@@ -24,7 +24,7 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
 const initDatabase = () => {
     return new Promise((resolve, reject) => {
         let completedTables = 0;
-        const totalTables = 6; // users, doors, access_groups, door_access_groups, user_access_groups, access_log
+        const totalTables = 7; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, admin_user
         
         const checkCompletion = () => {
             completedTables++;
@@ -197,12 +197,12 @@ const initDatabase = () => {
                                 return;
                             }
                             console.log('Default admin user created (username: admin, password: admin123)');
-                            resolve();
+                            checkCompletion();
                         }
                     );
                 } else {
                     console.log('Users already exist, skipping default admin creation');
-                    resolve();
+                    checkCompletion();
                 }
             });
         });
