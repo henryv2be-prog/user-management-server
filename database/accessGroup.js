@@ -284,6 +284,7 @@ class AccessGroup {
          VALUES (?, ?, ?, ?, ?)`,
         [userId, this.id, grantedBy, expiresAt, 1],
         function(err) {
+          db.close();
           if (err) {
             reject(err);
             return;
@@ -303,6 +304,7 @@ class AccessGroup {
         'DELETE FROM user_access_groups WHERE access_group_id = ? AND user_id = ?',
         [this.id, userId],
         function(err) {
+          db.close();
           if (err) {
             reject(err);
             return;

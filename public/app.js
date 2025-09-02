@@ -1241,6 +1241,8 @@ async function manageAccessGroupDetails(accessGroupId) {
                 const doorsData = await doorsResponse.json();
                 const allDoors = doorsData.doors;
                 
+                console.log('Loaded doors for dropdown:', allDoors);
+                
                 // Populate door dropdown
                 const doorDropdown = document.getElementById('accessGroupDoorSelect');
                 doorDropdown.innerHTML = '<option value="">Select a door...</option>';
@@ -1251,10 +1253,15 @@ async function manageAccessGroupDetails(accessGroupId) {
                     }
                 });
                 
+                console.log('Door dropdown populated with', doorDropdown.children.length - 1, 'doors');
+                
                 // Display current doors
                 displayAccessGroupDoors(doors);
                 
                 document.getElementById('accessGroupDetailsModal').classList.add('active');
+            } else {
+                console.error('Failed to load doors:', doorsResponse.status, doorsResponse.statusText);
+                showToast('Failed to load doors for dropdown', 'error');
             }
         }
     } catch (error) {
