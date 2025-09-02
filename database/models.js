@@ -20,7 +20,6 @@ class User {
     this.updatedAt = data.updated_at;
   }
 
-  // Remove sensitive data before sending to client
   toJSON() {
     return {
       id: this.id,
@@ -41,34 +40,25 @@ class User {
     return new Promise((resolve, reject) => {
       const { email, password, firstName, lastName, role = 'user' } = userData;
       
-      if (!email || !password || !firstName || !lastName) {
-        reject(new Error('Missing required fields'));
-        return;
-      }
-
       bcrypt.hash(password, BCRYPT_ROUNDS, (err, hash) => {
         if (err) {
           reject(err);
           return;
         }
-
+        
         const db = getDatabase();
         db.run(
           'INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, email_verified) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [email, hash, firstName, lastName, role, 1, 0],
           function(err) {
             if (err) {
-              if (err.message.includes('UNIQUE constraint failed')) {
-                reject(new Error('Email already exists'));
-              } else {
-                reject(err);
-              }
+              reject(err);
               return;
             }
             
-            // Return the created user
+            // Fetch the created user
             User.findById(this.lastID)
-              .then(resolve)
+              .then(user => resolve(user))
               .catch(reject);
           }
         );
@@ -124,8 +114,13 @@ class User {
 
   static async findAll(options = {}) {
     return new Promise((resolve, reject) => {
-      const { page = 1, limit = 10, role, isActive, search } = options;
-      const offset = (page - 1) * limit;
+      const {
+        page = 1,
+        limit = 10,
+        role,
+        isActive,
+        search
+      } = options;
       
       let query = 'SELECT * FROM users WHERE 1=1';
       const params = [];
@@ -146,8 +141,9 @@ class User {
         params.push(searchTerm, searchTerm, searchTerm);
       }
       
-      query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-      params.push(limit, offset);
+      query += ' ORDER BY created_at DESC';
+      query += ' LIMIT ? OFFSET ?';
+      params.push(limit, (page - 1) * limit);
       
       const db = getDatabase();
       db.all(query, params, (err, rows) => {
@@ -203,9 +199,18 @@ class User {
       const updates = [];
       const params = [];
       
+      // Map camelCase to snake_case
+      const fieldMapping = {
+        'firstName': 'first_name',
+        'lastName': 'last_name',
+        'isActive': 'is_active',
+        'emailVerified': 'email_verified'
+      };
+      
       for (const [key, value] of Object.entries(updateData)) {
-        if (allowedFields.includes(key) && value !== undefined) {
-          updates.push(`${key} = ?`);
+        const dbField = fieldMapping[key] || key;
+        if (allowedFields.includes(dbField) && value !== undefined) {
+          updates.push(`${dbField} = ?`);
           params.push(value);
         }
       }
@@ -227,9 +232,9 @@ class User {
             return;
           }
           
-          // Return updated user
+          // Fetch updated user
           User.findById(this.id)
-            .then(resolve)
+            .then(updatedUser => resolve(updatedUser))
             .catch(reject);
         }
       );
@@ -328,21 +333,19 @@ class User {
   }
 
   generateToken() {
-    const payload = {
-      id: this.id,
-      email: this.email,
-      role: this.role
-    };
-    
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    return jwt.sign(
+      { 
+        id: this.id, 
+        email: this.email, 
+        role: this.role 
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
   }
 
   static verifyToken(token) {
-    try {
-      return jwt.verify(token, JWT_SECRET);
-    } catch (err) {
-      throw new Error('Invalid token');
-    }
+    return jwt.verify(token, JWT_SECRET);
   }
 
   hasRole(requiredRole) {
@@ -357,7 +360,31 @@ class User {
     
     return userLevel >= requiredLevel;
   }
+
+  static async authenticate(email, password) {
+    try {
+      const user = await User.findByEmail(email);
+      if (!user) {
+        return null;
+      }
+      
+      const isValid = await user.verifyPassword(password);
+      if (!isValid) {
+        return null;
+      }
+      
+      if (!user.isActive) {
+        return null;
+      }
+      
+      // Update last login
+      await user.updateLastLogin();
+      
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 module.exports = { User };
-
