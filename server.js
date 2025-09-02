@@ -98,8 +98,10 @@ app.use('*', (req, res) => {
 async function startServer() {
   try {
     console.log('Starting server...');
+    console.log('Port:', PORT);
+    console.log('Environment:', process.env.NODE_ENV || 'development');
     
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📱 Web interface: http://localhost:${PORT}`);
       console.log(`🔧 API endpoints: http://localhost:${PORT}/api`);
@@ -109,11 +111,31 @@ async function startServer() {
       console.log(`   Password: ${process.env.ADMIN_PASSWORD || 'admin123456'}`);
       console.log(`\n⚠️  Please change the default password after first login!`);
     });
+
+    server.on('error', (error) => {
+      console.error('Server error:', error);
+      if (error.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use. Please use a different port.`);
+      }
+      process.exit(1);
+    });
+
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
   }
 }
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
 
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
