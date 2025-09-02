@@ -183,16 +183,45 @@ async function loadDashboard() {
     }
     
     try {
-        const response = await fetch('/api/users/stats/overview', {
+        // Load user stats
+        const userStatsResponse = await fetch('/api/users/stats/overview', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
         
-        if (response.ok) {
-            const data = await response.json();
-            displayStats(data.stats);
+        // Load door stats
+        const doorStatsResponse = await fetch('/api/doors?limit=1', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        // Load access group stats
+        const accessGroupStatsResponse = await fetch('/api/access-groups?limit=1', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        let stats = {};
+        
+        if (userStatsResponse.ok) {
+            const userData = await userStatsResponse.json();
+            stats = { ...userData.stats };
         }
+        
+        if (doorStatsResponse.ok) {
+            const doorData = await doorStatsResponse.json();
+            stats.totalDoors = doorData.pagination.totalCount;
+        }
+        
+        if (accessGroupStatsResponse.ok) {
+            const accessGroupData = await accessGroupStatsResponse.json();
+            stats.totalAccessGroups = accessGroupData.pagination.totalCount;
+        }
+        
+        displayStats(stats);
     } catch (error) {
         console.error('Failed to load dashboard stats:', error);
     }
@@ -220,6 +249,16 @@ function displayStats(stats) {
             <i class="fas fa-user-cog"></i>
             <h3>${stats.moderatorUsers}</h3>
             <p>Moderators</p>
+        </div>
+        <div class="stat-card doors">
+            <i class="fas fa-door-open"></i>
+            <h3>${stats.totalDoors || 0}</h3>
+            <p>Total Doors</p>
+        </div>
+        <div class="stat-card access-groups">
+            <i class="fas fa-shield-alt"></i>
+            <h3>${stats.totalAccessGroups || 0}</h3>
+            <p>Access Groups</p>
         </div>
     `;
 }
@@ -556,4 +595,503 @@ function showToast(message, type = 'info') {
 // Helper function to check if user has role
 function hasRole(role) {
     return currentUser && currentUser.role === role;
+}
+
+// Door management functions
+async function loadDoors(page = 1) {
+    if (!currentUser || !hasRole('admin')) {
+        return;
+    }
+    
+    showLoading();
+    currentPage = page;
+    
+    try {
+        const params = new URLSearchParams({
+            page: page,
+            limit: 10,
+            ...currentFilters
+        });
+        
+        const response = await fetch(`/api/doors?${params}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayDoors(data.doors);
+            displayDoorsPagination(data.pagination);
+        } else {
+            showToast('Failed to load doors', 'error');
+        }
+    } catch (error) {
+        console.error('Failed to load doors:', error);
+        showToast('Failed to load doors', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function displayDoors(doors) {
+    const tbody = document.getElementById('doorsTableBody');
+    tbody.innerHTML = doors.map(door => `
+        <tr>
+            <td>${door.name}</td>
+            <td>${door.location}</td>
+            <td>${door.esp32Ip}</td>
+            <td><span class="status-indicator ${door.isActive ? 'active' : 'inactive'}">${door.isActive ? 'Active' : 'Inactive'}</span></td>
+            <td>${door.lastSeen ? new Date(door.lastSeen).toLocaleString() : 'Never'}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn edit" onclick="editDoor(${door.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="action-btn access-groups" onclick="manageDoorAccessGroups(${door.id})">
+                        <i class="fas fa-shield-alt"></i>
+                    </button>
+                    <button class="action-btn delete" onclick="deleteDoor(${door.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function displayDoorsPagination(pagination) {
+    const paginationDiv = document.getElementById('doorsPagination');
+    const { page, totalPages, hasNext, hasPrev } = pagination;
+    
+    let paginationHTML = `
+        <button ${!hasPrev ? 'disabled' : ''} onclick="loadDoors(${page - 1})">
+            <i class="fas fa-chevron-left"></i> Previous
+        </button>
+    `;
+    
+    for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) {
+        paginationHTML += `
+            <button class="${i === page ? 'active' : ''}" onclick="loadDoors(${i})">${i}</button>
+        `;
+    }
+    
+    paginationHTML += `
+        <button ${!hasNext ? 'disabled' : ''} onclick="loadDoors(${page + 1})">
+            Next <i class="fas fa-chevron-right"></i>
+        </button>
+    `;
+    
+    paginationDiv.innerHTML = paginationHTML;
+}
+
+function searchDoors() {
+    const searchTerm = document.getElementById('doorSearchInput').value;
+    currentFilters.search = searchTerm;
+    loadDoors(1);
+}
+
+function filterDoors() {
+    const statusFilter = document.getElementById('doorStatusFilter').value;
+    currentFilters.isActive = statusFilter;
+    loadDoors(1);
+}
+
+function showCreateDoorModal() {
+    document.getElementById('createDoorModal').classList.add('active');
+}
+
+async function handleCreateDoor(event) {
+    event.preventDefault();
+    showLoading();
+    
+    const formData = new FormData(event.target);
+    const doorData = {
+        name: formData.get('name'),
+        location: formData.get('location'),
+        esp32Ip: formData.get('esp32Ip'),
+        esp32Mac: formData.get('esp32Mac')
+    };
+    
+    try {
+        const response = await fetch('/api/doors', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(doorData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('Door created successfully!', 'success');
+            closeModal('createDoorModal');
+            event.target.reset();
+            loadDoors();
+        } else {
+            showToast(data.message || 'Failed to create door', 'error');
+        }
+    } catch (error) {
+        console.error('Create door error:', error);
+        showToast('Failed to create door', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function editDoor(doorId) {
+    try {
+        const response = await fetch(`/api/doors/${doorId}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const door = data.door;
+            
+            document.getElementById('editDoorId').value = door.id;
+            document.getElementById('editDoorName').value = door.name;
+            document.getElementById('editDoorLocation').value = door.location;
+            document.getElementById('editDoorEsp32Ip').value = door.esp32Ip;
+            document.getElementById('editDoorEsp32Mac').value = door.esp32Mac || '';
+            document.getElementById('editDoorIsActive').value = door.isActive.toString();
+            
+            document.getElementById('editDoorModal').classList.add('active');
+        } else {
+            showToast('Failed to load door details', 'error');
+        }
+    } catch (error) {
+        console.error('Edit door error:', error);
+        showToast('Failed to load door details', 'error');
+    }
+}
+
+async function handleEditDoor(event) {
+    event.preventDefault();
+    showLoading();
+    
+    const formData = new FormData(event.target);
+    const doorId = formData.get('id');
+    const doorData = {
+        name: formData.get('name'),
+        location: formData.get('location'),
+        esp32Ip: formData.get('esp32Ip'),
+        esp32Mac: formData.get('esp32Mac'),
+        isActive: formData.get('isActive') === 'true'
+    };
+    
+    try {
+        const response = await fetch(`/api/doors/${doorId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(doorData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('Door updated successfully!', 'success');
+            closeModal('editDoorModal');
+            loadDoors();
+        } else {
+            showToast(data.message || 'Failed to update door', 'error');
+        }
+    } catch (error) {
+        console.error('Update door error:', error);
+        showToast('Failed to update door', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function deleteDoor(doorId) {
+    if (!confirm('Are you sure you want to delete this door?')) {
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const response = await fetch(`/api/doors/${doorId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            showToast('Door deleted successfully!', 'success');
+            loadDoors();
+        } else {
+            const data = await response.json();
+            showToast(data.message || 'Failed to delete door', 'error');
+        }
+    } catch (error) {
+        console.error('Delete door error:', error);
+        showToast('Failed to delete door', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Access Group management functions
+async function loadAccessGroups(page = 1) {
+    if (!currentUser || !hasRole('admin')) {
+        return;
+    }
+    
+    showLoading();
+    currentPage = page;
+    
+    try {
+        const params = new URLSearchParams({
+            page: page,
+            limit: 10,
+            ...currentFilters
+        });
+        
+        const response = await fetch(`/api/access-groups?${params}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayAccessGroups(data.accessGroups);
+            displayAccessGroupsPagination(data.pagination);
+        } else {
+            showToast('Failed to load access groups', 'error');
+        }
+    } catch (error) {
+        console.error('Failed to load access groups:', error);
+        showToast('Failed to load access groups', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function displayAccessGroups(accessGroups) {
+    const tbody = document.getElementById('accessGroupsTableBody');
+    tbody.innerHTML = accessGroups.map(group => `
+        <tr>
+            <td>${group.name}</td>
+            <td>${group.description || 'No description'}</td>
+            <td><span class="status-indicator ${group.isActive ? 'active' : 'inactive'}">${group.isActive ? 'Active' : 'Inactive'}</span></td>
+            <td>${new Date(group.createdAt).toLocaleDateString()}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn edit" onclick="editAccessGroup(${group.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="action-btn details" onclick="manageAccessGroupDetails(${group.id})">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                    <button class="action-btn delete" onclick="deleteAccessGroup(${group.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function displayAccessGroupsPagination(pagination) {
+    const paginationDiv = document.getElementById('accessGroupsPagination');
+    const { page, totalPages, hasNext, hasPrev } = pagination;
+    
+    let paginationHTML = `
+        <button ${!hasPrev ? 'disabled' : ''} onclick="loadAccessGroups(${page - 1})">
+            <i class="fas fa-chevron-left"></i> Previous
+        </button>
+    `;
+    
+    for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) {
+        paginationHTML += `
+            <button class="${i === page ? 'active' : ''}" onclick="loadAccessGroups(${i})">${i}</button>
+        `;
+    }
+    
+    paginationHTML += `
+        <button ${!hasNext ? 'disabled' : ''} onclick="loadAccessGroups(${page + 1})">
+            Next <i class="fas fa-chevron-right"></i>
+        </button>
+    `;
+    
+    paginationDiv.innerHTML = paginationHTML;
+}
+
+function searchAccessGroups() {
+    const searchTerm = document.getElementById('accessGroupSearchInput').value;
+    currentFilters.search = searchTerm;
+    loadAccessGroups(1);
+}
+
+function filterAccessGroups() {
+    const statusFilter = document.getElementById('accessGroupStatusFilter').value;
+    currentFilters.isActive = statusFilter;
+    loadAccessGroups(1);
+}
+
+function showCreateAccessGroupModal() {
+    document.getElementById('createAccessGroupModal').classList.add('active');
+}
+
+async function handleCreateAccessGroup(event) {
+    event.preventDefault();
+    showLoading();
+    
+    const formData = new FormData(event.target);
+    const accessGroupData = {
+        name: formData.get('name'),
+        description: formData.get('description')
+    };
+    
+    try {
+        const response = await fetch('/api/access-groups', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(accessGroupData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('Access group created successfully!', 'success');
+            closeModal('createAccessGroupModal');
+            event.target.reset();
+            loadAccessGroups();
+        } else {
+            showToast(data.message || 'Failed to create access group', 'error');
+        }
+    } catch (error) {
+        console.error('Create access group error:', error);
+        showToast('Failed to create access group', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function editAccessGroup(accessGroupId) {
+    try {
+        const response = await fetch(`/api/access-groups/${accessGroupId}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const accessGroup = data.accessGroup;
+            
+            document.getElementById('editAccessGroupId').value = accessGroup.id;
+            document.getElementById('editAccessGroupName').value = accessGroup.name;
+            document.getElementById('editAccessGroupDescription').value = accessGroup.description || '';
+            document.getElementById('editAccessGroupIsActive').value = accessGroup.isActive.toString();
+            
+            document.getElementById('editAccessGroupModal').classList.add('active');
+        } else {
+            showToast('Failed to load access group details', 'error');
+        }
+    } catch (error) {
+        console.error('Edit access group error:', error);
+        showToast('Failed to load access group details', 'error');
+    }
+}
+
+async function handleEditAccessGroup(event) {
+    event.preventDefault();
+    showLoading();
+    
+    const formData = new FormData(event.target);
+    const accessGroupId = formData.get('id');
+    const accessGroupData = {
+        name: formData.get('name'),
+        description: formData.get('description'),
+        isActive: formData.get('isActive') === 'true'
+    };
+    
+    try {
+        const response = await fetch(`/api/access-groups/${accessGroupId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(accessGroupData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('Access group updated successfully!', 'success');
+            closeModal('editAccessGroupModal');
+            loadAccessGroups();
+        } else {
+            showToast(data.message || 'Failed to update access group', 'error');
+        }
+    } catch (error) {
+        console.error('Update access group error:', error);
+        showToast('Failed to update access group', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function deleteAccessGroup(accessGroupId) {
+    if (!confirm('Are you sure you want to delete this access group?')) {
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const response = await fetch(`/api/access-groups/${accessGroupId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            showToast('Access group deleted successfully!', 'success');
+            loadAccessGroups();
+        } else {
+            const data = await response.json();
+            showToast(data.message || 'Failed to delete access group', 'error');
+        }
+    } catch (error) {
+        console.error('Delete access group error:', error);
+        showToast('Failed to delete access group', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Update the showSection function to handle new sections
+function showSection(sectionName) {
+    hideAllSections();
+    document.getElementById(sectionName + 'Section').classList.add('active');
+    
+    if (sectionName === 'dashboard') {
+        loadDashboard();
+    } else if (sectionName === 'users') {
+        loadUsers();
+    } else if (sectionName === 'doors') {
+        loadDoors();
+    } else if (sectionName === 'accessGroups') {
+        loadAccessGroups();
+    } else if (sectionName === 'profile') {
+        updateProfileInfo();
+    }
 }

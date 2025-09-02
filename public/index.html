@@ -23,6 +23,12 @@
                     <a href="#" class="nav-link" onclick="showSection('users')">
                         <i class="fas fa-users"></i> Users
                     </a>
+                    <a href="#" class="nav-link" onclick="showSection('doors')">
+                        <i class="fas fa-door-open"></i> Doors
+                    </a>
+                    <a href="#" class="nav-link" onclick="showSection('accessGroups')">
+                        <i class="fas fa-shield-alt"></i> Access Groups
+                    </a>
                     <a href="#" class="nav-link" onclick="showSection('profile')">
                         <i class="fas fa-user"></i> Profile
                     </a>
@@ -160,6 +166,91 @@
             </div>
         </div>
 
+        <!-- Doors Management -->
+        <div id="doorsSection" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h1><i class="fas fa-door-open"></i> Door Management</h1>
+                    <button class="btn btn-primary" onclick="showCreateDoorModal()">
+                        <i class="fas fa-plus"></i> Add Door
+                    </button>
+                </div>
+                
+                <div class="filters">
+                    <input type="text" id="doorSearchInput" placeholder="Search doors..." onkeyup="searchDoors()">
+                    <select id="doorStatusFilter" onchange="filterDoors()">
+                        <option value="">All Status</option>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+
+                <div class="doors-table-container">
+                    <table class="doors-table" id="doorsTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Location</th>
+                                <th>ESP32 IP</th>
+                                <th>Status</th>
+                                <th>Last Seen</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="doorsTableBody">
+                            <!-- Doors will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination" id="doorsPagination">
+                    <!-- Pagination will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Access Groups Management -->
+        <div id="accessGroupsSection" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h1><i class="fas fa-shield-alt"></i> Access Groups</h1>
+                    <button class="btn btn-primary" onclick="showCreateAccessGroupModal()">
+                        <i class="fas fa-plus"></i> Add Access Group
+                    </button>
+                </div>
+                
+                <div class="filters">
+                    <input type="text" id="accessGroupSearchInput" placeholder="Search access groups..." onkeyup="searchAccessGroups()">
+                    <select id="accessGroupStatusFilter" onchange="filterAccessGroups()">
+                        <option value="">All Status</option>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+
+                <div class="access-groups-table-container">
+                    <table class="access-groups-table" id="accessGroupsTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accessGroupsTableBody">
+                            <!-- Access groups will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination" id="accessGroupsPagination">
+                    <!-- Pagination will be loaded here -->
+                </div>
+            </div>
+        </div>
+
         <!-- Profile -->
         <div id="profileSection" class="section">
             <div class="container">
@@ -290,6 +381,201 @@
                     <button type="submit" class="btn btn-primary">Change Password</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Door Modals -->
+    <div id="createDoorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-door-open"></i> Create New Door</h3>
+                <span class="close" onclick="closeModal('createDoorModal')">&times;</span>
+            </div>
+            <form id="createDoorForm" onsubmit="handleCreateDoor(event)">
+                <div class="form-group">
+                    <label for="createDoorName">Door Name</label>
+                    <input type="text" id="createDoorName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="createDoorLocation">Location</label>
+                    <input type="text" id="createDoorLocation" name="location" required>
+                </div>
+                <div class="form-group">
+                    <label for="createDoorEsp32Ip">ESP32 IP Address</label>
+                    <input type="text" id="createDoorEsp32Ip" name="esp32Ip" required placeholder="192.168.1.100">
+                </div>
+                <div class="form-group">
+                    <label for="createDoorEsp32Mac">ESP32 MAC Address (Optional)</label>
+                    <input type="text" id="createDoorEsp32Mac" name="esp32Mac" placeholder="AA:BB:CC:DD:EE:FF">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createDoorModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Door</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editDoorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Edit Door</h3>
+                <span class="close" onclick="closeModal('editDoorModal')">&times;</span>
+            </div>
+            <form id="editDoorForm" onsubmit="handleEditDoor(event)">
+                <input type="hidden" id="editDoorId" name="id">
+                <div class="form-group">
+                    <label for="editDoorName">Door Name</label>
+                    <input type="text" id="editDoorName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="editDoorLocation">Location</label>
+                    <input type="text" id="editDoorLocation" name="location" required>
+                </div>
+                <div class="form-group">
+                    <label for="editDoorEsp32Ip">ESP32 IP Address</label>
+                    <input type="text" id="editDoorEsp32Ip" name="esp32Ip" required>
+                </div>
+                <div class="form-group">
+                    <label for="editDoorEsp32Mac">ESP32 MAC Address</label>
+                    <input type="text" id="editDoorEsp32Mac" name="esp32Mac">
+                </div>
+                <div class="form-group">
+                    <label for="editDoorIsActive">Status</label>
+                    <select id="editDoorIsActive" name="isActive" required>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editDoorModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Door</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="doorAccessGroupsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-shield-alt"></i> Door Access Groups</h3>
+                <span class="close" onclick="closeModal('doorAccessGroupsModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="doorAccessGroupSelect">Add Access Group</label>
+                    <select id="doorAccessGroupSelect">
+                        <option value="">Select an access group...</option>
+                    </select>
+                    <button type="button" class="btn btn-primary" onclick="addAccessGroupToDoor()">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+                <div id="doorAccessGroupsList">
+                    <!-- Access groups will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Access Group Modals -->
+    <div id="createAccessGroupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-shield-alt"></i> Create New Access Group</h3>
+                <span class="close" onclick="closeModal('createAccessGroupModal')">&times;</span>
+            </div>
+            <form id="createAccessGroupForm" onsubmit="handleCreateAccessGroup(event)">
+                <div class="form-group">
+                    <label for="createAccessGroupName">Access Group Name</label>
+                    <input type="text" id="createAccessGroupName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="createAccessGroupDescription">Description</label>
+                    <textarea id="createAccessGroupDescription" name="description" rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createAccessGroupModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Access Group</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editAccessGroupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Edit Access Group</h3>
+                <span class="close" onclick="closeModal('editAccessGroupModal')">&times;</span>
+            </div>
+            <form id="editAccessGroupForm" onsubmit="handleEditAccessGroup(event)">
+                <input type="hidden" id="editAccessGroupId" name="id">
+                <div class="form-group">
+                    <label for="editAccessGroupName">Access Group Name</label>
+                    <input type="text" id="editAccessGroupName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="editAccessGroupDescription">Description</label>
+                    <textarea id="editAccessGroupDescription" name="description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editAccessGroupIsActive">Status</label>
+                    <select id="editAccessGroupIsActive" name="isActive" required>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editAccessGroupModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Access Group</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="accessGroupDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-shield-alt"></i> Access Group Details</h3>
+                <span class="close" onclick="closeModal('accessGroupDetailsModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="tabs">
+                    <button class="tab-button active" onclick="showAccessGroupTab('doors')">Doors</button>
+                    <button class="tab-button" onclick="showAccessGroupTab('users')">Users</button>
+                </div>
+                
+                <div id="accessGroupDoorsTab" class="tab-content active">
+                    <div class="form-group">
+                        <label for="accessGroupDoorSelect">Add Door</label>
+                        <select id="accessGroupDoorSelect">
+                            <option value="">Select a door...</option>
+                        </select>
+                        <button type="button" class="btn btn-primary" onclick="addDoorToAccessGroup()">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                    <div id="accessGroupDoorsList">
+                        <!-- Doors will be loaded here -->
+                    </div>
+                </div>
+                
+                <div id="accessGroupUsersTab" class="tab-content">
+                    <div class="form-group">
+                        <label for="accessGroupUserSelect">Add User</label>
+                        <select id="accessGroupUserSelect">
+                            <option value="">Select a user...</option>
+                        </select>
+                        <input type="date" id="accessGroupUserExpires" placeholder="Expires (optional)">
+                        <button type="button" class="btn btn-primary" onclick="addUserToAccessGroup()">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                    <div id="accessGroupUsersList">
+                        <!-- Users will be loaded here -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -161,6 +161,84 @@ const validatePagination = [
   handleValidationErrors
 ];
 
+// Door validation rules
+const validateDoor = [
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Door name must be between 2 and 100 characters'),
+  body('location')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Location must be between 2 and 100 characters'),
+  body('esp32Ip')
+    .isIP()
+    .withMessage('ESP32 IP must be a valid IP address'),
+  body('esp32Mac')
+    .optional()
+    .matches(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/)
+    .withMessage('ESP32 MAC must be a valid MAC address'),
+  handleValidationErrors
+];
+
+const validateDoorUpdate = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Door name must be between 2 and 100 characters'),
+  body('location')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Location must be between 2 and 100 characters'),
+  body('esp32Ip')
+    .optional()
+    .isIP()
+    .withMessage('ESP32 IP must be a valid IP address'),
+  body('esp32Mac')
+    .optional()
+    .matches(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/)
+    .withMessage('ESP32 MAC must be a valid MAC address'),
+  body('isActive')
+    .optional()
+    .isBoolean()
+    .withMessage('isActive must be a boolean value'),
+  handleValidationErrors
+];
+
+// Access group validation rules
+const validateAccessGroup = [
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Access group name must be between 2 and 50 characters'),
+  body('description')
+    .optional()
+    .trim()
+    .isLength({ max: 255 })
+    .withMessage('Description must be less than 255 characters'),
+  handleValidationErrors
+];
+
+const validateAccessGroupUpdate = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Access group name must be between 2 and 50 characters'),
+  body('description')
+    .optional()
+    .trim()
+    .isLength({ max: 255 })
+    .withMessage('Description must be less than 255 characters'),
+  body('isActive')
+    .optional()
+    .isBoolean()
+    .withMessage('isActive must be a boolean value'),
+  handleValidationErrors
+];
+
 module.exports = {
   handleValidationErrors,
   validateUser,
@@ -170,6 +248,10 @@ module.exports = {
   validateLogin,
   validateRegister,
   validateId,
-  validatePagination
+  validatePagination,
+  validateDoor,
+  validateDoorUpdate,
+  validateAccessGroup,
+  validateAccessGroupUpdate
 };
 

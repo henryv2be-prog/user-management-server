@@ -63,6 +63,80 @@ function initializeDatabase() {
       )
     `;
     
+    // Create doors table for ESP32 door controllers
+    const createDoorsTable = `
+      CREATE TABLE IF NOT EXISTS doors (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        location TEXT NOT NULL,
+        esp32_ip TEXT NOT NULL,
+        esp32_mac TEXT,
+        secret_key TEXT NOT NULL,
+        is_active BOOLEAN DEFAULT 1,
+        last_seen TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    
+    // Create access_groups table
+    const createAccessGroupsTable = `
+      CREATE TABLE IF NOT EXISTS access_groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        description TEXT,
+        is_active BOOLEAN DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    
+    // Create door_access_groups junction table
+    const createDoorAccessGroupsTable = `
+      CREATE TABLE IF NOT EXISTS door_access_groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        door_id INTEGER NOT NULL,
+        access_group_id INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE,
+        FOREIGN KEY (access_group_id) REFERENCES access_groups (id) ON DELETE CASCADE,
+        UNIQUE(door_id, access_group_id)
+      )
+    `;
+    
+    // Create user_access_groups junction table
+    const createUserAccessGroupsTable = `
+      CREATE TABLE IF NOT EXISTS user_access_groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        access_group_id INTEGER NOT NULL,
+        granted_by INTEGER,
+        granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP,
+        is_active BOOLEAN DEFAULT 1,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+        FOREIGN KEY (access_group_id) REFERENCES access_groups (id) ON DELETE CASCADE,
+        FOREIGN KEY (granted_by) REFERENCES users (id) ON DELETE SET NULL,
+        UNIQUE(user_id, access_group_id)
+      )
+    `;
+    
+    // Create access_log table for tracking door access attempts
+    const createAccessLogTable = `
+      CREATE TABLE IF NOT EXISTS access_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        door_id INTEGER NOT NULL,
+        access_granted BOOLEAN NOT NULL,
+        access_method TEXT NOT NULL,
+        ip_address TEXT,
+        user_agent TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL,
+        FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE
+      )
+    `;
+    
     // Create audit_log table for tracking changes
     const createAuditLogTable = `
       CREATE TABLE IF NOT EXISTS audit_log (
@@ -87,6 +161,17 @@ function initializeDatabase() {
       'CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active)',
       'CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON user_sessions(user_id)',
       'CREATE INDEX IF NOT EXISTS idx_sessions_expires ON user_sessions(expires_at)',
+      'CREATE INDEX IF NOT EXISTS idx_doors_ip ON doors(esp32_ip)',
+      'CREATE INDEX IF NOT EXISTS idx_doors_active ON doors(is_active)',
+      'CREATE INDEX IF NOT EXISTS idx_access_groups_name ON access_groups(name)',
+      'CREATE INDEX IF NOT EXISTS idx_access_groups_active ON access_groups(is_active)',
+      'CREATE INDEX IF NOT EXISTS idx_door_access_groups_door_id ON door_access_groups(door_id)',
+      'CREATE INDEX IF NOT EXISTS idx_door_access_groups_group_id ON door_access_groups(access_group_id)',
+      'CREATE INDEX IF NOT EXISTS idx_user_access_groups_user_id ON user_access_groups(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_user_access_groups_group_id ON user_access_groups(access_group_id)',
+      'CREATE INDEX IF NOT EXISTS idx_access_log_user_id ON access_log(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_access_log_door_id ON access_log(door_id)',
+      'CREATE INDEX IF NOT EXISTS idx_access_log_created_at ON access_log(created_at)',
       'CREATE INDEX IF NOT EXISTS idx_audit_user_id ON audit_log(user_id)',
       'CREATE INDEX IF NOT EXISTS idx_audit_created_at ON audit_log(created_at)'
     ];
@@ -118,6 +203,51 @@ function initializeDatabase() {
           return;
         }
         console.log('✅ Sessions table created/verified');
+      });
+      
+      database.run(createDoorsTable, (err) => {
+        if (err) {
+          console.error('Error creating doors table:', err.message);
+          reject(err);
+          return;
+        }
+        console.log('✅ Doors table created/verified');
+      });
+      
+      database.run(createAccessGroupsTable, (err) => {
+        if (err) {
+          console.error('Error creating access_groups table:', err.message);
+          reject(err);
+          return;
+        }
+        console.log('✅ Access groups table created/verified');
+      });
+      
+      database.run(createDoorAccessGroupsTable, (err) => {
+        if (err) {
+          console.error('Error creating door_access_groups table:', err.message);
+          reject(err);
+          return;
+        }
+        console.log('✅ Door access groups table created/verified');
+      });
+      
+      database.run(createUserAccessGroupsTable, (err) => {
+        if (err) {
+          console.error('Error creating user_access_groups table:', err.message);
+          reject(err);
+          return;
+        }
+        console.log('✅ User access groups table created/verified');
+      });
+      
+      database.run(createAccessLogTable, (err) => {
+        if (err) {
+          console.error('Error creating access_log table:', err.message);
+          reject(err);
+          return;
+        }
+        console.log('✅ Access log table created/verified');
       });
       
       database.run(createAuditLogTable, (err) => {

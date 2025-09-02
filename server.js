@@ -8,6 +8,8 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
+const doorRoutes = require('./routes/doors');
+const accessGroupRoutes = require('./routes/accessGroups');
 const { initializeDatabase } = require('./database/init');
 
 const app = express();
@@ -61,6 +63,8 @@ app.use(express.static('public'));
 // API Routes
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/doors', doorRoutes);
+app.use('/api/access-groups', accessGroupRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

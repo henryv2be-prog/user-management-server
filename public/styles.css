@@ -725,3 +725,186 @@ body {
         min-width: 250px;
     }
 }
+
+/* Door and Access Group Tables */
+.doors-table-container,
+.access-groups-table-container {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.doors-table,
+.access-groups-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.doors-table th,
+.doors-table td,
+.access-groups-table th,
+.access-groups-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.doors-table th,
+.access-groups-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+.doors-table tr:hover,
+.access-groups-table tr:hover {
+    background: #f8f9fa;
+}
+
+/* Action buttons for doors and access groups */
+.action-btn.access-groups {
+    background: #17a2b8;
+    color: white;
+}
+
+.action-btn.access-groups:hover {
+    background: #138496;
+}
+
+.action-btn.details {
+    background: #6c757d;
+    color: white;
+}
+
+.action-btn.details:hover {
+    background: #5a6268;
+}
+
+/* Tabs for access group details */
+.tabs {
+    display: flex;
+    border-bottom: 2px solid #eee;
+    margin-bottom: 20px;
+}
+
+.tab-button {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #666;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.tab-button.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+}
+
+.tab-button:hover {
+    color: #667eea;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Access group lists */
+#doorAccessGroupsList,
+#accessGroupDoorsList,
+#accessGroupUsersList {
+    margin-top: 20px;
+}
+
+.access-group-item,
+.door-item,
+.user-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.access-group-item .remove-btn,
+.door-item .remove-btn,
+.user-item .remove-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.access-group-item .remove-btn:hover,
+.door-item .remove-btn:hover,
+.user-item .remove-btn:hover {
+    background: #c82333;
+}
+
+/* Form improvements for doors and access groups */
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.form-group input[type="date"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-family: inherit;
+}
+
+/* Stats grid updates for new cards */
+.stat-card.doors {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.stat-card.access-groups {
+    background: linear-gradient(135deg, #6f42c1, #e83e8c);
+}
+
+/* Responsive updates for new tables */
+@media (max-width: 768px) {
+    .doors-table-container,
+    .access-groups-table-container {
+        overflow-x: auto;
+    }
+    
+    .doors-table,
+    .access-groups-table {
+        min-width: 600px;
+    }
+    
+    .tabs {
+        flex-direction: column;
+    }
+    
+    .tab-button {
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        border-right: none;
+    }
+    
+    .tab-button.active {
+        border-bottom-color: #eee;
+        border-left: 3px solid #667eea;
+    }
+}
