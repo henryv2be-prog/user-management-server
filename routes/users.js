@@ -15,35 +15,25 @@ const {
 const router = express.Router();
 
 // Get all users (admin only)
-router.get('/', authenticate, requireAdmin, validatePagination, async (req, res) => {
+router.get('/', authenticate, requireAdmin, async (req, res) => {
   try {
-    const { page = 1, limit = 10, role, isActive, search } = req.query;
+    const { role, isActive } = req.query;
     
-    const options = {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      role,
-      isActive: isActive !== undefined ? isActive === 'true' : undefined,
-      search
-    };
+    const options = {};
     
-    const [users, totalCount] = await Promise.all([
-      User.findAll(options),
-      User.count(options)
-    ]);
+    if (role) {
+      options.role = role;
+    }
     
-    const totalPages = Math.ceil(totalCount / options.limit);
+    if (isActive !== undefined) {
+      options.activeOnly = isActive === 'true';
+    }
+    
+    const users = await User.findAll(options);
     
     res.json({
       users: users.map(user => user.toJSON()),
-      pagination: {
-        page: options.page,
-        limit: options.limit,
-        totalCount,
-        totalPages,
-        hasNext: options.page < totalPages,
-        hasPrev: options.page > 1
-      }
+      totalCount: users.length
     });
   } catch (error) {
     console.error('Get users error:', error);

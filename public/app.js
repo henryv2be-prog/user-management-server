@@ -288,7 +288,8 @@ async function loadUsers(page = 1) {
         if (response.ok) {
             const data = await response.json();
             displayUsers(data.users);
-            displayPagination(data.pagination);
+            // Simple pagination - just show all users for now
+            displaySimplePagination(data.totalCount);
         } else {
             showToast('Failed to load users', 'error');
         }
@@ -349,6 +350,11 @@ function displayPagination(pagination) {
     `;
     
     paginationDiv.innerHTML = paginationHTML;
+}
+
+function displaySimplePagination(totalCount) {
+    const paginationDiv = document.getElementById('pagination');
+    paginationDiv.innerHTML = `<span>Showing ${totalCount} users</span>`;
 }
 
 function searchUsers() {
