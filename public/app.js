@@ -838,7 +838,12 @@ async function deleteDoor(doorId) {
 
 // Access Group management functions
 async function loadAccessGroups(page = 1) {
+    console.log('loadAccessGroups called with page:', page);
+    console.log('currentUser:', currentUser);
+    console.log('hasRole admin:', hasRole('admin'));
+    
     if (!currentUser || !hasRole('admin')) {
+        console.log('Access denied - not admin or no current user');
         return;
     }
     
@@ -860,9 +865,11 @@ async function loadAccessGroups(page = 1) {
         
         if (response.ok) {
             const data = await response.json();
+            console.log('Access groups API response:', data);
             displayAccessGroups(data.accessGroups);
             displayAccessGroupsPagination(data.pagination);
         } else {
+            console.error('Access groups API failed:', response.status, response.statusText);
             showToast('Failed to load access groups', 'error');
         }
     } catch (error) {
@@ -874,6 +881,7 @@ async function loadAccessGroups(page = 1) {
 }
 
 function displayAccessGroups(accessGroups) {
+    console.log('Displaying access groups:', accessGroups);
     const tbody = document.getElementById('accessGroupsTableBody');
     tbody.innerHTML = accessGroups.map(group => `
         <tr>
