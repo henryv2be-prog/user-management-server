@@ -38,10 +38,18 @@ router.post('/login', validateLogin, async (req, res) => {
       });
     }
     
-    // Update last login
-    await user.updateLastLogin();
-    
-    const token = user.generateToken();
+    // Generate JWT token
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        username: user.username, 
+        email: user.email, 
+        role: user.role 
+      },
+      process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production',
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+    );
     
     res.json({
       message: 'Login successful',
@@ -78,7 +86,18 @@ router.post('/register', validateRegister, async (req, res) => {
       role: 'user'
     });
     
-    const token = user.generateToken();
+    // Generate JWT token
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        username: user.username, 
+        email: user.email, 
+        role: user.role 
+      },
+      process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production',
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+    );
     
     res.status(201).json({
       message: 'User created successfully',
@@ -116,7 +135,7 @@ router.post('/change-password', authenticate, validatePasswordChange, async (req
       });
     }
     
-    await user.updatePassword(newPassword);
+    await user.update({ password: newPassword });
     
     res.json({
       message: 'Password changed successfully'
