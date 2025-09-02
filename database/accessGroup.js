@@ -238,6 +238,7 @@ class AccessGroup {
          WHERE dag.access_group_id = ? AND d.is_active = 1`,
         [this.id],
         (err, rows) => {
+          db.close();
           if (err) {
             reject(err);
             return;
@@ -261,6 +262,7 @@ class AccessGroup {
          AND (uag.expires_at IS NULL OR uag.expires_at > CURRENT_TIMESTAMP)`,
         [this.id],
         (err, rows) => {
+          db.close();
           if (err) {
             reject(err);
             return;
@@ -320,6 +322,7 @@ class AccessGroup {
         'INSERT OR IGNORE INTO door_access_groups (access_group_id, door_id) VALUES (?, ?)',
         [this.id, doorId],
         function(err) {
+          db.close();
           if (err) {
             reject(err);
             return;
@@ -339,6 +342,7 @@ class AccessGroup {
         'DELETE FROM door_access_groups WHERE access_group_id = ? AND door_id = ?',
         [this.id, doorId],
         function(err) {
+          db.close();
           if (err) {
             reject(err);
             return;
