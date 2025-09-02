@@ -92,13 +92,19 @@ router.post('/', authenticate, requireAdmin, validateUser, async (req, res) => {
       });
     }
     
-    const user = await User.create({
+    // Generate username from email if not provided
+    const username = email.split('@')[0];
+    
+    const userId = await User.create({
+      username,
       email,
       password,
       firstName,
       lastName,
       role
     });
+    
+    const user = await User.findById(userId);
     
     res.status(201).json({
       message: 'User created successfully',
