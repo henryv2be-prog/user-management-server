@@ -15,8 +15,9 @@ const authenticate = async (req, res, next) => {
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
     
     try {
-      const decoded = User.verifyToken(token);
-      const user = await User.findById(decoded.id);
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
+      const user = await User.findById(decoded.userId);
       
       if (!user) {
         return res.status(401).json({
@@ -79,8 +80,9 @@ const optionalAuth = async (req, res, next) => {
       const token = authHeader.substring(7);
       
       try {
-        const decoded = User.verifyToken(token);
-        const user = await User.findById(decoded.id);
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
+        const user = await User.findById(decoded.userId);
         
         if (user && user.isActive) {
           req.user = user;
