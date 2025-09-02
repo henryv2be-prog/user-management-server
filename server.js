@@ -13,10 +13,8 @@ const { initializeDatabase } = require('./database/init');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Security middleware - disable CSP for development
-app.use(helmet({
-  contentSecurityPolicy: false,
-}));
+// Security middleware - disabled for development
+// app.use(helmet());
 
 // Rate limiting
 const limiter = rateLimit({
