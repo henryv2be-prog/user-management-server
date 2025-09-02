@@ -16,6 +16,12 @@ const PORT = process.env.PORT || 3000;
 // Security middleware - disabled for development
 // app.use(helmet());
 
+// Set permissive CSP headers for development
+app.use((req, res, next) => {
+  res.setHeader('Content-Security-Policy', "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https:;");
+  next();
+});
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
