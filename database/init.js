@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
 
-const DB_PATH = process.env.DB_PATH || './data/users.db';
+const DB_PATH = process.env.DB_PATH || './database/users.db';
 const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS) || 12;
 
 // Ensure data directory exists
