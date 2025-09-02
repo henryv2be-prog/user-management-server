@@ -58,6 +58,9 @@ class AccessGroup {
         (err, row) => {
           db.close();
           if (err) {
+            console.error('AccessGroup.findById SQLite error:', err);
+            console.error('Query: SELECT * FROM access_groups WHERE id = ?');
+            console.error('Params:', [id]);
             reject(err);
             return;
           }
@@ -127,6 +130,9 @@ class AccessGroup {
       db.all(query, params, (err, rows) => {
         db.close();
         if (err) {
+          console.error('AccessGroup.findAll SQLite error:', err);
+          console.error('Query:', query);
+          console.error('Params:', params);
           reject(err);
           return;
         }
@@ -159,6 +165,9 @@ class AccessGroup {
       db.get(query, params, (err, row) => {
         db.close();
         if (err) {
+          console.error('AccessGroup.count SQLite error:', err);
+          console.error('Query:', query);
+          console.error('Params:', params);
           reject(err);
           return;
         }
