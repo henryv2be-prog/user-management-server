@@ -148,3 +148,4 @@ router.get('/verify', authenticate, (req, res) => {
 });
 
 module.exports = router;
+

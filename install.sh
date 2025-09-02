@@ -179,3 +179,4 @@ echo "- Stop server: pm2 stop user-management-server"
 echo "- Restart server: pm2 restart user-management-server"
 echo
 print_status "Installation completed successfully! 🚀"
+

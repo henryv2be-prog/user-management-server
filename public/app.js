@@ -314,6 +314,9 @@ function displayUsers(users) {
                     <button class="action-btn edit" onclick="editUser(${user.id})">
                         <i class="fas fa-edit"></i>
                     </button>
+                    <button class="action-btn access-groups" onclick="manageUserAccessGroups(${user.id})">
+                        <i class="fas fa-shield-alt"></i>
+                    </button>
                     <button class="action-btn delete" onclick="deleteUser(${user.id})" ${user.id === currentUser.id ? 'disabled' : ''}>
                         <i class="fas fa-trash"></i>
                     </button>
@@ -647,9 +650,6 @@ function displayDoors(doors) {
                 <div class="action-buttons">
                     <button class="action-btn edit" onclick="editDoor(${door.id})">
                         <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="action-btn access-groups" onclick="manageDoorAccessGroups(${door.id})">
-                        <i class="fas fa-shield-alt"></i>
                     </button>
                     <button class="action-btn delete" onclick="deleteDoor(${door.id})">
                         <i class="fas fa-trash"></i>
@@ -1078,75 +1078,63 @@ async function deleteAccessGroup(accessGroupId) {
     }
 }
 
-// Door-Access Group Management Functions
-let currentDoorId = null;
+// User-Access Group Management Functions
+let currentUserId = null;
 
-async function manageDoorAccessGroups(doorId) {
-    currentDoorId = doorId;
+async function manageUserAccessGroups(userId) {
+    currentUserId = userId;
     
     try {
-        // Load door details
-        const doorResponse = await fetch(`/api/doors/${doorId}`, {
+        // Load all access groups
+        const accessGroupsResponse = await fetch('/api/access-groups?limit=100', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
         
-        if (doorResponse.ok) {
-            const doorData = await doorResponse.json();
-            const door = doorData.door;
-            const currentAccessGroups = doorData.accessGroups;
+        if (accessGroupsResponse.ok) {
+            const accessGroupsData = await accessGroupsResponse.json();
+            const allAccessGroups = accessGroupsData.accessGroups;
             
-            // Load all access groups for the dropdown
-            const accessGroupsResponse = await fetch('/api/access-groups?limit=100', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
+            // Get user's current access groups (we'll need to create an API endpoint for this)
+            // For now, we'll show all access groups and let the backend handle duplicates
+            const dropdown = document.getElementById('userAccessGroupSelect');
+            dropdown.innerHTML = '<option value="">Select an access group...</option>';
+            
+            allAccessGroups.forEach(group => {
+                dropdown.innerHTML += `<option value="${group.id}">${group.name}</option>`;
             });
             
-            if (accessGroupsResponse.ok) {
-                const accessGroupsData = await accessGroupsResponse.json();
-                const allAccessGroups = accessGroupsData.accessGroups;
-                
-                // Populate dropdown with access groups not already assigned
-                const dropdown = document.getElementById('doorAccessGroupSelect');
-                dropdown.innerHTML = '<option value="">Select an access group...</option>';
-                
-                allAccessGroups.forEach(group => {
-                    if (!currentAccessGroups.find(ag => ag.id === group.id)) {
-                        dropdown.innerHTML += `<option value="${group.id}">${group.name}</option>`;
-                    }
-                });
-                
-                // Display current access groups
-                displayDoorAccessGroups(currentAccessGroups);
-                
-                document.getElementById('doorAccessGroupsModal').classList.add('active');
-            }
+            // For now, we'll show an empty list since we don't have a user access groups endpoint yet
+            displayUserAccessGroups([]);
+            
+            document.getElementById('userAccessGroupsModal').classList.add('active');
         }
     } catch (error) {
-        console.error('Error loading door access groups:', error);
-        showToast('Failed to load door access groups', 'error');
+        console.error('Error loading user access groups:', error);
+        showToast('Failed to load user access groups', 'error');
     }
 }
 
-function displayDoorAccessGroups(accessGroups) {
-    const container = document.getElementById('doorAccessGroupsList');
+function displayUserAccessGroups(accessGroups) {
+    const container = document.getElementById('userAccessGroupsList');
     container.innerHTML = accessGroups.map(group => `
         <div class="access-group-item">
             <div>
                 <strong>${group.name}</strong>
                 ${group.description ? `<br><small>${group.description}</small>` : ''}
+                ${group.expires_at ? `<br><small>Expires: ${new Date(group.expires_at).toLocaleDateString()}</small>` : ''}
             </div>
-            <button class="remove-btn" onclick="removeAccessGroupFromDoor(${group.id})">
+            <button class="remove-btn" onclick="removeAccessGroupFromUser(${group.id})">
                 <i class="fas fa-times"></i> Remove
             </button>
         </div>
     `).join('');
 }
 
-async function addAccessGroupToDoor() {
-    const accessGroupId = document.getElementById('doorAccessGroupSelect').value;
+async function addAccessGroupToUser() {
+    const accessGroupId = document.getElementById('userAccessGroupSelect').value;
+    const expiresAt = document.getElementById('userAccessGroupExpires').value;
     
     if (!accessGroupId) {
         showToast('Please select an access group', 'error');
@@ -1156,39 +1144,44 @@ async function addAccessGroupToDoor() {
     showLoading();
     
     try {
-        const response = await fetch(`/api/doors/${currentDoorId}/access-groups`, {
+        const response = await fetch(`/api/access-groups/${accessGroupId}/users`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
-            body: JSON.stringify({ accessGroupId: parseInt(accessGroupId) })
+            body: JSON.stringify({ 
+                userId: parseInt(currentUserId),
+                expiresAt: expiresAt || null
+            })
         });
         
         if (response.ok) {
-            showToast('Access group added to door successfully!', 'success');
-            manageDoorAccessGroups(currentDoorId); // Reload the modal
+            showToast('Access group added to user successfully!', 'success');
+            document.getElementById('userAccessGroupSelect').value = '';
+            document.getElementById('userAccessGroupExpires').value = '';
+            manageUserAccessGroups(currentUserId); // Reload the modal
         } else {
             const data = await response.json();
-            showToast(data.message || 'Failed to add access group to door', 'error');
+            showToast(data.message || 'Failed to add access group to user', 'error');
         }
     } catch (error) {
-        console.error('Error adding access group to door:', error);
-        showToast('Failed to add access group to door', 'error');
+        console.error('Error adding access group to user:', error);
+        showToast('Failed to add access group to user', 'error');
     } finally {
         hideLoading();
     }
 }
 
-async function removeAccessGroupFromDoor(accessGroupId) {
-    if (!confirm('Are you sure you want to remove this access group from the door?')) {
+async function removeAccessGroupFromUser(accessGroupId) {
+    if (!confirm('Are you sure you want to remove this access group from the user?')) {
         return;
     }
     
     showLoading();
     
     try {
-        const response = await fetch(`/api/doors/${currentDoorId}/access-groups/${accessGroupId}`, {
+        const response = await fetch(`/api/access-groups/${accessGroupId}/users/${currentUserId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1196,19 +1189,21 @@ async function removeAccessGroupFromDoor(accessGroupId) {
         });
         
         if (response.ok) {
-            showToast('Access group removed from door successfully!', 'success');
-            manageDoorAccessGroups(currentDoorId); // Reload the modal
+            showToast('Access group removed from user successfully!', 'success');
+            manageUserAccessGroups(currentUserId); // Reload the modal
         } else {
             const data = await response.json();
-            showToast(data.message || 'Failed to remove access group from door', 'error');
+            showToast(data.message || 'Failed to remove access group from user', 'error');
         }
     } catch (error) {
-        console.error('Error removing access group from door:', error);
-        showToast('Failed to remove access group from door', 'error');
+        console.error('Error removing access group from user:', error);
+        showToast('Failed to remove access group from user', 'error');
     } finally {
         hideLoading();
     }
 }
+
+
 
 // Access Group-User Management Functions
 let currentAccessGroupId = null;
@@ -1228,7 +1223,6 @@ async function manageAccessGroupDetails(accessGroupId) {
             const accessGroupData = await accessGroupResponse.json();
             const accessGroup = accessGroupData.accessGroup;
             const doors = accessGroupData.doors;
-            const users = accessGroupData.users;
             
             // Load all doors for the dropdown
             const doorsResponse = await fetch('/api/doors?limit=100', {
@@ -1237,18 +1231,9 @@ async function manageAccessGroupDetails(accessGroupId) {
                 }
             });
             
-            // Load all users for the dropdown
-            const usersResponse = await fetch('/api/users?limit=100', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            
-            if (doorsResponse.ok && usersResponse.ok) {
+            if (doorsResponse.ok) {
                 const doorsData = await doorsResponse.json();
-                const usersData = await usersResponse.json();
                 const allDoors = doorsData.doors;
-                const allUsers = usersData.users;
                 
                 // Populate door dropdown
                 const doorDropdown = document.getElementById('accessGroupDoorSelect');
@@ -1260,19 +1245,8 @@ async function manageAccessGroupDetails(accessGroupId) {
                     }
                 });
                 
-                // Populate user dropdown
-                const userDropdown = document.getElementById('accessGroupUserSelect');
-                userDropdown.innerHTML = '<option value="">Select a user...</option>';
-                
-                allUsers.forEach(user => {
-                    if (!users.find(u => u.id === user.id)) {
-                        userDropdown.innerHTML += `<option value="${user.id}">${user.firstName} ${user.lastName} (${user.email})</option>`;
-                    }
-                });
-                
-                // Display current doors and users
+                // Display current doors
                 displayAccessGroupDoors(doors);
-                displayAccessGroupUsers(users);
                 
                 document.getElementById('accessGroupDetailsModal').classList.add('active');
             }
@@ -1298,21 +1272,7 @@ function displayAccessGroupDoors(doors) {
     `).join('');
 }
 
-function displayAccessGroupUsers(users) {
-    const container = document.getElementById('accessGroupUsersList');
-    container.innerHTML = users.map(user => `
-        <div class="user-item">
-            <div>
-                <strong>${user.firstName} ${user.lastName}</strong>
-                <br><small>${user.email}</small>
-                ${user.expires_at ? `<br><small>Expires: ${new Date(user.expires_at).toLocaleDateString()}</small>` : ''}
-            </div>
-            <button class="remove-btn" onclick="removeUserFromAccessGroup(${user.id})">
-                <i class="fas fa-times"></i> Remove
-            </button>
-        </div>
-    `).join('');
-}
+
 
 async function addDoorToAccessGroup() {
     const doorId = document.getElementById('accessGroupDoorSelect').value;
@@ -1379,95 +1339,7 @@ async function removeDoorFromAccessGroup(doorId) {
     }
 }
 
-async function addUserToAccessGroup() {
-    const userId = document.getElementById('accessGroupUserSelect').value;
-    const expiresAt = document.getElementById('accessGroupUserExpires').value;
-    
-    if (!userId) {
-        showToast('Please select a user', 'error');
-        return;
-    }
-    
-    showLoading();
-    
-    try {
-        const response = await fetch(`/api/access-groups/${currentAccessGroupId}/users`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ 
-                userId: parseInt(userId),
-                expiresAt: expiresAt || null
-            })
-        });
-        
-        if (response.ok) {
-            showToast('User added to access group successfully!', 'success');
-            document.getElementById('accessGroupUserSelect').value = '';
-            document.getElementById('accessGroupUserExpires').value = '';
-            manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
-        } else {
-            const data = await response.json();
-            showToast(data.message || 'Failed to add user to access group', 'error');
-        }
-    } catch (error) {
-        console.error('Error adding user to access group:', error);
-        showToast('Failed to add user to access group', 'error');
-    } finally {
-        hideLoading();
-    }
-}
 
-async function removeUserFromAccessGroup(userId) {
-    if (!confirm('Are you sure you want to remove this user from the access group?')) {
-        return;
-    }
-    
-    showLoading();
-    
-    try {
-        const response = await fetch(`/api/access-groups/${currentAccessGroupId}/users/${userId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        
-        if (response.ok) {
-            showToast('User removed from access group successfully!', 'success');
-            manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
-        } else {
-            const data = await response.json();
-            showToast(data.message || 'Failed to remove user from access group', 'error');
-        }
-    } catch (error) {
-        console.error('Error removing user from access group:', error);
-        showToast('Failed to remove user from access group', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-// Tab functionality for access group details modal
-function showAccessGroupTab(tabName) {
-    // Hide all tab contents
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    
-    // Remove active class from all tab buttons
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.classList.remove('active');
-    });
-    
-    // Show selected tab content
-    document.getElementById(`accessGroup${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`).classList.add('active');
-    
-    // Add active class to clicked tab button
-    event.target.classList.add('active');
-}
 
 // Update the showSection function to handle new sections
 function showSection(sectionName) {

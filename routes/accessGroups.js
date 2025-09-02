@@ -328,3 +328,4 @@ router.delete('/:id/doors/:doorId', authenticate, requireAdmin, validateId, asyn
 });
 
 module.exports = router;
+

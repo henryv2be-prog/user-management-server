@@ -384,6 +384,31 @@
         </div>
     </div>
 
+    <!-- User Access Groups Modal -->
+    <div id="userAccessGroupsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-shield-alt"></i> User Access Groups</h3>
+                <span class="close" onclick="closeModal('userAccessGroupsModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="userAccessGroupSelect">Add Access Group</label>
+                    <select id="userAccessGroupSelect">
+                        <option value="">Select an access group...</option>
+                    </select>
+                    <input type="date" id="userAccessGroupExpires" placeholder="Expires (optional)">
+                    <button type="button" class="btn btn-primary" onclick="addAccessGroupToUser()">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+                <div id="userAccessGroupsList">
+                    <!-- Access groups will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Door Modals -->
     <div id="createDoorModal" class="modal">
         <div class="modal-content">
@@ -455,28 +480,7 @@
         </div>
     </div>
 
-    <div id="doorAccessGroupsModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-shield-alt"></i> Door Access Groups</h3>
-                <span class="close" onclick="closeModal('doorAccessGroupsModal')">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="doorAccessGroupSelect">Add Access Group</label>
-                    <select id="doorAccessGroupSelect">
-                        <option value="">Select an access group...</option>
-                    </select>
-                    <button type="button" class="btn btn-primary" onclick="addAccessGroupToDoor()">
-                        <i class="fas fa-plus"></i> Add
-                    </button>
-                </div>
-                <div id="doorAccessGroupsList">
-                    <!-- Access groups will be loaded here -->
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Access Group Modals -->
     <div id="createAccessGroupModal" class="modal">
@@ -540,40 +544,17 @@
                 <span class="close" onclick="closeModal('accessGroupDetailsModal')">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="tabs">
-                    <button class="tab-button active" onclick="showAccessGroupTab('doors')">Doors</button>
-                    <button class="tab-button" onclick="showAccessGroupTab('users')">Users</button>
+                <div class="form-group">
+                    <label for="accessGroupDoorSelect">Add Door</label>
+                    <select id="accessGroupDoorSelect">
+                        <option value="">Select a door...</option>
+                    </select>
+                    <button type="button" class="btn btn-primary" onclick="addDoorToAccessGroup()">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
                 </div>
-                
-                <div id="accessGroupDoorsTab" class="tab-content active">
-                    <div class="form-group">
-                        <label for="accessGroupDoorSelect">Add Door</label>
-                        <select id="accessGroupDoorSelect">
-                            <option value="">Select a door...</option>
-                        </select>
-                        <button type="button" class="btn btn-primary" onclick="addDoorToAccessGroup()">
-                            <i class="fas fa-plus"></i> Add
-                        </button>
-                    </div>
-                    <div id="accessGroupDoorsList">
-                        <!-- Doors will be loaded here -->
-                    </div>
-                </div>
-                
-                <div id="accessGroupUsersTab" class="tab-content">
-                    <div class="form-group">
-                        <label for="accessGroupUserSelect">Add User</label>
-                        <select id="accessGroupUserSelect">
-                            <option value="">Select a user...</option>
-                        </select>
-                        <input type="date" id="accessGroupUserExpires" placeholder="Expires (optional)">
-                        <button type="button" class="btn btn-primary" onclick="addUserToAccessGroup()">
-                            <i class="fas fa-plus"></i> Add
-                        </button>
-                    </div>
-                    <div id="accessGroupUsersList">
-                        <!-- Users will be loaded here -->
-                    </div>
+                <div id="accessGroupDoorsList">
+                    <!-- Doors will be loaded here -->
                 </div>
             </div>
         </div>
