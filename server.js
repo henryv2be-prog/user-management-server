@@ -39,85 +39,75 @@ const authLimiter = rateLimit({
 app.use(compression());
 app.use(morgan('combined'));
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
-  credentials: true
+  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Static files
+// Serve static files from public directory
 app.use(express.static('public'));
 
-// Routes
+// API Routes
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    version: process.env.npm_package_version || '1.0.0'
+    environment: process.env.NODE_ENV || 'development'
   });
-});
-
-// Serve the main application
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   
-  if (err.name === 'ValidationError') {
-    return res.status(400).json({
-      error: 'Validation Error',
-      details: err.message
-    });
-  }
+  // Don't leak error details in production
+  const isDevelopment = process.env.NODE_ENV !== 'production';
   
-  if (err.name === 'UnauthorizedError') {
-    return res.status(401).json({
-      error: 'Unauthorized',
-      message: 'Invalid or missing authentication token'
-    });
-  }
-  
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  res.status(err.status || 500).json({
+    error: isDevelopment ? err.message : 'Internal Server Error',
+    ...(isDevelopment && { stack: err.stack })
   });
 });
 
 // 404 handler
 app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: 'The requested resource was not found'
-  });
+  res.status(404).json({ error: 'Route not found' });
 });
 
 // Initialize database and start server
 async function startServer() {
   try {
+    console.log('Initializing database...');
     await initializeDatabase();
-    console.log('✅ Database initialized successfully');
+    console.log('Database initialized successfully');
     
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📱 Web interface: http://localhost:${PORT}`);
       console.log(`🔧 API endpoints: http://localhost:${PORT}/api`);
-      console.log(`💚 Health check: http://localhost:${PORT}/health`);
+      console.log(`❤️  Health check: http://localhost:${PORT}/api/health`);
+      console.log(`\n📋 Default admin credentials:`);
+      console.log(`   Email: ${process.env.ADMIN_EMAIL || 'admin@example.com'}`);
+      console.log(`   Password: ${process.env.ADMIN_PASSWORD || 'admin123456'}`);
+      console.log(`\n⚠️  Please change the default password after first login!`);
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    console.error('Failed to start server:', error);
     process.exit(1);
   }
 }
 
-// Graceful shutdown
+// Handle graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
   process.exit(0);
@@ -128,5 +118,5 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
+// Start the server
 startServer();
-
