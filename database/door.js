@@ -67,6 +67,7 @@ class Door {
         'SELECT * FROM doors WHERE id = ?',
         [id],
         (err, row) => {
+          db.close();
           if (err) {
             reject(err);
             return;
@@ -90,6 +91,7 @@ class Door {
         'SELECT * FROM doors WHERE esp32_ip = ?',
         [ip],
         (err, row) => {
+          db.close();
           if (err) {
             reject(err);
             return;
@@ -135,6 +137,7 @@ class Door {
       
       const db = new sqlite3.Database(DB_PATH);
       db.all(query, params, (err, rows) => {
+        db.close();
         if (err) {
           reject(err);
           return;
@@ -166,6 +169,7 @@ class Door {
       
       const db = new sqlite3.Database(DB_PATH);
       db.get(query, params, (err, row) => {
+        db.close();
         if (err) {
           reject(err);
           return;
