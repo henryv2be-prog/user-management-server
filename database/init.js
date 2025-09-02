@@ -23,6 +23,16 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
 // Initialize database tables
 const initDatabase = () => {
     return new Promise((resolve, reject) => {
+        let completedTables = 0;
+        const totalTables = 6; // users, doors, access_groups, door_access_groups, user_access_groups, access_log
+        
+        const checkCompletion = () => {
+            completedTables++;
+            if (completedTables === totalTables) {
+                resolve();
+            }
+        };
+        
         db.serialize(() => {
             // Users table
             db.run(`CREATE TABLE IF NOT EXISTS users (
@@ -44,6 +54,7 @@ const initDatabase = () => {
                     return;
                 }
                 console.log('Users table created/verified');
+                checkCompletion();
             });
 
             // Doors table
@@ -63,6 +74,7 @@ const initDatabase = () => {
                     return;
                 }
                 console.log('Doors table created/verified');
+                checkCompletion();
             });
 
             // Access groups table
@@ -80,6 +92,7 @@ const initDatabase = () => {
                     return;
                 }
                 console.log('Access groups table created/verified');
+                checkCompletion();
             });
 
             // Door access groups junction table
@@ -98,6 +111,7 @@ const initDatabase = () => {
                     return;
                 }
                 console.log('Door access groups table created/verified');
+                checkCompletion();
             });
 
             // User access groups junction table
@@ -117,6 +131,7 @@ const initDatabase = () => {
                     return;
                 }
                 console.log('User access groups table created/verified');
+                checkCompletion();
             });
 
             // Access log table
@@ -136,6 +151,7 @@ const initDatabase = () => {
                     return;
                 }
                 console.log('Access log table created/verified');
+                checkCompletion();
             });
 
             // Create indexes for better performance
