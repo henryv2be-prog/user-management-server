@@ -1,4 +1,8 @@
-const { getDatabase } = require('./init');
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+
+// Database path
+const DB_PATH = path.join(__dirname, 'users.db');
 
 class AccessGroup {
   constructor(data) {
@@ -26,7 +30,7 @@ class AccessGroup {
     return new Promise((resolve, reject) => {
       const { name, description } = accessGroupData;
       
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.run(
         'INSERT INTO access_groups (name, description, is_active) VALUES (?, ?, ?)',
         [name, description, 1],
@@ -47,7 +51,7 @@ class AccessGroup {
 
   static async findById(id) {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.get(
         'SELECT * FROM access_groups WHERE id = ?',
         [id],
@@ -70,7 +74,7 @@ class AccessGroup {
 
   static async findByName(name) {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.get(
         'SELECT * FROM access_groups WHERE name = ?',
         [name],
@@ -118,7 +122,7 @@ class AccessGroup {
       query += ' LIMIT ? OFFSET ?';
       params.push(limit, (page - 1) * limit);
       
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.all(query, params, (err, rows) => {
         if (err) {
           reject(err);
@@ -149,7 +153,7 @@ class AccessGroup {
         params.push(searchTerm, searchTerm);
       }
       
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.get(query, params, (err, row) => {
         if (err) {
           reject(err);
@@ -187,7 +191,7 @@ class AccessGroup {
       
       params.push(this.id);
       
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.run(
         `UPDATE access_groups SET ${updates.join(', ')} WHERE id = ?`,
         params,
@@ -208,7 +212,7 @@ class AccessGroup {
 
   async delete() {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.run(
         'DELETE FROM access_groups WHERE id = ?',
         [this.id],
@@ -227,7 +231,7 @@ class AccessGroup {
   // Get doors for this access group
   async getDoors() {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.all(
         `SELECT d.* FROM doors d
          JOIN door_access_groups dag ON d.id = dag.door_id
@@ -248,7 +252,7 @@ class AccessGroup {
   // Get users in this access group
   async getUsers() {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.all(
         `SELECT u.*, uag.granted_at, uag.expires_at, uag.is_active as membership_active
          FROM users u
@@ -271,7 +275,7 @@ class AccessGroup {
   // Add user to access group
   async addUser(userId, grantedBy, expiresAt = null) {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.run(
         `INSERT OR REPLACE INTO user_access_groups 
          (user_id, access_group_id, granted_by, expires_at, is_active) 
@@ -292,7 +296,7 @@ class AccessGroup {
   // Remove user from access group
   async removeUser(userId) {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.run(
         'DELETE FROM user_access_groups WHERE access_group_id = ? AND user_id = ?',
         [this.id, userId],
@@ -311,7 +315,7 @@ class AccessGroup {
   // Add door to access group
   async addDoor(doorId) {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.run(
         'INSERT OR IGNORE INTO door_access_groups (access_group_id, door_id) VALUES (?, ?)',
         [this.id, doorId],
@@ -330,7 +334,7 @@ class AccessGroup {
   // Remove door from access group
   async removeDoor(doorId) {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.run(
         'DELETE FROM door_access_groups WHERE access_group_id = ? AND door_id = ?',
         [this.id, doorId],

@@ -1,5 +1,9 @@
-const { getDatabase } = require('./init');
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
 const crypto = require('crypto');
+
+// Database path
+const DB_PATH = path.join(__dirname, 'users.db');
 
 class Door {
   constructor(data) {
@@ -37,7 +41,7 @@ class Door {
       // Generate a secure secret key for ESP32 communication
       const secretKey = crypto.randomBytes(32).toString('hex');
       
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.run(
         'INSERT INTO doors (name, location, esp32_ip, esp32_mac, secret_key, is_active) VALUES (?, ?, ?, ?, ?, ?)',
         [name, location, esp32Ip, esp32Mac, secretKey, 1],
@@ -58,7 +62,7 @@ class Door {
 
   static async findById(id) {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.get(
         'SELECT * FROM doors WHERE id = ?',
         [id],
@@ -81,7 +85,7 @@ class Door {
 
   static async findByIp(ip) {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.get(
         'SELECT * FROM doors WHERE esp32_ip = ?',
         [ip],
@@ -129,7 +133,7 @@ class Door {
       query += ' LIMIT ? OFFSET ?';
       params.push(limit, (page - 1) * limit);
       
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.all(query, params, (err, rows) => {
         if (err) {
           reject(err);
@@ -160,7 +164,7 @@ class Door {
         params.push(searchTerm, searchTerm, searchTerm);
       }
       
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.get(query, params, (err, row) => {
         if (err) {
           reject(err);
@@ -200,7 +204,7 @@ class Door {
       
       params.push(this.id);
       
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.run(
         `UPDATE doors SET ${updates.join(', ')} WHERE id = ?`,
         params,
@@ -221,7 +225,7 @@ class Door {
 
   async updateLastSeen() {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.run(
         'UPDATE doors SET last_seen = CURRENT_TIMESTAMP WHERE id = ?',
         [this.id],
@@ -239,7 +243,7 @@ class Door {
 
   async delete() {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.run(
         'DELETE FROM doors WHERE id = ?',
         [this.id],
@@ -258,7 +262,7 @@ class Door {
   // Get access groups for this door
   async getAccessGroups() {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.all(
         `SELECT ag.* FROM access_groups ag
          JOIN door_access_groups dag ON ag.id = dag.access_group_id
@@ -279,7 +283,7 @@ class Door {
   // Add access group to door
   async addAccessGroup(accessGroupId) {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.run(
         'INSERT OR IGNORE INTO door_access_groups (door_id, access_group_id) VALUES (?, ?)',
         [this.id, accessGroupId],
@@ -298,7 +302,7 @@ class Door {
   // Remove access group from door
   async removeAccessGroup(accessGroupId) {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.run(
         'DELETE FROM door_access_groups WHERE door_id = ? AND access_group_id = ?',
         [this.id, accessGroupId],
@@ -317,7 +321,7 @@ class Door {
   // Verify access for a user
   async verifyUserAccess(userId) {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.get(
         `SELECT COUNT(*) as count FROM user_access_groups uag
          JOIN door_access_groups dag ON uag.access_group_id = dag.access_group_id
@@ -339,7 +343,7 @@ class Door {
   // Log access attempt
   async logAccess(userId, accessGranted, accessMethod, ipAddress, userAgent) {
     return new Promise((resolve, reject) => {
-      const db = getDatabase();
+      const db = new sqlite3.Database(DB_PATH);
       db.run(
         'INSERT INTO access_log (user_id, door_id, access_granted, access_method, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)',
         [userId, this.id, accessGranted ? 1 : 0, accessMethod, ipAddress, userAgent],
