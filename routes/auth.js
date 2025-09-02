@@ -10,11 +10,16 @@ router.post('/login', validateLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    const user = await User.findByEmail(email);
+    // Try to find user by email first, then by username
+    let user = await User.findByEmail(email);
+    if (!user) {
+      user = await User.findByUsername(email);
+    }
+    
     if (!user) {
       return res.status(401).json({
         error: 'Authentication failed',
-        message: 'Invalid email or password'
+        message: 'Invalid username/email or password'
       });
     }
     

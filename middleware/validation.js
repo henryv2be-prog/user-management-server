@@ -97,9 +97,18 @@ const validatePasswordReset = [
 // Authentication validation rules
 const validateLogin = [
   body('email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Must be a valid email address'),
+    .notEmpty()
+    .withMessage('Username or email is required')
+    .custom((value) => {
+      // Check if it's a valid email or a valid username (alphanumeric + underscore)
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+      const isUsername = /^[a-zA-Z0-9_]+$/.test(value);
+      
+      if (!isEmail && !isUsername) {
+        throw new Error('Must be a valid email address or username');
+      }
+      return true;
+    }),
   body('password')
     .notEmpty()
     .withMessage('Password is required'),
