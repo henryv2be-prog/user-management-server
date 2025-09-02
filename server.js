@@ -134,7 +134,7 @@ async function startServer() {
       console.log(`❤️  Health check: http://localhost:${PORT}/api/health`);
       console.log(`\n📋 Default admin credentials:`);
       console.log(`   Email: ${process.env.ADMIN_EMAIL || 'admin@example.com'}`);
-      console.log(`   Password: ${process.env.ADMIN_PASSWORD || 'admin123456'}`);
+      console.log(`   Password: ${process.env.ADMIN_PASSWORD || 'admin123'}`);
       console.log(`\n⚠️  Please change the default password after first login!`);
     });
 
