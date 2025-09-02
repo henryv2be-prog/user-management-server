@@ -15,11 +15,11 @@ try {
   console.log('Auth routes module loaded');
   userRoutes = require('./routes/users');
   console.log('User routes module loaded');
-  // doorRoutes = require('./routes/doors');
-  // console.log('Door routes module loaded');
+  doorRoutes = require('./routes/doors');
+  console.log('Door routes module loaded');
   // accessGroupRoutes = require('./routes/accessGroups');
   // console.log('Access group routes module loaded');
-  console.log('Auth and User route modules loaded successfully');
+  console.log('Auth, User, and Door route modules loaded successfully');
 } catch (error) {
   console.error('Error loading route modules:', error);
   process.exit(1);
@@ -82,11 +82,11 @@ try {
   console.log('Auth routes loaded');
   app.use('/api/users', userRoutes);
   console.log('User routes loaded');
-  // app.use('/api/doors', doorRoutes);
-  // console.log('Door routes loaded');
+  app.use('/api/doors', doorRoutes);
+  console.log('Door routes loaded');
   // app.use('/api/access-groups', accessGroupRoutes);
   // console.log('Access group routes loaded');
-  console.log('Auth and User routes loaded successfully');
+  console.log('Auth, User, and Door routes loaded successfully');
 } catch (error) {
   console.error('Error loading routes:', error);
   process.exit(1);
