@@ -1287,6 +1287,8 @@ function displayAccessGroupDoors(doors) {
 async function addDoorToAccessGroup() {
     const doorId = document.getElementById('accessGroupDoorSelect').value;
     
+    console.log('Adding door to access group:', { doorId, currentAccessGroupId });
+    
     if (!doorId) {
         showToast('Please select a door', 'error');
         return;
@@ -1305,10 +1307,12 @@ async function addDoorToAccessGroup() {
         });
         
         if (response.ok) {
+            console.log('Door added to access group successfully');
             showToast('Door added to access group successfully!', 'success');
             manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
         } else {
             const data = await response.json();
+            console.error('Failed to add door to access group:', response.status, data);
             showToast(data.message || 'Failed to add door to access group', 'error');
         }
     } catch (error) {
