@@ -168,7 +168,7 @@ const initDatabase = () => {
                 }
 
                 if (row.count === 0) {
-                    const bcrypt = require('bcrypt');
+                    const bcrypt = require('bcryptjs');
                     const hashedPassword = bcrypt.hashSync('admin123', 10);
                     
                     db.run(`INSERT INTO users (username, email, password_hash, first_name, last_name, role, is_active, email_verified) 
