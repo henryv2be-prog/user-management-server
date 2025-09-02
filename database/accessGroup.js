@@ -56,6 +56,7 @@ class AccessGroup {
         'SELECT * FROM access_groups WHERE id = ?',
         [id],
         (err, row) => {
+          db.close();
           if (err) {
             reject(err);
             return;
@@ -124,6 +125,7 @@ class AccessGroup {
       
       const db = new sqlite3.Database(DB_PATH);
       db.all(query, params, (err, rows) => {
+        db.close();
         if (err) {
           reject(err);
           return;
@@ -155,6 +157,7 @@ class AccessGroup {
       
       const db = new sqlite3.Database(DB_PATH);
       db.get(query, params, (err, row) => {
+        db.close();
         if (err) {
           reject(err);
           return;
