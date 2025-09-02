@@ -43,8 +43,8 @@ class Door {
       
       const db = new sqlite3.Database(DB_PATH);
       db.run(
-        'INSERT INTO doors (name, location, esp32_ip, esp32_mac, secret_key, is_active) VALUES (?, ?, ?, ?, ?, ?)',
-        [name, location, esp32Ip, esp32Mac, secretKey, 1],
+        'INSERT INTO doors (name, location, esp32_ip, esp32_mac, is_active) VALUES (?, ?, ?, ?, ?)',
+        [name, location, esp32Ip, esp32Mac, 1],
         function(err) {
           if (err) {
             reject(err);
