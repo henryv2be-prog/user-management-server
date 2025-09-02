@@ -153,18 +153,7 @@ function showAuthenticatedUI() {
     updateProfileInfo();
 }
 
-function showSection(sectionName) {
-    hideAllSections();
-    document.getElementById(sectionName + 'Section').classList.add('active');
-    
-    if (sectionName === 'dashboard') {
-        loadDashboard();
-    } else if (sectionName === 'users') {
-        loadUsers();
-    } else if (sectionName === 'profile') {
-        updateProfileInfo();
-    }
-}
+
 
 function hideAllSections() {
     const sections = document.querySelectorAll('.section');
