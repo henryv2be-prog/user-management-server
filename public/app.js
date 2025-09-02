@@ -178,7 +178,7 @@ function toggleNav() {
 
 // Dashboard functions
 async function loadDashboard() {
-    if (!currentUser || !currentUser.hasRole('admin')) {
+    if (!currentUser || !hasRole('admin')) {
         return;
     }
     
@@ -226,7 +226,7 @@ function displayStats(stats) {
 
 // User management functions
 async function loadUsers(page = 1) {
-    if (!currentUser || !currentUser.hasRole('admin')) {
+    if (!currentUser || !hasRole('admin')) {
         return;
     }
     
