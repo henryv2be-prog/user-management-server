@@ -10,7 +10,7 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const doorRoutes = require('./routes/doors');
 const accessGroupRoutes = require('./routes/accessGroups');
-const { initializeDatabase } = require('./database/init');
+// Database initialization is handled by running: node database/init.js
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -94,12 +94,10 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Initialize database and start server
+// Start server
 async function startServer() {
   try {
-    console.log('Initializing database...');
-    await initializeDatabase();
-    console.log('Database initialized successfully');
+    console.log('Starting server...');
     
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
