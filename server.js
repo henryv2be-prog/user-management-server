@@ -6,24 +6,24 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
-// Load routes with error handling
-let authRoutes, userRoutes, doorRoutes, accessGroupRoutes;
+// Load routes with error handling - temporarily disabled for testing
+// let authRoutes, userRoutes, doorRoutes, accessGroupRoutes;
 
-try {
-  console.log('Loading route modules...');
-  authRoutes = require('./routes/auth');
-  console.log('Auth routes module loaded');
-  userRoutes = require('./routes/users');
-  console.log('User routes module loaded');
-  doorRoutes = require('./routes/doors');
-  console.log('Door routes module loaded');
-  accessGroupRoutes = require('./routes/accessGroups');
-  console.log('Access group routes module loaded');
-  console.log('All route modules loaded successfully');
-} catch (error) {
-  console.error('Error loading route modules:', error);
-  process.exit(1);
-}
+// try {
+//   console.log('Loading route modules...');
+//   authRoutes = require('./routes/auth');
+//   console.log('Auth routes module loaded');
+//   userRoutes = require('./routes/users');
+//   console.log('User routes module loaded');
+//   doorRoutes = require('./routes/doors');
+//   console.log('Door routes module loaded');
+//   accessGroupRoutes = require('./routes/accessGroups');
+//   console.log('Access group routes module loaded');
+//   console.log('All route modules loaded successfully');
+// } catch (error) {
+//   console.error('Error loading route modules:', error);
+//   process.exit(1);
+// }
 
 // Database initialization is handled by running: node database/init.js
 
@@ -78,15 +78,16 @@ app.use(express.static('public'));
 // API Routes - with error handling
 try {
   console.log('Loading routes...');
-  app.use('/api/auth', authLimiter, authRoutes);
-  console.log('Auth routes loaded');
-  app.use('/api/users', userRoutes);
-  console.log('User routes loaded');
-  app.use('/api/doors', doorRoutes);
-  console.log('Door routes loaded');
-  app.use('/api/access-groups', accessGroupRoutes);
-  console.log('Access group routes loaded');
-  console.log('All routes loaded successfully');
+  // Temporarily comment out routes to test
+  // app.use('/api/auth', authLimiter, authRoutes);
+  // console.log('Auth routes loaded');
+  // app.use('/api/users', userRoutes);
+  // console.log('User routes loaded');
+  // app.use('/api/doors', doorRoutes);
+  // console.log('Door routes loaded');
+  // app.use('/api/access-groups', accessGroupRoutes);
+  // console.log('Access group routes loaded');
+  console.log('Routes temporarily disabled for testing');
 } catch (error) {
   console.error('Error loading routes:', error);
   process.exit(1);
