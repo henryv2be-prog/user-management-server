@@ -203,22 +203,24 @@ async function loadDashboard() {
     }
     
     try {
+        console.log('Loading dashboard stats...');
+        
         // Load user stats
-        const userStatsResponse = await fetch('/api/users/stats/overview', {
+        const userStatsResponse = await fetch('/api/users', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
         
         // Load door stats
-        const doorStatsResponse = await fetch('/api/doors?limit=1', {
+        const doorStatsResponse = await fetch('/api/doors', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
         
         // Load access group stats
-        const accessGroupStatsResponse = await fetch('/api/access-groups?limit=1', {
+        const accessGroupStatsResponse = await fetch('/api/access-groups', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -228,21 +230,30 @@ async function loadDashboard() {
         
         if (userStatsResponse.ok) {
             const userData = await userStatsResponse.json();
-            stats.totalUsers = userData.stats?.totalUsers || 0;
-            stats.activeUsers = userData.stats?.activeUsers || 0;
-            stats.adminUsers = userData.stats?.adminUsers || 0;
+            console.log('User stats response:', userData);
+            stats.totalUsers = userData.users?.length || userData.totalCount || 0;
+            stats.adminUsers = userData.users?.filter(u => u.role === 'admin').length || 0;
+        } else {
+            console.error('User stats failed:', userStatsResponse.status);
         }
         
         if (doorStatsResponse.ok) {
             const doorData = await doorStatsResponse.json();
-            stats.totalDoors = doorData.totalCount || 0;
+            console.log('Door stats response:', doorData);
+            stats.totalDoors = doorData.doors?.length || doorData.pagination?.totalCount || 0;
+        } else {
+            console.error('Door stats failed:', doorStatsResponse.status);
         }
         
         if (accessGroupStatsResponse.ok) {
             const accessGroupData = await accessGroupStatsResponse.json();
-            stats.totalAccessGroups = accessGroupData.totalCount || 0;
+            console.log('Access group stats response:', accessGroupData);
+            stats.totalAccessGroups = accessGroupData.accessGroups?.length || accessGroupData.pagination?.totalCount || 0;
+        } else {
+            console.error('Access group stats failed:', accessGroupStatsResponse.status);
         }
         
+        console.log('Final dashboard stats:', stats);
         updateDashboardStats(stats);
     } catch (error) {
         console.error('Failed to load dashboard stats:', error);
