@@ -156,13 +156,29 @@ function logout() {
 // UI Navigation functions
 function showLogin() {
     hideAllSections();
-    document.getElementById('loginSection').classList.add('active');
-    document.getElementById('registerSection').classList.remove('active');
+    const loginSection = document.getElementById('loginSection');
+    const registerSection = document.getElementById('registerSection');
+    
+    if (loginSection) {
+        loginSection.classList.add('active');
+    } else {
+        console.error('Login section not found');
+    }
+    
+    if (registerSection) {
+        registerSection.classList.remove('active');
+    }
 }
 
 function showRegister() {
     hideAllSections();
-    document.getElementById('registerSection').classList.add('active');
+    const registerSection = document.getElementById('registerSection');
+    
+    if (registerSection) {
+        registerSection.classList.add('active');
+    } else {
+        console.error('Register section not found');
+    }
 }
 
 function showAuthenticatedUI() {
@@ -590,22 +606,38 @@ async function handleChangePassword(event) {
 }
 
 // Utility functions
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
 function showLoading() {
-    document.getElementById('loadingOverlay').classList.add('active');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.classList.add('active');
+    }
 }
 
 function hideLoading() {
-    document.getElementById('loadingOverlay').classList.remove('active');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.classList.remove('active');
+    }
 }
 
 function showToast(message, type = 'info') {
     const toastContainer = document.getElementById('toastContainer');
+    
+    if (!toastContainer) {
+        console.error('Toast container not found');
+        console.log(`Toast message: ${message} (${type})`);
+        return;
+    }
+    
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     
     const icon = type === 'success' ? 'check-circle' : 
-                 type === 'error' ? 'exclamation-circle' : 
-                 type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+                 type === 'error' ? 'exclamation-circle' : 'info-circle';
     
     toast.innerHTML = `
         <i class="fas fa-${icon}"></i>
@@ -615,24 +647,15 @@ function showToast(message, type = 'info') {
     toastContainer.appendChild(toast);
     
     setTimeout(() => {
-        toast.classList.add('show');
-    }, 100);
-    
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => {
-            toastContainer.removeChild(toast);
-        }, 300);
-    }, 3000);
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, 5000);
 }
 
+// Helper function to check if user has role
 function hasRole(role) {
     return currentUser && currentUser.role === role;
-}
-
-// Modal functions
-function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
 }
 
 // Search and filter functions
@@ -941,7 +964,13 @@ async function deleteAccessGroup(accessGroupId) {
 
 function showSection(sectionName) {
     hideAllSections();
-    document.getElementById(sectionName + 'Section').classList.add('active');
+    const sectionElement = document.getElementById(sectionName + 'Section');
+    if (sectionElement) {
+        sectionElement.classList.add('active');
+    } else {
+        console.error(`Section element not found: ${sectionName}Section`);
+        return;
+    }
     
     if (sectionName === 'dashboard') {
         loadDashboard();
