@@ -211,46 +211,183 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
   }
 });
 
-// Verify access for ESP32 (public endpoint with IP-based auth)
-router.post('/verify-access', async (req, res) => {
+// Add door to access group (admin only)
+router.post('/:id/access-groups/:accessGroupId', authenticate, requireAdmin, validateId, async (req, res) => {
   try {
-    const { esp32_ip, user_id, esp32_secret } = req.body;
+    const doorId = parseInt(req.params.id);
+    const accessGroupId = parseInt(req.params.accessGroupId);
     
-    if (!esp32_ip || !user_id) {
+    const door = await Door.findById(doorId);
+    if (!door) {
+      return res.status(404).json({
+        error: 'Door not found',
+        message: 'The requested door does not exist'
+      });
+    }
+    
+    // Add door to access group
+    const db = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+    await new Promise((resolve, reject) => {
+      db.run('INSERT OR IGNORE INTO door_access_groups (door_id, access_group_id) VALUES (?, ?)', 
+             [doorId, accessGroupId], (err) => {
+        db.close();
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+    
+    res.json({
+      message: 'Door added to access group successfully'
+    });
+  } catch (error) {
+    console.error('Add door to access group error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to add door to access group'
+    });
+  }
+});
+
+// Remove door from access group (admin only)
+router.delete('/:id/access-groups/:accessGroupId', authenticate, requireAdmin, validateId, async (req, res) => {
+  try {
+    const doorId = parseInt(req.params.id);
+    const accessGroupId = parseInt(req.params.accessGroupId);
+    
+    const door = await Door.findById(doorId);
+    if (!door) {
+      return res.status(404).json({
+        error: 'Door not found',
+        message: 'The requested door does not exist'
+      });
+    }
+    
+    // Remove door from access group
+    const db = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+    await new Promise((resolve, reject) => {
+      db.run('DELETE FROM door_access_groups WHERE door_id = ? AND access_group_id = ?', 
+             [doorId, accessGroupId], (err) => {
+        db.close();
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+    
+    res.json({
+      message: 'Door removed from access group successfully'
+    });
+  } catch (error) {
+    console.error('Remove door from access group error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to remove access group from door'
+    });
+  }
+});
+
+// ESP32 heartbeat endpoint (public endpoint)
+router.post('/heartbeat', async (req, res) => {
+  try {
+    const { esp32_ip, esp32_mac, status = 'online' } = req.body;
+    
+    if (!esp32_ip) {
       return res.status(400).json({
         error: 'Bad Request',
-        message: 'ESP32 IP and user ID are required'
+        message: 'ESP32 IP address is required'
       });
     }
     
     // Find door by IP
     const door = await Door.findByIp(esp32_ip);
     if (!door) {
-      await Door.logAccess(null, user_id, false, 'Door not found');
       return res.status(404).json({
         error: 'Door not found',
-        message: 'No door found with this IP address',
+        message: 'No door found with this IP address'
+      });
+    }
+    
+    // Update last seen timestamp
+    await door.updateLastSeen();
+    
+    // Log heartbeat activity
+    console.log(`Heartbeat received from ${door.name} (${esp32_ip}) - Status: ${status}`);
+    
+    res.json({
+      success: true,
+      message: 'Heartbeat received',
+      door_name: door.name,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Heartbeat error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to process heartbeat'
+    });
+  }
+});
+
+// ESP32 access verification endpoint (no auth required - uses secret key)
+router.post('/:id/verify-access', async (req, res) => {
+  try {
+    const doorId = parseInt(req.params.id);
+    const { userId, secretKey, accessMethod = 'card' } = req.body;
+    
+    if (!userId || !secretKey) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'User ID and secret key are required'
+      });
+    }
+    
+    const door = await Door.findById(doorId);
+    if (!door) {
+      await Door.logAccess(doorId, userId, false, 'Door not found');
+      return res.status(404).json({
+        error: 'Door not found',
+        message: 'The requested door does not exist',
         access_granted: false
       });
     }
     
-    // Update last seen
+    // Verify secret key (basic security)
+    if (secretKey !== door.secretKey) {
+      await Door.logAccess(doorId, userId, false, 'Invalid secret key');
+      return res.status(401).json({
+        error: 'Invalid credentials',
+        message: 'Invalid secret key',
+        access_granted: false
+      });
+    }
+    
+    // Update last seen when device communicates
     await door.updateLastSeen();
     
     // Verify user access
-    const hasAccess = await door.verifyAccess(user_id);
+    const hasAccess = await door.verifyAccess(userId);
     
     // Log access attempt
-    await Door.logAccess(door.id, user_id, hasAccess, hasAccess ? 'Access granted' : 'Access denied');
+    await Door.logAccess(doorId, userId, hasAccess, 
+      hasAccess ? `Access granted via ${accessMethod}` : 'Access denied - insufficient permissions');
     
     res.json({
       access_granted: hasAccess,
       door_name: door.name,
-      message: hasAccess ? 'Access granted' : 'Access denied'
+      message: hasAccess ? 'Access granted' : 'Access denied',
+      timestamp: new Date().toISOString()
     });
     
   } catch (error) {
     console.error('Verify access error:', error);
+    
+    // Log error and deny access
+    try {
+      await Door.logAccess(req.params.id, req.body.userId, false, 'System error during verification');
+    } catch (logError) {
+      console.error('Failed to log access error:', logError);
+    }
+    
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to verify access',
