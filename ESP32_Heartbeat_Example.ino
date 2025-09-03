@@ -25,7 +25,8 @@ const char* esp32MAC = "AA:BB:CC:DD:EE:FF";  // This ESP32's MAC address
 
 // Heartbeat Configuration
 unsigned long lastHeartbeat = 0;
-const unsigned long HEARTBEAT_INTERVAL = 60000;  // Send heartbeat every 60 seconds
+const unsigned long HEARTBEAT_INTERVAL = 10000;  // Send heartbeat every 10 seconds
+// Note: Server considers device offline after 10 seconds of no heartbeat
 
 void setup() {
   Serial.begin(115200);

@@ -3,6 +3,8 @@ console.log('App.js loaded successfully');
 let currentUser = null;
 let currentPage = 1;
 let currentFilters = {};
+let currentSection = null;
+let autoRefreshInterval = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -501,9 +503,9 @@ async function loadDoors() {
 function displayDoors(doors) {
     const tbody = document.getElementById('doorsTableBody');
     tbody.innerHTML = doors.map(door => {
-        // Determine if door is online (last seen within 5 minutes)
+        // Determine if door is online (last seen within 10 seconds)
         const isOnline = door.lastSeen && 
-                        (new Date() - new Date(door.lastSeen)) < 5 * 60 * 1000;
+                        (new Date() - new Date(door.lastSeen)) < 10 * 1000;
         
         return `
         <tr>
@@ -1094,12 +1096,27 @@ function showSection(sectionName) {
         return;
     }
     
+    // Clear any existing auto-refresh
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+    
+    currentSection = sectionName;
+    
     if (sectionName === 'dashboard') {
         loadDashboard();
     } else if (sectionName === 'users') {
         loadUsers();
     } else if (sectionName === 'doors') {
         loadDoors();
+        // Start auto-refresh for doors table (every 5 seconds for real-time status)
+        autoRefreshInterval = setInterval(() => {
+            if (currentSection === 'doors') {
+                console.log('Auto-refreshing doors for online status...');
+                loadDoors();
+            }
+        }, 5000); // 5 seconds
     } else if (sectionName === 'accessGroups') {
         loadAccessGroups();
     } else if (sectionName === 'profile') {
