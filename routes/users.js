@@ -14,6 +14,51 @@ const {
 
 const router = express.Router();
 
+// Get users with their access groups (admin only) - MUST be before /:id route
+router.get('/with-access-groups', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const { role } = req.query;
+    
+    const options = {};
+    
+    if (role) {
+      options.role = role;
+    }
+    
+    const users = await User.findAll(options);
+    
+    // Get access groups for each user
+    const usersWithAccessGroups = await Promise.all(
+      users.map(async (user) => {
+        try {
+          const accessGroups = await user.getAccessGroups();
+          return {
+            ...user.toJSON(),
+            accessGroups
+          };
+        } catch (error) {
+          console.error(`Error getting access groups for user ${user.id}:`, error);
+          return {
+            ...user.toJSON(),
+            accessGroups: []
+          };
+        }
+      })
+    );
+    
+    res.json({
+      users: usersWithAccessGroups,
+      totalCount: usersWithAccessGroups.length
+    });
+  } catch (error) {
+    console.error('Get users with access groups error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to retrieve users with access groups'
+    });
+  }
+});
+
 // Get all users (admin only)
 router.get('/', authenticate, requireAdmin, async (req, res) => {
   try {
@@ -228,43 +273,6 @@ router.get('/stats/overview', authenticate, requireAdmin, async (req, res) => {
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to retrieve statistics'
-    });
-  }
-});
-
-// Get users with their access groups (admin only)
-router.get('/with-access-groups', authenticate, requireAdmin, async (req, res) => {
-  try {
-    const { role } = req.query;
-    
-    const options = {};
-    
-    if (role) {
-      options.role = role;
-    }
-    
-    const users = await User.findAll(options);
-    
-    // Get access groups for each user
-    const usersWithAccessGroups = await Promise.all(
-      users.map(async (user) => {
-        const accessGroups = await user.getAccessGroups();
-        return {
-          ...user.toJSON(),
-          accessGroups
-        };
-      })
-    );
-    
-    res.json({
-      users: usersWithAccessGroups,
-      totalCount: usersWithAccessGroups.length
-    });
-  } catch (error) {
-    console.error('Get users with access groups error:', error);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to retrieve users with access groups'
     });
   }
 });
