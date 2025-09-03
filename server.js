@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const { initDatabase } = require('./database/init');
 require('dotenv').config();
 
 // Load routes with error handling - testing one by one
@@ -19,87 +20,72 @@ try {
   console.log('Door routes module loaded');
   accessGroupRoutes = require('./routes/accessGroups');
   console.log('Access group routes module loaded');
-  console.log('All route modules loaded successfully');
+  console.log('All routes loaded successfully');
 } catch (error) {
-  console.error('Error loading route modules:', error);
-  process.exit(1);
-}
-
-// Database initialization
-const { execSync } = require('child_process');
-
-// Run database initialization
-try {
-  console.log('Running database initialization...');
-  execSync('node database/init.js', { stdio: 'inherit' });
-  console.log('Database initialization completed');
-} catch (error) {
-  console.error('Database setup failed:', error.message);
+  console.error('Error loading routes:', error);
   process.exit(1);
 }
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Security middleware - disabled for development
-// app.use(helmet());
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP for development
+  crossOriginEmbedderPolicy: false
+}));
 
-// Set permissive CSP headers for development
-app.use((req, res, next) => {
-  res.setHeader('Content-Security-Policy', "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https:;");
-  next();
-});
+// CORS configuration
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL 
+    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  credentials: true
+}));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use(limiter);
+// Compression
+app.use(compression());
+
+// Logging
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// Body parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve static files
+app.use(express.static('public'));
 
 // Stricter rate limiting for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: 10, // limit each IP to 10 requests per windowMs
   message: 'Too many authentication attempts, please try again later.',
   standardHeaders: true,
-  legacyHeaders: false,
+  legacyHeaders: false
 });
 
-// Middleware
-app.use(compression());
-app.use(morgan('combined'));
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://127.0.0.1:3000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// General rate limiting
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // limit each IP to 1000 requests per windowMs
+  message: 'Too many requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use('/api', generalLimiter);
 
-// Serve static files from public directory
-app.use(express.static('public'));
-
-// API Routes - with error handling
+// Routes
 try {
-  console.log('Loading routes...');
+  console.log('Setting up routes...');
   app.use('/api/auth', authLimiter, authRoutes);
-  console.log('Auth routes loaded');
   app.use('/api/users', userRoutes);
-  console.log('User routes loaded');
   app.use('/api/doors', doorRoutes);
-  console.log('Door routes loaded');
   app.use('/api/access-groups', accessGroupRoutes);
-  console.log('Access group routes loaded');
-  console.log('All routes loaded successfully');
+  console.log('All routes configured successfully');
 } catch (error) {
-  console.error('Error loading routes:', error);
+  console.error('Error setting up routes:', error);
   process.exit(1);
 }
 
@@ -134,6 +120,11 @@ app.use('*', (req, res) => {
 // Start server
 async function startServer() {
   try {
+    // Initialize database first
+    console.log('🗄️  Initializing database...');
+    await initDatabase();
+    console.log('✅ Database initialization completed');
+    
     console.log('Starting server...');
     console.log('Port:', PORT);
     console.log('Environment:', process.env.NODE_ENV || 'development');
@@ -169,19 +160,20 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
+// Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);
 });
 
-// Handle graceful shutdown
+// Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
+  console.log('SIGTERM received. Shutting down gracefully...');
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
+  console.log('SIGINT received. Shutting down gracefully...');
   process.exit(0);
 });
 
