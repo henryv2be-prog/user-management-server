@@ -9,7 +9,7 @@ class AccessGroup {
     this.id = data.id;
     this.name = data.name;
     this.description = data.description;
-    this.isActive = data.is_active;
+
     this.createdAt = data.created_at;
     this.updatedAt = data.updated_at;
   }
@@ -19,7 +19,7 @@ class AccessGroup {
       id: this.id,
       name: this.name,
       description: this.description,
-      isActive: this.isActive,
+
       createdAt: this.createdAt,
       updatedAt: this.updatedAt
     };
@@ -32,8 +32,8 @@ class AccessGroup {
       
       const db = new sqlite3.Database(DB_PATH);
       db.run(
-        'INSERT INTO access_groups (name, description, is_active) VALUES (?, ?, ?)',
-        [name, description, 1],
+        'INSERT INTO access_groups (name, description) VALUES (?, ?)',
+        [name, description],
         function(err) {
           if (err) {
             reject(err);
@@ -104,17 +104,14 @@ class AccessGroup {
       const {
         page = 1,
         limit = 10,
-        isActive,
+
         search
       } = options;
       
       let query = 'SELECT * FROM access_groups WHERE 1=1';
       const params = [];
       
-      if (isActive !== undefined) {
-        query += ' AND is_active = ?';
-        params.push(isActive ? 1 : 0);
-      }
+
       
       if (search) {
         query += ' AND (name LIKE ? OR description LIKE ?)';
@@ -145,15 +142,12 @@ class AccessGroup {
 
   static async count(options = {}) {
     return new Promise((resolve, reject) => {
-      const { isActive, search } = options;
+      const { search } = options;
       
       let query = 'SELECT COUNT(*) as count FROM access_groups WHERE 1=1';
       const params = [];
       
-      if (isActive !== undefined) {
-        query += ' AND is_active = ?';
-        params.push(isActive ? 1 : 0);
-      }
+
       
       if (search) {
         query += ' AND (name LIKE ? OR description LIKE ?)';
@@ -179,19 +173,13 @@ class AccessGroup {
 
   async update(updateData) {
     return new Promise((resolve, reject) => {
-      const allowedFields = ['name', 'description', 'is_active'];
+      const allowedFields = ['name', 'description'];
       const updates = [];
       const params = [];
       
-      // Map camelCase to snake_case
-      const fieldMapping = {
-        'isActive': 'is_active'
-      };
-      
       for (const [key, value] of Object.entries(updateData)) {
-        const dbField = fieldMapping[key] || key;
-        if (allowedFields.includes(dbField) && value !== undefined) {
-          updates.push(`${dbField} = ?`);
+        if (allowedFields.includes(key) && value !== undefined) {
+          updates.push(`${key} = ?`);
           params.push(value);
         }
       }
@@ -247,7 +235,7 @@ class AccessGroup {
       db.all(
         `SELECT d.* FROM doors d
          JOIN door_access_groups dag ON d.id = dag.door_id
-         WHERE dag.access_group_id = ? AND d.is_active = 1`,
+         WHERE dag.access_group_id = ?`,
         [this.id],
         (err, rows) => {
           db.close();
@@ -267,10 +255,10 @@ class AccessGroup {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(DB_PATH);
       db.all(
-        `SELECT u.*, uag.granted_at, uag.expires_at, uag.is_active as membership_active
+        `         SELECT u.*, uag.granted_at, uag.expires_at
          FROM users u
          JOIN user_access_groups uag ON u.id = uag.user_id
-         WHERE uag.access_group_id = ? AND uag.is_active = 1
+         WHERE uag.access_group_id = ?
          AND (uag.expires_at IS NULL OR uag.expires_at > CURRENT_TIMESTAMP)`,
         [this.id],
         (err, rows) => {
@@ -291,10 +279,10 @@ class AccessGroup {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(DB_PATH);
       db.run(
-        `INSERT OR REPLACE INTO user_access_groups 
-         (user_id, access_group_id, granted_by, expires_at, is_active) 
-         VALUES (?, ?, ?, ?, ?)`,
-        [userId, this.id, grantedBy, expiresAt, 1],
+        `         INSERT OR REPLACE INTO user_access_groups 
+         (user_id, access_group_id, granted_by, expires_at) 
+         VALUES (?, ?, ?, ?)`,
+        [userId, this.id, grantedBy, expiresAt],
         function(err) {
           db.close();
           if (err) {

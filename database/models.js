@@ -14,7 +14,7 @@ class User {
         this.firstName = data.first_name;
         this.lastName = data.last_name;
         this.role = data.role || 'user';
-        this.isActive = data.is_active !== undefined ? Boolean(data.is_active) : true;
+
         this.emailVerified = data.email_verified !== undefined ? Boolean(data.email_verified) : false;
         this.createdAt = data.created_at;
         this.updatedAt = data.updated_at;
@@ -55,10 +55,10 @@ class User {
                     return reject(err);
                 }
 
-                const sql = `INSERT INTO users (username, email, password_hash, first_name, last_name, role, is_active, email_verified)
+                const sql = `INSERT INTO users (username, email, password_hash, first_name, last_name, role, email_verified)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
                 
-                db.run(sql, [username, email, hashedPassword, firstName, lastName, role, 1, 0], function(err) {
+                db.run(sql, [username, email, hashedPassword, firstName, lastName, role, 0], function(err) {
                     db.close();
                     if (err) {
                         return reject(err);
@@ -123,7 +123,7 @@ class User {
             const params = [];
             
             if (options.activeOnly) {
-                sql += " WHERE is_active = 1";
+
             }
             
             if (options.role) {
@@ -157,7 +157,7 @@ class User {
             const fieldMapping = {
                 firstName: 'first_name',
                 lastName: 'last_name',
-                isActive: 'is_active',
+
                 emailVerified: 'email_verified'
             };
             
@@ -233,7 +233,7 @@ class User {
             
             const queries = [
                 "SELECT COUNT(*) as total FROM users",
-                "SELECT COUNT(*) as active FROM users WHERE is_active = 1",
+                "SELECT COUNT(*) as active FROM users",
                 "SELECT COUNT(*) as admins FROM users WHERE role = 'admin'",
                 "SELECT COUNT(*) as verified FROM users WHERE email_verified = 1"
             ];

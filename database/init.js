@@ -43,7 +43,6 @@ const initDatabase = () => {
                 first_name TEXT,
                 last_name TEXT,
                 role TEXT DEFAULT 'user',
-                is_active INTEGER DEFAULT 1,
                 email_verified INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -64,7 +63,6 @@ const initDatabase = () => {
                 location TEXT,
                 esp32_ip TEXT,
                 esp32_mac TEXT,
-                is_active INTEGER DEFAULT 1,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )`, (err) => {
@@ -82,7 +80,6 @@ const initDatabase = () => {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT UNIQUE NOT NULL,
                 description TEXT,
-                is_active INTEGER DEFAULT 1,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )`, (err) => {
@@ -187,9 +184,9 @@ const initDatabase = () => {
                     const bcrypt = require('bcryptjs');
                     const hashedPassword = bcrypt.hashSync('admin123', 10);
                     
-                    db.run(`INSERT INTO users (username, email, password_hash, first_name, last_name, role, is_active, email_verified) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                        ['admin', 'admin@example.com', hashedPassword, 'Admin', 'User', 'admin', 1, 1],
+                    db.run(`INSERT INTO users (username, email, password_hash, first_name, last_name, role, email_verified) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                        ['admin', 'admin@example.com', hashedPassword, 'Admin', 'User', 'admin', 1],
                         function(err) {
                             if (err) {
                                 console.error('Error creating default admin user:', err.message);

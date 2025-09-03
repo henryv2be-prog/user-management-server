@@ -25,19 +25,14 @@ try {
   process.exit(1);
 }
 
-// Database initialization and migration
+// Database initialization
 const { execSync } = require('child_process');
-const path = require('path');
 
-// Run database initialization and migration
+// Run database initialization
 try {
   console.log('Running database initialization...');
   execSync('node database/init.js', { stdio: 'inherit' });
   console.log('Database initialization completed');
-  
-  console.log('Running database migration...');
-  execSync('node database/migrate.js', { stdio: 'inherit' });
-  console.log('Database migration completed');
 } catch (error) {
   console.error('Database setup failed:', error.message);
   process.exit(1);

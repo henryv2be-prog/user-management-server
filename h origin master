@@ -1,0 +1,5 @@
+[33m2012464[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m Add database migration script to fix missing is_active columns
+[33mb6f4d32[m[33m ([m[1;31morigin/master[m[33m)[m Add debugging logs to door linking functionality
+[33m8cbbd1d[m Fix admin user creation in database initialization
+[33mf7ee36b[m Fix database initialization to properly wait for all tables to be created
+[33m9f6a366[m Add database recreation script to fix schema issues

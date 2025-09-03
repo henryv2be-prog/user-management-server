@@ -13,7 +13,7 @@ class Door {
     this.esp32Ip = data.esp32_ip;
     this.esp32Mac = data.esp32_mac;
     this.secretKey = data.secret_key;
-    this.isActive = data.is_active;
+
     this.lastSeen = data.last_seen;
     this.createdAt = data.created_at;
     this.updatedAt = data.updated_at;
@@ -26,7 +26,7 @@ class Door {
       location: this.location,
       esp32Ip: this.esp32Ip,
       esp32Mac: this.esp32Mac,
-      isActive: this.isActive,
+
       lastSeen: this.lastSeen,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt
@@ -43,8 +43,8 @@ class Door {
       
       const db = new sqlite3.Database(DB_PATH);
       db.run(
-        'INSERT INTO doors (name, location, esp32_ip, esp32_mac, is_active) VALUES (?, ?, ?, ?, ?)',
-        [name, location, esp32Ip, esp32Mac, 1],
+        'INSERT INTO doors (name, location, esp32_ip, esp32_mac) VALUES (?, ?, ?, ?)',
+        [name, location, esp32Ip, esp32Mac],
         function(err) {
           if (err) {
             reject(err);
@@ -121,7 +121,7 @@ class Door {
       const params = [];
       
       if (isActive !== undefined) {
-        query += ' AND is_active = ?';
+
         params.push(isActive ? 1 : 0);
       }
       
@@ -157,7 +157,7 @@ class Door {
       const params = [];
       
       if (isActive !== undefined) {
-        query += ' AND is_active = ?';
+
         params.push(isActive ? 1 : 0);
       }
       
@@ -182,15 +182,14 @@ class Door {
 
   async update(updateData) {
     return new Promise((resolve, reject) => {
-      const allowedFields = ['name', 'location', 'esp32_ip', 'esp32_mac', 'is_active'];
+      const allowedFields = ['name', 'location', 'esp32_ip', 'esp32_mac'];
       const updates = [];
       const params = [];
       
       // Map camelCase to snake_case
       const fieldMapping = {
         'esp32Ip': 'esp32_ip',
-        'esp32Mac': 'esp32_mac',
-        'isActive': 'is_active'
+        'esp32Mac': 'esp32_mac'
       };
       
       for (const [key, value] of Object.entries(updateData)) {
@@ -270,7 +269,7 @@ class Door {
       db.all(
         `SELECT ag.* FROM access_groups ag
          JOIN door_access_groups dag ON ag.id = dag.access_group_id
-         WHERE dag.door_id = ? AND ag.is_active = 1`,
+         WHERE dag.door_id = ?`,
         [this.id],
         (err, rows) => {
           if (err) {
@@ -329,7 +328,7 @@ class Door {
       db.get(
         `SELECT COUNT(*) as count FROM user_access_groups uag
          JOIN door_access_groups dag ON uag.access_group_id = dag.access_group_id
-         WHERE dag.door_id = ? AND uag.user_id = ? AND uag.is_active = 1
+         WHERE dag.door_id = ? AND uag.user_id = ?
          AND (uag.expires_at IS NULL OR uag.expires_at > CURRENT_TIMESTAMP)`,
         [this.id, userId],
         (err, row) => {
