@@ -4,199 +4,190 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Management System</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="styles.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <div id="app">
-        <!-- Navigation -->
-        <nav class="navbar">
-            <div class="nav-container">
-                <div class="nav-brand">
-                    <i class="fas fa-users"></i>
-                    <span>User Management</span>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+    <!-- Login Section -->
+    <div id="loginSection" class="login-section">
+        <div class="login-container">
+            <div class="login-header">
+                <h1><i class="fas fa-shield-alt"></i> User Management System</h1>
+                <p>Please sign in to continue</p>
+            </div>
+            
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
                 </div>
-                <div class="nav-menu" id="navMenu">
-                    <a href="#" class="nav-link" onclick="showSection('dashboard')">
-                        <i class="fas fa-tachometer-alt"></i> Dashboard
-                    </a>
-                    <a href="#" class="nav-link" onclick="showSection('users')">
-                        <i class="fas fa-users"></i> Users
-                    </a>
-                    <a href="#" class="nav-link" onclick="showSection('doors')">
-                        <i class="fas fa-door-open"></i> Doors
-                    </a>
-                    <a href="#" class="nav-link" onclick="showSection('accessGroups')">
-                        <i class="fas fa-shield-alt"></i> Access Groups
-                    </a>
-                    <a href="#" class="nav-link" onclick="showSection('profile')">
-                        <i class="fas fa-user"></i> Profile
-                    </a>
-                    <a href="#" class="nav-link" onclick="logout()">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
                 </div>
-                <div class="nav-toggle" onclick="toggleNav()">
-                    <i class="fas fa-bars"></i>
-                </div>
+                <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="main-app" style="display: none;">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-shield-alt"></i> User Management</h2>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="#" onclick="showSection('dashboard')" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="#" onclick="showSection('users')"><i class="fas fa-users"></i> Users</a></li>
+                <li><a href="#" onclick="showSection('doors')"><i class="fas fa-door-open"></i> Doors</a></li>
+                <li><a href="#" onclick="showSection('accessGroups')"><i class="fas fa-shield-alt"></i> Access Groups</a></li>
+                <li><a href="#" onclick="showSection('profile')"><i class="fas fa-user"></i> Profile</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <button onclick="logout()" class="btn btn-secondary btn-full">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
             </div>
         </nav>
 
-        <!-- Login Form -->
-        <div id="loginSection" class="section active">
-            <div class="login-container">
-                <div class="login-card">
-                    <div class="login-header">
-                        <i class="fas fa-lock"></i>
-                        <h2>Login</h2>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <div id="dashboardSection" class="section active">
+                <div class="container">
+                    <div class="section-header">
+                        <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+                        <p>Welcome back, <span id="userName">User</span>!</p>
                     </div>
-                    <form id="loginForm" onsubmit="handleLogin(event)">
-                        <div class="form-group">
-                            <label for="email">Username or Email</label>
-                            <input type="text" id="email" name="email" placeholder="Enter username or email" required>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalUsers">0</h3>
+                                <p>Total Users</p>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="password">Password</label>
-                            <input type="password" id="password" name="password" required>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-door-open"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalDoors">0</h3>
+                                <p>Total Doors</p>
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-sign-in-alt"></i> Login
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalAccessGroups">0</h3>
+                                <p>Access Groups</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="activeUsers">0</h3>
+                                <p>Active Users</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Management -->
+            <div id="usersSection" class="section">
+                <div class="container">
+                    <div class="section-header">
+                        <h1><i class="fas fa-users"></i> Users</h1>
+                        <button class="btn btn-primary" onclick="showCreateUserModal()">
+                            <i class="fas fa-plus"></i> Add User
                         </button>
-                    </form>
-                    <div class="login-footer">
-                        <p>Don't have an account? <a href="#" onclick="showRegister()">Register here</a></p>
+                    </div>
+                    
+                    <div class="filters">
+                        <input type="text" id="userSearchInput" placeholder="Search users..." onkeyup="searchUsers()">
+                        <select id="userRoleFilter" onchange="filterUsers()">
+                            <option value="">All Roles</option>
+                            <option value="user">User</option>
+                            <option value="moderator">Moderator</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <select id="userStatusFilter" onchange="filterUsers()">
+                            <option value="">All Status</option>
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+
+                    <div class="users-table-container">
+                        <table class="users-table" id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Users will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination" id="usersPagination">
+                        <!-- Pagination will be loaded here -->
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Register Form -->
-        <div id="registerSection" class="section">
-            <div class="login-container">
-                <div class="login-card">
-                    <div class="login-header">
-                        <i class="fas fa-user-plus"></i>
-                        <h2>Register</h2>
-                    </div>
-                    <form id="registerForm" onsubmit="handleRegister(event)">
-                        <div class="form-group">
-                            <label for="regFirstName">First Name</label>
-                            <input type="text" id="regFirstName" name="firstName" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="regLastName">Last Name</label>
-                            <input type="text" id="regLastName" name="lastName" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="regEmail">Email</label>
-                            <input type="email" id="regEmail" name="email" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="regPassword">Password</label>
-                            <input type="password" id="regPassword" name="password" required>
-                            <small>Must be at least 8 characters with uppercase, lowercase, and number</small>
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-user-plus"></i> Register
+            <!-- Doors Management -->
+            <div id="doorsSection" class="section">
+                <div class="container">
+                    <div class="section-header">
+                        <h1><i class="fas fa-door-open"></i> Doors</h1>
+                        <button class="btn btn-primary" onclick="showCreateDoorModal()">
+                            <i class="fas fa-plus"></i> Add Door
                         </button>
-                    </form>
-                    <div class="login-footer">
-                        <p>Already have an account? <a href="#" onclick="showLogin()">Login here</a></p>
                     </div>
-                </div>
-            </div>
-        </div>
+                    
+                    <div class="filters">
+                        <input type="text" id="doorSearchInput" placeholder="Search doors..." onkeyup="searchDoors()">
+                        <select id="doorStatusFilter" onchange="filterDoors()">
+                            <option value="">All Status</option>
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
 
-        <!-- Dashboard -->
-        <div id="dashboardSection" class="section">
-            <div class="container">
-                <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
-                <div class="stats-grid" id="statsGrid">
-                    <!-- Stats will be loaded here -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Users Management -->
-        <div id="usersSection" class="section">
-            <div class="container">
-                <div class="section-header">
-                    <h1><i class="fas fa-users"></i> User Management</h1>
-                    <button class="btn btn-primary" onclick="showCreateUserModal()">
-                        <i class="fas fa-plus"></i> Add User
-                    </button>
-                </div>
-                
-                <div class="filters">
-                    <input type="text" id="searchInput" placeholder="Search users..." onkeyup="searchUsers()">
-                    <select id="roleFilter" onchange="filterUsers()">
-                        <option value="">All Roles</option>
-                        <option value="user">User</option>
-                        <option value="moderator">Moderator</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                    <select id="statusFilter" onchange="filterUsers()">
-                        <option value="">All Status</option>
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
-                    </select>
-                </div>
-
-                <div class="users-table-container">
-                    <table class="users-table" id="usersTable">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Last Login</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTableBody">
-                            <!-- Users will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="pagination" id="pagination">
-                    <!-- Pagination will be loaded here -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Doors Management -->
-        <div id="doorsSection" class="section">
-            <div class="container">
-                <div class="section-header">
-                    <h1><i class="fas fa-door-open"></i> Door Management</h1>
-                    <button class="btn btn-primary" onclick="showCreateDoorModal()">
-                        <i class="fas fa-plus"></i> Add Door
-                    </button>
-                </div>
-                
-                <div class="filters">
-                    <input type="text" id="doorSearchInput" placeholder="Search doors..." onkeyup="searchDoors()">
-                    <select id="doorStatusFilter" onchange="filterDoors()">
-                        <option value="">All Status</option>
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
-                    </select>
-                </div>
-
-                <div class="doors-table-container">
-                    <table class="doors-table" id="doorsTable">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Location</th>
-                                <th>ESP32 IP</th>
-                                <th>Status</th>
-                                <th>Last Seen</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
+                    <div class="doors-table-container">
+                        <table class="doors-table" id="doorsTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Location</th>
+                                    <th>ESP32 IP</th>
+                                    <th>Status</th>
+                                    <th>Last Seen</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
                         <tbody id="doorsTableBody">
                             <!-- Doors will be loaded here -->
                         </tbody>
@@ -251,162 +242,129 @@
             </div>
         </div>
 
-        <!-- Profile -->
+        <!-- Profile Section -->
         <div id="profileSection" class="section">
             <div class="container">
-                <h1><i class="fas fa-user"></i> My Profile</h1>
-                <div class="profile-container">
-                    <div class="profile-card">
-                        <div class="profile-header">
-                            <div class="profile-avatar">
-                                <i class="fas fa-user"></i>
+                <div class="section-header">
+                    <h1><i class="fas fa-user"></i> Profile</h1>
+                </div>
+                
+                <div class="profile-content">
+                    <div class="profile-info">
+                        <h3>User Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Name:</label>
+                                <span id="profileName">-</span>
                             </div>
-                            <div class="profile-info">
-                                <h2 id="profileName">Loading...</h2>
-                                <p id="profileEmail">Loading...</p>
-                                <span class="role-badge" id="profileRole">Loading...</span>
+                            <div class="info-item">
+                                <label>Email:</label>
+                                <span id="profileEmail">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Role:</label>
+                                <span id="profileRole">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Member Since:</label>
+                                <span id="profileCreated">-</span>
                             </div>
                         </div>
-                        <div class="profile-actions">
-                            <button class="btn btn-secondary" onclick="showChangePasswordModal()">
-                                <i class="fas fa-key"></i> Change Password
-                            </button>
-                        </div>
+                    </div>
+                    
+                    <div class="profile-actions">
+                        <button class="btn btn-primary" onclick="showChangePasswordModal()">
+                            <i class="fas fa-key"></i> Change Password
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
+</div>
 
-    <!-- Modals -->
-    <div id="createUserModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-user-plus"></i> Create New User</h3>
-                <span class="close" onclick="closeModal('createUserModal')">&times;</span>
-            </div>
-            <form id="createUserForm" onsubmit="handleCreateUser(event)">
-                <div class="form-group">
-                    <label for="createFirstName">First Name</label>
-                    <input type="text" id="createFirstName" name="firstName" required>
-                </div>
-                <div class="form-group">
-                    <label for="createLastName">Last Name</label>
-                    <input type="text" id="createLastName" name="lastName" required>
-                </div>
-                <div class="form-group">
-                    <label for="createEmail">Email</label>
-                    <input type="email" id="createEmail" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="createPassword">Password</label>
-                    <input type="password" id="createPassword" name="password" required>
-                </div>
-                <div class="form-group">
-                    <label for="createRole">Role</label>
-                    <select id="createRole" name="role" required>
-                        <option value="user">User</option>
-                        <option value="moderator">Moderator</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('createUserModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create User</button>
-                </div>
-            </form>
+<!-- Modals -->
+<div id="createUserModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-plus"></i> Create New User</h3>
+            <span class="close" onclick="closeModal('createUserModal')">&times;</span>
         </div>
-    </div>
-
-    <div id="editUserModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-edit"></i> Edit User</h3>
-                <span class="close" onclick="closeModal('editUserModal')">&times;</span>
+        <form id="createUserForm" onsubmit="handleCreateUser(event)">
+            <div class="form-group">
+                <label for="createFirstName">First Name</label>
+                <input type="text" id="createFirstName" name="firstName" required>
             </div>
-            <form id="editUserForm" onsubmit="handleEditUser(event)">
-                <input type="hidden" id="editUserId" name="id">
-                <div class="form-group">
-                    <label for="editFirstName">First Name</label>
-                    <input type="text" id="editFirstName" name="firstName" required>
-                </div>
-                <div class="form-group">
-                    <label for="editLastName">Last Name</label>
-                    <input type="text" id="editLastName" name="lastName" required>
-                </div>
-                <div class="form-group">
-                    <label for="editEmail">Email</label>
-                    <input type="email" id="editEmail" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="editRole">Role</label>
-                    <select id="editRole" name="role" required>
-                        <option value="user">User</option>
-                        <option value="moderator">Moderator</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="editIsActive">Status</label>
-                    <select id="editIsActive" name="isActive" required>
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('editUserModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Update User</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="changePasswordModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-key"></i> Change Password</h3>
-                <span class="close" onclick="closeModal('changePasswordModal')">&times;</span>
+            <div class="form-group">
+                <label for="createLastName">Last Name</label>
+                <input type="text" id="createLastName" name="lastName" required>
             </div>
-            <form id="changePasswordForm" onsubmit="handleChangePassword(event)">
-                <div class="form-group">
-                    <label for="currentPassword">Current Password</label>
-                    <input type="password" id="currentPassword" name="currentPassword" required>
-                </div>
-                <div class="form-group">
-                    <label for="newPassword">New Password</label>
-                    <input type="password" id="newPassword" name="newPassword" required>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('changePasswordModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Change Password</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- User Access Groups Modal -->
-    <div id="userAccessGroupsModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-shield-alt"></i> User Access Groups</h3>
-                <span class="close" onclick="closeModal('userAccessGroupsModal')">&times;</span>
+            <div class="form-group">
+                <label for="createEmail">Email</label>
+                <input type="email" id="createEmail" name="email" required>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="userAccessGroupSelect">Add Access Group</label>
-                    <select id="userAccessGroupSelect">
-                        <option value="">Select an access group...</option>
-                    </select>
-                    <button type="button" class="btn btn-primary" onclick="addAccessGroupToUser()">
-                        <i class="fas fa-plus"></i> Add
-                    </button>
-                </div>
-                <div id="userAccessGroupsList">
+            <div class="form-group">
+                <label for="createPassword">Password</label>
+                <input type="password" id="createPassword" name="password" required>
+            </div>
+            <div class="form-group">
+                <label for="createRole">Role</label>
+                <select id="createRole" name="role" required>
+                    <option value="user">User</option>
+                    <option value="moderator">Moderator</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="createUserAccessGroup">Access Group</label>
+                <select id="createUserAccessGroup" name="accessGroupId">
+                    <option value="">Select Access Group</option>
                     <!-- Access groups will be loaded here -->
-                </div>
+                </select>
             </div>
-        </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('createUserModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create User</button>
+            </div>
+        </form>
     </div>
+</div>
+
+<div id="editUserModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Edit User</h3>
+            <span class="close" onclick="closeModal('editUserModal')">&times;</span>
+        </div>
+        <form id="editUserForm" onsubmit="handleEditUser(event)">
+            <input type="hidden" id="editUserId" name="id">
+            <div class="form-group">
+                <label for="editFirstName">First Name</label>
+                <input type="text" id="editFirstName" name="firstName" required>
+            </div>
+            <div class="form-group">
+                <label for="editLastName">Last Name</label>
+                <input type="text" id="editLastName" name="lastName" required>
+            </div>
+            <div class="form-group">
+                <label for="editEmail">Email</label>
+                <input type="email" id="editEmail" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="editRole">Role</label>
+                <select id="editRole" name="role" required>
+                    <option value="user">User</option>
+                    <option value="moderator">Moderator</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editUserModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update User</button>
+            </div>
+        </form>
+    </div>
+</div>
 
     <!-- Door Modals -->
     <div id="createDoorModal" class="modal">
@@ -431,6 +389,13 @@
                 <div class="form-group">
                     <label for="createDoorEsp32Mac">ESP32 MAC Address (Optional)</label>
                     <input type="text" id="createDoorEsp32Mac" name="esp32Mac" placeholder="AA:BB:CC:DD:EE:FF">
+                </div>
+                <div class="form-group">
+                    <label for="createDoorAccessGroup">Access Group</label>
+                    <select id="createDoorAccessGroup" name="accessGroupId">
+                        <option value="">Select Access Group</option>
+                        <!-- Access groups will be loaded here -->
+                    </select>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('createDoorModal')">Cancel</button>
@@ -464,13 +429,6 @@
                     <label for="editDoorEsp32Mac">ESP32 MAC Address</label>
                     <input type="text" id="editDoorEsp32Mac" name="esp32Mac">
                 </div>
-                <div class="form-group">
-                    <label for="editDoorIsActive">Status</label>
-                    <select id="editDoorIsActive" name="isActive" required>
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
-                    </select>
-                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('editDoorModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">Update Door</button>
@@ -478,8 +436,6 @@
             </form>
         </div>
     </div>
-
-
 
     <!-- Access Group Modals -->
     <div id="createAccessGroupModal" class="modal">
@@ -521,13 +477,6 @@
                     <label for="editAccessGroupDescription">Description</label>
                     <textarea id="editAccessGroupDescription" name="description" rows="3"></textarea>
                 </div>
-                <div class="form-group">
-                    <label for="editAccessGroupIsActive">Status</label>
-                    <select id="editAccessGroupIsActive" name="isActive" required>
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
-                    </select>
-                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('editAccessGroupModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">Update Access Group</button>
@@ -536,38 +485,35 @@
         </div>
     </div>
 
-    <div id="accessGroupDetailsModal" class="modal">
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-shield-alt"></i> Access Group Details</h3>
-                <span class="close" onclick="closeModal('accessGroupDetailsModal')">&times;</span>
+                <h3><i class="fas fa-key"></i> Change Password</h3>
+                <span class="close" onclick="closeModal('changePasswordModal')">&times;</span>
             </div>
-            <div class="modal-body">
+            <form id="changePasswordForm" onsubmit="handleChangePassword(event)">
                 <div class="form-group">
-                    <label for="accessGroupDoorSelect">Add Door</label>
-                    <select id="accessGroupDoorSelect">
-                        <option value="">Select a door...</option>
-                    </select>
-                    <button type="button" class="btn btn-primary" onclick="addDoorToAccessGroup()">
-                        <i class="fas fa-plus"></i> Add
-                    </button>
+                    <label for="currentPassword">Current Password</label>
+                    <input type="password" id="currentPassword" name="currentPassword" required>
                 </div>
-                <div id="accessGroupDoorsList">
-                    <!-- Doors will be loaded here -->
+                <div class="form-group">
+                    <label for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" name="newPassword" required>
                 </div>
-            </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm New Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('changePasswordModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Change Password</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loading-spinner">
-            <i class="fas fa-spinner fa-spin"></i>
-            <p>Loading...</p>
-        </div>
-    </div>
-
-    <!-- Toast Notifications -->
+    <!-- Toast Container -->
     <div id="toastContainer" class="toast-container"></div>
 
     <script src="app.js"></script>

@@ -68,7 +68,7 @@ router.get('/:id', authenticate, validateId, authorizeSelfOrAdmin, async (req, r
 // Create new user (admin only)
 router.post('/', authenticate, requireAdmin, validateUser, async (req, res) => {
   try {
-    const { email, password, firstName, lastName, role = 'user' } = req.body;
+    const { email, password, firstName, lastName, role = 'user', accessGroupId } = req.body;
     
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
@@ -91,6 +91,20 @@ router.post('/', authenticate, requireAdmin, validateUser, async (req, res) => {
     });
     
     const user = await User.findById(userId);
+    
+    // If access group is specified, add the user to it
+    if (accessGroupId) {
+      try {
+        const { AccessGroup } = require('../database/accessGroup');
+        const accessGroup = await AccessGroup.findById(accessGroupId);
+        if (accessGroup) {
+          await accessGroup.addUser(userId, req.user.id);
+        }
+      } catch (accessGroupError) {
+        console.error('Error adding user to access group:', accessGroupError);
+        // Don't fail the user creation if access group assignment fails
+      }
+    }
     
     res.status(201).json({
       message: 'User created successfully',
@@ -117,8 +131,9 @@ router.post('/', authenticate, requireAdmin, validateUser, async (req, res) => {
 router.put('/:id', authenticate, validateId, authorizeSelfOrAdmin, validateUserUpdate, async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
-    const user = await User.findById(userId);
+    const { firstName, lastName, email, role } = req.body;
     
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
         error: 'User not found',
@@ -126,21 +141,26 @@ router.put('/:id', authenticate, validateId, authorizeSelfOrAdmin, validateUserU
       });
     }
     
-    // Non-admin users can only update their own basic info
-    if (!req.user.hasRole('admin') && req.user.id !== userId) {
-      return res.status(403).json({
-        error: 'Forbidden',
-        message: 'You can only update your own profile'
-      });
+    // Check if email is being changed and if it's already taken
+    if (email && email !== user.email) {
+      const existingUser = await User.findByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({
+          error: 'Email already exists',
+          message: 'An account with this email already exists'
+        });
+      }
     }
     
-    // Non-admin users cannot change role or active status
-    const updateData = { ...req.body };
-    if (!req.user.hasRole('admin')) {
-      delete updateData.role;
-    }
+    const updateData = {};
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
+    if (email !== undefined) updateData.email = email;
+    if (role !== undefined) updateData.role = role;
     
-    const updatedUser = await user.update(updateData);
+    await user.update(updateData);
+    
+    const updatedUser = await User.findById(userId);
     
     res.json({
       message: 'User updated successfully',
@@ -169,9 +189,9 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
     }
     
     // Prevent admin from deleting themselves
-    if (req.user.id === userId) {
+    if (user.id === req.user.id) {
       return res.status(400).json({
-        error: 'Cannot delete self',
+        error: 'Bad Request',
         message: 'You cannot delete your own account'
       });
     }
@@ -193,30 +213,32 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
 // Get user statistics (admin only)
 router.get('/stats/overview', authenticate, requireAdmin, async (req, res) => {
   try {
-    const [totalUsers, adminUsers, moderatorUsers] = await Promise.all([
-      User.count({}),
-      User.count({ role: 'admin' }),
-      User.count({ role: 'moderator' })
+    const stats = await User.getStats();
+    
+    // Get additional stats from other models
+    const { Door } = require('../database/door');
+    const { AccessGroup } = require('../database/accessGroup');
+    
+    const [totalDoors, totalAccessGroups] = await Promise.all([
+      Door.count(),
+      AccessGroup.count()
     ]);
     
     res.json({
-      stats: {
-        totalUsers,
-        activeUsers,
-        inactiveUsers: totalUsers - activeUsers,
-        adminUsers,
-        moderatorUsers,
-        regularUsers: totalUsers - adminUsers - moderatorUsers
-      }
+      totalUsers: stats.total,
+      activeUsers: stats.active,
+      adminUsers: stats.admins,
+      verifiedUsers: stats.verified,
+      totalDoors,
+      totalAccessGroups
     });
   } catch (error) {
-    console.error('Get stats error:', error);
+    console.error('Get user stats error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to retrieve statistics'
+      message: 'Failed to retrieve user statistics'
     });
   }
 });
 
 module.exports = router;
-

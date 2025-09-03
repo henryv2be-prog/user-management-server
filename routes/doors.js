@@ -65,12 +65,8 @@ router.get('/:id', authenticate, requireAdmin, validateId, async (req, res) => {
       });
     }
     
-    // Get access groups for this door
-    const accessGroups = await door.getAccessGroups();
-    
     res.json({
-      door: door.toJSON(),
-      accessGroups
+      door: door.toJSON()
     });
   } catch (error) {
     console.error('Get door error:', error);
@@ -84,7 +80,7 @@ router.get('/:id', authenticate, requireAdmin, validateId, async (req, res) => {
 // Create new door (admin only)
 router.post('/', authenticate, requireAdmin, validateDoor, async (req, res) => {
   try {
-    const { name, location, esp32Ip, esp32Mac } = req.body;
+    const { name, location, esp32Ip, esp32Mac, accessGroupId } = req.body;
     
     // Check if door with this IP already exists
     const existingDoor = await Door.findByIp(esp32Ip);
@@ -101,6 +97,16 @@ router.post('/', authenticate, requireAdmin, validateDoor, async (req, res) => {
       esp32Ip,
       esp32Mac
     });
+    
+    // If access group is specified, add the door to it
+    if (accessGroupId) {
+      try {
+        await door.addAccessGroup(accessGroupId);
+      } catch (accessGroupError) {
+        console.error('Error adding door to access group:', accessGroupError);
+        // Don't fail the door creation if access group assignment fails
+      }
+    }
     
     res.status(201).json({
       message: 'Door created successfully',
@@ -119,8 +125,9 @@ router.post('/', authenticate, requireAdmin, validateDoor, async (req, res) => {
 router.put('/:id', authenticate, requireAdmin, validateId, validateDoorUpdate, async (req, res) => {
   try {
     const doorId = parseInt(req.params.id);
-    const door = await Door.findById(doorId);
+    const { name, location, esp32Ip, esp32Mac } = req.body;
     
+    const door = await Door.findById(doorId);
     if (!door) {
       return res.status(404).json({
         error: 'Door not found',
@@ -128,7 +135,25 @@ router.put('/:id', authenticate, requireAdmin, validateId, validateDoorUpdate, a
       });
     }
     
-    const updatedDoor = await door.update(req.body);
+    // Check if another door with this IP already exists
+    if (esp32Ip && esp32Ip !== door.esp32Ip) {
+      const existingDoor = await Door.findByIp(esp32Ip);
+      if (existingDoor) {
+        return res.status(409).json({
+          error: 'IP address already in use',
+          message: 'Another door with this ESP32 IP address already exists'
+        });
+      }
+    }
+    
+    await door.update({
+      name,
+      location,
+      esp32Ip,
+      esp32Mac
+    });
+    
+    const updatedDoor = await Door.findById(doorId);
     
     res.json({
       message: 'Door updated successfully',
@@ -170,7 +195,7 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
   }
 });
 
-// Add access group to door (admin only)
+// Add access group to door
 router.post('/:id/access-groups', authenticate, requireAdmin, validateId, async (req, res) => {
   try {
     const doorId = parseInt(req.params.id);
@@ -212,7 +237,7 @@ router.post('/:id/access-groups', authenticate, requireAdmin, validateId, async 
   }
 });
 
-// Remove access group from door (admin only)
+// Remove access group from door
 router.delete('/:id/access-groups/:accessGroupId', authenticate, requireAdmin, validateId, async (req, res) => {
   try {
     const doorId = parseInt(req.params.id);
@@ -247,7 +272,7 @@ router.delete('/:id/access-groups/:accessGroupId', authenticate, requireAdmin, v
   }
 });
 
-// ESP32 access verification endpoint (no auth required - uses secret key)
+// ESP32 access verification endpoint (no authentication required)
 router.post('/:id/verify-access', async (req, res) => {
   try {
     const doorId = parseInt(req.params.id);
@@ -277,32 +302,27 @@ router.post('/:id/verify-access', async (req, res) => {
     }
     
     // Door is always active (is_active column removed)
-    // if (!door.isActive) {
-    //   return res.status(403).json({
-    //     error: 'Forbidden',
-        message: 'Door is not active'
-      });
-    }
     
     // Verify user access
     const hasAccess = await door.verifyUserAccess(userId);
     
-    // Log access attempt
-    await door.logAccess(
-      userId, 
-      hasAccess, 
-      accessMethod, 
-      req.ip, 
-      req.get('User-Agent')
-    );
-    
-    // Update door last seen
-    await door.updateLastSeen();
-    
-    res.json({
-      accessGranted: hasAccess,
-      message: hasAccess ? 'Access granted' : 'Access denied'
-    });
+    if (hasAccess) {
+      // Log successful access
+      await door.logAccess(userId, accessMethod, true);
+      
+      res.json({
+        access: true,
+        message: 'Access granted'
+      });
+    } else {
+      // Log failed access attempt
+      await door.logAccess(userId, accessMethod, false);
+      
+      res.status(403).json({
+        access: false,
+        message: 'Access denied'
+      });
+    }
   } catch (error) {
     console.error('Verify access error:', error);
     res.status(500).json({
@@ -312,5 +332,47 @@ router.post('/:id/verify-access', async (req, res) => {
   }
 });
 
-module.exports = router;
+// Update door last seen (ESP32 heartbeat)
+router.post('/:id/heartbeat', async (req, res) => {
+  try {
+    const doorId = parseInt(req.params.id);
+    const { secretKey } = req.body;
+    
+    if (!secretKey) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Secret key is required'
+      });
+    }
+    
+    const door = await Door.findById(doorId);
+    if (!door) {
+      return res.status(404).json({
+        error: 'Door not found',
+        message: 'The requested door does not exist'
+      });
+    }
+    
+    // Verify secret key
+    if (door.secretKey !== secretKey) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Invalid secret key'
+      });
+    }
+    
+    await door.updateLastSeen();
+    
+    res.json({
+      message: 'Heartbeat received'
+    });
+  } catch (error) {
+    console.error('Door heartbeat error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to update door heartbeat'
+    });
+  }
+});
 
+module.exports = router;
