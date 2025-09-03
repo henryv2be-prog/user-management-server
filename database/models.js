@@ -36,35 +36,48 @@ class User {
         return bcrypt.compare(password, this.passwordHash);
     }
 
-    // Hash password
-    static async hashPassword(password) {
-        return bcrypt.hash(password, 10);
-    }
-
-    // Create new user
-    static async create(userData) {
+    // Update password
+    async updatePassword(newPassword) {
+        const saltRounds = 10;
+        this.passwordHash = await bcrypt.hash(newPassword, saltRounds);
+        
         return new Promise((resolve, reject) => {
             const db = new sqlite3.Database(DB_PATH);
             
-            const { username, email, password, firstName, lastName, role = 'user' } = userData;
-            
-            // Hash password
-            bcrypt.hash(password, 10, (err, hashedPassword) => {
+            db.run("UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", 
+                [this.passwordHash, this.id], (err) => {
+                db.close();
                 if (err) {
-                    db.close();
                     return reject(err);
                 }
+                resolve(true);
+            });
+        });
+    }
 
-                const sql = `INSERT INTO users (username, email, password_hash, first_name, last_name, role, email_verified)
-                            VALUES (?, ?, ?, ?, ?, ?, ?)`;
-                
-                db.run(sql, [username, email, hashedPassword, firstName, lastName, role, 0], function(err) {
-                    db.close();
-                    if (err) {
-                        return reject(err);
+    // Static methods for database operations
+    
+    // Create new user
+    static async create(userData) {
+        const { username, email, password, firstName, lastName, role = 'user' } = userData;
+        
+        // Hash password
+        const saltRounds = 10;
+        const passwordHash = await bcrypt.hash(password, saltRounds);
+        
+        return new Promise((resolve, reject) => {
+            const db = new sqlite3.Database(DB_PATH);
+            
+            db.run("INSERT INTO users (username, email, password_hash, first_name, last_name, role) VALUES (?, ?, ?, ?, ?, ?)", 
+                [username, email, passwordHash, firstName, lastName, role], function(err) {
+                db.close();
+                if (err) {
+                    if (err.message.includes('UNIQUE constraint failed: users.email')) {
+                        return reject(new Error('Email already exists'));
                     }
-                    resolve(this.lastID);
-                });
+                    return reject(err);
+                }
+                resolve(this.lastID);
             });
         });
     }
@@ -114,7 +127,7 @@ class User {
         });
     }
 
-    // Get all users
+    // Find all users with optional filters
     static async findAll(options = {}) {
         return new Promise((resolve, reject) => {
             const db = new sqlite3.Database(DB_PATH);
@@ -130,13 +143,8 @@ class User {
                 sql += options.activeOnly ? " AND role = ?" : " WHERE role = ?";
                 params.push(options.role);
             }
-            
+
             sql += " ORDER BY created_at DESC";
-            
-            if (options.limit) {
-                sql += " LIMIT ?";
-                params.push(options.limit);
-            }
             
             db.all(sql, params, (err, rows) => {
                 db.close();
@@ -148,67 +156,81 @@ class User {
         });
     }
 
-    // Update user
-    async update(updateData) {
+    // Count users with optional filters
+    static async count(options = {}) {
         return new Promise((resolve, reject) => {
             const db = new sqlite3.Database(DB_PATH);
             
-            // Map camelCase to snake_case for database fields
-            const fieldMapping = {
-                firstName: 'first_name',
-                lastName: 'last_name',
-
-                emailVerified: 'email_verified'
-            };
+            let sql = "SELECT COUNT(*) as count FROM users";
+            const params = [];
             
-            const fields = [];
-            const values = [];
-            
-            for (const [key, value] of Object.entries(updateData)) {
-                if (key === 'password') {
-                    // Hash password if provided
-                    bcrypt.hash(value, 10, (err, hashedPassword) => {
-                        if (err) {
-                            db.close();
-                            return reject(err);
-                        }
-                        fields.push('password_hash = ?');
-                        values.push(hashedPassword);
-                        this._performUpdate(db, fields, values, resolve, reject);
-                    });
-                    return;
-                } else if (key !== 'id' && key !== 'createdAt' && key !== 'updatedAt') {
-                    const dbField = fieldMapping[key] || key;
-                    fields.push(`${dbField} = ?`);
-                    values.push(value);
-                }
+            if (options.activeOnly) {
+                sql += " WHERE is_active = 1";
             }
             
-            if (fields.length === 0) {
+            if (options.role) {
+                sql += options.activeOnly ? " AND role = ?" : " WHERE role = ?";
+                params.push(options.role);
+            }
+            
+            db.get(sql, params, (err, row) => {
                 db.close();
-                return resolve();
-            }
-            
-            this._performUpdate(db, fields, values, resolve, reject);
+                if (err) {
+                    return reject(err);
+                }
+                resolve(row.count);
+            });
         });
     }
 
-    _performUpdate(db, fields, values, resolve, reject) {
-        fields.push('updated_at = CURRENT_TIMESTAMP');
-        values.push(this.id);
-        
-        const sql = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
-        
-        db.run(sql, values, function(err) {
-            db.close();
-            if (err) {
-                return reject(err);
+    // Update user
+    async update(updateData) {
+        return new Promise((resolve, reject) => {
+            const allowedFields = ['username', 'email', 'first_name', 'last_name', 'role'];
+            const updates = [];
+            const params = [];
+            
+            // Map camelCase to snake_case for database fields
+            const fieldMapping = {
+                'firstName': 'first_name',
+                'lastName': 'last_name'
+            };
+            
+            for (const [key, value] of Object.entries(updateData)) {
+                const dbField = fieldMapping[key] || key;
+                if (allowedFields.includes(dbField) && value !== undefined) {
+                    updates.push(`${dbField} = ?`);
+                    params.push(value);
+                }
             }
             
-            // Update local object
-            Object.assign(this, updateData);
-            resolve(this.changes > 0);
-        }.bind(this));
+            if (updates.length === 0) {
+                return resolve(this);
+            }
+            
+            updates.push('updated_at = CURRENT_TIMESTAMP');
+            params.push(this.id);
+            
+            const sql = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
+            
+            const db = new sqlite3.Database(DB_PATH);
+            
+            db.run(sql, params, (err) => {
+                if (err) {
+                    db.close();
+                    return reject(err);
+                }
+                
+                // Fetch updated user
+                db.get("SELECT * FROM users WHERE id = ?", [this.id], (err, row) => {
+                    db.close();
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(new User(row));
+                });
+            });
+        });
     }
 
     // Delete user
@@ -216,46 +238,80 @@ class User {
         return new Promise((resolve, reject) => {
             const db = new sqlite3.Database(DB_PATH);
             
-            db.run("DELETE FROM users WHERE id = ?", [this.id], function(err) {
-                db.close();
-                if (err) {
-                    return reject(err);
-                }
-                resolve(this.changes > 0);
+            // First delete related records
+            db.serialize(() => {
+                db.run("DELETE FROM user_access_groups WHERE user_id = ?", [this.id]);
+                db.run("DELETE FROM access_log WHERE user_id = ?", [this.id]);
+                db.run("DELETE FROM users WHERE id = ?", [this.id], (err) => {
+                    db.close();
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(true);
+                });
             });
         });
     }
 
-    // Get user statistics
-    static async getStats() {
+    // Get user's access groups
+    async getAccessGroups() {
+        return new Promise((resolve, reject) => {
+            const db = new sqlite3.Database(DB_PATH);
+            db.all(
+                `SELECT ag.id, ag.name, ag.description, uag.granted_at, uag.expires_at
+                 FROM access_groups ag
+                 JOIN user_access_groups uag ON ag.id = uag.access_group_id
+                 WHERE uag.user_id = ?
+                 AND (uag.expires_at IS NULL OR uag.expires_at > CURRENT_TIMESTAMP)`,
+                [this.id],
+                (err, rows) => {
+                    db.close();
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    
+                    resolve(rows);
+                }
+            );
+        });
+    }
+
+    // Update user's access groups
+    async updateAccessGroups(accessGroupIds, grantedBy) {
         return new Promise((resolve, reject) => {
             const db = new sqlite3.Database(DB_PATH);
             
-            const queries = [
-                "SELECT COUNT(*) as total FROM users",
-                "SELECT COUNT(*) as active FROM users",
-                "SELECT COUNT(*) as admins FROM users WHERE role = 'admin'",
-                "SELECT COUNT(*) as verified FROM users WHERE email_verified = 1"
-            ];
-            
-            Promise.all(queries.map(query => 
-                new Promise((resolveQuery, rejectQuery) => {
-                    db.get(query, (err, row) => {
-                        if (err) rejectQuery(err);
-                        else resolveQuery(row);
-                    });
-                })
-            )).then(results => {
-                db.close();
-                resolve({
-                    total: results[0].total,
-                    active: results[1].active,
-                    admins: results[2].admins,
-                    verified: results[3].verified
+            db.serialize(() => {
+                // Remove all existing access groups for this user
+                db.run('DELETE FROM user_access_groups WHERE user_id = ?', [this.id], (err) => {
+                    if (err) {
+                        db.close();
+                        reject(err);
+                        return;
+                    }
                 });
-            }).catch(err => {
-                db.close();
-                reject(err);
+                
+                // Add new access groups
+                if (accessGroupIds && accessGroupIds.length > 0) {
+                    const stmt = db.prepare('INSERT INTO user_access_groups (user_id, access_group_id, granted_by) VALUES (?, ?, ?)');
+                    
+                    accessGroupIds.forEach(accessGroupId => {
+                        stmt.run([this.id, accessGroupId, grantedBy]);
+                    });
+                    
+                    stmt.finalize((err) => {
+                        db.close();
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve();
+                        }
+                    });
+                } else {
+                    db.close();
+                    resolve();
+                }
             });
         });
     }

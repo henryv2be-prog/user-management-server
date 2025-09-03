@@ -131,9 +131,8 @@ router.post('/', authenticate, requireAdmin, validateUser, async (req, res) => {
 router.put('/:id', authenticate, validateId, authorizeSelfOrAdmin, validateUserUpdate, async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
-    const { firstName, lastName, email, role } = req.body;
-    
     const user = await User.findById(userId);
+    
     if (!user) {
       return res.status(404).json({
         error: 'User not found',
@@ -141,26 +140,21 @@ router.put('/:id', authenticate, validateId, authorizeSelfOrAdmin, validateUserU
       });
     }
     
-    // Check if email is being changed and if it's already taken
-    if (email && email !== user.email) {
-      const existingUser = await User.findByEmail(email);
-      if (existingUser) {
-        return res.status(409).json({
-          error: 'Email already exists',
-          message: 'An account with this email already exists'
-        });
-      }
+    // Non-admin users can only update their own basic info
+    if (!req.user.hasRole('admin') && req.user.id !== userId) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only update your own profile'
+      });
     }
     
-    const updateData = {};
-    if (firstName !== undefined) updateData.firstName = firstName;
-    if (lastName !== undefined) updateData.lastName = lastName;
-    if (email !== undefined) updateData.email = email;
-    if (role !== undefined) updateData.role = role;
+    // Non-admin users cannot change role or active status
+    const updateData = { ...req.body };
+    if (!req.user.hasRole('admin')) {
+      delete updateData.role;
+    }
     
-    await user.update(updateData);
-    
-    const updatedUser = await User.findById(userId);
+    const updatedUser = await user.update(updateData);
     
     res.json({
       message: 'User updated successfully',
@@ -189,9 +183,9 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
     }
     
     // Prevent admin from deleting themselves
-    if (user.id === req.user.id) {
+    if (req.user.id === userId) {
       return res.status(400).json({
-        error: 'Bad Request',
+        error: 'Cannot delete self',
         message: 'You cannot delete your own account'
       });
     }
@@ -213,30 +207,121 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
 // Get user statistics (admin only)
 router.get('/stats/overview', authenticate, requireAdmin, async (req, res) => {
   try {
-    const stats = await User.getStats();
-    
-    // Get additional stats from other models
-    const { Door } = require('../database/door');
-    const AccessGroup = require('../database/accessGroup');
-    
-    const [totalDoors, totalAccessGroups] = await Promise.all([
-      Door.count(),
-      AccessGroup.count()
+    const [totalUsers, adminUsers, moderatorUsers] = await Promise.all([
+      User.count({}),
+      User.count({ role: 'admin' }),
+      User.count({ role: 'moderator' })
     ]);
     
     res.json({
-      totalUsers: stats.total,
-      activeUsers: stats.active,
-      adminUsers: stats.admins,
-      verifiedUsers: stats.verified,
-      totalDoors,
-      totalAccessGroups
+      stats: {
+        totalUsers,
+        activeUsers,
+        inactiveUsers: totalUsers - activeUsers,
+        adminUsers,
+        moderatorUsers,
+        regularUsers: totalUsers - adminUsers - moderatorUsers
+      }
     });
   } catch (error) {
-    console.error('Get user stats error:', error);
+    console.error('Get stats error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to retrieve user statistics'
+      message: 'Failed to retrieve statistics'
+    });
+  }
+});
+
+// Get users with their access groups (admin only)
+router.get('/with-access-groups', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const { role } = req.query;
+    
+    const options = {};
+    
+    if (role) {
+      options.role = role;
+    }
+    
+    const users = await User.findAll(options);
+    
+    // Get access groups for each user
+    const usersWithAccessGroups = await Promise.all(
+      users.map(async (user) => {
+        const accessGroups = await user.getAccessGroups();
+        return {
+          ...user.toJSON(),
+          accessGroups
+        };
+      })
+    );
+    
+    res.json({
+      users: usersWithAccessGroups,
+      totalCount: usersWithAccessGroups.length
+    });
+  } catch (error) {
+    console.error('Get users with access groups error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to retrieve users with access groups'
+    });
+  }
+});
+
+// Get user's access groups
+router.get('/:id/access-groups', authenticate, requireAdmin, validateId, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found',
+        message: 'The requested user does not exist'
+      });
+    }
+    
+    const accessGroups = await user.getAccessGroups();
+    
+    res.json({
+      user: user.toJSON(),
+      accessGroups
+    });
+  } catch (error) {
+    console.error('Get user access groups error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to retrieve user access groups'
+    });
+  }
+});
+
+// Update user's access groups
+router.put('/:id/access-groups', authenticate, requireAdmin, validateId, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const { accessGroupIds } = req.body;
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found',
+        message: 'The requested user does not exist'
+      });
+    }
+    
+    // Update user's access groups
+    await user.updateAccessGroups(accessGroupIds, req.user.id);
+    
+    res.json({
+      message: 'User access groups updated successfully'
+    });
+  } catch (error) {
+    console.error('Update user access groups error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to update user access groups'
     });
   }
 });

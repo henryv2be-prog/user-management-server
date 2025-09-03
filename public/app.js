@@ -304,7 +304,7 @@ async function loadUsers() {
     
     try {
         showLoading();
-        const response = await fetch('/api/users', {
+        const response = await fetch('/api/users/with-access-groups', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -333,15 +333,22 @@ function displayUsers(users) {
                 <td>${user.firstName || ''} ${user.lastName || ''}</td>
                 <td>${user.email}</td>
                 <td><span class="role-badge ${user.role}">${user.role}</span></td>
-                <td><span class="status-indicator active">Active</span></td>
+                <td>${user.accessGroups && user.accessGroups.length > 0 ? 
+                      user.accessGroups.map(ag => `<span class="access-group-tag">${ag.name}</span>`).join(' ') : 
+                      '<span class="no-groups">None</span>'}</td>
                 <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline" onclick="editUser(${user.id})">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})" ${user.id === currentUser.id ? 'disabled' : ''}>
-                        <i class="fas fa-trash"></i> Delete
-                    </button>
+                    <div class="action-buttons">
+                        <button class="action-btn edit" onclick="editUser(${user.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn access-groups" onclick="manageUserAccessGroups(${user.id}, '${user.firstName} ${user.lastName}')">
+                            <i class="fas fa-shield-alt"></i>
+                        </button>
+                        <button class="action-btn delete" onclick="deleteUser(${user.id})" ${user.id === currentUser.id ? 'disabled' : ''}>
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `).join('');
@@ -1146,5 +1153,105 @@ async function loadAccessGroupsForUser() {
         }
     } catch (error) {
         console.error('Failed to load access groups for user:', error);
+    }
+}
+
+// Manage user access groups with checkboxes
+async function manageUserAccessGroups(userId, userName) {
+    try {
+        showLoading();
+        
+        // Load user's current access groups and all available access groups
+        const [userResponse, allGroupsResponse] = await Promise.all([
+            fetch(`/api/users/${userId}/access-groups`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            }),
+            fetch('/api/access-groups?limit=100', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+        ]);
+        
+        if (userResponse.ok && allGroupsResponse.ok) {
+            const userData = await userResponse.json();
+            const allGroupsData = await allGroupsResponse.json();
+            
+            // Set user info
+            document.getElementById('manageUserId').value = userId;
+            document.getElementById('manageUserName').textContent = userName;
+            
+            // Create checkbox list
+            const checkboxList = document.getElementById('accessGroupsCheckboxList');
+            const userAccessGroupIds = userData.accessGroups.map(ag => ag.id);
+            
+            checkboxList.innerHTML = allGroupsData.accessGroups.map(group => `
+                <div class="checkbox-item">
+                    <input type="checkbox" 
+                           id="accessGroup_${group.id}" 
+                           name="accessGroupIds" 
+                           value="${group.id}" 
+                           ${userAccessGroupIds.includes(group.id) ? 'checked' : ''}>
+                    <label for="accessGroup_${group.id}">
+                        <strong>${group.name}</strong>
+                        ${group.description ? `<br><small>${group.description}</small>` : ''}
+                    </label>
+                </div>
+            `).join('');
+            
+            document.getElementById('userAccessGroupsModal').classList.add('active');
+        } else {
+            showToast('Failed to load access groups data', 'error');
+        }
+    } catch (error) {
+        console.error('Failed to load user access groups:', error);
+        showToast('Failed to load user access groups', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Handle user access groups form submission
+async function handleUserAccessGroupsUpdate(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const userId = formData.get('userId');
+    
+    // Get all checked access group IDs
+    const selectedAccessGroupIds = [];
+    const checkboxes = event.target.querySelectorAll('input[name="accessGroupIds"]:checked');
+    checkboxes.forEach(checkbox => {
+        selectedAccessGroupIds.push(parseInt(checkbox.value));
+    });
+    
+    try {
+        showLoading();
+        const response = await fetch(`/api/users/${userId}/access-groups`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                accessGroupIds: selectedAccessGroupIds
+            })
+        });
+        
+        if (response.ok) {
+            showToast('User access groups updated successfully', 'success');
+            closeModal('userAccessGroupsModal');
+            loadUsers(); // Refresh the users list
+        } else {
+            const error = await response.json();
+            showToast(error.message || 'Failed to update user access groups', 'error');
+        }
+    } catch (error) {
+        console.error('Failed to update user access groups:', error);
+        showToast('Failed to update user access groups', 'error');
+    } finally {
+        hideLoading();
     }
 }
