@@ -509,9 +509,11 @@ async function editDoor(doorId) {
             document.getElementById('editDoorEsp32Mac').value = door.esp32Mac || '';
             
             document.getElementById('editDoorModal').classList.add('active');
+        } else {
+            showToast('Failed to load door details', 'error');
         }
     } catch (error) {
-        console.error('Error loading door:', error);
+        console.error('Edit door error:', error);
         showToast('Failed to load door details', 'error');
     }
 }
@@ -523,7 +525,7 @@ async function handleEditDoor(event) {
     
     const formData = new FormData(event.target);
     const doorId = formData.get('id');
-    const updateData = {
+    const doorData = {
         name: formData.get('name'),
         location: formData.get('location'),
         esp32Ip: formData.get('esp32Ip'),
@@ -537,15 +539,15 @@ async function handleEditDoor(event) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
-            body: JSON.stringify(updateData)
+            body: JSON.stringify(doorData)
         });
         
         const data = await response.json();
         
         if (response.ok) {
-            closeModal('editDoorModal');
-            loadDoors(currentPage);
             showToast('Door updated successfully!', 'success');
+            closeModal('editDoorModal');
+            loadDoors();
         } else {
             showToast(data.message || 'Failed to update door', 'error');
         }
@@ -557,7 +559,6 @@ async function handleEditDoor(event) {
     }
 }
 
-// Delete door
 async function deleteDoor(doorId) {
     if (!confirm('Are you sure you want to delete this door?')) {
         return;
@@ -914,7 +915,7 @@ function showToast(message, type = 'info') {
 // Load access groups for door creation dropdown
 async function loadAccessGroupsForDoor() {
     try {
-        const response = await fetch('/api/access-groups', {
+        const response = await fetch('/api/access-groups?limit=100', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -931,6 +932,8 @@ async function loadAccessGroupsForDoor() {
                 option.textContent = accessGroup.name;
                 select.appendChild(option);
             });
+        } else {
+            console.error('Failed to load access groups:', response.status);
         }
     } catch (error) {
         console.error('Error loading access groups for door:', error);
@@ -940,7 +943,7 @@ async function loadAccessGroupsForDoor() {
 // Load access groups for user creation dropdown
 async function loadAccessGroupsForUser() {
     try {
-        const response = await fetch('/api/access-groups', {
+        const response = await fetch('/api/access-groups?limit=100', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -957,6 +960,8 @@ async function loadAccessGroupsForUser() {
                 option.textContent = accessGroup.name;
                 select.appendChild(option);
             });
+        } else {
+            console.error('Failed to load access groups:', response.status);
         }
     } catch (error) {
         console.error('Error loading access groups for user:', error);
