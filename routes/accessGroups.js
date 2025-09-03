@@ -1,5 +1,5 @@
 const express = require('express');
-const { AccessGroup } = require('../database/accessGroup');
+const AccessGroup = require('../database/accessGroup');
 const { 
   validateAccessGroup, 
   validateAccessGroupUpdate, 
