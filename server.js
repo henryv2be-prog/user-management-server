@@ -25,7 +25,23 @@ try {
   process.exit(1);
 }
 
-// Database initialization is handled by running: node database/init.js
+// Database initialization and migration
+const { execSync } = require('child_process');
+const path = require('path');
+
+// Run database initialization and migration
+try {
+  console.log('Running database initialization...');
+  execSync('node database/init.js', { stdio: 'inherit' });
+  console.log('Database initialization completed');
+  
+  console.log('Running database migration...');
+  execSync('node database/migrate.js', { stdio: 'inherit' });
+  console.log('Database migration completed');
+} catch (error) {
+  console.error('Database setup failed:', error.message);
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
