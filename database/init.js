@@ -116,10 +116,12 @@ const initDatabase = () => {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
                 access_group_id INTEGER NOT NULL,
+                granted_by INTEGER,
                 expires_at DATETIME,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
                 FOREIGN KEY (access_group_id) REFERENCES access_groups (id) ON DELETE CASCADE,
+                FOREIGN KEY (granted_by) REFERENCES users (id) ON DELETE SET NULL,
                 UNIQUE(user_id, access_group_id)
             )`, (err) => {
                 if (err) {

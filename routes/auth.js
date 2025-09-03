@@ -23,12 +23,7 @@ router.post('/login', validateLogin, async (req, res) => {
       });
     }
     
-    if (!user.isActive) {
-      return res.status(401).json({
-        error: 'Account deactivated',
-        message: 'Your account has been deactivated. Please contact an administrator.'
-      });
-    }
+    // Account is always active (is_active column removed)
     
     const isValidPassword = await user.verifyPassword(password);
     if (!isValidPassword) {

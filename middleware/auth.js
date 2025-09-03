@@ -26,9 +26,10 @@ const authenticate = async (req, res, next) => {
         });
       }
       
-      if (!user.isActive) {
-        return res.status(401).json({
-          error: 'Unauthorized',
+      // User is always active (is_active column removed)
+      // if (!user.isActive) {
+      //   return res.status(401).json({
+      //     error: 'Unauthorized',
           message: 'User account is deactivated'
         });
       }
@@ -84,7 +85,7 @@ const optionalAuth = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
         const user = await User.findById(decoded.userId);
         
-        if (user && user.isActive) {
+        if (user) {
           req.user = user;
         }
       } catch (tokenError) {

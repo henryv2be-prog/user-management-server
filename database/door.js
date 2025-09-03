@@ -113,17 +113,11 @@ class Door {
       const {
         page = 1,
         limit = 10,
-        isActive,
         search
       } = options;
       
       let query = 'SELECT * FROM doors WHERE 1=1';
       const params = [];
-      
-      if (isActive !== undefined) {
-
-        params.push(isActive ? 1 : 0);
-      }
       
       if (search) {
         query += ' AND (name LIKE ? OR location LIKE ? OR esp32_ip LIKE ?)';
@@ -151,15 +145,10 @@ class Door {
 
   static async count(options = {}) {
     return new Promise((resolve, reject) => {
-      const { isActive, search } = options;
+      const { search } = options;
       
       let query = 'SELECT COUNT(*) as count FROM doors WHERE 1=1';
       const params = [];
-      
-      if (isActive !== undefined) {
-
-        params.push(isActive ? 1 : 0);
-      }
       
       if (search) {
         query += ' AND (name LIKE ? OR location LIKE ? OR esp32_ip LIKE ?)';

@@ -62,10 +62,7 @@ const validateUserUpdate = [
     .optional()
     .isIn(['user', 'moderator', 'admin'])
     .withMessage('Role must be user, moderator, or admin'),
-  body('isActive')
-    .optional()
-    .isBoolean()
-    .withMessage('isActive must be a boolean value'),
+  // isActive removed - entities are always active
   body('emailVerified')
     .optional()
     .isBoolean()
@@ -163,10 +160,7 @@ const validatePagination = [
     .optional()
     .isIn(['user', 'moderator', 'admin'])
     .withMessage('Role must be user, moderator, or admin'),
-  query('isActive')
-    .optional()
-    .isBoolean()
-    .withMessage('isActive must be a boolean value'),
+  // isActive removed - accounts are always active
   handleValidationErrors
 ];
 
@@ -209,10 +203,7 @@ const validateDoorUpdate = [
     .optional()
     .matches(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/)
     .withMessage('ESP32 MAC must be a valid MAC address'),
-  body('isActive')
-    .optional()
-    .isBoolean()
-    .withMessage('isActive must be a boolean value'),
+  // isActive removed - entities are always active
   handleValidationErrors
 ];
 
@@ -241,10 +232,7 @@ const validateAccessGroupUpdate = [
     .trim()
     .isLength({ max: 255 })
     .withMessage('Description must be less than 255 characters'),
-  body('isActive')
-    .optional()
-    .isBoolean()
-    .withMessage('isActive must be a boolean value'),
+  // isActive removed - entities are always active
   handleValidationErrors
 ];
 

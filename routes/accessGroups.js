@@ -17,12 +17,11 @@ const router = express.Router();
 // Get all access groups (admin only)
 router.get('/', authenticate, requireAdmin, validatePagination, async (req, res) => {
   try {
-    const { page = 1, limit = 10, isActive, search } = req.query;
+    const { page = 1, limit = 10, search } = req.query;
     
     const options = {
       page: parseInt(page),
       limit: parseInt(limit),
-      isActive: isActive !== undefined ? isActive === 'true' : undefined,
       search
     };
     
@@ -177,7 +176,7 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
 router.post('/:id/users', authenticate, requireAdmin, validateId, async (req, res) => {
   try {
     const accessGroupId = parseInt(req.params.id);
-    const { userId, expiresAt } = req.body;
+    const { userId } = req.body;
     
     if (!userId) {
       return res.status(400).json({
@@ -194,7 +193,7 @@ router.post('/:id/users', authenticate, requireAdmin, validateId, async (req, re
       });
     }
     
-    const success = await accessGroup.addUser(userId, req.user.id, expiresAt);
+    const success = await accessGroup.addUser(userId, req.user.id);
     
     if (success) {
       res.json({

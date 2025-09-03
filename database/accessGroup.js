@@ -275,14 +275,14 @@ class AccessGroup {
   }
 
   // Add user to access group
-  async addUser(userId, grantedBy, expiresAt = null) {
+  async addUser(userId, grantedBy) {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(DB_PATH);
       db.run(
-        `         INSERT OR REPLACE INTO user_access_groups 
-         (user_id, access_group_id, granted_by, expires_at) 
-         VALUES (?, ?, ?, ?)`,
-        [userId, this.id, grantedBy, expiresAt],
+        `INSERT OR REPLACE INTO user_access_groups 
+         (user_id, access_group_id, granted_by) 
+         VALUES (?, ?, ?)`,
+        [userId, this.id, grantedBy],
         function(err) {
           db.close();
           if (err) {

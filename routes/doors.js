@@ -17,12 +17,11 @@ const router = express.Router();
 // Get all doors (admin only)
 router.get('/', authenticate, requireAdmin, validatePagination, async (req, res) => {
   try {
-    const { page = 1, limit = 10, isActive, search } = req.query;
+    const { page = 1, limit = 10, search } = req.query;
     
     const options = {
       page: parseInt(page),
       limit: parseInt(limit),
-      isActive: isActive !== undefined ? isActive === 'true' : undefined,
       search
     };
     
@@ -277,10 +276,10 @@ router.post('/:id/verify-access', async (req, res) => {
       });
     }
     
-    // Check if door is active
-    if (!door.isActive) {
-      return res.status(403).json({
-        error: 'Forbidden',
+    // Door is always active (is_active column removed)
+    // if (!door.isActive) {
+    //   return res.status(403).json({
+    //     error: 'Forbidden',
         message: 'Door is not active'
       });
     }

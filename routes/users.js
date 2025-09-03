@@ -17,16 +17,12 @@ const router = express.Router();
 // Get all users (admin only)
 router.get('/', authenticate, requireAdmin, async (req, res) => {
   try {
-    const { role, isActive } = req.query;
+    const { role } = req.query;
     
     const options = {};
     
     if (role) {
       options.role = role;
-    }
-    
-    if (isActive !== undefined) {
-      options.activeOnly = isActive === 'true';
     }
     
     const users = await User.findAll(options);
@@ -142,7 +138,6 @@ router.put('/:id', authenticate, validateId, authorizeSelfOrAdmin, validateUserU
     const updateData = { ...req.body };
     if (!req.user.hasRole('admin')) {
       delete updateData.role;
-      delete updateData.isActive;
     }
     
     const updatedUser = await user.update(updateData);
@@ -198,9 +193,8 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
 // Get user statistics (admin only)
 router.get('/stats/overview', authenticate, requireAdmin, async (req, res) => {
   try {
-    const [totalUsers, activeUsers, adminUsers, moderatorUsers] = await Promise.all([
+    const [totalUsers, adminUsers, moderatorUsers] = await Promise.all([
       User.count({}),
-      User.count({ isActive: true }),
       User.count({ role: 'admin' }),
       User.count({ role: 'moderator' })
     ]);

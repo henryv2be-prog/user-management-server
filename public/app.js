@@ -297,7 +297,7 @@ function displayUsers(users) {
             <td>${user.firstName} ${user.lastName}</td>
             <td>${user.email}</td>
             <td><span class="role-badge ${user.role}">${user.role}</span></td>
-            <td><span class="status-indicator ${user.isActive ? 'active' : 'inactive'}">${user.isActive ? 'Active' : 'Inactive'}</span></td>
+            <td><span class="status-indicator active">Active</span></td>
             <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}</td>
             <td>
                 <div class="action-buttons">
@@ -639,7 +639,7 @@ function displayDoors(doors) {
             <td>${door.name}</td>
             <td>${door.location}</td>
             <td>${door.esp32Ip}</td>
-            <td><span class="status-indicator ${door.isActive ? 'active' : 'inactive'}">${door.isActive ? 'Active' : 'Inactive'}</span></td>
+            <td><span class="status-indicator active">Active</span></td>
             <td>${door.lastSeen ? new Date(door.lastSeen).toLocaleString() : 'Never'}</td>
             <td>
                 <div class="action-buttons">
@@ -887,7 +887,7 @@ function displayAccessGroups(accessGroups) {
         <tr>
             <td>${group.name}</td>
             <td>${group.description || 'No description'}</td>
-            <td><span class="status-indicator ${group.isActive ? 'active' : 'inactive'}">${group.isActive ? 'Active' : 'Inactive'}</span></td>
+            <td><span class="status-indicator active">Active</span></td>
             <td>${new Date(group.createdAt).toLocaleDateString()}</td>
             <td>
                 <div class="action-buttons">
@@ -1126,7 +1126,6 @@ function displayUserAccessGroups(accessGroups) {
             <div>
                 <strong>${group.name}</strong>
                 ${group.description ? `<br><small>${group.description}</small>` : ''}
-                ${group.expires_at ? `<br><small>Expires: ${new Date(group.expires_at).toLocaleDateString()}</small>` : ''}
             </div>
             <button class="remove-btn" onclick="removeAccessGroupFromUser(${group.id})">
                 <i class="fas fa-times"></i> Remove
@@ -1137,7 +1136,6 @@ function displayUserAccessGroups(accessGroups) {
 
 async function addAccessGroupToUser() {
     const accessGroupId = document.getElementById('userAccessGroupSelect').value;
-    const expiresAt = document.getElementById('userAccessGroupExpires').value;
     
     if (!accessGroupId) {
         showToast('Please select an access group', 'error');
@@ -1154,15 +1152,13 @@ async function addAccessGroupToUser() {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
             body: JSON.stringify({ 
-                userId: parseInt(currentUserId),
-                expiresAt: expiresAt || null
+                userId: parseInt(currentUserId)
             })
         });
         
         if (response.ok) {
             showToast('Access group added to user successfully!', 'success');
             document.getElementById('userAccessGroupSelect').value = '';
-            document.getElementById('userAccessGroupExpires').value = '';
             manageUserAccessGroups(currentUserId); // Reload the modal
         } else {
             const data = await response.json();
