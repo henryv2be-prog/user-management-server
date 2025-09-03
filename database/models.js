@@ -258,11 +258,10 @@ class User {
         return new Promise((resolve, reject) => {
             const db = new sqlite3.Database(DB_PATH);
             db.all(
-                `SELECT ag.id, ag.name, ag.description, uag.granted_at, uag.expires_at
+                `SELECT ag.id, ag.name, ag.description
                  FROM access_groups ag
                  JOIN user_access_groups uag ON ag.id = uag.access_group_id
-                 WHERE uag.user_id = ?
-                 AND (uag.expires_at IS NULL OR uag.expires_at > CURRENT_TIMESTAMP)`,
+                 WHERE uag.user_id = ?`,
                 [this.id],
                 (err, rows) => {
                     db.close();
@@ -278,7 +277,7 @@ class User {
     }
 
     // Update user's access groups
-    async updateAccessGroups(accessGroupIds, grantedBy) {
+    async updateAccessGroups(accessGroupIds) {
         return new Promise((resolve, reject) => {
             const db = new sqlite3.Database(DB_PATH);
             
@@ -294,10 +293,10 @@ class User {
                 
                 // Add new access groups
                 if (accessGroupIds && accessGroupIds.length > 0) {
-                    const stmt = db.prepare('INSERT INTO user_access_groups (user_id, access_group_id, granted_by) VALUES (?, ?, ?)');
+                    const stmt = db.prepare('INSERT INTO user_access_groups (user_id, access_group_id) VALUES (?, ?)');
                     
                     accessGroupIds.forEach(accessGroupId => {
-                        stmt.run([this.id, accessGroupId, grantedBy]);
+                        stmt.run([this.id, accessGroupId]);
                     });
                     
                     stmt.finalize((err) => {
