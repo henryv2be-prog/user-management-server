@@ -197,6 +197,91 @@ function logout() {
     showLogin();
 }
 
+// ==================== AUTHENTICATION ====================
+
+// Authentication functions
+async function handleLogin(event) {
+    console.log('Login form submitted');
+    event.preventDefault();
+    showLoading();
+    
+    const formData = new FormData(event.target);
+    const loginData = {
+        email: formData.get('email'),
+        password: formData.get('password')
+    };
+    
+    console.log('Login data:', loginData);
+    
+    try {
+        console.log('Sending login request to /api/auth/login');
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(loginData)
+        });
+        
+        console.log('Login response status:', response.status);
+        const data = await response.json();
+        console.log('Login response data:', data);
+        
+        if (response.ok) {
+            localStorage.setItem('token', data.token);
+            currentUser = data.user;
+            showAuthenticatedUI();
+            loadDashboard();
+            showToast('Login successful!', 'success');
+        } else {
+            showToast(data.message || 'Login failed', 'error');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        showToast('Login failed. Please try again.', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function handleRegister(event) {
+    event.preventDefault();
+    showLoading();
+    
+    const formData = new FormData(event.target);
+    const registerData = {
+        email: formData.get('email'),
+        password: formData.get('password'),
+        firstName: formData.get('firstName'),
+        lastName: formData.get('lastName')
+    };
+    
+    try {
+        const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(registerData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('Registration successful! Please login.', 'success');
+            document.getElementById('registerForm').reset();
+            showLogin();
+        } else {
+            showToast(data.message || 'Registration failed', 'error');
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        showToast('Registration failed. Please try again.', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
 // ==================== USER MANAGEMENT ====================
 
 // Load users
