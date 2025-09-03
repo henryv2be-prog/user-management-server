@@ -320,7 +320,7 @@ router.put('/:id/access-groups', authenticate, requireAdmin, validateId, async (
     }
     
     // Update user's access groups
-    await user.updateAccessGroups(accessGroupIds, req.user.id);
+    await user.updateAccessGroups(accessGroupIds);
     
     res.json({
       message: 'User access groups updated successfully'
