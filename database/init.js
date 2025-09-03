@@ -23,12 +23,16 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
 // Initialize database tables
 const initDatabase = () => {
     return new Promise((resolve, reject) => {
+        const dbPath = path.join(__dirname, 'users.db');
+        const db = new sqlite3.Database(dbPath);
+        
         let completedTables = 0;
         const totalTables = 7; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, admin_user
         
         const checkCompletion = () => {
             completedTables++;
             if (completedTables === totalTables) {
+                db.close();
                 resolve();
             }
         };
@@ -208,21 +212,26 @@ const initDatabase = () => {
     });
 };
 
-// Run initialization
-initDatabase()
-    .then(() => {
-        console.log('Database initialization completed successfully');
-        db.close((err) => {
-            if (err) {
-                console.error('Error closing database:', err.message);
-                process.exit(1);
-            }
-            console.log('Database connection closed');
-            process.exit(0);
+// Export the initialization function
+module.exports = { initDatabase };
+
+// Run initialization if this file is run directly
+if (require.main === module) {
+    initDatabase()
+        .then(() => {
+            console.log('Database initialization completed successfully');
+            db.close((err) => {
+                if (err) {
+                    console.error('Error closing database:', err.message);
+                    process.exit(1);
+                }
+                console.log('Database connection closed');
+                process.exit(0);
+            });
+        })
+        .catch((err) => {
+            console.error('Database initialization failed:', err.message);
+            db.close();
+            process.exit(1);
         });
-    })
-    .catch((err) => {
-        console.error('Database initialization failed:', err.message);
-        db.close();
-        process.exit(1);
-    });
+}
