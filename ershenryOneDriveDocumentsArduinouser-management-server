@@ -1,0 +1,5 @@
+[33m5959f36[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m Implement step-by-step workflow: Add access group dropdowns to door and user creation forms, fix SQL syntax errors, and improve user experience
+[33m2b0ba43[m Fix SQL errors: User.create syntax and AccessGroup.addDoor column order
+[33m40c8d1f[m Fix SQL syntax error in User.create and clean up middleware/auth.js
+[33mc45804d[m Force commit - fix syntax errors
+[33m94f1cff[m Test Git functionality
