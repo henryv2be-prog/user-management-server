@@ -27,12 +27,6 @@ const authenticate = async (req, res, next) => {
       }
       
       // User is always active (is_active column removed)
-      // if (!user.isActive) {
-      //   return res.status(401).json({
-      //     error: 'Unauthorized',
-          message: 'User account is deactivated'
-        });
-      }
       
       req.user = user;
       next();
@@ -140,5 +134,3 @@ module.exports = {
   requireModerator,
   requireUser
 };
-
-

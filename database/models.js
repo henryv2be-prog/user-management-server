@@ -56,7 +56,7 @@ class User {
                 }
 
                 const sql = `INSERT INTO users (username, email, password_hash, first_name, last_name, role, email_verified)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+                            VALUES (?, ?, ?, ?, ?, ?, ?)`;
                 
                 db.run(sql, [username, email, hashedPassword, firstName, lastName, role, 0], function(err) {
                     db.close();
