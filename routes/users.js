@@ -95,7 +95,7 @@ router.post('/', authenticate, requireAdmin, validateUser, async (req, res) => {
     // If access group is specified, add the user to it
     if (accessGroupId) {
       try {
-        const { AccessGroup } = require('../database/accessGroup');
+        const AccessGroup = require('../database/accessGroup');
         const accessGroup = await AccessGroup.findById(accessGroupId);
         if (accessGroup) {
           await accessGroup.addUser(userId, req.user.id);
@@ -217,7 +217,7 @@ router.get('/stats/overview', authenticate, requireAdmin, async (req, res) => {
     
     // Get additional stats from other models
     const { Door } = require('../database/door');
-    const { AccessGroup } = require('../database/accessGroup');
+    const AccessGroup = require('../database/accessGroup');
     
     const [totalDoors, totalAccessGroups] = await Promise.all([
       Door.count(),

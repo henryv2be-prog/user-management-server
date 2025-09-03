@@ -357,4 +357,4 @@ class AccessGroup {
   }
 }
 
-module.exports = { AccessGroup };
+module.exports = AccessGroup;
