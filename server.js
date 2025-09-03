@@ -7,25 +7,6 @@ const rateLimit = require('express-rate-limit');
 const { initDatabase } = require('./database/init');
 require('dotenv').config();
 
-// Load routes with error handling - testing one by one
-let authRoutes, userRoutes, doorRoutes, accessGroupRoutes;
-
-try {
-  console.log('Loading route modules...');
-  authRoutes = require('./routes/auth');
-  console.log('Auth routes module loaded');
-  userRoutes = require('./routes/users');
-  console.log('User routes module loaded');
-  doorRoutes = require('./routes/doors');
-  console.log('Door routes module loaded');
-  accessGroupRoutes = require('./routes/accessGroups');
-  console.log('Access group routes module loaded');
-  console.log('All routes loaded successfully');
-} catch (error) {
-  console.error('Error loading routes:', error);
-  process.exit(1);
-}
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -56,7 +37,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Serve static files
 app.use(express.static('public'));
 
-// Stricter rate limiting for auth endpoints
+// Rate limiting
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // limit each IP to 10 requests per windowMs
@@ -65,7 +46,6 @@ const authLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// General rate limiting
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // limit each IP to 1000 requests per windowMs
@@ -76,16 +56,28 @@ const generalLimiter = rateLimit({
 
 app.use('/api', generalLimiter);
 
-// Routes
+// Load and setup routes
+let authRoutes, userRoutes, doorRoutes, accessGroupRoutes;
+
 try {
-  console.log('Setting up routes...');
+  console.log('Loading route modules...');
+  authRoutes = require('./routes/auth');
+  console.log('Auth routes module loaded');
+  userRoutes = require('./routes/users');
+  console.log('User routes module loaded');
+  doorRoutes = require('./routes/doors');
+  console.log('Door routes module loaded');
+  accessGroupRoutes = require('./routes/accessGroups');
+  console.log('Access group routes module loaded');
+  
+  // Setup routes
   app.use('/api/auth', authLimiter, authRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/doors', doorRoutes);
   app.use('/api/access-groups', accessGroupRoutes);
   console.log('All routes configured successfully');
 } catch (error) {
-  console.error('Error setting up routes:', error);
+  console.error('Error loading/setting up routes:', error);
   process.exit(1);
 }
 
