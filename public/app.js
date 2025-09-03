@@ -186,8 +186,6 @@ function showAuthenticatedUI() {
     showSection('dashboard');
 }
 
-
-
 function hideAllSections() {
     const sections = document.querySelectorAll('.section');
     sections.forEach(section => section.classList.remove('active'));
@@ -315,10 +313,9 @@ async function loadUsers() {
         if (response.ok) {
             const data = await response.json();
             displayUsers(data.users);
-            // Simple pagination - just show all users for now
-            displaySimplePagination(data.totalCount);
         } else {
-            showToast('Failed to load users', 'error');
+            const error = await response.json();
+            showToast(error.message || 'Failed to load users', 'error');
         }
     } catch (error) {
         console.error('Failed to load users:', error);
@@ -330,34 +327,24 @@ async function loadUsers() {
 
 function displayUsers(users) {
     const tbody = document.getElementById('usersTableBody');
-    tbody.innerHTML = users.map(user => `
-        <tr>
-            <td>${user.firstName} ${user.lastName}</td>
-            <td>${user.email}</td>
-            <td><span class="role-badge ${user.role}">${user.role}</span></td>
-            <td><span class="status-indicator active">Active</span></td>
-            <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class="action-btn edit" onclick="editUser(${user.id})">
-                        <i class="fas fa-edit"></i>
+    if (tbody) {
+        tbody.innerHTML = users.map(user => `
+            <tr>
+                <td>${user.firstName || ''} ${user.lastName || ''}</td>
+                <td>${user.email}</td>
+                <td><span class="role-badge ${user.role}">${user.role}</span></td>
+                <td><span class="status-indicator active">Active</span></td>
+                <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline" onclick="editUser(${user.id})">
+                        <i class="fas fa-edit"></i> Edit
                     </button>
-                    <button class="action-btn access-groups" onclick="manageUserAccessGroups(${user.id})">
-                        <i class="fas fa-shield-alt"></i>
+                    <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})" ${user.id === currentUser.id ? 'disabled' : ''}>
+                        <i class="fas fa-trash"></i> Delete
                     </button>
-                    <button class="action-btn delete" onclick="deleteUser(${user.id})" ${user.id === currentUser?.id ? 'disabled' : ''}>
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
-}
-
-function displaySimplePagination(totalCount) {
-    const paginationDiv = document.getElementById('pagination');
-    if (paginationDiv) {
-        paginationDiv.innerHTML = `<p>Total: ${totalCount} users</p>`;
+                </td>
+            </tr>
+        `).join('');
     }
 }
 
@@ -372,23 +359,26 @@ async function editUser(userId) {
         
         if (response.ok) {
             const data = await response.json();
-            // Populate edit form
-            document.getElementById('editUserId').value = data.user.id;
-            document.getElementById('editFirstName').value = data.user.firstName || '';
-            document.getElementById('editLastName').value = data.user.lastName || '';
-            document.getElementById('editEmail').value = data.user.email;
-            document.getElementById('editRole').value = data.user.role;
-            
+            populateEditUserForm(data.user);
             document.getElementById('editUserModal').classList.add('active');
         } else {
-            showToast('Failed to load user data', 'error');
+            const error = await response.json();
+            showToast(error.message || 'Failed to load user', 'error');
         }
     } catch (error) {
         console.error('Failed to load user:', error);
-        showToast('Failed to load user data', 'error');
+        showToast('Failed to load user', 'error');
     } finally {
         hideLoading();
     }
+}
+
+function populateEditUserForm(user) {
+    document.getElementById('editUserId').value = user.id;
+    document.getElementById('editFirstName').value = user.firstName || '';
+    document.getElementById('editLastName').value = user.lastName || '';
+    document.getElementById('editEmail').value = user.email;
+    document.getElementById('editRole').value = user.role;
 }
 
 async function handleEditUser(event) {
@@ -479,7 +469,8 @@ async function loadDoors() {
             displayDoors(data.doors);
             displayDoorsPagination(data.pagination);
         } else {
-            showToast('Failed to load doors', 'error');
+            const error = await response.json();
+            showToast(error.message || 'Failed to load doors', 'error');
         }
     } catch (error) {
         console.error('Failed to load doors:', error);
@@ -497,6 +488,7 @@ function displayDoors(doors) {
             <td>${door.location}</td>
             <td>${door.esp32Ip || 'N/A'}</td>
             <td>${door.esp32Mac || 'N/A'}</td>
+            <td>${door.accessGroup ? door.accessGroup.name : 'None'}</td>
             <td>${door.createdAt ? new Date(door.createdAt).toLocaleDateString() : 'N/A'}</td>
             <td>
                 <div class="action-buttons">
@@ -596,20 +588,24 @@ async function editDoor(doorId) {
         
         if (response.ok) {
             const data = await response.json();
-            // Populate edit form
-            document.getElementById('editDoorId').value = data.door.id;
-            document.getElementById('editDoorName').value = data.door.name;
-            document.getElementById('editDoorLocation').value = data.door.location;
-            document.getElementById('editDoorEsp32Ip').value = data.door.esp32Ip || '';
-            document.getElementById('editDoorEsp32Mac').value = data.door.esp32Mac || '';
+            const door = data.door;
+            
+            document.getElementById('editDoorId').value = door.id;
+            document.getElementById('editDoorName').value = door.name;
+            document.getElementById('editDoorLocation').value = door.location;
+            document.getElementById('editDoorEsp32Ip').value = door.esp32Ip || '';
+            document.getElementById('editDoorEsp32Mac').value = door.esp32Mac || '';
+            
+            // Load access groups for the edit dropdown and set current selection
+            await loadAccessGroupsForEditDoor(door.accessGroupId);
             
             document.getElementById('editDoorModal').classList.add('active');
         } else {
-            showToast('Failed to load door data', 'error');
+            showToast('Failed to load door details', 'error');
         }
     } catch (error) {
-        console.error('Failed to load door:', error);
-        showToast('Failed to load door data', 'error');
+        console.error('Edit door error:', error);
+        showToast('Failed to load door details', 'error');
     } finally {
         hideLoading();
     }
@@ -618,6 +614,7 @@ async function editDoor(doorId) {
 // Handle edit door form submission
 async function handleEditDoor(event) {
     event.preventDefault();
+    showLoading();
     
     const formData = new FormData(event.target);
     const doorId = formData.get('id');
@@ -625,11 +622,11 @@ async function handleEditDoor(event) {
         name: formData.get('name'),
         location: formData.get('location'),
         esp32Ip: formData.get('esp32Ip'),
-        esp32Mac: formData.get('esp32Mac')
+        esp32Mac: formData.get('esp32Mac'),
+        accessGroupId: formData.get('accessGroupId') || null
     };
     
     try {
-        showLoading();
         const response = await fetch(`/api/doors/${doorId}`, {
             method: 'PUT',
             headers: {
@@ -730,7 +727,6 @@ function displayAccessGroups(accessGroups) {
         <tr>
             <td>${group.name}</td>
             <td>${group.description || 'No description'}</td>
-            <td><span class="status-indicator active">Active</span></td>
             <td>${new Date(group.createdAt).toLocaleDateString()}</td>
             <td>
                 <div class="action-buttons">
@@ -1102,6 +1098,30 @@ async function loadAccessGroupsForDoor() {
         }
     } catch (error) {
         console.error('Failed to load access groups for door:', error);
+    }
+}
+
+// Load access groups for door edit dropdown
+async function loadAccessGroupsForEditDoor(currentAccessGroupId = null) {
+    try {
+        const response = await fetch('/api/access-groups?limit=100', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const select = document.getElementById('editDoorAccessGroup');
+            if (select && data.accessGroups && Array.isArray(data.accessGroups)) {
+                select.innerHTML = '<option value="">Select Access Group (Optional)</option>' +
+                    data.accessGroups.map(group => 
+                        `<option value="${group.id}" ${group.id == currentAccessGroupId ? 'selected' : ''}>${group.name}</option>`
+                    ).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load access groups for door edit:', error);
     }
 }
 
