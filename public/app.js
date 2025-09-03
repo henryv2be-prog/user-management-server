@@ -500,13 +500,24 @@ async function loadDoors() {
 
 function displayDoors(doors) {
     const tbody = document.getElementById('doorsTableBody');
-    tbody.innerHTML = doors.map(door => `
+    tbody.innerHTML = doors.map(door => {
+        // Determine if door is online (last seen within 5 minutes)
+        const isOnline = door.lastSeen && 
+                        (new Date() - new Date(door.lastSeen)) < 5 * 60 * 1000;
+        
+        return `
         <tr>
             <td>${door.name}</td>
             <td>${door.location}</td>
             <td>${door.esp32Ip || 'N/A'}</td>
             <td>${door.esp32Mac || 'N/A'}</td>
             <td>${door.accessGroup ? door.accessGroup.name : 'None'}</td>
+            <td>
+                <span class="status-indicator ${isOnline ? 'online' : 'offline'}">
+                    <i class="fas ${isOnline ? 'fa-circle' : 'fa-circle'}"></i>
+                    ${isOnline ? 'Online' : 'Offline'}
+                </span>
+            </td>
             <td>${door.createdAt ? new Date(door.createdAt).toLocaleDateString() : 'N/A'}</td>
             <td>
                 <div class="action-buttons">
@@ -519,7 +530,8 @@ function displayDoors(doors) {
                 </div>
             </td>
         </tr>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function displayDoorsPagination(pagination) {

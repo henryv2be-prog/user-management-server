@@ -179,8 +179,8 @@
                     <input type="text" id="doorSearchInput" placeholder="Search doors..." onkeyup="searchDoors()">
                     <select id="doorStatusFilter" onchange="filterDoors()">
                         <option value="">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
                     </select>
                 </div>
 
@@ -193,6 +193,7 @@
                                 <th>ESP32 IP</th>
                                 <th>ESP32 MAC</th>
                                 <th>Access Group</th>
+                                <th>Status</th>
                                 <th>Created</th>
                                 <th>Actions</th>
                             </tr>
