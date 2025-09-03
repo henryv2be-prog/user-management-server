@@ -1,12 +1,25 @@
 // Global variables
+console.log('App.js loaded successfully');
 let currentUser = null;
 let currentPage = 1;
 let currentFilters = {};
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded - Initializing app');
     checkAuthStatus();
     setupEventListeners();
+    
+    // Test if login button exists and add click handler
+    const loginButton = document.querySelector('#loginForm button[type="submit"]');
+    if (loginButton) {
+        console.log('Login button found, adding click handler');
+        loginButton.addEventListener('click', function(e) {
+            console.log('Login button clicked!');
+        });
+    } else {
+        console.error('Login button not found!');
+    }
 });
 
 // Check if user is authenticated
@@ -201,6 +214,7 @@ function logout() {
 
 // Authentication functions
 async function handleLogin(event) {
+    console.log('=== LOGIN FUNCTION CALLED ===');
     console.log('Login form submitted');
     event.preventDefault();
     showLoading();
