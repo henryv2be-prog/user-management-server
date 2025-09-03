@@ -321,8 +321,8 @@ class AccessGroup {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(DB_PATH);
       db.run(
-        'INSERT OR IGNORE INTO door_access_groups (access_group_id, door_id) VALUES (?, ?)',
-        [this.id, doorId],
+        'INSERT OR IGNORE INTO door_access_groups (door_id, access_group_id) VALUES (?, ?)',
+        [doorId, this.id],
         function(err) {
           db.close();
           if (err) {
@@ -358,4 +358,3 @@ class AccessGroup {
 }
 
 module.exports = { AccessGroup };
-
