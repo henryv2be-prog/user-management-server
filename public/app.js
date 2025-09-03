@@ -1159,9 +1159,11 @@ async function loadAccessGroupsForUser() {
 // Manage user access groups with checkboxes
 async function manageUserAccessGroups(userId, userName) {
     try {
+        console.log('Managing access groups for user:', userId, userName);
         showLoading();
         
         // Load user's current access groups and all available access groups
+        console.log('Fetching user access groups and all access groups...');
         const [userResponse, allGroupsResponse] = await Promise.all([
             fetch(`/api/users/${userId}/access-groups`, {
                 headers: {
@@ -1175,9 +1177,15 @@ async function manageUserAccessGroups(userId, userName) {
             })
         ]);
         
+        console.log('User response status:', userResponse.status);
+        console.log('All groups response status:', allGroupsResponse.status);
+        
         if (userResponse.ok && allGroupsResponse.ok) {
             const userData = await userResponse.json();
             const allGroupsData = await allGroupsResponse.json();
+            
+            console.log('User data:', userData);
+            console.log('All groups data:', allGroupsData);
             
             // Set user info
             document.getElementById('manageUserId').value = userId;
@@ -1203,6 +1211,21 @@ async function manageUserAccessGroups(userId, userName) {
             
             document.getElementById('userAccessGroupsModal').classList.add('active');
         } else {
+            console.error('API responses not ok:', {
+                userResponse: userResponse.status,
+                allGroupsResponse: allGroupsResponse.status
+            });
+            
+            if (!userResponse.ok) {
+                const userError = await userResponse.json();
+                console.error('User access groups API error:', userError);
+            }
+            
+            if (!allGroupsResponse.ok) {
+                const groupsError = await allGroupsResponse.json();
+                console.error('All access groups API error:', groupsError);
+            }
+            
             showToast('Failed to load access groups data', 'error');
         }
     } catch (error) {
