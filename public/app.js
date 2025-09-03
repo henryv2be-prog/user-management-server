@@ -516,7 +516,7 @@ function displayDoors(doors) {
             <td>${door.accessGroup ? door.accessGroup.name : 'None'}</td>
             <td>
                 <span class="status-indicator ${isOnline ? 'online' : 'offline'}">
-                    <i class="fas ${isOnline ? 'fa-circle' : 'fa-circle'}"></i>
+                    <i class="fas fa-circle"></i>
                     ${isOnline ? 'Online' : 'Offline'}
                 </span>
             </td>
@@ -534,6 +534,48 @@ function displayDoors(doors) {
         </tr>
         `;
     }).join('');
+}
+
+// Update only the status column of doors table (prevents blinking)
+async function updateDoorsStatusOnly() {
+    try {
+        // NO showLoading() call here - silent update
+        const response = await fetch('/api/doors', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const tbody = document.getElementById('doorsTableBody');
+            const rows = tbody.querySelectorAll('tr');
+            
+            // Update only the status column for each row
+            data.doors.forEach((door, index) => {
+                if (rows[index]) {
+                    const statusCell = rows[index].cells[5]; // Status column (6th column, index 5)
+                    if (statusCell) {
+                        // Determine if door is online (last seen within 10 seconds)
+                        const isOnline = door.lastSeen && 
+                                        (new Date() - new Date(door.lastSeen)) < 10 * 1000;
+                        
+                        statusCell.innerHTML = `
+                            <span class="status-indicator ${isOnline ? 'online' : 'offline'}">
+                                <i class="fas fa-circle"></i>
+                                ${isOnline ? 'Online' : 'Offline'}
+                            </span>
+                        `;
+                    }
+                }
+            });
+        }
+        // NO hideLoading() call here - silent update
+    } catch (error) {
+        console.error('Failed to update doors status:', error);
+        // Fall back to full refresh if status-only update fails
+        loadDoors();
+    }
 }
 
 function displayDoorsPagination(pagination) {
@@ -1113,8 +1155,8 @@ function showSection(sectionName) {
         // Start auto-refresh for doors table (every 5 seconds for real-time status)
         autoRefreshInterval = setInterval(() => {
             if (currentSection === 'doors') {
-                console.log('Auto-refreshing doors for online status...');
-                loadDoors();
+                console.log('Auto-refreshing doors status only...');
+                updateDoorsStatusOnly();
             }
         }, 5000); // 5 seconds
     } else if (sectionName === 'accessGroups') {
