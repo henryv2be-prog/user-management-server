@@ -149,6 +149,7 @@
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Role</th>
+                                <th>Status</th>
                                 <th>Created</th>
                                 <th>Actions</th>
                             </tr>
@@ -182,8 +183,8 @@
                         <option value="inactive">Inactive</option>
                     </select>
                 </div>
-                
-                <div class="table-container">
+
+                <div class="doors-table-container">
                     <table class="doors-table" id="doorsTable">
                         <thead>
                             <tr>
@@ -191,6 +192,7 @@
                                 <th>Location</th>
                                 <th>ESP32 IP</th>
                                 <th>ESP32 MAC</th>
+                                <th>Access Group</th>
                                 <th>Created</th>
                                 <th>Actions</th>
                             </tr>
@@ -224,8 +226,8 @@
                         <option value="inactive">Inactive</option>
                     </select>
                 </div>
-                
-                <div class="table-container">
+
+                <div class="access-groups-table-container">
                     <table class="access-groups-table" id="accessGroupsTable">
                         <thead>
                             <tr>
@@ -454,8 +456,8 @@
     <div id="editDoorModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Edit Door</h2>
-                <button class="modal-close" onclick="closeModal('editDoorModal')">&times;</button>
+                <h3><i class="fas fa-edit"></i> Edit Door</h3>
+                <span class="close" onclick="closeModal('editDoorModal')">&times;</span>
             </div>
             <form id="editDoorForm" onsubmit="handleEditDoor(event)">
                 <input type="hidden" id="editDoorId" name="id">
@@ -476,14 +478,13 @@
                     <input type="text" id="editDoorEsp32Mac" name="esp32Mac">
                 </div>
                 <div class="form-group">
-                    <label for="editDoorIsActive">Status</label>
-                    <select id="editDoorIsActive" name="isActive" required>
-                        <option value="1">Active</option>
-                        <option value="0">Inactive</option>
+                    <label for="editDoorAccessGroup">Access Group</label>
+                    <select id="editDoorAccessGroup" name="accessGroupId">
+                        <option value="">Select Access Group (Optional)</option>
                     </select>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('editDoorModal')">Cancel</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editDoorModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">Update Door</button>
                 </div>
             </form>
