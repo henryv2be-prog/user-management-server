@@ -141,15 +141,15 @@
                         <option value="inactive">Inactive</option>
                     </select>
                 </div>
-                
-                <div class="table-container">
+
+                <div class="users-table-container">
                     <table class="users-table" id="usersTable">
                         <thead>
                             <tr>
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Role</th>
-                                <th>Status</th>
+                                <th>Access Groups</th>
                                 <th>Created</th>
                                 <th>Actions</th>
                             </tr>
@@ -352,13 +352,6 @@
                         <option value="admin">Admin</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="editIsActive">Status</label>
-                    <select id="editIsActive" name="isActive" required>
-                        <option value="1">Active</option>
-                        <option value="0">Inactive</option>
-                    </select>
-                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" onclick="closeModal('editUserModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">Update User</button>
@@ -395,22 +388,24 @@
     <div id="userAccessGroupsModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Manage User Access Groups</h2>
+                <h2><i class="fas fa-shield-alt"></i> Manage User Access Groups</h2>
                 <button class="modal-close" onclick="closeModal('userAccessGroupsModal')">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="userAccessGroupSelect">Add to Access Group</label>
-                    <select id="userAccessGroupSelect">
-                        <option value="">Select Access Group</option>
-                    </select>
-                    <button class="btn btn-primary" onclick="addUserToAccessGroup()">Add</button>
+            <form id="userAccessGroupsForm" onsubmit="handleUserAccessGroupsUpdate(event)">
+                <input type="hidden" id="manageUserId" name="userId">
+                <div class="modal-body">
+                    <p>Select the access groups for <strong id="manageUserName">User</strong>:</p>
+                    <div id="accessGroupsCheckboxList" class="checkbox-list">
+                        <!-- Access groups checkboxes will be loaded here -->
+                    </div>
                 </div>
-                
-                <div id="userAccessGroupsList">
-                    <!-- User's access groups will be loaded here -->
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('userAccessGroupsModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Access Groups
+                    </button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 
