@@ -236,6 +236,291 @@ const validateAccessGroupUpdate = [
   handleValidationErrors
 ];
 
+// Site validation rules
+const validateSite = [
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Site name must be between 2 and 100 characters'),
+  body('description')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Description must be less than 500 characters'),
+  body('address')
+    .optional()
+    .trim()
+    .isLength({ max: 255 })
+    .withMessage('Address must be less than 255 characters'),
+  body('timezone')
+    .optional()
+    .isLength({ min: 3, max: 50 })
+    .withMessage('Timezone must be between 3 and 50 characters'),
+  handleValidationErrors
+];
+
+const validateSiteUpdate = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Site name must be between 2 and 100 characters'),
+  body('description')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Description must be less than 500 characters'),
+  body('address')
+    .optional()
+    .trim()
+    .isLength({ max: 255 })
+    .withMessage('Address must be less than 255 characters'),
+  body('timezone')
+    .optional()
+    .isLength({ min: 3, max: 50 })
+    .withMessage('Timezone must be between 3 and 50 characters'),
+  handleValidationErrors
+];
+
+// Area validation rules
+const validateArea = [
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Area name must be between 2 and 100 characters'),
+  body('description')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Description must be less than 500 characters'),
+  body('siteId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Site ID must be a positive integer'),
+  body('parentAreaId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Parent area ID must be a positive integer'),
+  handleValidationErrors
+];
+
+const validateAreaUpdate = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Area name must be between 2 and 100 characters'),
+  body('description')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Description must be less than 500 characters'),
+  body('siteId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Site ID must be a positive integer'),
+  body('parentAreaId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Parent area ID must be a positive integer'),
+  handleValidationErrors
+];
+
+// Power monitoring validation rules
+const validatePowerMonitoring = [
+  body('doorId')
+    .isInt({ min: 1 })
+    .withMessage('Door ID must be a positive integer'),
+  body('voltage')
+    .isFloat({ min: 0, max: 50 })
+    .withMessage('Voltage must be between 0 and 50 volts'),
+  body('current')
+    .isFloat({ min: 0, max: 10 })
+    .withMessage('Current must be between 0 and 10 amps'),
+  body('power')
+    .optional()
+    .isFloat({ min: 0, max: 500 })
+    .withMessage('Power must be between 0 and 500 watts'),
+  body('batteryLevel')
+    .optional()
+    .isInt({ min: 0, max: 100 })
+    .withMessage('Battery level must be between 0 and 100 percent'),
+  body('temperature')
+    .optional()
+    .isFloat({ min: -40, max: 85 })
+    .withMessage('Temperature must be between -40 and 85 degrees Celsius'),
+  handleValidationErrors
+];
+
+// Door status validation rules
+const validateDoorStatus = [
+  body('doorId')
+    .isInt({ min: 1 })
+    .withMessage('Door ID must be a positive integer'),
+  body('status')
+    .isIn(['open', 'closed', 'locked', 'unlocked'])
+    .withMessage('Status must be one of: open, closed, locked, unlocked'),
+  body('locked')
+    .optional()
+    .isBoolean()
+    .withMessage('Locked must be a boolean value'),
+  handleValidationErrors
+];
+
+// Camera validation rules
+const validateCamera = [
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Camera name must be between 2 and 100 characters'),
+  body('doorId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Door ID must be a positive integer'),
+  body('areaId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Area ID must be a positive integer'),
+  body('ipAddress')
+    .optional()
+    .isIP()
+    .withMessage('IP address must be a valid IP address'),
+  body('port')
+    .optional()
+    .isInt({ min: 1, max: 65535 })
+    .withMessage('Port must be between 1 and 65535'),
+  body('username')
+    .optional()
+    .trim()
+    .isLength({ max: 50 })
+    .withMessage('Username must be less than 50 characters'),
+  body('password')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Password must be less than 100 characters'),
+  body('streamUrl')
+    .optional()
+    .isURL()
+    .withMessage('Stream URL must be a valid URL'),
+  body('recordingEnabled')
+    .optional()
+    .isBoolean()
+    .withMessage('Recording enabled must be a boolean value'),
+  body('motionDetection')
+    .optional()
+    .isBoolean()
+    .withMessage('Motion detection must be a boolean value'),
+  handleValidationErrors
+];
+
+const validateCameraUpdate = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Camera name must be between 2 and 100 characters'),
+  body('doorId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Door ID must be a positive integer'),
+  body('areaId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Area ID must be a positive integer'),
+  body('ipAddress')
+    .optional()
+    .isIP()
+    .withMessage('IP address must be a valid IP address'),
+  body('port')
+    .optional()
+    .isInt({ min: 1, max: 65535 })
+    .withMessage('Port must be between 1 and 65535'),
+  body('username')
+    .optional()
+    .trim()
+    .isLength({ max: 50 })
+    .withMessage('Username must be less than 50 characters'),
+  body('password')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Password must be less than 100 characters'),
+  body('streamUrl')
+    .optional()
+    .isURL()
+    .withMessage('Stream URL must be a valid URL'),
+  body('recordingEnabled')
+    .optional()
+    .isBoolean()
+    .withMessage('Recording enabled must be a boolean value'),
+  body('motionDetection')
+    .optional()
+    .isBoolean()
+    .withMessage('Motion detection must be a boolean value'),
+  handleValidationErrors
+];
+
+// License validation rules
+const validateLicense = [
+  body('licenseType')
+    .isIn(['trial', 'basic', 'professional', 'enterprise'])
+    .withMessage('License type must be one of: trial, basic, professional, enterprise'),
+  body('features')
+    .optional()
+    .isArray()
+    .withMessage('Features must be an array'),
+  body('maxUsers')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Max users must be a positive integer'),
+  body('maxDoors')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Max doors must be a positive integer'),
+  body('maxSites')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Max sites must be a positive integer'),
+  body('expiresAt')
+    .optional()
+    .isISO8601()
+    .withMessage('Expires at must be a valid ISO 8601 date'),
+  handleValidationErrors
+];
+
+const validateLicenseUpdate = [
+  body('licenseType')
+    .optional()
+    .isIn(['trial', 'basic', 'professional', 'enterprise'])
+    .withMessage('License type must be one of: trial, basic, professional, enterprise'),
+  body('features')
+    .optional()
+    .isArray()
+    .withMessage('Features must be an array'),
+  body('maxUsers')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Max users must be a positive integer'),
+  body('maxDoors')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Max doors must be a positive integer'),
+  body('maxSites')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Max sites must be a positive integer'),
+  body('expiresAt')
+    .optional()
+    .isISO8601()
+    .withMessage('Expires at must be a valid ISO 8601 date'),
+  body('isActive')
+    .optional()
+    .isBoolean()
+    .withMessage('Is active must be a boolean value'),
+  handleValidationErrors
+];
+
 module.exports = {
   handleValidationErrors,
   validateUser,
@@ -249,6 +534,16 @@ module.exports = {
   validateDoor,
   validateDoorUpdate,
   validateAccessGroup,
-  validateAccessGroupUpdate
+  validateAccessGroupUpdate,
+  validateSite,
+  validateSiteUpdate,
+  validateArea,
+  validateAreaUpdate,
+  validatePowerMonitoring,
+  validateDoorStatus,
+  validateCamera,
+  validateCameraUpdate,
+  validateLicense,
+  validateLicenseUpdate
 };
 

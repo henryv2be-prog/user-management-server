@@ -1,5 +1,164 @@
 # SimplifiAccess Changelog
 
+## [1.2.0] - 2024-01-05
+
+### Major Features Added
+- **Multi-Site Management System**
+  - Complete site management with hierarchical organization
+  - Site-specific door and area management
+  - Timezone support for each site
+  - Cross-site reporting and analytics
+
+- **Advanced Area/Zone Management**
+  - Hierarchical area organization with parent-child relationships
+  - Area-specific door and camera assignments
+  - Zone-based access control and reporting
+  - Nested area structures for complex facilities
+
+- **Power Monitoring for ESP32 Devices**
+  - Real-time power consumption tracking
+  - Battery level monitoring and alerts
+  - Temperature monitoring for device health
+  - Power statistics and historical data
+  - Automatic cleanup of old power data
+
+- **Enhanced Door Access Control**
+  - QR code access with secure token validation
+  - NFC card reader integration and management
+  - Door Position Sensor (DPS) integration
+  - Multiple sensor types: magnetic, reed switch, ultrasonic, PIR
+  - Real-time door status tracking (open/closed/locked/unlocked)
+  - Emergency door override functionality
+
+- **Camera Integration System**
+  - IP camera management and configuration
+  - Live stream URL generation
+  - Snapshot capture capabilities
+  - Motion detection configuration
+  - Recording management
+  - Camera health monitoring and connection testing
+
+- **Licensing Framework**
+  - Multi-tier licensing system (trial, basic, professional, enterprise)
+  - Feature-based access control
+  - Usage limits and monitoring
+  - License validation and status tracking
+  - Automatic license expiration handling
+
+- **Offline Fallback System**
+  - Intelligent caching for offline operation
+  - Local access rule storage
+  - Offline access decision making
+  - Automatic sync when connectivity restored
+  - Cache management and cleanup
+
+- **ESP32 Mesh Networking**
+  - Distributed door control network
+  - Automatic node discovery and registration
+  - Message routing and broadcasting
+  - Network topology management
+  - Health monitoring and statistics
+
+- **ESP32 Web Server Configuration**
+  - Direct device configuration interface
+  - WiFi setup and management
+  - Server connection configuration
+  - Device-specific settings management
+
+### Database Enhancements
+- **New Tables Added:**
+  - `sites` - Multi-site management
+  - `areas` - Hierarchical area/zone management
+  - `power_monitoring` - ESP32 power data
+  - `door_status` - Real-time door status
+  - `door_sensors` - Sensor configuration
+  - `cameras` - Camera management
+  - `licenses` - Licensing system
+  - `offline_cache` - Offline data storage
+
+- **Enhanced Door Table:**
+  - Added `site_id` for multi-site support
+  - Added `area_id` for zone management
+  - Added `access_type` (card, qr, nfc, biometric)
+  - Added `override_enabled` for emergency access
+  - Added `mesh_node_id` for mesh networking
+
+### API Endpoints Added
+- `/api/sites` - Site management
+- `/api/areas` - Area/zone management
+- `/api/power-monitoring` - Power data management
+- `/api/door-status` - Door status management
+- `/api/cameras` - Camera management
+- `/api/licenses` - License management
+- `/api/offline-cache` - Offline cache management
+
+### ESP32 Integration
+- **Enhanced Heartbeat System**
+  - Extended device information reporting
+  - Power monitoring data transmission
+  - Temperature and health metrics
+  - Mesh network status reporting
+
+- **QR Code Access**
+  - Secure token-based access codes
+  - Time-limited access validation
+  - Multiple QR code types (access, config, user, mesh)
+
+- **NFC Card Support**
+  - Card UID validation and lookup
+  - Access group association
+  - Card data processing and validation
+
+- **Sensor Integration**
+  - DPS (Door Position Sensor) support
+  - Multiple sensor type compatibility
+  - Real-time sensor data processing
+
+### Testing and Quality Assurance
+- **Comprehensive ESP32 Test Suite**
+  - Automated workflow testing
+  - Component integration testing
+  - Mesh network testing
+  - QR code and NFC testing
+  - Power monitoring validation
+
+- **Test Coverage:**
+  - Heartbeat system validation
+  - Door control functionality
+  - Power monitoring accuracy
+  - Door status updates
+  - Access control methods
+  - Sensor integration
+  - Mesh networking
+  - Offline fallback
+  - Web server configuration
+
+### Utility Classes Added
+- `QRCodeGenerator` - QR code generation and validation
+- `NFCHandler` - NFC card processing and management
+- `ESPMeshNetwork` - Mesh network management
+- `ESP32TestWorkflow` - Comprehensive testing framework
+
+### Dependencies Added
+- `qrcode ^1.5.3` - QR code generation
+- `nfc-pcsc ^0.7.0` - NFC card reader support
+- `ws ^8.14.2` - WebSocket support for real-time communication
+- `node-cron ^3.0.3` - Scheduled task management
+
+### Performance Improvements
+- Enhanced database indexing for new tables
+- Optimized query performance for large datasets
+- Improved memory management for power monitoring data
+- Efficient cache management for offline operations
+
+### Security Enhancements
+- Secure QR code token validation
+- NFC card data encryption
+- License key validation and protection
+- Enhanced access control validation
+
+---
+
 ## [1.1.0] - 2024-01-04
 
 ### Added

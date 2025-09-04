@@ -1,6 +1,6 @@
 {
   "name": "user-management-server",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Linux-based cloud web server for user management",
   "main": "server.js",
   "scripts": {
@@ -29,7 +29,11 @@
     "dotenv": "^16.3.1",
     "compression": "^1.7.4",
     "morgan": "^1.10.0",
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "qrcode": "^1.5.3",
+    "nfc-pcsc": "^0.7.0",
+    "ws": "^8.14.2",
+    "node-cron": "^3.0.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.2",
