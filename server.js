@@ -57,7 +57,7 @@ const generalLimiter = rateLimit({
 app.use('/api', generalLimiter);
 
 // Load and setup routes
-let authRoutes, userRoutes, doorRoutes, accessGroupRoutes;
+let authRoutes, userRoutes, doorRoutes, accessGroupRoutes, siteRoutes, areaRoutes, powerMonitoringRoutes, doorStatusRoutes, cameraRoutes, licenseRoutes, offlineCacheRoutes;
 
 try {
   console.log('Loading route modules...');
@@ -69,12 +69,33 @@ try {
   console.log('Door routes module loaded');
   accessGroupRoutes = require('./routes/accessGroups');
   console.log('Access group routes module loaded');
+  siteRoutes = require('./routes/sites');
+  console.log('Site routes module loaded');
+  areaRoutes = require('./routes/areas');
+  console.log('Area routes module loaded');
+  powerMonitoringRoutes = require('./routes/powerMonitoring');
+  console.log('Power monitoring routes module loaded');
+  doorStatusRoutes = require('./routes/doorStatus');
+  console.log('Door status routes module loaded');
+  cameraRoutes = require('./routes/cameras');
+  console.log('Camera routes module loaded');
+  licenseRoutes = require('./routes/licenses');
+  console.log('License routes module loaded');
+  offlineCacheRoutes = require('./routes/offlineCache');
+  console.log('Offline cache routes module loaded');
   
   // Setup routes
   app.use('/api/auth', authLimiter, authRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/doors', doorRoutes);
   app.use('/api/access-groups', accessGroupRoutes);
+  app.use('/api/sites', siteRoutes);
+  app.use('/api/areas', areaRoutes);
+  app.use('/api/power-monitoring', powerMonitoringRoutes);
+  app.use('/api/door-status', doorStatusRoutes);
+  app.use('/api/cameras', cameraRoutes);
+  app.use('/api/licenses', licenseRoutes);
+  app.use('/api/offline-cache', offlineCacheRoutes);
   console.log('All routes configured successfully');
 } catch (error) {
   console.error('Error loading/setting up routes:', error);
