@@ -447,4 +447,45 @@ router.get('/accessible/me', authenticate, async (req, res) => {
   }
 });
 
+// ESP32 Discovery endpoint
+router.post('/discover', authenticate, requireAdmin, async (req, res) => {
+  try {
+    // Mock ESP32 discovery - in a real implementation, this would scan the network
+    const mockDevices = [
+      {
+        mac: 'AA:BB:CC:DD:EE:01',
+        ip: '192.168.1.100',
+        name: 'ESP32-Door-001',
+        status: 'discovered',
+        signal: -45,
+        lastSeen: new Date().toISOString(),
+        deviceType: 'ESP32',
+        firmware: '1.0.0'
+      },
+      {
+        mac: 'AA:BB:CC:DD:EE:02',
+        ip: '192.168.1.101',
+        name: 'ESP32-Door-002',
+        status: 'discovered',
+        signal: -52,
+        lastSeen: new Date().toISOString(),
+        deviceType: 'ESP32',
+        firmware: '1.0.0'
+      }
+    ];
+    
+    res.json({
+      message: 'ESP32 discovery completed',
+      devices: mockDevices,
+      count: mockDevices.length
+    });
+  } catch (error) {
+    console.error('ESP32 discovery error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to discover ESP32 devices'
+    });
+  }
+});
+
 module.exports = router;

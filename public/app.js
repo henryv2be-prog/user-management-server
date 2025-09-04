@@ -1161,6 +1161,8 @@ function showSection(sectionName) {
         }, 5000); // 5 seconds
     } else if (sectionName === 'accessGroups') {
         loadAccessGroups();
+    } else if (sectionName === 'esp32Discovery') {
+        loadEsp32Discovery();
     } else if (sectionName === 'profile') {
         updateProfileInfo();
     }
@@ -1359,4 +1361,64 @@ async function handleUserAccessGroupsUpdate(event) {
     } finally {
         hideLoading();
     }
+}
+
+// ESP32 Discovery Functions
+async function loadEsp32Discovery() {
+    if (!currentUser || !hasRole('admin')) {
+        return;
+    }
+    
+    document.getElementById('scanStatus').innerHTML = '<p>Click "Scan for ESP32s" to discover devices on your network</p>';
+    document.getElementById('discoveredEsp32s').innerHTML = '';
+}
+
+async function startEsp32Scan() {
+    document.getElementById('scanStatus').innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Scanning network for ESP32 devices...</p>';
+    
+    try {
+        const response = await fetch('/api/doors/discover', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            document.getElementById('scanStatus').innerHTML = `<p><i class="fas fa-check-circle"></i> Scan complete! Found ${data.count} ESP32 device(s)</p>`;
+            displayDiscoveredEsp32s(data.devices);
+        } else {
+            document.getElementById('scanStatus').innerHTML = '<p><i class="fas fa-exclamation-triangle"></i> Scan failed. Please try again.</p>';
+        }
+    } catch (error) {
+        console.error('ESP32 discovery error:', error);
+        document.getElementById('scanStatus').innerHTML = '<p><i class="fas fa-exclamation-triangle"></i> Scan failed. Please try again.</p>';
+    }
+}
+
+function displayDiscoveredEsp32s(devices) {
+    const container = document.getElementById('discoveredEsp32s');
+    
+    if (!devices || devices.length === 0) {
+        container.innerHTML = '<p>No ESP32 devices found on the network</p>';
+        return;
+    }
+    
+    container.innerHTML = devices.map(device => `
+        <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px;">
+            <h4>${device.name}</h4>
+            <p><strong>MAC:</strong> ${device.mac}</p>
+            <p><strong>IP:</strong> ${device.ip}</p>
+            <p><strong>Status:</strong> ${device.status}</p>
+            <p><strong>Signal:</strong> ${device.signal} dBm</p>
+            <button class="btn btn-primary" onclick="configureEsp32('${device.mac}', '${device.ip}')">Configure</button>
+        </div>
+    `).join('');
+}
+
+function configureEsp32(mac, ip) {
+    showToast(`Configuring ESP32 ${mac} at ${ip}`, 'info');
+    // Future: Add modal for configuration
 }
