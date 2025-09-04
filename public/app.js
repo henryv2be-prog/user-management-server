@@ -1,27 +1,12 @@
 // Global variables
-console.log('App.js loaded successfully');
 let currentUser = null;
 let currentPage = 1;
 let currentFilters = {};
-let currentSection = null;
-let autoRefreshInterval = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM Content Loaded - Initializing app');
     checkAuthStatus();
     setupEventListeners();
-    
-    // Test if login button exists and add click handler
-    const loginButton = document.querySelector('#loginForm button[type="submit"]');
-    if (loginButton) {
-        console.log('Login button found, adding click handler');
-        loginButton.addEventListener('click', function(e) {
-            console.log('Login button clicked!');
-        });
-    } else {
-        console.error('Login button not found!');
-    }
 });
 
 // Check if user is authenticated
@@ -66,8 +51,6 @@ function setupEventListeners() {
 
 // Authentication functions
 async function handleLogin(event) {
-    console.log('=== LOGIN FUNCTION CALLED ===');
-    console.log('Login form submitted');
     event.preventDefault();
     showLoading();
     
@@ -77,10 +60,7 @@ async function handleLogin(event) {
         password: formData.get('password')
     };
     
-    console.log('Login data:', loginData);
-    
     try {
-        console.log('Sending login request to /api/auth/login');
         const response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: {
@@ -89,9 +69,7 @@ async function handleLogin(event) {
             body: JSON.stringify(loginData)
         });
         
-        console.log('Login response status:', response.status);
         const data = await response.json();
-        console.log('Login response data:', data);
         
         if (response.ok) {
             localStorage.setItem('token', data.token);
@@ -116,10 +94,10 @@ async function handleRegister(event) {
     
     const formData = new FormData(event.target);
     const registerData = {
-        email: formData.get('email'),
-        password: formData.get('password'),
         firstName: formData.get('firstName'),
-        lastName: formData.get('lastName')
+        lastName: formData.get('lastName'),
+        email: formData.get('email'),
+        password: formData.get('password')
     };
     
     try {
@@ -134,9 +112,11 @@ async function handleRegister(event) {
         const data = await response.json();
         
         if (response.ok) {
-            showToast('Registration successful! Please login.', 'success');
-            document.getElementById('registerForm').reset();
-            showLogin();
+            localStorage.setItem('token', data.token);
+            currentUser = data.user;
+            showAuthenticatedUI();
+            loadDashboard();
+            showToast('Registration successful!', 'success');
         } else {
             showToast(data.message || 'Registration failed', 'error');
         }
@@ -158,35 +138,22 @@ function logout() {
 // UI Navigation functions
 function showLogin() {
     hideAllSections();
-    const loginSection = document.getElementById('loginSection');
-    const registerSection = document.getElementById('registerSection');
-    
-    if (loginSection) {
-        loginSection.classList.add('active');
-    } else {
-        console.error('Login section not found');
-    }
-    
-    if (registerSection) {
-        registerSection.classList.remove('active');
-    }
+    document.getElementById('loginSection').classList.add('active');
+    document.getElementById('registerSection').classList.remove('active');
 }
 
 function showRegister() {
     hideAllSections();
-    const registerSection = document.getElementById('registerSection');
-    
-    if (registerSection) {
-        registerSection.classList.add('active');
-    } else {
-        console.error('Register section not found');
-    }
+    document.getElementById('registerSection').classList.add('active');
 }
 
 function showAuthenticatedUI() {
-    console.log('Showing authenticated UI');
-    showSection('dashboard');
+    hideAllSections();
+    document.getElementById('dashboardSection').classList.add('active');
+    updateProfileInfo();
 }
+
+
 
 function hideAllSections() {
     const sections = document.querySelectorAll('.section');
@@ -205,24 +172,22 @@ async function loadDashboard() {
     }
     
     try {
-        console.log('Loading dashboard stats...');
-        
         // Load user stats
-        const userStatsResponse = await fetch('/api/users', {
+        const userStatsResponse = await fetch('/api/users/stats/overview', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
         
         // Load door stats
-        const doorStatsResponse = await fetch('/api/doors', {
+        const doorStatsResponse = await fetch('/api/doors?limit=1', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
         
         // Load access group stats
-        const accessGroupStatsResponse = await fetch('/api/access-groups', {
+        const accessGroupStatsResponse = await fetch('/api/access-groups?limit=1', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -232,92 +197,78 @@ async function loadDashboard() {
         
         if (userStatsResponse.ok) {
             const userData = await userStatsResponse.json();
-            console.log('User stats response:', userData);
-            stats.totalUsers = userData.users?.length || userData.totalCount || 0;
-            stats.adminUsers = userData.users?.filter(u => u.role === 'admin').length || 0;
-        } else {
-            console.error('User stats failed:', userStatsResponse.status);
+            stats = { ...userData.stats };
         }
         
         if (doorStatsResponse.ok) {
             const doorData = await doorStatsResponse.json();
-            console.log('Door stats response:', doorData);
-            stats.totalDoors = doorData.doors?.length || doorData.pagination?.totalCount || 0;
-        } else {
-            console.error('Door stats failed:', doorStatsResponse.status);
+            stats.totalDoors = doorData.pagination.totalCount;
         }
         
         if (accessGroupStatsResponse.ok) {
             const accessGroupData = await accessGroupStatsResponse.json();
-            console.log('Access group stats response:', accessGroupData);
-            stats.totalAccessGroups = accessGroupData.accessGroups?.length || accessGroupData.pagination?.totalCount || 0;
-        } else {
-            console.error('Access group stats failed:', accessGroupStatsResponse.status);
+            stats.totalAccessGroups = accessGroupData.pagination.totalCount;
         }
         
-        console.log('Final dashboard stats:', stats);
-        updateDashboardStats(stats);
+        displayStats(stats);
     } catch (error) {
         console.error('Failed to load dashboard stats:', error);
     }
 }
 
-function updateDashboardStats(stats) {
+function displayStats(stats) {
     const statsGrid = document.getElementById('statsGrid');
-    if (statsGrid) {
-        statsGrid.innerHTML = `
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-users"></i>
-                </div>
-                <div class="stat-content">
-                    <h3>${stats.totalUsers || 0}</h3>
-                    <p>Total Users</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <div class="stat-icon">
-                        <i class="fas fa-door-open"></i>
-                    </div>
-                </div>
-                <div class="stat-content">
-                    <h3>${stats.totalDoors || 0}</h3>
-                    <p>Total Doors</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-layer-group"></i>
-                </div>
-                <div class="stat-content">
-                    <h3>${stats.totalAccessGroups || 0}</h3>
-                    <p>Access Groups</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-user-shield"></i>
-                </div>
-                <div class="stat-content">
-                    <h3>${stats.adminUsers || 0}</h3>
-                    <p>Admin Users</p>
-                </div>
-            </div>
-        `;
-    }
+    statsGrid.innerHTML = `
+        <div class="stat-card users">
+            <i class="fas fa-users"></i>
+            <h3>${stats.totalUsers}</h3>
+            <p>Total Users</p>
+        </div>
+        <div class="stat-card active">
+            <i class="fas fa-user-check"></i>
+            <h3>${stats.activeUsers}</h3>
+            <p>Active Users</p>
+        </div>
+        <div class="stat-card admins">
+            <i class="fas fa-user-shield"></i>
+            <h3>${stats.adminUsers}</h3>
+            <p>Administrators</p>
+        </div>
+        <div class="stat-card moderators">
+            <i class="fas fa-user-cog"></i>
+            <h3>${stats.moderatorUsers}</h3>
+            <p>Moderators</p>
+        </div>
+        <div class="stat-card doors">
+            <i class="fas fa-door-open"></i>
+            <h3>${stats.totalDoors || 0}</h3>
+            <p>Total Doors</p>
+        </div>
+        <div class="stat-card access-groups">
+            <i class="fas fa-shield-alt"></i>
+            <h3>${stats.totalAccessGroups || 0}</h3>
+            <p>Access Groups</p>
+        </div>
+    `;
 }
 
 // User management functions
-async function loadUsers() {
+async function loadUsers(page = 1) {
     if (!currentUser || !hasRole('admin')) {
-        showToast('Access denied. Admin privileges required.', 'error');
         return;
     }
     
+    showLoading();
+    currentPage = page;
+    
     try {
-        showLoading();
-        const response = await fetch('/api/users/with-access-groups', {
+        const params = new URLSearchParams({
+            page: page,
+            limit: 10,
+            ...currentFilters
+        });
+        
+        const response = await fetch(`/api/users?${params}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -326,9 +277,10 @@ async function loadUsers() {
         if (response.ok) {
             const data = await response.json();
             displayUsers(data.users);
+            // Simple pagination - just show all users for now
+            displaySimplePagination(data.totalCount);
         } else {
-            const error = await response.json();
-            showToast(error.message || 'Failed to load users', 'error');
+            showToast('Failed to load users', 'error');
         }
     } catch (error) {
         console.error('Failed to load users:', error);
@@ -340,37 +292,124 @@ async function loadUsers() {
 
 function displayUsers(users) {
     const tbody = document.getElementById('usersTableBody');
-    if (tbody) {
-        tbody.innerHTML = users.map(user => `
-            <tr>
-                <td>${user.firstName || ''} ${user.lastName || ''}</td>
-                <td>${user.email}</td>
-                <td><span class="role-badge ${user.role}">${user.role}</span></td>
-                <td>${user.accessGroups && user.accessGroups.length > 0 ? 
-                      user.accessGroups.map(ag => `<span class="access-group-tag">${ag.name}</span>`).join(' ') : 
-                      '<span class="no-groups">None</span>'}</td>
-                <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="action-btn edit" onclick="editUser(${user.id})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="action-btn access-groups" onclick="manageUserAccessGroups(${user.id}, '${user.firstName} ${user.lastName}')">
-                            <i class="fas fa-shield-alt"></i>
-                        </button>
-                        <button class="action-btn delete" onclick="deleteUser(${user.id})" ${user.id === currentUser.id ? 'disabled' : ''}>
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
+    tbody.innerHTML = users.map(user => `
+        <tr>
+            <td>${user.firstName} ${user.lastName}</td>
+            <td>${user.email}</td>
+            <td><span class="role-badge ${user.role}">${user.role}</span></td>
+            <td><span class="status-indicator active">Active</span></td>
+            <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn edit" onclick="editUser(${user.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="action-btn access-groups" onclick="manageUserAccessGroups(${user.id})">
+                        <i class="fas fa-shield-alt"></i>
+                    </button>
+                    <button class="action-btn delete" onclick="deleteUser(${user.id})" ${user.id === currentUser.id ? 'disabled' : ''}>
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function displayPagination(pagination) {
+    const paginationDiv = document.getElementById('pagination');
+    const { page, totalPages, hasNext, hasPrev } = pagination;
+    
+    let paginationHTML = `
+        <button ${!hasPrev ? 'disabled' : ''} onclick="loadUsers(${page - 1})">
+            <i class="fas fa-chevron-left"></i> Previous
+        </button>
+    `;
+    
+    for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) {
+        paginationHTML += `
+            <button class="${i === page ? 'active' : ''}" onclick="loadUsers(${i})">${i}</button>
+        `;
+    }
+    
+    paginationHTML += `
+        <button ${!hasNext ? 'disabled' : ''} onclick="loadUsers(${page + 1})">
+            Next <i class="fas fa-chevron-right"></i>
+        </button>
+    `;
+    
+    paginationDiv.innerHTML = paginationHTML;
+}
+
+function displaySimplePagination(totalCount) {
+    const paginationDiv = document.getElementById('pagination');
+    paginationDiv.innerHTML = `<span>Showing ${totalCount} users</span>`;
+}
+
+function searchUsers() {
+    const searchTerm = document.getElementById('searchInput').value;
+    currentFilters.search = searchTerm || undefined;
+    loadUsers(1);
+}
+
+function filterUsers() {
+    const roleFilter = document.getElementById('roleFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    currentFilters.role = roleFilter || undefined;
+    currentFilters.isActive = statusFilter || undefined;
+    
+    loadUsers(1);
+}
+
+// User CRUD functions
+function showCreateUserModal() {
+    document.getElementById('createUserModal').classList.add('active');
+    document.getElementById('createUserForm').reset();
+}
+
+async function handleCreateUser(event) {
+    event.preventDefault();
+    showLoading();
+    
+    const formData = new FormData(event.target);
+    const userData = {
+        firstName: formData.get('firstName'),
+        lastName: formData.get('lastName'),
+        email: formData.get('email'),
+        password: formData.get('password'),
+        role: formData.get('role')
+    };
+    
+    try {
+        const response = await fetch('/api/users', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(userData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            closeModal('createUserModal');
+            loadUsers(currentPage);
+            showToast('User created successfully!', 'success');
+        } else {
+            showToast(data.message || 'Failed to create user', 'error');
+        }
+    } catch (error) {
+        console.error('Create user error:', error);
+        showToast('Failed to create user', 'error');
+    } finally {
+        hideLoading();
     }
 }
 
 async function editUser(userId) {
     try {
-        showLoading();
         const response = await fetch(`/api/users/${userId}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -379,30 +418,26 @@ async function editUser(userId) {
         
         if (response.ok) {
             const data = await response.json();
-            populateEditUserForm(data.user);
+            const user = data.user;
+            
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editFirstName').value = user.firstName;
+            document.getElementById('editLastName').value = user.lastName;
+            document.getElementById('editEmail').value = user.email;
+            document.getElementById('editRole').value = user.role;
+            document.getElementById('editIsActive').value = user.isActive.toString();
+            
             document.getElementById('editUserModal').classList.add('active');
-        } else {
-            const error = await response.json();
-            showToast(error.message || 'Failed to load user', 'error');
         }
     } catch (error) {
-        console.error('Failed to load user:', error);
-        showToast('Failed to load user', 'error');
-    } finally {
-        hideLoading();
+        console.error('Failed to load user for editing:', error);
+        showToast('Failed to load user data', 'error');
     }
-}
-
-function populateEditUserForm(user) {
-    document.getElementById('editUserId').value = user.id;
-    document.getElementById('editFirstName').value = user.firstName || '';
-    document.getElementById('editLastName').value = user.lastName || '';
-    document.getElementById('editEmail').value = user.email;
-    document.getElementById('editRole').value = user.role;
 }
 
 async function handleEditUser(event) {
     event.preventDefault();
+    showLoading();
     
     const formData = new FormData(event.target);
     const userId = formData.get('id');
@@ -410,11 +445,11 @@ async function handleEditUser(event) {
         firstName: formData.get('firstName'),
         lastName: formData.get('lastName'),
         email: formData.get('email'),
-        role: formData.get('role')
+        role: formData.get('role'),
+        isActive: formData.get('isActive') === 'true'
     };
     
     try {
-        showLoading();
         const response = await fetch(`/api/users/${userId}`, {
             method: 'PUT',
             headers: {
@@ -424,16 +459,17 @@ async function handleEditUser(event) {
             body: JSON.stringify(userData)
         });
         
+        const data = await response.json();
+        
         if (response.ok) {
-            showToast('User updated successfully', 'success');
-            document.getElementById('editUserModal').classList.remove('active');
-            loadUsers();
+            closeModal('editUserModal');
+            loadUsers(currentPage);
+            showToast('User updated successfully!', 'success');
         } else {
-            const error = await response.json();
-            showToast(error.message || 'Failed to update user', 'error');
+            showToast(data.message || 'Failed to update user', 'error');
         }
     } catch (error) {
-        console.error('Failed to update user:', error);
+        console.error('Update user error:', error);
         showToast('Failed to update user', 'error');
     } finally {
         hideLoading();
@@ -441,12 +477,13 @@ async function handleEditUser(event) {
 }
 
 async function deleteUser(userId) {
-    if (!confirm('Are you sure you want to delete this user?')) {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
         return;
     }
     
+    showLoading();
+    
     try {
-        showLoading();
         const response = await fetch(`/api/users/${userId}`, {
             method: 'DELETE',
             headers: {
@@ -455,30 +492,126 @@ async function deleteUser(userId) {
         });
         
         if (response.ok) {
-            showToast('User deleted successfully', 'success');
-            loadUsers();
+            loadUsers(currentPage);
+            showToast('User deleted successfully!', 'success');
         } else {
-            const error = await response.json();
-            showToast(error.message || 'Failed to delete user', 'error');
+            const data = await response.json();
+            showToast(data.message || 'Failed to delete user', 'error');
         }
     } catch (error) {
-        console.error('Failed to delete user:', error);
+        console.error('Delete user error:', error);
         showToast('Failed to delete user', 'error');
     } finally {
         hideLoading();
     }
 }
 
+// Profile functions
+function updateProfileInfo() {
+    if (currentUser) {
+        document.getElementById('profileName').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
+        document.getElementById('profileEmail').textContent = currentUser.email;
+        document.getElementById('profileRole').textContent = currentUser.role;
+        document.getElementById('profileRole').className = `role-badge ${currentUser.role}`;
+    }
+}
+
+function showChangePasswordModal() {
+    document.getElementById('changePasswordModal').classList.add('active');
+    document.getElementById('changePasswordForm').reset();
+}
+
+async function handleChangePassword(event) {
+    event.preventDefault();
+    showLoading();
+    
+    const formData = new FormData(event.target);
+    const passwordData = {
+        currentPassword: formData.get('currentPassword'),
+        newPassword: formData.get('newPassword')
+    };
+    
+    try {
+        const response = await fetch('/api/auth/change-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(passwordData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            closeModal('changePasswordModal');
+            showToast('Password changed successfully!', 'success');
+        } else {
+            showToast(data.message || 'Failed to change password', 'error');
+        }
+    } catch (error) {
+        console.error('Change password error:', error);
+        showToast('Failed to change password', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Utility functions
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.add('active');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+function showToast(message, type = 'info') {
+    const toastContainer = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = type === 'success' ? 'check-circle' : 
+                 type === 'error' ? 'exclamation-circle' : 'info-circle';
+    
+    toast.innerHTML = `
+        <i class="fas fa-${icon}"></i>
+        <span>${message}</span>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+
+// Helper function to check if user has role
+function hasRole(role) {
+    return currentUser && currentUser.role === role;
+}
+
 // Door management functions
-async function loadDoors() {
+async function loadDoors(page = 1) {
     if (!currentUser || !hasRole('admin')) {
-        showToast('Access denied. Admin privileges required.', 'error');
         return;
     }
     
+    showLoading();
+    currentPage = page;
+    
     try {
-        showLoading();
-        const response = await fetch('/api/doors', {
+        const params = new URLSearchParams({
+            page: page,
+            limit: 10,
+            ...currentFilters
+        });
+        
+        const response = await fetch(`/api/doors?${params}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -489,8 +622,7 @@ async function loadDoors() {
             displayDoors(data.doors);
             displayDoorsPagination(data.pagination);
         } else {
-            const error = await response.json();
-            showToast(error.message || 'Failed to load doors', 'error');
+            showToast('Failed to load doors', 'error');
         }
     } catch (error) {
         console.error('Failed to load doors:', error);
@@ -502,25 +634,13 @@ async function loadDoors() {
 
 function displayDoors(doors) {
     const tbody = document.getElementById('doorsTableBody');
-    tbody.innerHTML = doors.map(door => {
-        // Determine if door is online (last seen within 10 seconds)
-        const isOnline = door.lastSeen && 
-                        (new Date() - new Date(door.lastSeen)) < 10 * 1000;
-        
-        return `
+    tbody.innerHTML = doors.map(door => `
         <tr>
             <td>${door.name}</td>
             <td>${door.location}</td>
-            <td>${door.esp32Ip || 'N/A'}</td>
-            <td>${door.esp32Mac || 'N/A'}</td>
-            <td>${door.accessGroup ? door.accessGroup.name : 'None'}</td>
-            <td>
-                <span class="status-indicator ${isOnline ? 'online' : 'offline'}">
-                    <i class="fas fa-circle"></i>
-                    ${isOnline ? 'Online' : 'Offline'}
-                </span>
-            </td>
-            <td>${door.createdAt ? new Date(door.createdAt).toLocaleDateString() : 'N/A'}</td>
+            <td>${door.esp32Ip}</td>
+            <td><span class="status-indicator active">Active</span></td>
+            <td>${door.lastSeen ? new Date(door.lastSeen).toLocaleString() : 'Never'}</td>
             <td>
                 <div class="action-buttons">
                     <button class="action-btn edit" onclick="editDoor(${door.id})">
@@ -532,50 +652,7 @@ function displayDoors(doors) {
                 </div>
             </td>
         </tr>
-        `;
-    }).join('');
-}
-
-// Update only the status column of doors table (prevents blinking)
-async function updateDoorsStatusOnly() {
-    try {
-        // NO showLoading() call here - silent update
-        const response = await fetch('/api/doors', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            const tbody = document.getElementById('doorsTableBody');
-            const rows = tbody.querySelectorAll('tr');
-            
-            // Update only the status column for each row
-            data.doors.forEach((door, index) => {
-                if (rows[index]) {
-                    const statusCell = rows[index].cells[5]; // Status column (6th column, index 5)
-                    if (statusCell) {
-                        // Determine if door is online (last seen within 10 seconds)
-                        const isOnline = door.lastSeen && 
-                                        (new Date() - new Date(door.lastSeen)) < 10 * 1000;
-                        
-                        statusCell.innerHTML = `
-                            <span class="status-indicator ${isOnline ? 'online' : 'offline'}">
-                                <i class="fas fa-circle"></i>
-                                ${isOnline ? 'Online' : 'Offline'}
-                            </span>
-                        `;
-                    }
-                }
-            });
-        }
-        // NO hideLoading() call here - silent update
-    } catch (error) {
-        console.error('Failed to update doors status:', error);
-        // Fall back to full refresh if status-only update fails
-        loadDoors();
-    }
+    `).join('');
 }
 
 function displayDoorsPagination(pagination) {
@@ -603,27 +680,35 @@ function displayDoorsPagination(pagination) {
     paginationDiv.innerHTML = paginationHTML;
 }
 
-// Create door
-function createDoor() {
-    loadAccessGroupsForDoor();
-    openModal('createDoorModal');
+function searchDoors() {
+    const searchTerm = document.getElementById('doorSearchInput').value;
+    currentFilters.search = searchTerm;
+    loadDoors(1);
 }
 
-// Handle create door form submission
+function filterDoors() {
+    const statusFilter = document.getElementById('doorStatusFilter').value;
+    currentFilters.isActive = statusFilter;
+    loadDoors(1);
+}
+
+function showCreateDoorModal() {
+    document.getElementById('createDoorModal').classList.add('active');
+}
+
 async function handleCreateDoor(event) {
     event.preventDefault();
+    showLoading();
     
     const formData = new FormData(event.target);
     const doorData = {
         name: formData.get('name'),
         location: formData.get('location'),
         esp32Ip: formData.get('esp32Ip'),
-        esp32Mac: formData.get('esp32Mac'),
-        accessGroupId: formData.get('accessGroupId') || null
+        esp32Mac: formData.get('esp32Mac')
     };
     
     try {
-        showLoading();
         const response = await fetch('/api/doors', {
             method: 'POST',
             headers: {
@@ -633,27 +718,26 @@ async function handleCreateDoor(event) {
             body: JSON.stringify(doorData)
         });
         
+        const data = await response.json();
+        
         if (response.ok) {
-            showToast('Door created successfully', 'success');
+            showToast('Door created successfully!', 'success');
             closeModal('createDoorModal');
             event.target.reset();
             loadDoors();
         } else {
-            const error = await response.json();
-            showToast(error.message || 'Failed to create door', 'error');
+            showToast(data.message || 'Failed to create door', 'error');
         }
     } catch (error) {
-        console.error('Failed to create door:', error);
+        console.error('Create door error:', error);
         showToast('Failed to create door', 'error');
     } finally {
         hideLoading();
     }
 }
 
-// Edit door
 async function editDoor(doorId) {
     try {
-        showLoading();
         const response = await fetch(`/api/doors/${doorId}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -667,11 +751,9 @@ async function editDoor(doorId) {
             document.getElementById('editDoorId').value = door.id;
             document.getElementById('editDoorName').value = door.name;
             document.getElementById('editDoorLocation').value = door.location;
-            document.getElementById('editDoorEsp32Ip').value = door.esp32Ip || '';
+            document.getElementById('editDoorEsp32Ip').value = door.esp32Ip;
             document.getElementById('editDoorEsp32Mac').value = door.esp32Mac || '';
-            
-            // Load access groups for the edit dropdown and set current selection
-            await loadAccessGroupsForEditDoor(door.accessGroupId);
+            document.getElementById('editDoorIsActive').value = door.isActive.toString();
             
             document.getElementById('editDoorModal').classList.add('active');
         } else {
@@ -680,12 +762,9 @@ async function editDoor(doorId) {
     } catch (error) {
         console.error('Edit door error:', error);
         showToast('Failed to load door details', 'error');
-    } finally {
-        hideLoading();
     }
 }
 
-// Handle edit door form submission
 async function handleEditDoor(event) {
     event.preventDefault();
     showLoading();
@@ -697,7 +776,7 @@ async function handleEditDoor(event) {
         location: formData.get('location'),
         esp32Ip: formData.get('esp32Ip'),
         esp32Mac: formData.get('esp32Mac'),
-        accessGroupId: formData.get('accessGroupId') || null
+        isActive: formData.get('isActive') === 'true'
     };
     
     try {
@@ -710,30 +789,31 @@ async function handleEditDoor(event) {
             body: JSON.stringify(doorData)
         });
         
+        const data = await response.json();
+        
         if (response.ok) {
-            showToast('Door updated successfully', 'success');
+            showToast('Door updated successfully!', 'success');
             closeModal('editDoorModal');
             loadDoors();
         } else {
-            const error = await response.json();
-            showToast(error.message || 'Failed to update door', 'error');
+            showToast(data.message || 'Failed to update door', 'error');
         }
     } catch (error) {
-        console.error('Failed to update door:', error);
+        console.error('Update door error:', error);
         showToast('Failed to update door', 'error');
     } finally {
         hideLoading();
     }
 }
 
-// Delete door
 async function deleteDoor(doorId) {
     if (!confirm('Are you sure you want to delete this door?')) {
         return;
     }
     
+    showLoading();
+    
     try {
-        showLoading();
         const response = await fetch(`/api/doors/${doorId}`, {
             method: 'DELETE',
             headers: {
@@ -742,30 +822,42 @@ async function deleteDoor(doorId) {
         });
         
         if (response.ok) {
-            showToast('Door deleted successfully', 'success');
+            showToast('Door deleted successfully!', 'success');
             loadDoors();
         } else {
-            const error = await response.json();
-            showToast(error.message || 'Failed to delete door', 'error');
+            const data = await response.json();
+            showToast(data.message || 'Failed to delete door', 'error');
         }
     } catch (error) {
-        console.error('Failed to delete door:', error);
+        console.error('Delete door error:', error);
         showToast('Failed to delete door', 'error');
     } finally {
         hideLoading();
     }
 }
 
-// Access group management functions
-async function loadAccessGroups() {
+// Access Group management functions
+async function loadAccessGroups(page = 1) {
+    console.log('loadAccessGroups called with page:', page);
+    console.log('currentUser:', currentUser);
+    console.log('hasRole admin:', hasRole('admin'));
+    
     if (!currentUser || !hasRole('admin')) {
-        showToast('Access denied. Admin privileges required.', 'error');
+        console.log('Access denied - not admin or no current user');
         return;
     }
     
+    showLoading();
+    currentPage = page;
+    
     try {
-        showLoading();
-        const response = await fetch('/api/access-groups', {
+        const params = new URLSearchParams({
+            page: page,
+            limit: 10,
+            ...currentFilters
+        });
+        
+        const response = await fetch(`/api/access-groups?${params}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -774,14 +866,8 @@ async function loadAccessGroups() {
         if (response.ok) {
             const data = await response.json();
             console.log('Access groups API response:', data);
-            
-            if (data.accessGroups && Array.isArray(data.accessGroups)) {
-                displayAccessGroups(data.accessGroups);
-                displayAccessGroupsPagination(data.pagination);
-            } else {
-                console.error('Invalid access groups data structure:', data);
-                showToast('Invalid data received from server', 'error');
-            }
+            displayAccessGroups(data.accessGroups);
+            displayAccessGroupsPagination(data.pagination);
         } else {
             console.error('Access groups API failed:', response.status, response.statusText);
             showToast('Failed to load access groups', 'error');
@@ -801,9 +887,16 @@ function displayAccessGroups(accessGroups) {
         <tr>
             <td>${group.name}</td>
             <td>${group.description || 'No description'}</td>
+            <td><span class="status-indicator active">Active</span></td>
             <td>${new Date(group.createdAt).toLocaleDateString()}</td>
             <td>
                 <div class="action-buttons">
+                    <button class="action-btn edit" onclick="editAccessGroup(${group.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="action-btn details" onclick="manageAccessGroupDetails(${group.id})">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
                     <button class="action-btn delete" onclick="deleteAccessGroup(${group.id})">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -825,9 +918,7 @@ function displayAccessGroupsPagination(pagination) {
     
     for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) {
         paginationHTML += `
-            <button class="${i === page ? 'active' : ''}" onclick="loadAccessGroups(${i})">
-                ${i}
-            </button>
+            <button class="${i === page ? 'active' : ''}" onclick="loadAccessGroups(${i})">${i}</button>
         `;
     }
     
@@ -840,14 +931,25 @@ function displayAccessGroupsPagination(pagination) {
     paginationDiv.innerHTML = paginationHTML;
 }
 
-// Create access group
-function createAccessGroup() {
-    openModal('createAccessGroupModal');
+function searchAccessGroups() {
+    const searchTerm = document.getElementById('accessGroupSearchInput').value;
+    currentFilters.search = searchTerm;
+    loadAccessGroups(1);
 }
 
-// Handle create access group form submission
+function filterAccessGroups() {
+    const statusFilter = document.getElementById('accessGroupStatusFilter').value;
+    currentFilters.isActive = statusFilter;
+    loadAccessGroups(1);
+}
+
+function showCreateAccessGroupModal() {
+    document.getElementById('createAccessGroupModal').classList.add('active');
+}
+
 async function handleCreateAccessGroup(event) {
     event.preventDefault();
+    showLoading();
     
     const formData = new FormData(event.target);
     const accessGroupData = {
@@ -855,10 +957,7 @@ async function handleCreateAccessGroup(event) {
         description: formData.get('description')
     };
     
-    console.log('Creating access group with data:', accessGroupData);
-    
     try {
-        showLoading();
         const response = await fetch('/api/access-groups', {
             method: 'POST',
             headers: {
@@ -868,36 +967,98 @@ async function handleCreateAccessGroup(event) {
             body: JSON.stringify(accessGroupData)
         });
         
-        console.log('Access group creation response status:', response.status);
+        const data = await response.json();
         
         if (response.ok) {
-            const data = await response.json();
-            console.log('Access group creation response data:', data);
-            showToast('Access group created successfully', 'success');
+            showToast('Access group created successfully!', 'success');
             closeModal('createAccessGroupModal');
             event.target.reset();
             loadAccessGroups();
         } else {
-            const error = await response.json();
-            console.error('Access group creation error:', error);
-            showToast(error.message || 'Failed to create access group', 'error');
+            showToast(data.message || 'Failed to create access group', 'error');
         }
     } catch (error) {
-        console.error('Failed to create access group:', error);
+        console.error('Create access group error:', error);
         showToast('Failed to create access group', 'error');
     } finally {
         hideLoading();
     }
 }
 
-// Delete access group
+async function editAccessGroup(accessGroupId) {
+    try {
+        const response = await fetch(`/api/access-groups/${accessGroupId}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const accessGroup = data.accessGroup;
+            
+            document.getElementById('editAccessGroupId').value = accessGroup.id;
+            document.getElementById('editAccessGroupName').value = accessGroup.name;
+            document.getElementById('editAccessGroupDescription').value = accessGroup.description || '';
+            document.getElementById('editAccessGroupIsActive').value = accessGroup.isActive.toString();
+            
+            document.getElementById('editAccessGroupModal').classList.add('active');
+        } else {
+            showToast('Failed to load access group details', 'error');
+        }
+    } catch (error) {
+        console.error('Edit access group error:', error);
+        showToast('Failed to load access group details', 'error');
+    }
+}
+
+async function handleEditAccessGroup(event) {
+    event.preventDefault();
+    showLoading();
+    
+    const formData = new FormData(event.target);
+    const accessGroupId = formData.get('id');
+    const accessGroupData = {
+        name: formData.get('name'),
+        description: formData.get('description'),
+        isActive: formData.get('isActive') === 'true'
+    };
+    
+    try {
+        const response = await fetch(`/api/access-groups/${accessGroupId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(accessGroupData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('Access group updated successfully!', 'success');
+            closeModal('editAccessGroupModal');
+            loadAccessGroups();
+        } else {
+            showToast(data.message || 'Failed to update access group', 'error');
+        }
+    } catch (error) {
+        console.error('Update access group error:', error);
+        showToast('Failed to update access group', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
 async function deleteAccessGroup(accessGroupId) {
     if (!confirm('Are you sure you want to delete this access group?')) {
         return;
     }
     
+    showLoading();
+    
     try {
-        showLoading();
         const response = await fetch(`/api/access-groups/${accessGroupId}`, {
             method: 'DELETE',
             headers: {
@@ -906,245 +1067,294 @@ async function deleteAccessGroup(accessGroupId) {
         });
         
         if (response.ok) {
-            showToast('Access group deleted successfully', 'success');
+            showToast('Access group deleted successfully!', 'success');
             loadAccessGroups();
         } else {
-            const error = await response.json();
-            showToast(error.message || 'Failed to delete access group', 'error');
+            const data = await response.json();
+            showToast(data.message || 'Failed to delete access group', 'error');
         }
     } catch (error) {
-        console.error('Failed to delete access group:', error);
+        console.error('Delete access group error:', error);
         showToast('Failed to delete access group', 'error');
     } finally {
         hideLoading();
     }
 }
 
-// Profile functions
-function updateProfileInfo() {
-    if (currentUser) {
-        const profileName = document.getElementById('profileName');
-        const profileEmail = document.getElementById('profileEmail');
-        const profileRole = document.getElementById('profileRole');
-        
-        if (profileName) profileName.textContent = `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'N/A';
-        if (profileEmail) profileEmail.textContent = currentUser.email;
-        if (profileRole) profileRole.textContent = currentUser.role;
-    }
-}
+// User-Access Group Management Functions
+let currentUserId = null;
 
-function showChangePasswordModal() {
-    document.getElementById('changePasswordModal').classList.add('active');
-    document.getElementById('changePasswordForm').reset();
-}
-
-async function handleChangePassword(event) {
-    event.preventDefault();
-    
-    const formData = new FormData(event.target);
-    const passwordData = {
-        currentPassword: formData.get('currentPassword'),
-        newPassword: formData.get('newPassword')
-    };
+async function manageUserAccessGroups(userId) {
+    currentUserId = userId;
     
     try {
-        showLoading();
-        const response = await fetch('/api/auth/change-password', {
-            method: 'POST',
+        // Load all access groups
+        const accessGroupsResponse = await fetch('/api/access-groups?limit=100', {
             headers: {
-                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify(passwordData)
+            }
         });
         
-        if (response.ok) {
-            showToast('Password changed successfully', 'success');
-            document.getElementById('changePasswordModal').classList.remove('active');
-            event.target.reset();
-        } else {
-            const error = await response.json();
-            showToast(error.message || 'Failed to change password', 'error');
+        if (accessGroupsResponse.ok) {
+            const accessGroupsData = await accessGroupsResponse.json();
+            const allAccessGroups = accessGroupsData.accessGroups;
+            
+            // Get user's current access groups (we'll need to create an API endpoint for this)
+            // For now, we'll show all access groups and let the backend handle duplicates
+            const dropdown = document.getElementById('userAccessGroupSelect');
+            dropdown.innerHTML = '<option value="">Select an access group...</option>';
+            
+            allAccessGroups.forEach(group => {
+                dropdown.innerHTML += `<option value="${group.id}">${group.name}</option>`;
+            });
+            
+            // For now, we'll show an empty list since we don't have a user access groups endpoint yet
+            displayUserAccessGroups([]);
+            
+            document.getElementById('userAccessGroupsModal').classList.add('active');
         }
     } catch (error) {
-        console.error('Failed to change password:', error);
-        showToast('Failed to change password', 'error');
-    } finally {
-        hideLoading();
+        console.error('Error loading user access groups:', error);
+        showToast('Failed to load user access groups', 'error');
     }
 }
 
-// Utility functions
-function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
+function displayUserAccessGroups(accessGroups) {
+    const container = document.getElementById('userAccessGroupsList');
+    container.innerHTML = accessGroups.map(group => `
+        <div class="access-group-item">
+            <div>
+                <strong>${group.name}</strong>
+                ${group.description ? `<br><small>${group.description}</small>` : ''}
+            </div>
+            <button class="remove-btn" onclick="removeAccessGroupFromUser(${group.id})">
+                <i class="fas fa-times"></i> Remove
+            </button>
+        </div>
+    `).join('');
 }
 
-function openModal(modalId) {
-    document.getElementById(modalId).classList.add('active');
-}
-
-function showLoading() {
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    if (loadingOverlay) {
-        loadingOverlay.classList.add('active');
-    }
-}
-
-function hideLoading() {
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    if (loadingOverlay) {
-        loadingOverlay.classList.remove('active');
-    }
-}
-
-function showToast(message, type = 'info') {
-    const toastContainer = document.getElementById('toastContainer');
+async function addAccessGroupToUser() {
+    const accessGroupId = document.getElementById('userAccessGroupSelect').value;
     
-    if (!toastContainer) {
-        console.error('Toast container not found');
-        console.log(`Toast message: ${message} (${type})`);
+    if (!accessGroupId) {
+        showToast('Please select an access group', 'error');
         return;
     }
     
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    
-    const icon = type === 'success' ? 'check-circle' : 
-                 type === 'error' ? 'exclamation-circle' : 'info-circle';
-    
-    toast.innerHTML = `
-        <i class="fas fa-${icon}"></i>
-        <span>${message}</span>
-    `;
-    
-    toastContainer.appendChild(toast);
-    
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
-        }
-    }, 5000);
-}
-
-// Helper function to check if user has role
-function hasRole(role) {
-    return currentUser && currentUser.role === role;
-}
-
-// Search and filter functions
-function searchUsers() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const roleFilter = document.getElementById('roleFilter').value;
-    const statusFilter = document.getElementById('statusFilter').value;
-    
-    // Implement search logic
-    loadUsers();
-}
-
-function filterUsers() {
-    searchUsers();
-}
-
-function searchDoors() {
-    const searchTerm = document.getElementById('doorSearchInput').value.toLowerCase();
-    const statusFilter = document.getElementById('doorStatusFilter').value;
-    
-    // Implement search logic
-    loadDoors();
-}
-
-function filterDoors() {
-    searchDoors();
-}
-
-function searchAccessGroups() {
-    const searchTerm = document.getElementById('accessGroupSearchInput').value.toLowerCase();
-    const statusFilter = document.getElementById('accessGroupStatusFilter').value;
-    
-    // Implement search logic
-    loadAccessGroups();
-}
-
-function filterAccessGroups() {
-    searchAccessGroups();
-}
-
-// Create user modal functions
-function showCreateUserModal() {
-    document.getElementById('createUserModal').classList.add('active');
-    document.getElementById('createUserForm').reset();
-    loadAccessGroupsForUser();
-}
-
-async function handleCreateUser(event) {
-    event.preventDefault();
-    
-    const formData = new FormData(event.target);
-    const userData = {
-        firstName: formData.get('firstName'),
-        lastName: formData.get('lastName'),
-        email: formData.get('email'),
-        password: formData.get('password'),
-        role: formData.get('role'),
-        accessGroupId: formData.get('accessGroupId') || null
-    };
+    showLoading();
     
     try {
-        showLoading();
-        const response = await fetch('/api/users', {
+        const response = await fetch(`/api/access-groups/${accessGroupId}/users`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
-            body: JSON.stringify(userData)
+            body: JSON.stringify({ 
+                userId: parseInt(currentUserId)
+            })
         });
         
         if (response.ok) {
-            showToast('User created successfully', 'success');
-            document.getElementById('createUserModal').classList.remove('active');
-            event.target.reset();
-            loadUsers();
+            showToast('Access group added to user successfully!', 'success');
+            document.getElementById('userAccessGroupSelect').value = '';
+            manageUserAccessGroups(currentUserId); // Reload the modal
         } else {
-            const error = await response.json();
-            showToast(error.message || 'Failed to create user', 'error');
+            const data = await response.json();
+            showToast(data.message || 'Failed to add access group to user', 'error');
         }
     } catch (error) {
-        console.error('Failed to create user:', error);
-        showToast('Failed to create user', 'error');
+        console.error('Error adding access group to user:', error);
+        showToast('Failed to add access group to user', 'error');
     } finally {
         hideLoading();
     }
 }
 
-// Create door modal functions
-function showCreateDoorModal() {
-    document.getElementById('createDoorModal').classList.add('active');
-    loadAccessGroupsForDoor();
+async function removeAccessGroupFromUser(accessGroupId) {
+    if (!confirm('Are you sure you want to remove this access group from the user?')) {
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const response = await fetch(`/api/access-groups/${accessGroupId}/users/${currentUserId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            showToast('Access group removed from user successfully!', 'success');
+            manageUserAccessGroups(currentUserId); // Reload the modal
+        } else {
+            const data = await response.json();
+            showToast(data.message || 'Failed to remove access group from user', 'error');
+        }
+    } catch (error) {
+        console.error('Error removing access group from user:', error);
+        showToast('Failed to remove access group from user', 'error');
+    } finally {
+        hideLoading();
+    }
 }
 
-// Create access group modal functions
-function showCreateAccessGroupModal() {
-    document.getElementById('createAccessGroupModal').classList.add('active');
+
+
+// Access Group-User Management Functions
+let currentAccessGroupId = null;
+
+async function manageAccessGroupDetails(accessGroupId) {
+    currentAccessGroupId = accessGroupId;
+    
+    try {
+        // Load access group details
+        const accessGroupResponse = await fetch(`/api/access-groups/${accessGroupId}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (accessGroupResponse.ok) {
+            const accessGroupData = await accessGroupResponse.json();
+            const accessGroup = accessGroupData.accessGroup;
+            const doors = accessGroupData.doors;
+            
+            // Load all doors for the dropdown
+            const doorsResponse = await fetch('/api/doors?limit=100', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (doorsResponse.ok) {
+                const doorsData = await doorsResponse.json();
+                const allDoors = doorsData.doors;
+                
+                console.log('Loaded doors for dropdown:', allDoors);
+                
+                // Populate door dropdown
+                const doorDropdown = document.getElementById('accessGroupDoorSelect');
+                doorDropdown.innerHTML = '<option value="">Select a door...</option>';
+                
+                allDoors.forEach(door => {
+                    if (!doors.find(d => d.id === door.id)) {
+                        doorDropdown.innerHTML += `<option value="${door.id}">${door.name} (${door.location})</option>`;
+                    }
+                });
+                
+                console.log('Door dropdown populated with', doorDropdown.children.length - 1, 'doors');
+                
+                // Display current doors
+                displayAccessGroupDoors(doors);
+                
+                document.getElementById('accessGroupDetailsModal').classList.add('active');
+            } else {
+                console.error('Failed to load doors:', doorsResponse.status, doorsResponse.statusText);
+                showToast('Failed to load doors for dropdown', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading access group details:', error);
+        showToast('Failed to load access group details', 'error');
+    }
 }
 
+function displayAccessGroupDoors(doors) {
+    const container = document.getElementById('accessGroupDoorsList');
+    container.innerHTML = doors.map(door => `
+        <div class="door-item">
+            <div>
+                <strong>${door.name}</strong>
+                <br><small>${door.location} (${door.esp32Ip})</small>
+            </div>
+            <button class="remove-btn" onclick="removeDoorFromAccessGroup(${door.id})">
+                <i class="fas fa-times"></i> Remove
+            </button>
+        </div>
+    `).join('');
+}
+
+
+
+async function addDoorToAccessGroup() {
+    const doorId = document.getElementById('accessGroupDoorSelect').value;
+    
+    console.log('Adding door to access group:', { doorId, currentAccessGroupId });
+    
+    if (!doorId) {
+        showToast('Please select a door', 'error');
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const response = await fetch(`/api/access-groups/${currentAccessGroupId}/doors`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ doorId: parseInt(doorId) })
+        });
+        
+        if (response.ok) {
+            console.log('Door added to access group successfully');
+            showToast('Door added to access group successfully!', 'success');
+            manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
+        } else {
+            const data = await response.json();
+            console.error('Failed to add door to access group:', response.status, data);
+            showToast(data.message || 'Failed to add door to access group', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding door to access group:', error);
+        showToast('Failed to add door to access group', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function removeDoorFromAccessGroup(doorId) {
+    if (!confirm('Are you sure you want to remove this door from the access group?')) {
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const response = await fetch(`/api/access-groups/${currentAccessGroupId}/doors/${doorId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            showToast('Door removed from access group successfully!', 'success');
+            manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
+        } else {
+            const data = await response.json();
+            showToast(data.message || 'Failed to remove door from access group', 'error');
+        }
+    } catch (error) {
+        console.error('Error removing door from access group:', error);
+        showToast('Failed to remove door from access group', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+
+
+// Update the showSection function to handle new sections
 function showSection(sectionName) {
     hideAllSections();
-    const sectionElement = document.getElementById(sectionName + 'Section');
-    if (sectionElement) {
-        sectionElement.classList.add('active');
-    } else {
-        console.error(`Section element not found: ${sectionName}Section`);
-        return;
-    }
-    
-    // Clear any existing auto-refresh
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-        autoRefreshInterval = null;
-    }
-    
-    currentSection = sectionName;
+    document.getElementById(sectionName + 'Section').classList.add('active');
     
     if (sectionName === 'dashboard') {
         loadDashboard();
@@ -1152,13 +1362,6 @@ function showSection(sectionName) {
         loadUsers();
     } else if (sectionName === 'doors') {
         loadDoors();
-        // Start auto-refresh for doors table (every 5 seconds for real-time status)
-        autoRefreshInterval = setInterval(() => {
-            if (currentSection === 'doors') {
-                console.log('Auto-refreshing doors status only...');
-                updateDoorsStatusOnly();
-            }
-        }, 5000); // 5 seconds
     } else if (sectionName === 'accessGroups') {
         loadAccessGroups();
     } else if (sectionName === 'esp32Discovery') {
@@ -1168,215 +1371,75 @@ function showSection(sectionName) {
     }
 }
 
-// Load access groups for door creation dropdown
-async function loadAccessGroupsForDoor() {
-    try {
-        const response = await fetch('/api/access-groups?limit=100', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            const select = document.getElementById('createDoorAccessGroup');
-            if (select && data.accessGroups) {
-                select.innerHTML = '<option value="">Select Access Group (Optional)</option>' +
-                    data.accessGroups.map(group => 
-                        `<option value="${group.id}">${group.name}</option>`
-                    ).join('');
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load access groups for door:', error);
-    }
-}
-
-// Load access groups for door edit dropdown
-async function loadAccessGroupsForEditDoor(currentAccessGroupId = null) {
-    try {
-        const response = await fetch('/api/access-groups?limit=100', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            const select = document.getElementById('editDoorAccessGroup');
-            if (select && data.accessGroups && Array.isArray(data.accessGroups)) {
-                select.innerHTML = '<option value="">Select Access Group (Optional)</option>' +
-                    data.accessGroups.map(group => 
-                        `<option value="${group.id}" ${group.id == currentAccessGroupId ? 'selected' : ''}>${group.name}</option>`
-                    ).join('');
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load access groups for door edit:', error);
-    }
-}
-
-// Load access groups for user creation dropdown
-async function loadAccessGroupsForUser() {
-    try {
-        const response = await fetch('/api/access-groups?limit=100', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            const select = document.getElementById('createUserAccessGroup');
-            if (select && data.accessGroups) {
-                select.innerHTML = '<option value="">Select Access Group (Optional)</option>' +
-                    data.accessGroups.map(group => 
-                        `<option value="${group.id}">${group.name}</option>`
-                    ).join('');
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load access groups for user:', error);
-    }
-}
-
-// Manage user access groups with checkboxes
-async function manageUserAccessGroups(userId, userName) {
-    try {
-        console.log('Managing access groups for user:', userId, userName);
-        showLoading();
-        
-        // Load user's current access groups and all available access groups
-        console.log('Fetching user access groups and all access groups...');
-        const [userResponse, allGroupsResponse] = await Promise.all([
-            fetch(`/api/users/${userId}/access-groups`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            }),
-            fetch('/api/access-groups?limit=100', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
-        ]);
-        
-        console.log('User response status:', userResponse.status);
-        console.log('All groups response status:', allGroupsResponse.status);
-        
-        if (userResponse.ok && allGroupsResponse.ok) {
-            const userData = await userResponse.json();
-            const allGroupsData = await allGroupsResponse.json();
-            
-            console.log('User data:', userData);
-            console.log('All groups data:', allGroupsData);
-            
-            // Set user info
-            document.getElementById('manageUserId').value = userId;
-            document.getElementById('manageUserName').textContent = userName;
-            
-            // Create checkbox list
-            const checkboxList = document.getElementById('accessGroupsCheckboxList');
-            const userAccessGroupIds = userData.accessGroups.map(ag => ag.id);
-            
-            checkboxList.innerHTML = allGroupsData.accessGroups.map(group => `
-                <div class="checkbox-item">
-                    <input type="checkbox" 
-                           id="accessGroup_${group.id}" 
-                           name="accessGroupIds" 
-                           value="${group.id}" 
-                           ${userAccessGroupIds.includes(group.id) ? 'checked' : ''}>
-                    <label for="accessGroup_${group.id}">
-                        <strong>${group.name}</strong>
-                        ${group.description ? `<br><small>${group.description}</small>` : ''}
-                    </label>
-                </div>
-            `).join('');
-            
-            document.getElementById('userAccessGroupsModal').classList.add('active');
-        } else {
-            console.error('API responses not ok:', {
-                userResponse: userResponse.status,
-                allGroupsResponse: allGroupsResponse.status
-            });
-            
-            if (!userResponse.ok) {
-                const userError = await userResponse.json();
-                console.error('User access groups API error:', userError);
-            }
-            
-            if (!allGroupsResponse.ok) {
-                const groupsError = await allGroupsResponse.json();
-                console.error('All access groups API error:', groupsError);
-            }
-            
-            showToast('Failed to load access groups data', 'error');
-        }
-    } catch (error) {
-        console.error('Failed to load user access groups:', error);
-        showToast('Failed to load user access groups', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-// Handle user access groups form submission
-async function handleUserAccessGroupsUpdate(event) {
-    event.preventDefault();
-    
-    const formData = new FormData(event.target);
-    const userId = formData.get('userId');
-    
-    // Get all checked access group IDs
-    const selectedAccessGroupIds = [];
-    const checkboxes = event.target.querySelectorAll('input[name="accessGroupIds"]:checked');
-    checkboxes.forEach(checkbox => {
-        selectedAccessGroupIds.push(parseInt(checkbox.value));
-    });
-    
-    try {
-        showLoading();
-        const response = await fetch(`/api/users/${userId}/access-groups`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({
-                accessGroupIds: selectedAccessGroupIds
-            })
-        });
-        
-        if (response.ok) {
-            showToast('User access groups updated successfully', 'success');
-            closeModal('userAccessGroupsModal');
-            loadUsers(); // Refresh the users list
-        } else {
-            const error = await response.json();
-            showToast(error.message || 'Failed to update user access groups', 'error');
-        }
-    } catch (error) {
-        console.error('Failed to update user access groups:', error);
-        showToast('Failed to update user access groups', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
 // ESP32 Discovery Functions
+let discoveredEsp32s = [];
+let scanInProgress = false;
+
 async function loadEsp32Discovery() {
     if (!currentUser || !hasRole('admin')) {
         return;
     }
     
-    document.getElementById('scanStatus').innerHTML = '<p>Click "Scan for ESP32s" to discover devices on your network</p>';
-    document.getElementById('discoveredEsp32s').innerHTML = '';
+    // Reset the discovery state
+    discoveredEsp32s = [];
+    scanInProgress = false;
+    
+    // Show initial scan status
+    updateScanStatus('ready');
+    displayDiscoveredEsp32s();
+}
+
+function updateScanStatus(status) {
+    const scanStatusDiv = document.getElementById('scanStatus');
+    
+    switch (status) {
+        case 'ready':
+            scanStatusDiv.innerHTML = `
+                <div class="scan-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Click "Scan for ESP32s" to discover devices on your network</span>
+                </div>
+            `;
+            break;
+        case 'scanning':
+            scanStatusDiv.innerHTML = `
+                <div class="scan-progress">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Scanning network for ESP32 devices...</span>
+                </div>
+            `;
+            break;
+        case 'complete':
+            scanStatusDiv.innerHTML = `
+                <div class="scan-info">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Scan complete. Found ${discoveredEsp32s.length} ESP32 device(s)</span>
+                </div>
+            `;
+            break;
+        case 'error':
+            scanStatusDiv.innerHTML = `
+                <div class="scan-info" style="background: #f8d7da; color: #721c24;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Scan failed. Please try again.</span>
+                </div>
+            `;
+            break;
+    }
 }
 
 async function startEsp32Scan() {
-    document.getElementById('scanStatus').innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Scanning network for ESP32 devices...</p>';
+    if (scanInProgress) {
+        return;
+    }
+    
+    scanInProgress = true;
+    discoveredEsp32s = [];
+    updateScanStatus('scanning');
+    displayDiscoveredEsp32s();
     
     try {
+        // Call the backend API to discover ESP32 devices
         const response = await fetch('/api/doors/discover', {
             method: 'POST',
             headers: {
@@ -1384,41 +1447,331 @@ async function startEsp32Scan() {
             }
         });
         
-        const data = await response.json();
-        
         if (response.ok) {
-            document.getElementById('scanStatus').innerHTML = `<p><i class="fas fa-check-circle"></i> Scan complete! Found ${data.count} ESP32 device(s)</p>`;
-            displayDiscoveredEsp32s(data.devices);
+            const data = await response.json();
+            discoveredEsp32s = data.devices;
+            updateScanStatus('complete');
+            displayDiscoveredEsp32s();
+            
+            // Show "Add All" button if devices were found
+            if (discoveredEsp32s.length > 0) {
+                document.getElementById('addAllBtn').style.display = 'block';
+            }
         } else {
-            document.getElementById('scanStatus').innerHTML = '<p><i class="fas fa-exclamation-triangle"></i> Scan failed. Please try again.</p>';
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to discover ESP32 devices');
         }
+        
     } catch (error) {
-        console.error('ESP32 discovery error:', error);
-        document.getElementById('scanStatus').innerHTML = '<p><i class="fas fa-exclamation-triangle"></i> Scan failed. Please try again.</p>';
+        console.error('ESP32 scan failed:', error);
+        updateScanStatus('error');
+        showToast('Failed to scan for ESP32 devices: ' + error.message, 'error');
+    } finally {
+        scanInProgress = false;
     }
 }
 
-function displayDiscoveredEsp32s(devices) {
+
+function displayDiscoveredEsp32s() {
     const container = document.getElementById('discoveredEsp32s');
     
-    if (!devices || devices.length === 0) {
-        container.innerHTML = '<p>No ESP32 devices found on the network</p>';
+    if (discoveredEsp32s.length === 0) {
+        container.innerHTML = `
+            <div class="no-devices">
+                <i class="fas fa-wifi"></i>
+                <p>No ESP32 devices discovered yet. Click "Scan for ESP32s" to start discovery.</p>
+            </div>
+        `;
         return;
     }
     
-    container.innerHTML = devices.map(device => `
-        <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px;">
-            <h4>${device.name}</h4>
-            <p><strong>MAC:</strong> ${device.mac}</p>
-            <p><strong>IP:</strong> ${device.ip}</p>
-            <p><strong>Status:</strong> ${device.status}</p>
-            <p><strong>Signal:</strong> ${device.signal} dBm</p>
-            <button class="btn btn-primary" onclick="configureEsp32('${device.mac}', '${device.ip}')">Configure</button>
+    container.innerHTML = discoveredEsp32s.map(esp32 => `
+        <div class="esp32-card ${esp32.status}">
+            <div class="esp32-header">
+                <div class="esp32-title">${esp32.name}</div>
+                <div class="esp32-status ${esp32.status}">${esp32.status}</div>
+            </div>
+            <div class="esp32-details">
+                <div class="esp32-detail">
+                    <span class="esp32-detail-label">MAC Address:</span>
+                    <span class="esp32-detail-value">${esp32.mac}</span>
+                </div>
+                <div class="esp32-detail">
+                    <span class="esp32-detail-label">IP Address:</span>
+                    <span class="esp32-detail-value">${esp32.ip}</span>
+                </div>
+                <div class="esp32-detail">
+                    <span class="esp32-detail-label">Signal Strength:</span>
+                    <span class="esp32-detail-value">${esp32.signal ? `${esp32.signal} dBm` : 'N/A'}</span>
+                </div>
+                <div class="esp32-detail">
+                    <span class="esp32-detail-label">Last Seen:</span>
+                    <span class="esp32-detail-value">${new Date(esp32.lastSeen).toLocaleString()}</span>
+                </div>
+            </div>
+            <div class="esp32-actions">
+                <button class="btn btn-primary" onclick="configureEsp32('${esp32.mac}', '${esp32.ip}')" ${esp32.status === 'offline' ? 'disabled' : ''}>
+                    <i class="fas fa-cog"></i> Configure
+                </button>
+                <button class="btn btn-secondary" onclick="testEsp32Connection('${esp32.mac}', '${esp32.ip}')" ${esp32.status === 'offline' ? 'disabled' : ''}>
+                    <i class="fas fa-plug"></i> Test
+                </button>
+            </div>
         </div>
     `).join('');
 }
 
-function configureEsp32(mac, ip) {
-    showToast(`Configuring ESP32 ${mac} at ${ip}`, 'info');
-    // Future: Add modal for configuration
+async function configureEsp32(mac, ip) {
+    // Load access groups for the dropdown
+    try {
+        const response = await fetch('/api/access-groups?limit=100', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const accessGroups = data.accessGroups;
+            
+            const dropdown = document.getElementById('esp32ConfigAccessGroup');
+            dropdown.innerHTML = '<option value="">Select an access group...</option>';
+            
+            accessGroups.forEach(group => {
+                dropdown.innerHTML += `<option value="${group.id}">${group.name}</option>`;
+            });
+            
+            // Populate the form
+            document.getElementById('esp32ConfigMac').value = mac;
+            document.getElementById('esp32ConfigIp').value = ip;
+            document.getElementById('esp32ConfigName').value = `Door ${mac.split(':').pop()}`;
+            document.getElementById('esp32ConfigLocation').value = 'Building A, Floor 1';
+            
+            // Show the modal
+            document.getElementById('esp32ConfigModal').style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Failed to load access groups:', error);
+        showToast('Failed to load access groups', 'error');
+    }
+}
+
+async function handleEsp32Config(event) {
+    event.preventDefault();
+    showLoading();
+    
+    const formData = new FormData(event.target);
+    const doorData = {
+        name: formData.get('name'),
+        location: formData.get('location'),
+        esp32Ip: formData.get('ip'),
+        esp32Mac: formData.get('mac'),
+        accessGroupId: formData.get('accessGroupId') || null
+    };
+    
+    try {
+        const response = await fetch('/api/doors', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(doorData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('ESP32 configured as door successfully!', 'success');
+            closeModal('esp32ConfigModal');
+            
+            // Remove the configured ESP32 from the discovered list
+            discoveredEsp32s = discoveredEsp32s.filter(esp32 => esp32.mac !== doorData.esp32Mac);
+            displayDiscoveredEsp32s();
+            
+            // Update the scan status
+            if (discoveredEsp32s.length === 0) {
+                updateScanStatus('complete');
+                document.getElementById('addAllBtn').style.display = 'none';
+            }
+            
+            // Refresh the doors page if it's currently active
+            if (document.getElementById('doorsSection').classList.contains('active')) {
+                loadDoors();
+            }
+        } else {
+            showToast(data.message || 'Failed to configure ESP32 as door', 'error');
+        }
+    } catch (error) {
+        console.error('Configure ESP32 error:', error);
+        showToast('Failed to configure ESP32 as door', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function testEsp32Connection(mac, ip) {
+    showLoading();
+    
+    try {
+        // Test connection to ESP32
+        const response = await fetch(`http://${ip}/status`, {
+            method: 'GET',
+            timeout: 5000
+        });
+        
+        if (response.ok) {
+            showToast('ESP32 connection test successful!', 'success');
+        } else {
+            showToast('ESP32 connection test failed', 'error');
+        }
+    } catch (error) {
+        console.error('ESP32 connection test failed:', error);
+        showToast('ESP32 connection test failed - device may be offline', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function addAllDiscoveredEsp32s() {
+    if (discoveredEsp32s.length === 0) {
+        showToast('No ESP32 devices to add', 'info');
+        return;
+    }
+    
+    if (!confirm(`Add all ${discoveredEsp32s.length} discovered ESP32 devices as doors?`)) {
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        // Load access groups for default assignment
+        const accessGroupsResponse = await fetch('/api/access-groups?limit=100', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        let defaultAccessGroupId = null;
+        if (accessGroupsResponse.ok) {
+            const accessGroupsData = await accessGroupsResponse.json();
+            if (accessGroupsData.accessGroups.length > 0) {
+                defaultAccessGroupId = accessGroupsData.accessGroups[0].id;
+            }
+        }
+        
+        // Add each ESP32 as a door
+        const promises = discoveredEsp32s.map(esp32 => {
+            const doorData = {
+                name: `Door ${esp32.mac.split(':').pop()}`,
+                location: 'Building A, Floor 1',
+                esp32Ip: esp32.ip,
+                esp32Mac: esp32.mac,
+                accessGroupId: defaultAccessGroupId
+            };
+            
+            return fetch('/api/doors', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(doorData)
+            });
+        });
+        
+        const results = await Promise.allSettled(promises);
+        const successful = results.filter(result => result.status === 'fulfilled' && result.value.ok).length;
+        const failed = results.length - successful;
+        
+        if (successful > 0) {
+            showToast(`Successfully added ${successful} ESP32 device(s) as doors`, 'success');
+        }
+        
+        if (failed > 0) {
+            showToast(`Failed to add ${failed} ESP32 device(s)`, 'error');
+        }
+        
+        // Clear the discovered list
+        discoveredEsp32s = [];
+        displayDiscoveredEsp32s();
+        updateScanStatus('complete');
+        document.getElementById('addAllBtn').style.display = 'none';
+        
+        // Refresh the doors page if it's currently active
+        if (document.getElementById('doorsSection').classList.contains('active')) {
+            loadDoors();
+        }
+        
+    } catch (error) {
+        console.error('Add all ESP32s error:', error);
+        showToast('Failed to add ESP32 devices', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function closeEsp32ConfigModal() {
+    document.getElementById('esp32ConfigModal').style.display = 'none';
+    document.getElementById('esp32ConfigForm').reset();
+}
+
+async function saveEsp32Configuration() {
+    const form = document.getElementById('esp32ConfigForm');
+    const formData = new FormData(form);
+    
+    const configData = {
+        name: formData.get('name'),
+        mac: formData.get('mac'),
+        ip: formData.get('ip'),
+        accessGroupId: parseInt(formData.get('accessGroupId')),
+        location: formData.get('location'),
+        description: formData.get('description')
+    };
+    
+    // Validate required fields
+    if (!configData.name || !configData.accessGroupId) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        // Create a new door with the ESP32 configuration
+        const response = await fetch('/api/doors', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                name: configData.name,
+                location: configData.location,
+                description: configData.description,
+                esp32Ip: configData.ip,
+                esp32Mac: configData.mac,
+                accessGroupId: configData.accessGroupId
+            })
+        });
+        
+        if (response.ok) {
+            showToast('ESP32 device configured successfully!', 'success');
+            closeEsp32ConfigModal();
+            
+            // Refresh the doors list if we're on that page
+            if (currentSection === 'doors') {
+                loadDoors();
+            }
+        } else {
+            const error = await response.json();
+            showToast(error.message || 'Failed to configure ESP32 device', 'error');
+        }
+    } catch (error) {
+        console.error('Failed to configure ESP32 device:', error);
+        showToast('Failed to configure ESP32 device', 'error');
+    } finally {
+        hideLoading();
+    }
 }
