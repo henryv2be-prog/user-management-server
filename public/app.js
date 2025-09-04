@@ -1161,6 +1161,8 @@ function showSection(sectionName) {
         }, 5000); // 5 seconds
     } else if (sectionName === 'accessGroups') {
         loadAccessGroups();
+    } else if (sectionName === 'esp32Discovery') {
+        loadEsp32Discovery();
     } else if (sectionName === 'profile') {
         updateProfileInfo();
     }
@@ -1356,6 +1358,341 @@ async function handleUserAccessGroupsUpdate(event) {
     } catch (error) {
         console.error('Failed to update user access groups:', error);
         showToast('Failed to update user access groups', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// ESP32 Discovery Functions
+let discoveredEsp32s = [];
+let scanInProgress = false;
+
+async function loadEsp32Discovery() {
+    if (!currentUser || !hasRole('admin')) {
+        return;
+    }
+    
+    // Reset the discovery state
+    discoveredEsp32s = [];
+    scanInProgress = false;
+    
+    // Show initial scan status
+    updateScanStatus('ready');
+    displayDiscoveredEsp32s();
+}
+
+function updateScanStatus(status) {
+    const scanStatusDiv = document.getElementById('scanStatus');
+    
+    switch (status) {
+        case 'ready':
+            scanStatusDiv.innerHTML = `
+                <div class="scan-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Click "Scan for ESP32s" to discover devices on your network</span>
+                </div>
+            `;
+            break;
+        case 'scanning':
+            scanStatusDiv.innerHTML = `
+                <div class="scan-info scanning">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Scanning network for ESP32 devices...</span>
+                </div>
+            `;
+            break;
+        case 'complete':
+            scanStatusDiv.innerHTML = `
+                <div class="scan-info success">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Scan complete! Found ${discoveredEsp32s.length} ESP32 device(s)</span>
+                </div>
+            `;
+            break;
+        case 'error':
+            scanStatusDiv.innerHTML = `
+                <div class="scan-info error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Scan failed. Please try again.</span>
+                </div>
+            `;
+            break;
+    }
+}
+
+async function startEsp32Scan() {
+    if (scanInProgress) {
+        return;
+    }
+    
+    scanInProgress = true;
+    updateScanStatus('scanning');
+    
+    try {
+        const response = await fetch('/api/doors/discover', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            discoveredEsp32s = data.devices || [];
+            displayDiscoveredEsp32s();
+            updateScanStatus('complete');
+            
+            // Show "Add All" button if devices were found
+            if (discoveredEsp32s.length > 0) {
+                document.getElementById('addAllBtn').style.display = 'inline-block';
+            }
+        } else {
+            console.error('ESP32 discovery failed:', data);
+            updateScanStatus('error');
+        }
+    } catch (error) {
+        console.error('ESP32 discovery error:', error);
+        updateScanStatus('error');
+    } finally {
+        scanInProgress = false;
+    }
+}
+
+function displayDiscoveredEsp32s() {
+    const container = document.getElementById('discoveredEsp32s');
+    
+    if (discoveredEsp32s.length === 0) {
+        container.innerHTML = `
+            <div class="no-esp32s">
+                <i class="fas fa-wifi-slash"></i>
+                <p>No ESP32 devices found on the network</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = discoveredEsp32s.map(esp32 => `
+        <div class="esp32-card ${esp32.status}">
+            <div class="esp32-header">
+                <div class="esp32-name">${esp32.name || 'Unknown Device'}</div>
+                <div class="esp32-status">
+                    <span class="status-indicator ${esp32.status}"></span>
+                    ${esp32.status}
+                </div>
+            </div>
+            <div class="esp32-details">
+                <div class="esp32-detail">
+                    <span class="esp32-detail-label">MAC Address:</span>
+                    <span class="esp32-detail-value">${esp32.mac}</span>
+                </div>
+                <div class="esp32-detail">
+                    <span class="esp32-detail-label">IP Address:</span>
+                    <span class="esp32-detail-value">${esp32.ip}</span>
+                </div>
+                <div class="esp32-detail">
+                    <span class="esp32-detail-label">Signal Strength:</span>
+                    <span class="esp32-detail-value">${esp32.signal ? `${esp32.signal} dBm` : 'N/A'}</span>
+                </div>
+                <div class="esp32-detail">
+                    <span class="esp32-detail-label">Last Seen:</span>
+                    <span class="esp32-detail-value">${new Date(esp32.lastSeen).toLocaleString()}</span>
+                </div>
+            </div>
+            <div class="esp32-actions">
+                <button class="btn btn-primary" onclick="configureEsp32('${esp32.mac}', '${esp32.ip}')" ${esp32.status === 'offline' ? 'disabled' : ''}>
+                    <i class="fas fa-cog"></i> Configure
+                </button>
+                <button class="btn btn-secondary" onclick="testEsp32Connection('${esp32.mac}', '${esp32.ip}')" ${esp32.status === 'offline' ? 'disabled' : ''}>
+                    <i class="fas fa-plug"></i> Test
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function configureEsp32(mac, ip) {
+    // Load access groups for the dropdown
+    try {
+        const response = await fetch('/api/access-groups?limit=100', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const accessGroups = data.accessGroups;
+            
+            const dropdown = document.getElementById('esp32ConfigAccessGroup');
+            dropdown.innerHTML = '<option value="">Select an access group...</option>';
+            
+            accessGroups.forEach(group => {
+                dropdown.innerHTML += `<option value="${group.id}">${group.name}</option>`;
+            });
+            
+            // Populate the form
+            document.getElementById('esp32ConfigMac').value = mac;
+            document.getElementById('esp32ConfigIp').value = ip;
+            document.getElementById('esp32ConfigName').value = `Door ${mac.split(':').pop()}`;
+            document.getElementById('esp32ConfigLocation').value = 'Building A, Floor 1';
+            
+            // Show the modal
+            document.getElementById('esp32ConfigModal').classList.add('active');
+        }
+    } catch (error) {
+        console.error('Failed to load access groups:', error);
+        showToast('Failed to load access groups', 'error');
+    }
+}
+
+async function handleEsp32Config(event) {
+    event.preventDefault();
+    showLoading();
+    
+    const formData = new FormData(event.target);
+    const doorData = {
+        name: formData.get('name'),
+        location: formData.get('location'),
+        esp32Ip: formData.get('ip'),
+        esp32Mac: formData.get('mac'),
+        accessGroupId: formData.get('accessGroupId') || null
+    };
+    
+    try {
+        const response = await fetch('/api/doors', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(doorData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('ESP32 configured as door successfully!', 'success');
+            closeModal('esp32ConfigModal');
+            
+            // Remove the configured ESP32 from the discovered list
+            discoveredEsp32s = discoveredEsp32s.filter(esp32 => esp32.mac !== doorData.esp32Mac);
+            displayDiscoveredEsp32s();
+            
+            // Update the scan status
+            if (discoveredEsp32s.length === 0) {
+                updateScanStatus('complete');
+                document.getElementById('addAllBtn').style.display = 'none';
+            }
+            
+            // Refresh the doors page if it's currently active
+            if (document.getElementById('doorsSection').classList.contains('active')) {
+                loadDoors();
+            }
+        } else {
+            showToast(data.message || 'Failed to configure ESP32 as door', 'error');
+        }
+    } catch (error) {
+        console.error('Failed to configure ESP32:', error);
+        showToast('Failed to configure ESP32 as door', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function testEsp32Connection(mac, ip) {
+    showLoading();
+    
+    try {
+        const response = await fetch(`http://${ip}/status`, {
+            method: 'GET',
+            timeout: 5000
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            showToast(`ESP32 connection test successful! Status: ${data.status}`, 'success');
+        } else {
+            showToast('ESP32 connection test failed - Device not responding', 'error');
+        }
+    } catch (error) {
+        console.error('ESP32 connection test failed:', error);
+        showToast('ESP32 connection test failed - Cannot reach device', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function addAllDiscoveredEsp32s() {
+    if (discoveredEsp32s.length === 0) {
+        showToast('No ESP32 devices to add', 'warning');
+        return;
+    }
+    
+    if (!confirm(`Add all ${discoveredEsp32s.length} discovered ESP32 devices as doors?`)) {
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        // Get the first available access group
+        const response = await fetch('/api/access-groups?limit=1', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to load access groups');
+        }
+        
+        const data = await response.json();
+        const accessGroupId = data.accessGroups.length > 0 ? data.accessGroups[0].id : null;
+        
+        // Add all ESP32s as doors
+        const promises = discoveredEsp32s.map((esp32, index) => {
+            const doorData = {
+                name: `Door ${esp32.mac.split(':').pop()}`,
+                location: `Building A, Floor ${Math.floor(index / 10) + 1}`,
+                esp32Ip: esp32.ip,
+                esp32Mac: esp32.mac,
+                accessGroupId: accessGroupId
+            };
+            
+            return fetch('/api/doors', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(doorData)
+            });
+        });
+        
+        const results = await Promise.allSettled(promises);
+        const successful = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
+        const failed = results.length - successful;
+        
+        if (successful > 0) {
+            showToast(`Successfully added ${successful} ESP32 devices as doors${failed > 0 ? ` (${failed} failed)` : ''}`, 'success');
+            
+            // Clear the discovered list
+            discoveredEsp32s = [];
+            displayDiscoveredEsp32s();
+            updateScanStatus('complete');
+            document.getElementById('addAllBtn').style.display = 'none';
+            
+            // Refresh the doors page if it's currently active
+            if (document.getElementById('doorsSection').classList.contains('active')) {
+                loadDoors();
+            }
+        } else {
+            showToast('Failed to add any ESP32 devices as doors', 'error');
+        }
+    } catch (error) {
+        console.error('Failed to add all ESP32s:', error);
+        showToast('Failed to add ESP32 devices as doors', 'error');
     } finally {
         hideLoading();
     }
