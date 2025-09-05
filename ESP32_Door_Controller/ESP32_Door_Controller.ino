@@ -328,6 +328,11 @@ void setupConfigWebServer() {
         deviceID.replace(":", "");
         preferences.putString("device_id", deviceID);
         
+        // Update global variables
+        isConfigured = true;
+        serverURL = serverUrl;
+        deviceName = deviceName;
+        
         StaticJsonDocument<200> response;
         response["success"] = true;
         response["message"] = "Configuration saved! Connecting to WiFi...";
@@ -336,9 +341,9 @@ void setupConfigWebServer() {
         serializeJson(response, responseStr);
         server.send(200, "application/json", responseStr);
         
-        // Start connection process
+        // Start connection process after a short delay
         delay(1000);
-        connectToWiFi();
+        connectToWiFi(true);
       } else {
         StaticJsonDocument<200> response;
         response["success"] = false;
