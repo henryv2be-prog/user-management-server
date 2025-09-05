@@ -37,6 +37,19 @@ bool buttonPressed = false;
 unsigned long buttonPressTime = 0;
 const unsigned long AP_ACTIVATION_TIME = 3000; // Hold for 3 seconds
 
+// Function declarations
+void connectToWiFi(bool restartAPOnFailure = true);
+void checkBootButton();
+void handleBootButton();
+void startAPMode();
+void setupConfigWebServer();
+void setupNormalWebServer();
+void loadConfiguration();
+void openDoor();
+void closeDoor();
+void sendHeartbeat();
+void updateStatusLED();
+
 void setup() {
   Serial.begin(115200);
   
