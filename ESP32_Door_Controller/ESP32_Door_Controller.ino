@@ -77,7 +77,6 @@ void setup() {
     // No configuration, wait for button press
     Serial.println("No configuration found. Press and hold boot button for 3 seconds to enter configuration mode.");
     Serial.println("ESP32 will wait for button press - no AP will start automatically.");
-    Serial.println("Current state: apMode=" + String(apMode) + ", isConfigured=" + String(isConfigured));
     // Blink LED to indicate waiting for configuration
     for (int i = 0; i < 3; i++) {
       digitalWrite(STATUS_LED_PIN, HIGH);
@@ -86,20 +85,12 @@ void setup() {
       delay(500);
     }
     Serial.println("Setup complete. Waiting for button press...");
-    Serial.println("ESP32 is now in WAITING mode - no AP, no WiFi connection attempts");
   }
 }
 
 void loop() {
   // Handle button press for AP activation
   handleBootButton();
-  
-  // Debug: Print state every 10 seconds
-  static unsigned long lastDebug = 0;
-  if (millis() - lastDebug > 10000) {
-    Serial.println("Loop debug - apMode: " + String(apMode) + ", isConfigured: " + String(isConfigured) + ", WiFi: " + String(WiFi.status()));
-    lastDebug = millis();
-  }
   
   if (apMode) {
     // In AP mode, handle web server
@@ -113,12 +104,10 @@ void loop() {
       sendHeartbeat();
       lastHeartbeat = millis();
     }
-  } else if (isConfigured && WiFi.status() != WL_CONNECTED) {
-    // Try to reconnect to WiFi only if configured but not connected
-    // Don't restart AP mode on reconnection attempts
-    connectToWiFi(false);
+  } else if (isConfigured) {
+    // Try to reconnect to WiFi
+    connectToWiFi();
   }
-  // If not configured and not in AP mode, do nothing (wait for button press)
   
   // Update status LED
   updateStatusLED();
@@ -328,20 +317,15 @@ void setupConfigWebServer() {
         
         StaticJsonDocument<200> response;
         response["success"] = true;
-        response["message"] = "Configuration saved! Stopping AP and connecting to WiFi...";
+        response["message"] = "Configuration saved! Connecting to WiFi...";
         
         String responseStr;
         serializeJson(response, responseStr);
         server.send(200, "application/json", responseStr);
         
-        // Stop AP mode first, then connect to WiFi
-        Serial.println("Stopping AP mode before WiFi connection...");
-        WiFi.softAPdisconnect(true);
-        apMode = false;
-        delay(2000); // Give time for AP to fully stop
-        
-        // Now connect to WiFi (restart AP if it fails)
-        connectToWiFi(true);
+        // Start connection process
+        delay(1000);
+        connectToWiFi();
       } else {
         StaticJsonDocument<200> response;
         response["success"] = false;
@@ -416,6 +400,7 @@ void loadConfiguration() {
 
 void connectToWiFi(bool restartAPOnFailure = true) {
   Serial.println("=== connectToWiFi() called ===");
+  Serial.println("restartAPOnFailure: " + String(restartAPOnFailure));
   
   if (!isConfigured) {
     Serial.println("ERROR: Not configured, cannot connect to WiFi");
@@ -432,6 +417,13 @@ void connectToWiFi(bool restartAPOnFailure = true) {
   if (ssid.length() == 0) {
     Serial.println("ERROR: No SSID found in preferences");
     return;
+  }
+  
+  // Stop AP mode if it's running
+  if (apMode) {
+    Serial.println("Stopping AP mode before connecting to WiFi...");
+    WiFi.softAPdisconnect(true);
+    delay(2000); // Give time for AP to fully stop
   }
   
   Serial.println("Setting WiFi mode to STA...");
@@ -500,7 +492,7 @@ void connectToWiFi(bool restartAPOnFailure = true) {
       // Return to AP mode for reconfiguration
       startAPMode();
     } else {
-      Serial.println("Not restarting AP mode - will retry connection later");
+      Serial.println("Not restarting AP mode - will retry later");
     }
   }
 }
