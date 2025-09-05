@@ -411,7 +411,7 @@ void loadConfiguration() {
   }
 }
 
-void connectToWiFi(bool restartAPOnFailure = true) {
+void connectToWiFi(bool restartAPOnFailure) {
   Serial.println("=== connectToWiFi() called ===");
   Serial.println("restartAPOnFailure: " + String(restartAPOnFailure));
   
