@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimplifiAccess - Door Access</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .door-info {
+            margin-bottom: 30px;
+        }
+        
+        .door-name {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .door-location {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+        
+        .status-card {
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+        
+        .status-granted {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+        
+        .status-denied {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+        
+        .status-pending {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border: 2px solid #ffc107;
+            color: #856404;
+        }
+        
+        .status-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .status-message {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .status-details {
+            font-size: 1em;
+            opacity: 0.8;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .user-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .user-info h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 5px 0;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .info-value {
+            color: #333;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #f5c6cb;
+            margin-bottom: 20px;
+        }
+        
+        .expiry-info {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #bbdefb;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 SimplifiAccess</h1>
+            <p>Door Access Control</p>
+        </div>
+        
+        <div class="content">
+            <div id="loadingSection" class="loading">
+                <div class="spinner"></div>
+                <div class="status-message">Processing Access Request...</div>
+                <div class="status-details">Please wait while we verify your access</div>
+            </div>
+            
+            <div id="errorSection" class="hidden">
+                <div class="error-message">
+                    <strong>Error:</strong> <span id="errorMessage"></span>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" onclick="location.reload()">Try Again</button>
+                </div>
+            </div>
+            
+            <div id="accessSection" class="hidden">
+                <div class="door-info">
+                    <div class="door-name" id="doorName">Loading...</div>
+                    <div class="door-location" id="doorLocation">Loading...</div>
+                </div>
+                
+                <div id="statusCard" class="status-card">
+                    <span class="status-icon" id="statusIcon">⏳</span>
+                    <div class="status-message" id="statusMessage">Processing...</div>
+                    <div class="status-details" id="statusDetails">Please wait...</div>
+                </div>
+                
+                <div id="userInfo" class="user-info hidden">
+                    <h3>Access Information</h3>
+                    <div class="info-row">
+                        <span class="info-label">User:</span>
+                        <span class="info-value" id="userName">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Time:</span>
+                        <span class="info-value" id="accessTime">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Type:</span>
+                        <span class="info-value" id="accessType">-</span>
+                    </div>
+                </div>
+                
+                <div id="expiryInfo" class="expiry-info hidden">
+                    <strong>⏰ Expires:</strong> <span id="expiryTime"></span>
+                </div>
+                
+                <div id="actionButtons" class="action-buttons hidden">
+                    <button class="btn btn-primary" id="actionButton" onclick="handleAction()">Continue</button>
+                    <button class="btn btn-secondary" onclick="closeWindow()">Close</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Powered by SimplifiAccess</p>
+        </div>
+    </div>
+
+    <script>
+        let accessData = {};
+        let doorData = {};
+        
+        // Parse URL parameters
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                door: params.get('door'),
+                type: params.get('type') || 'request',
+                t: params.get('t'),
+                e: params.get('e'),
+                msg: params.get('msg')
+            };
+        }
+        
+        // Initialize page
+        async function init() {
+            const params = getUrlParams();
+            
+            if (!params.door) {
+                showError('Invalid access request: No door specified');
+                return;
+            }
+            
+            // Check if request has expired
+            if (params.e && Date.now() > parseInt(params.e)) {
+                showError('This access request has expired');
+                return;
+            }
+            
+            // Show expiry info if applicable
+            if (params.e) {
+                const expiryDate = new Date(parseInt(params.e));
+                document.getElementById('expiryTime').textContent = expiryDate.toLocaleString();
+                document.getElementById('expiryInfo').classList.remove('hidden');
+            }
+            
+            // Load door information
+            await loadDoorInfo(params.door);
+            
+            // Process access request
+            await processAccessRequest(params);
+        }
+        
+        async function loadDoorInfo(doorId) {
+            try {
+                const response = await fetch(`/api/doors/${doorId}`);
+                if (!response.ok) throw new Error('Door not found');
+                
+                doorData = await response.json();
+                
+                document.getElementById('doorName').textContent = doorData.name;
+                document.getElementById('doorLocation').textContent = doorData.location || 'Location not specified';
+                
+            } catch (error) {
+                console.error('Error loading door info:', error);
+                showError('Failed to load door information');
+            }
+        }
+        
+        async function processAccessRequest(params) {
+            try {
+                const response = await fetch('/api/access/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        doorId: params.door,
+                        accessType: params.type,
+                        timestamp: params.t,
+                        expiry: params.e,
+                        customMessage: params.msg
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Access request failed');
+                }
+                
+                accessData = await response.json();
+                showAccessResult(accessData);
+                
+            } catch (error) {
+                console.error('Error processing access request:', error);
+                showError(error.message || 'Failed to process access request');
+            }
+        }
+        
+        function showAccessResult(data) {
+            // Hide loading section
+            document.getElementById('loadingSection').classList.add('hidden');
+            
+            // Show access section
+            document.getElementById('accessSection').classList.remove('hidden');
+            
+            // Update status based on result
+            const statusCard = document.getElementById('statusCard');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusMessage = document.getElementById('statusMessage');
+            const statusDetails = document.getElementById('statusDetails');
+            
+            if (data.granted) {
+                statusCard.className = 'status-card status-granted pulse';
+                statusIcon.textContent = '✅';
+                statusMessage.textContent = 'Access Granted!';
+                statusDetails.textContent = data.message || 'Door will open shortly...';
+                
+                // Show user info if available
+                if (data.user) {
+                    document.getElementById('userName').textContent = data.user.name || 'Unknown User';
+                    document.getElementById('userInfo').classList.remove('hidden');
+                }
+                
+                // Show action button
+                document.getElementById('actionButton').textContent = 'Door Opening...';
+                document.getElementById('actionButtons').classList.remove('hidden');
+                
+                // Auto-close after 5 seconds if granted
+                setTimeout(() => {
+                    closeWindow();
+                }, 5000);
+                
+            } else {
+                statusCard.className = 'status-card status-denied';
+                statusIcon.textContent = '❌';
+                statusMessage.textContent = 'Access Denied';
+                statusDetails.textContent = data.message || 'You do not have permission to access this door';
+                
+                // Show action button
+                document.getElementById('actionButton').textContent = 'Try Again';
+                document.getElementById('actionButtons').classList.remove('hidden');
+            }
+            
+            // Update access time
+            document.getElementById('accessTime').textContent = new Date().toLocaleString();
+            document.getElementById('accessType').textContent = params.type === 'direct' ? 'Direct Access' : 'Access Request';
+        }
+        
+        function showError(message) {
+            document.getElementById('loadingSection').classList.add('hidden');
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorSection').classList.remove('hidden');
+        }
+        
+        function handleAction() {
+            if (accessData.granted) {
+                // If access was granted, close the window
+                closeWindow();
+            } else {
+                // If access was denied, reload to try again
+                location.reload();
+            }
+        }
+        
+        function closeWindow() {
+            // Try to close the window/tab
+            if (window.opener) {
+                window.close();
+            } else {
+                // If we can't close, redirect to a simple page
+                window.location.href = 'about:blank';
+            }
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('load', init);
+        
+        // Handle page visibility changes (for mobile)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && accessData.granted) {
+                // If user switches away after access granted, close the window
+                setTimeout(closeWindow, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
