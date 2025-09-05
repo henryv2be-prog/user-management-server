@@ -67,6 +67,8 @@ const initDatabase = () => {
                 location TEXT,
                 esp32_ip TEXT,
                 esp32_mac TEXT,
+                last_seen DATETIME,
+                is_online INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )`, (err) => {
