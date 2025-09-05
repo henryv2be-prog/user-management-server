@@ -15,6 +15,7 @@ class Door {
     this.secretKey = data.secret_key;
 
     this.lastSeen = data.last_seen;
+    this.isOnline = data.is_online === 1;
     this.createdAt = data.created_at;
     this.updatedAt = data.updated_at;
     
@@ -37,6 +38,7 @@ class Door {
       esp32Mac: this.esp32Mac,
       secretKey: this.secretKey,
       lastSeen: this.lastSeen,
+      isOnline: this.isOnline,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
       accessGroupId: this.accessGroupId,
@@ -106,6 +108,30 @@ class Door {
       db.get(
         'SELECT * FROM doors WHERE esp32_ip = ?',
         [ip],
+        (err, row) => {
+          db.close();
+          if (err) {
+            reject(err);
+            return;
+          }
+          
+          if (!row) {
+            resolve(null);
+            return;
+          }
+          
+          resolve(new Door(row));
+        }
+      );
+    });
+  }
+
+  static async findByMac(mac) {
+    return new Promise((resolve, reject) => {
+      const db = new sqlite3.Database(DB_PATH);
+      db.get(
+        'SELECT * FROM doors WHERE esp32_mac = ?',
+        [mac],
         (err, row) => {
           db.close();
           if (err) {
@@ -239,7 +265,7 @@ class Door {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(DB_PATH);
       db.run(
-        'UPDATE doors SET last_seen = CURRENT_TIMESTAMP WHERE id = ?',
+        'UPDATE doors SET last_seen = CURRENT_TIMESTAMP, is_online = 1 WHERE id = ?',
         [this.id],
         (err) => {
           db.close();
@@ -248,6 +274,28 @@ class Door {
             return;
           }
           
+          this.lastSeen = new Date().toISOString();
+          this.isOnline = true;
+          resolve(true);
+        }
+      );
+    });
+  }
+
+  async setOffline() {
+    return new Promise((resolve, reject) => {
+      const db = new sqlite3.Database(DB_PATH);
+      db.run(
+        'UPDATE doors SET is_online = 0 WHERE id = ?',
+        [this.id],
+        (err) => {
+          db.close();
+          if (err) {
+            reject(err);
+            return;
+          }
+          
+          this.isOnline = false;
           resolve(true);
         }
       );

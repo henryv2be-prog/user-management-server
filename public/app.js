@@ -639,7 +639,12 @@ function displayDoors(doors) {
             <td>${door.name}</td>
             <td>${door.location}</td>
             <td>${door.esp32Ip}</td>
-            <td><span class="status-indicator active">Active</span></td>
+            <td>
+                <span class="status-indicator ${door.isOnline ? 'online' : 'offline'}">
+                    <i class="fas fa-circle"></i>
+                    ${door.isOnline ? 'Online' : 'Offline'}
+                </span>
+            </td>
             <td>${door.lastSeen ? new Date(door.lastSeen).toLocaleString() : 'Never'}</td>
             <td>
                 <div class="action-buttons">
@@ -649,6 +654,11 @@ function displayDoors(doors) {
                     <button class="action-btn delete" onclick="deleteDoor(${door.id})">
                         <i class="fas fa-trash"></i>
                     </button>
+                    ${door.isOnline ? `
+                        <button class="action-btn control" onclick="controlDoor(${door.id}, 'open')" title="Open Door">
+                            <i class="fas fa-door-open"></i>
+                        </button>
+                    ` : ''}
                 </div>
             </td>
         </tr>
@@ -690,6 +700,30 @@ function filterDoors() {
     const statusFilter = document.getElementById('doorStatusFilter').value;
     currentFilters.isActive = statusFilter;
     loadDoors(1);
+}
+
+async function controlDoor(doorId, action) {
+    try {
+        const response = await fetch(`/api/doors/${doorId}/control`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ action })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.message || 'Failed to control door', 'error');
+        }
+    } catch (error) {
+        console.error('Door control error:', error);
+        showToast('Failed to control door', 'error');
+    }
 }
 
 function showCreateDoorModal() {
@@ -1775,3 +1809,27 @@ async function saveEsp32Configuration() {
         hideLoading();
     }
 }
+
+// Periodic door status updates
+let doorStatusInterval;
+
+function startDoorStatusUpdates() {
+    // Update door status every 30 seconds
+    doorStatusInterval = setInterval(() => {
+        if (currentUser && hasRole('admin') && currentSection === 'doors') {
+            loadDoors(currentPage);
+        }
+    }, 30000);
+}
+
+function stopDoorStatusUpdates() {
+    if (doorStatusInterval) {
+        clearInterval(doorStatusInterval);
+    }
+}
+
+// Initialize periodic updates when the app loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Start periodic door status updates
+    startDoorStatusUpdates();
+});

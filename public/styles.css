@@ -396,6 +396,29 @@ body {
     background: #dc3545;
 }
 
+.status-indicator.online {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-indicator.offline {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-indicator.online::before {
+    background: #28a745;
+}
+
+.status-indicator.offline::before {
+    background: #dc3545;
+}
+
+.status-indicator i.fa-circle {
+    font-size: 0.6rem;
+    margin-right: 4px;
+}
+
 /* Action Buttons */
 .action-buttons {
     display: flex;
@@ -418,6 +441,11 @@ body {
 
 .action-btn.delete {
     background: #dc3545;
+    color: white;
+}
+
+.action-btn.control {
+    background: #28a745;
     color: white;
 }
 

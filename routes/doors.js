@@ -488,4 +488,185 @@ router.post('/discover', authenticate, requireAdmin, async (req, res) => {
   }
 });
 
+// ESP32 Heartbeat endpoint
+router.post('/heartbeat', async (req, res) => {
+  try {
+    const { deviceID, deviceName, ip, mac, status, doorOpen, signal, freeHeap, uptime } = req.body;
+    
+    if (!deviceID || !ip) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'deviceID and ip are required'
+      });
+    }
+    
+    // Find door by ESP32 IP or MAC
+    let door = await Door.findByIp(ip);
+    if (!door && mac) {
+      // Try to find by MAC if IP not found
+      door = await Door.findByMac(mac);
+    }
+    
+    if (door) {
+      // Update last seen and online status
+      await door.updateLastSeen();
+      
+      res.json({
+        success: true,
+        message: 'Heartbeat received',
+        doorId: door.id,
+        doorName: door.name
+      });
+    } else {
+      // Door not found - could be a new ESP32
+      res.json({
+        success: true,
+        message: 'Heartbeat received but door not registered',
+        registered: false
+      });
+    }
+  } catch (error) {
+    console.error('Heartbeat error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to process heartbeat'
+    });
+  }
+});
+
+// ESP32 Access Request endpoint (for QR code scanning)
+router.post('/access/request', async (req, res) => {
+  try {
+    const { doorId, userId, reason } = req.body;
+    
+    if (!doorId) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'doorId is required'
+      });
+    }
+    
+    const door = await Door.findById(doorId);
+    if (!door) {
+      return res.status(404).json({
+        error: 'Door Not Found',
+        message: 'The requested door does not exist'
+      });
+    }
+    
+    // Check if door is online
+    if (!door.isOnline) {
+      return res.json({
+        success: false,
+        message: 'Door is offline',
+        accessGranted: false
+      });
+    }
+    
+    // If userId provided, check access permissions
+    if (userId) {
+      const hasAccess = await door.verifyAccess(userId);
+      if (!hasAccess) {
+        await Door.logAccess(doorId, userId, false, 'Access denied - no permission');
+        return res.json({
+          success: false,
+          message: 'Access denied',
+          accessGranted: false
+        });
+      }
+    }
+    
+    // Grant access
+    await Door.logAccess(doorId, userId, true, reason || 'QR code access');
+    
+    // Send door open command to ESP32
+    try {
+      const response = await fetch(`http://${door.esp32Ip}/door`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action: 'open' })
+      });
+      
+      if (response.ok) {
+        res.json({
+          success: true,
+          message: 'Access granted - door opening',
+          accessGranted: true
+        });
+      } else {
+        res.json({
+          success: false,
+          message: 'Access granted but door control failed',
+          accessGranted: true
+        });
+      }
+    } catch (doorError) {
+      console.error('Door control error:', doorError);
+      res.json({
+        success: false,
+        message: 'Access granted but door control failed',
+        accessGranted: true
+      });
+    }
+  } catch (error) {
+    console.error('Access request error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to process access request'
+    });
+  }
+});
+
+// Direct door control endpoint
+router.post('/:id/control', authenticate, requireAdmin, validateId, async (req, res) => {
+  try {
+    const doorId = parseInt(req.params.id);
+    const { action } = req.body;
+    
+    const door = await Door.findById(doorId);
+    if (!door) {
+      return res.status(404).json({
+        error: 'Door Not Found',
+        message: 'The requested door does not exist'
+      });
+    }
+    
+    if (!door.isOnline) {
+      return res.status(400).json({
+        error: 'Door Offline',
+        message: 'Cannot control door - device is offline'
+      });
+    }
+    
+    // Send command to ESP32
+    const response = await fetch(`http://${door.esp32Ip}/door`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ action })
+    });
+    
+    if (response.ok) {
+      res.json({
+        success: true,
+        message: `Door ${action} command sent successfully`
+      });
+    } else {
+      res.status(500).json({
+        error: 'Door Control Failed',
+        message: 'Failed to send command to ESP32'
+      });
+    }
+  } catch (error) {
+    console.error('Door control error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to control door'
+    });
+  }
+});
+
 module.exports = router;
