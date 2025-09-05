@@ -1,0 +1,3 @@
+[33m69fc803[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mv1.0-dev-fixed[m[33m, [m[1;31morigin/v1.0-dev-fixed[m[33m)[m Add ESP32 Configuration Modal and functionality
+[33m76130a5[m Fix ESP32 Discovery implementation - clean version from stable
+[33m0838251[m[33m ([m[1;33mtag: [m[1;33mv1.0-stable[m[33m, [m[1;33mtag: [m[1;33mv1.0[m[33m, [m[1;31morigin/stable-backup[m[33m, [m[1;32mstable-backup[m[33m)[m Perfect smooth updates: Remove loading indicator from automatic status updates
