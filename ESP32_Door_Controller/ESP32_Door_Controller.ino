@@ -324,7 +324,7 @@ void setupConfigWebServer() {
         preferences.putBool("configured", true);
         
         // Generate device ID
-        String deviceID = "ESP32-" + WiFi.macAddress();
+        deviceID = "ESP32-" + WiFi.macAddress();
         deviceID.replace(":", "");
         preferences.putString("device_id", deviceID);
         
