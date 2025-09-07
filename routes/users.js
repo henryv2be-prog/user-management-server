@@ -11,6 +11,7 @@ const {
   requireAdmin, 
   authorizeSelfOrAdmin 
 } = require('../middleware/auth');
+const EventLogger = require('../utils/eventLogger');
 
 const router = express.Router();
 
@@ -151,6 +152,9 @@ router.post('/', authenticate, requireAdmin, validateUser, async (req, res) => {
       }
     }
     
+    // Log user creation event
+    await EventLogger.logUserCreated(req, user);
+    
     res.status(201).json({
       message: 'User created successfully',
       user: user.toJSON()
@@ -201,6 +205,10 @@ router.put('/:id', authenticate, validateId, authorizeSelfOrAdmin, validateUserU
     
     const updatedUser = await user.update(updateData);
     
+    // Log user update event
+    const changes = Object.keys(req.body).filter(key => req.body[key] !== undefined);
+    await EventLogger.logUserUpdated(req, updatedUser, changes);
+    
     res.json({
       message: 'User updated successfully',
       user: updatedUser.toJSON()
@@ -235,6 +243,9 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
       });
     }
     
+    // Log user deletion event before deleting
+    await EventLogger.logUserDeleted(req, user);
+    
     await user.delete();
     
     res.json({
@@ -257,6 +268,9 @@ router.get('/stats/overview', authenticate, requireAdmin, async (req, res) => {
       User.count({ role: 'admin' }),
       User.count({ role: 'moderator' })
     ]);
+    
+    // For now, assume all users are active since we don't have an is_active column
+    const activeUsers = totalUsers;
     
     res.json({
       stats: {

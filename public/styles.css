@@ -528,26 +528,37 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 30px;
+    padding: 24px 30px;
     border-bottom: 1px solid #e1e5e9;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px 15px 0 0;
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
 }
 
 .modal-header h3 {
-    color: #333;
+    color: white;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    font-weight: 600;
+    font-size: 1.4rem;
+    margin: 0;
 }
 
 .close {
     font-size: 2rem;
     cursor: pointer;
-    color: #666;
-    transition: color 0.3s ease;
+    color: white;
+    transition: all 0.3s ease;
+    padding: 4px;
+    border-radius: 4px;
+    line-height: 1;
 }
 
 .close:hover {
-    color: #333;
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
 }
 
 .modal form {
@@ -559,6 +570,741 @@ body {
     gap: 15px;
     justify-content: flex-end;
     margin-top: 20px;
+}
+
+/* Door selection styles */
+.door-selection-container {
+    border: 1px solid #e1e5e9;
+    border-radius: 12px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.door-selection-header {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.door-selection-header .btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.door-selection-header .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.door-checkbox-list {
+    max-height: 350px;
+    overflow-y: auto;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 0;
+    background-color: white;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.door-checkbox-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f3f4;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.door-checkbox-item:last-child {
+    border-bottom: none;
+}
+
+.door-checkbox-item:hover {
+    background-color: #f8f9fa;
+}
+
+.door-checkbox-item input[type="checkbox"] {
+    margin-right: 12px;
+    transform: scale(1.3);
+    accent-color: #667eea;
+    cursor: pointer;
+}
+
+.door-checkbox-item input[type="checkbox"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.door-checkbox-item label {
+    flex: 1;
+    cursor: pointer;
+    margin: 0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+}
+
+.door-checkbox-item .door-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.door-checkbox-item .door-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 15px;
+    margin-bottom: 2px;
+}
+
+.door-checkbox-item .door-details {
+    font-size: 13px;
+    color: #7f8c8d;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.door-checkbox-item .door-status {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.door-checkbox-item .door-status.already-added {
+    background-color: #e8f5e8;
+    color: #27ae60;
+}
+
+.door-checkbox-item .door-status.available {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+/* Current doors section styling */
+#accessGroupDoorsList {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 16px;
+    min-height: 60px;
+}
+
+#accessGroupDoorsList .text-muted {
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+.door-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.door-item:last-child {
+    margin-bottom: 0;
+}
+
+.door-item:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+.door-item .door-info {
+    flex: 1;
+}
+
+.door-item .door-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 15px;
+    margin-bottom: 2px;
+}
+
+.door-item .door-details {
+    font-size: 13px;
+    color: #7f8c8d;
+}
+
+.door-item .remove-btn {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.door-item .remove-btn:hover {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+}
+
+/* Section headers */
+.modal-body .form-group label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 16px;
+    margin-bottom: 12px;
+    display: block;
+}
+
+/* Scrollbar styling */
+.door-checkbox-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.door-checkbox-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.door-checkbox-list::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.door-checkbox-list::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Door tags in access groups table */
+.door-tag {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    margin: 2px 4px 2px 0;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(102, 126, 234, 0.3);
+    transition: all 0.2s ease;
+}
+
+.door-tag:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
+}
+
+.door-count {
+    display: inline-block;
+    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    margin: 2px 4px 2px 0;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(149, 165, 166, 0.3);
+}
+
+.no-doors {
+    color: #95a5a6;
+    font-style: italic;
+    font-size: 12px;
+}
+
+/* Access groups table adjustments for doors column */
+.access-groups-table th:nth-child(3),
+.access-groups-table td:nth-child(3) {
+    min-width: 200px;
+    max-width: 300px;
+}
+
+.access-groups-table td:nth-child(3) {
+    vertical-align: top;
+    padding-top: 12px;
+}
+
+/* Door form validation styles */
+.door-form input.error,
+.door-form select.error {
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
+}
+
+.door-error-message {
+    color: #e74c3c;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+
+.door-error-message strong {
+    font-weight: 600;
+}
+
+.door-error-message i {
+    color: #f59e0b;
+}
+
+/* Adjust column widths after removing status column */
+.access-groups-table th:nth-child(1),
+.access-groups-table td:nth-child(1) {
+    min-width: 150px;
+}
+
+/* Door Status Monitoring Styles */
+.door-status-section {
+    margin-bottom: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.door-status-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    margin: 0;
+}
+
+.door-status-section .section-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.door-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.door-controls .refresh-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-left: 1rem;
+}
+
+.door-controls .refresh-indicator i {
+    animation: spin 2s linear infinite;
+}
+
+.door-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+}
+
+.door-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.door-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.door-card.offline {
+    border-color: #dc3545;
+    background: #fff5f5;
+}
+
+.door-card.online {
+    border-color: #28a745;
+    background: #f8fff9;
+}
+
+.door-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.door-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #495057;
+    margin: 0;
+}
+
+.door-status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.door-status-indicator.online {
+    background: #28a745;
+    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+}
+
+.door-status-indicator.offline {
+    background: #dc3545;
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+}
+
+.door-location {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 0.75rem;
+}
+
+.door-status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.door-status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.door-status-icon {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    font-size: 0.7rem;
+}
+
+.door-status-icon.locked {
+    background: #28a745;
+    color: white;
+}
+
+.door-status-icon.unlocked {
+    background: #dc3545;
+    color: white;
+}
+
+.door-status-icon.unknown {
+    background: #6c757d;
+    color: white;
+}
+
+.door-status-icon.na {
+    background: #adb5bd; /* Light grey */
+    color: #6c757d; /* Darker grey text */
+    opacity: 0.7;
+}
+
+.door-status-icon.open {
+    background: #dc3545; /* Red - indicates vulnerability */
+    color: white;
+}
+
+.door-status-icon.closed {
+    background: #28a745; /* Green - indicates secure */
+    color: white;
+}
+
+.door-status-text {
+    font-weight: 500;
+    color: #495057;
+}
+
+.door-ip {
+    font-size: 0.75rem;
+    color: #adb5bd;
+    font-family: monospace;
+    text-align: center;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.door-last-seen {
+    font-size: 0.75rem;
+    color: #adb5bd;
+    text-align: center;
+    margin-top: 0.25rem;
+}
+
+/* Event Log Styles */
+.event-log-section {
+    margin-top: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.event-log-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin: 0;
+}
+
+.event-log-section .section-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.event-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.event-controls .refresh-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-left: 1rem;
+}
+
+.event-controls .refresh-indicator i {
+    animation: spin 2s linear infinite;
+}
+
+.event-controls select {
+    padding: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 0.9rem;
+}
+
+.event-controls select option {
+    background: #333;
+    color: white;
+}
+
+.event-log-container {
+    max-height: 500px;
+    overflow-y: auto;
+    background: #f8f9fa;
+}
+
+.event-log {
+    padding: 0;
+}
+
+.event-item {
+    display: grid;
+    grid-template-columns: 24px 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.event-item:hover {
+    background-color: #f1f3f4;
+}
+
+.event-item:last-child {
+    border-bottom: none;
+}
+
+.event-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.event-icon.user { background: #007bff; }
+.event-icon.door { background: #28a745; }
+.event-icon.access_group { background: #6f42c1; }
+.event-icon.auth { background: #fd7e14; }
+.event-icon.access { background: #20c997; }
+.event-icon.error { background: #dc3545; }
+.event-icon.system { background: #6c757d; }
+
+.event-content {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    min-width: 0;
+}
+
+.event-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.event-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.event-action {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.event-entity {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.event-details {
+    color: #6c757d;
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
+.event-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: #adb5bd;
+    text-align: right;
+}
+
+.event-user {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.event-time {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.event-pagination {
+    padding: 1rem 1.5rem;
+    background: white;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: center;
+}
+
+.event-pagination .pagination {
+    margin: 0;
+}
+
+.event-pagination .pagination button {
+    padding: 0.5rem 0.75rem;
+    margin: 0 0.25rem;
+    border: 1px solid #dee2e6;
+    background: white;
+    color: #495057;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.event-pagination .pagination button:hover:not(:disabled) {
+    background: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.event-pagination .pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.event-pagination .pagination button.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* Empty state for events */
+.event-log-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: #6c757d;
+}
+
+.event-log-empty i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.event-log-empty h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.event-log-empty p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.access-groups-table th:nth-child(2),
+.access-groups-table td:nth-child(2) {
+    min-width: 200px;
+}
+
+.access-groups-table th:nth-child(4),
+.access-groups-table td:nth-child(4) {
+    min-width: 120px;
+    text-align: center;
+}
+
+.access-groups-table th:nth-child(5),
+.access-groups-table td:nth-child(5) {
+    min-width: 150px;
+    text-align: center;
 }
 
 /* Pagination */
@@ -1228,6 +1974,38 @@ body {
 .esp32-config-form select:focus {
     outline: none;
     border-color: #667eea;
+}
+
+/* Header Actions */
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+
+/* Refresh Indicator */
+.refresh-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 8px;
+    padding: 4px 8px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid #667eea;
+}
+
+.refresh-indicator i {
+    color: #667eea;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 /* Responsive ESP32 Discovery */

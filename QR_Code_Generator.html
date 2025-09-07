@@ -4,7 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimplifiAccess - QR Code Generator</title>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" crossorigin="anonymous"></script>
+    <script>
+        // Wait for QRCode library to load
+        let qrCodeLoaded = false;
+        
+        function checkQRCodeLibrary() {
+            if (typeof QRCode !== 'undefined') {
+                qrCodeLoaded = true;
+                console.log('QRCode library loaded successfully');
+            } else {
+                console.log('QRCode library not yet loaded, retrying...');
+                setTimeout(checkQRCodeLibrary, 100);
+            }
+        }
+        
+        // Start checking for the library
+        checkQRCodeLibrary();
+        
+        // Store reference to original QRCode library
+        let originalQRCode = null;
+        
+        // Wait for the library to load and store reference
+        function waitForQRCode() {
+            if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+                originalQRCode = QRCode;
+                console.log('QRCode library loaded and ready');
+            } else {
+                setTimeout(waitForQRCode, 100);
+            }
+        }
+        
+        waitForQRCode();
+        
+        console.log('QR Code generator initialized');
+    </script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -214,6 +248,14 @@
             </div>
             
             <div class="form-group">
+                <label for="qrFormat">QR Code Format:</label>
+                <select id="qrFormat">
+                    <option value="url">URL Format (Dynamic)</option>
+                    <option value="json">JSON Format (Static)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
                 <label for="expiryTime">Expiry Time (minutes):</label>
                 <input type="number" id="expiryTime" value="60" min="1" max="1440">
             </div>
@@ -262,10 +304,19 @@
             }
             
             try {
-                const response = await fetch(`${serverUrl}/api/doors`);
-                if (!response.ok) throw new Error('Failed to load doors');
+                console.log('Fetching doors from:', `${serverUrl}/api/doors/public`);
+                const response = await fetch(`${serverUrl}/api/doors/public`);
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
                 
-                doors = await response.json();
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Raw response data:', data);
+                
+                doors = Array.isArray(data) ? data : [];
                 
                 doorSelect.innerHTML = '<option value="">Select a door...</option>';
                 doors.forEach(door => {
@@ -276,17 +327,25 @@
                 });
                 
                 console.log('Loaded doors:', doors);
+                console.log('Number of doors loaded:', doors.length);
             } catch (error) {
                 console.error('Error loading doors:', error);
                 doorSelect.innerHTML = '<option value="">Error loading doors</option>';
-                alert('Failed to load doors. Please check your server URL and try again.');
+                alert(`Failed to load doors: ${error.message}. Please check your server URL and try again.`);
             }
         }
         
         function generateQR() {
+            // Check if QRCode library is available
+            if (typeof QRCode === 'undefined') {
+                alert('QR Code library is not loaded. Please refresh the page and try again.');
+                return;
+            }
+            
             const serverUrl = document.getElementById('serverUrl').value;
             const doorId = document.getElementById('doorSelect').value;
             const accessType = document.getElementById('accessType').value;
+            const qrFormat = document.getElementById('qrFormat').value;
             const expiryTime = document.getElementById('expiryTime').value;
             const customMessage = document.getElementById('customMessage').value;
             
@@ -302,37 +361,47 @@
                 return;
             }
             
-            // Generate access URL
-            const accessUrl = generateAccessUrl(serverUrl, doorId, accessType, expiryTime, customMessage);
+            // Generate QR code data based on format
+            let qrData;
+            if (qrFormat === 'json') {
+                qrData = generateStaticQRData(doorId, selectedDoor, serverUrl);
+            } else {
+                qrData = generateAccessUrl(serverUrl, doorId, accessType, expiryTime, customMessage);
+            }
             
             // Clear previous QR code
             document.getElementById('qrcode').innerHTML = '';
             
-            // Generate new QR code
-            QRCode.toCanvas(document.getElementById('qrcode'), accessUrl, {
-                width: 300,
-                height: 300,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                }
-            }, function (error) {
-                if (error) {
-                    console.error('QR Code generation error:', error);
-                    alert('Failed to generate QR code');
-                } else {
-                    console.log('QR Code generated successfully');
-                }
-            });
+            // Generate new QR code using original library
+            if (originalQRCode && originalQRCode.toCanvas) {
+                originalQRCode.toCanvas(document.getElementById('qrcode'), qrData, {
+                    width: 300,
+                    height: 300,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                }, function (error) {
+                    if (error) {
+                        console.error('QR Code generation error:', error);
+                        alert('Failed to generate QR code');
+                    } else {
+                        console.log('QR Code generated successfully');
+                    }
+                });
+            } else {
+                console.error('QRCode library not available');
+                alert('QR Code library not loaded. Please refresh the page and try again.');
+            }
             
             // Show QR section
             document.getElementById('qrSection').style.display = 'block';
-            document.getElementById('accessUrl').textContent = accessUrl;
+            document.getElementById('accessUrl').textContent = qrData;
             
             // Generate preview
-            generatePreview(selectedDoor, accessUrl, accessType);
+            generatePreview(selectedDoor, qrData, accessType, qrFormat);
             
-            currentQRCode = accessUrl;
+            currentQRCode = qrData;
         }
         
         function generateAccessUrl(serverUrl, doorId, accessType, expiryTime, customMessage) {
@@ -353,8 +422,23 @@
             return `${serverUrl}/access?${params.toString()}`;
         }
         
-        function generatePreview(selectedDoor, accessUrl, accessType) {
+        function generateStaticQRData(doorId, door, serverUrl) {
+            const qrData = {
+                doorId: parseInt(doorId),
+                doorName: door.name,
+                location: door.location,
+                esp32Ip: door.esp32Ip,
+                serverUrl: serverUrl,
+                type: 'door_access'
+            };
+            
+            return JSON.stringify(qrData);
+        }
+        
+        function generatePreview(selectedDoor, qrData, accessType, qrFormat) {
             const previewContent = document.getElementById('previewContent');
+            
+            let formatText = qrFormat === 'json' ? 'Static JSON Format' : 'Dynamic URL Format';
             
             let preview = `
                 <div style="max-width: 400px; margin: 0 auto; text-align: center; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background: white;">
@@ -362,6 +446,7 @@
                     <p><strong>Door:</strong> ${selectedDoor.name}</p>
                     <p><strong>Location:</strong> ${selectedDoor.location || 'Not specified'}</p>
                     <p><strong>Type:</strong> ${accessType === 'request' ? 'Access Request' : 'Direct Access'}</p>
+                    <p><strong>Format:</strong> ${formatText}</p>
                     <div style="margin: 20px 0;">
                         <div style="width: 200px; height: 200px; margin: 0 auto; background: #f0f0f0; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #666;">
                             QR Code Here
@@ -369,6 +454,9 @@
                     </div>
                     <p style="font-size: 0.9em; color: #666;">
                         ${accessType === 'request' ? 'Scan with your phone to request access' : 'Admin access - scan to open door directly'}
+                    </p>
+                    <p style="font-size: 0.8em; color: #999; margin-top: 10px;">
+                        ${qrFormat === 'json' ? 'Static QR codes work offline and contain door information' : 'Dynamic QR codes include expiry time and custom messages'}
                     </p>
                 </div>
             `;

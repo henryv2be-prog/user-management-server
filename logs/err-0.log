@@ -1,0 +1,504 @@
+2025-09-07T21:35:37: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:38: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:39: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:40: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:41: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:41: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:42: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:43: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:44: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:45: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:46: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:47: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:48: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:49: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:49: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:50: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:51: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:51: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:52: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:52: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:53: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:54: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:55: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:55: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:56: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:56: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:57: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:58: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:58: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:35:59: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:36:00: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:36:01: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:36:01: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:36:02: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:36:03: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}
+2025-09-07T21:36:05: Server error: Error: bind EADDRINUSE 0.0.0.0:3000
+    at listenOnPrimaryHandle (node:net:2021:18)
+    at shared (node:internal/cluster/child:157:3)
+    at Worker.<anonymous> (node:internal/cluster/child:110:7)
+    at process.onInternalMessage (node:internal/cluster/utils:49:5)
+    at process.emit (node:events:531:35)
+    at emit (node:internal/child_process:949:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+  errno: -4091,
+  code: 'EADDRINUSE',
+  syscall: 'bind',
+  address: '0.0.0.0',
+  port: 3000
+}

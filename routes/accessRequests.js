@@ -1,0 +1,404 @@
+const express = require('express');
+const { body, validationResult } = require('express-validator');
+const AccessRequest = require('../database/accessRequest');
+const { Door } = require('../database/door');
+const { User } = require('../database/models');
+const AccessGroup = require('../database/accessGroup');
+const { authenticate, requireAdmin } = require('../middleware/auth');
+const { validatePagination } = require('../middleware/validation');
+const EventLogger = require('../utils/eventLogger');
+
+const router = express.Router();
+
+// Validation middleware
+const validateAccessRequest = [
+  body('doorId').isInt({ min: 1 }).withMessage('Door ID must be a positive integer'),
+  body('requestType').optional().isIn(['qr_scan', 'manual', 'emergency']).withMessage('Invalid request type'),
+  body('qrCodeData').optional().isString().withMessage('QR code data must be a string')
+];
+
+// Process access request (requires user authentication from mobile app)
+router.post('/request', authenticate, validateAccessRequest, async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Please fix the validation errors below',
+        errors: errors.array()
+      });
+    }
+
+    const { doorId, requestType = 'qr_scan', qrCodeData } = req.body;
+    const userId = req.user.id; // User is authenticated via mobile app
+    
+    // Find the door
+    const door = await Door.findById(doorId);
+    if (!door) {
+      return res.status(404).json({
+        error: 'Door Not Found',
+        message: 'The requested door does not exist'
+      });
+    }
+
+    // Check if door is online
+    if (!door.isOnline) {
+      return res.status(503).json({
+        error: 'Door Offline',
+        message: 'The door is currently offline and cannot process access requests'
+      });
+    }
+
+    // Check if user has access to this door
+    // All users (including admins) must have proper access groups to access doors
+    let hasAccess = await checkUserDoorAccess(userId, doorId);
+    
+    if (hasAccess) {
+      console.log(`User ${req.user.email} (${req.user.role}) granted access to door ${doorId} via access groups`);
+    } else {
+      console.log(`User ${req.user.email} (${req.user.role}) denied access to door ${doorId} - no access groups`);
+    }
+    
+    if (!hasAccess) {
+      // Create denied request
+      const requestData = {
+        userId: userId,
+        doorId: doorId,
+        requestType: requestType,
+        status: 'denied',
+        reason: 'User does not have access to this door',
+        userAgent: req.headers['user-agent'],
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+        qrCodeData: qrCodeData,
+        processedAt: new Date().toISOString()
+      };
+
+      const accessRequest = await AccessRequest.create(requestData);
+
+      // Log denied access
+      await EventLogger.log(req, 'access', 'denied', 'AccessRequest', accessRequest.id, `Access denied to ${req.user.firstName} ${req.user.lastName} for ${door.name}`, `User: ${req.user.email}`);
+
+      return res.json({
+        success: true,
+        message: 'Access denied',
+        access: false,
+        reason: 'You do not have access to this door',
+        requestId: accessRequest.id,
+        door: {
+          id: door.id,
+          name: door.name,
+          location: door.location
+        }
+      });
+    }
+
+    // User has access - create granted request
+    const requestData = {
+      userId: userId,
+      doorId: doorId,
+      requestType: requestType,
+      status: 'granted',
+      reason: 'Access granted',
+      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+      qrCodeData: qrCodeData,
+      processedAt: new Date().toISOString()
+    };
+
+    const accessRequest = await AccessRequest.create(requestData);
+
+    // Log granted access
+    await EventLogger.log(req, 'access', 'granted', 'AccessRequest', accessRequest.id, `Access granted to ${req.user.firstName} ${req.user.lastName} for ${door.name}`, `User: ${req.user.email}`);
+
+    // Send door open command to ESP32
+    let doorControlSuccess = false;
+    let doorControlMessage = '';
+    
+    try {
+      const response = await fetch(`http://${door.esp32Ip}/door`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action: 'open' })
+      });
+      
+      if (response.ok) {
+        doorControlSuccess = true;
+        doorControlMessage = 'Door opening command sent';
+      } else {
+        doorControlMessage = 'Access granted but door control failed';
+      }
+    } catch (doorError) {
+      console.error('Door control error:', doorError);
+      doorControlMessage = 'Access granted but door control failed';
+    }
+
+    res.json({
+      success: true,
+      message: doorControlSuccess ? 'Access granted - door opening' : 'Access granted but door control failed',
+      access: true,
+      doorControlSuccess: doorControlSuccess,
+      doorControlMessage: doorControlMessage,
+      requestId: accessRequest.id,
+      user: {
+        id: req.user.id,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        email: req.user.email
+      },
+      door: {
+        id: door.id,
+        name: door.name,
+        location: door.location,
+        esp32Ip: door.esp32Ip
+      }
+    });
+
+  } catch (error) {
+    console.error('Access request error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to process access request'
+    });
+  }
+});
+
+// ESP32 door control endpoint (no auth required - uses secret key)
+router.post('/door-control', async (req, res) => {
+  try {
+    const { doorId, secretKey, action = 'open' } = req.body;
+
+    if (!doorId || !secretKey) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'doorId and secretKey are required'
+      });
+    }
+
+    // Find the door and validate secret key
+    const door = await Door.findById(doorId);
+    if (!door || door.secretKey !== secretKey) {
+      return res.status(403).json({
+        error: 'Access Denied',
+        message: 'Invalid door or secret key'
+      });
+    }
+
+    // Check if door is online
+    if (!door.isOnline) {
+      return res.status(503).json({
+        error: 'Door Offline',
+        message: 'The door is currently offline'
+      });
+    }
+
+    // Log door control action
+    await EventLogger.log(req, 'door', 'controlled', 'Door', door.id, `Door ${action} command sent to ${door.name}`, `Action: ${action}`);
+
+    res.json({
+      success: true,
+      message: `Door ${action} command sent`,
+      door: {
+        id: door.id,
+        name: door.name,
+        location: door.location,
+        esp32Ip: door.esp32Ip
+      },
+      action: action,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Door control error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to control door'
+    });
+  }
+});
+
+// Helper function to check if user has access to a door
+async function checkUserDoorAccess(userId, doorId) {
+  try {
+    // Get all access groups for the user
+    const userAccessGroups = await AccessGroup.getUserAccessGroups(userId);
+    
+    if (userAccessGroups.length === 0) {
+      return false; // User has no access groups
+    }
+
+    // Check if any of the user's access groups include this door
+    for (const accessGroup of userAccessGroups) {
+      const doors = await accessGroup.getDoors();
+      if (doors.some(door => door.id === doorId)) {
+        return true; // User has access through this access group
+      }
+    }
+
+    return false; // User has no access to this door
+  } catch (error) {
+    console.error('Error checking user door access:', error);
+    return false;
+  }
+}
+
+// Get access requests (admin only)
+router.get('/', authenticate, requireAdmin, validatePagination, async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status, userId, doorId, requestType } = req.query;
+
+    const options = { page: parseInt(page), limit: parseInt(limit) };
+    if (status) options.status = status;
+    if (userId) options.userId = parseInt(userId);
+    if (doorId) options.doorId = parseInt(doorId);
+    if (requestType) options.requestType = requestType;
+
+    const requests = await AccessRequest.findAll(options);
+    const totalCount = await AccessRequest.count(options);
+
+    res.json({
+      requests: requests.map(request => request.toJSON()),
+      pagination: {
+        totalCount,
+        currentPage: options.page,
+        perPage: options.limit,
+        totalPages: Math.ceil(totalCount / options.limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get access requests error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to retrieve access requests'
+    });
+  }
+});
+
+// Get access request by ID (admin only)
+router.get('/:id', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const requestId = parseInt(req.params.id);
+    
+    if (isNaN(requestId)) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Invalid request ID'
+      });
+    }
+
+    const request = await AccessRequest.findById(requestId);
+    if (!request) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Access request not found'
+      });
+    }
+
+    res.json({
+      request: request.toJSON()
+    });
+  } catch (error) {
+    console.error('Get access request error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to retrieve access request'
+    });
+  }
+});
+
+// Update access request status (admin only)
+router.patch('/:id/status', authenticate, requireAdmin, [
+  body('status').isIn(['pending', 'granted', 'denied', 'expired']).withMessage('Invalid status'),
+  body('reason').optional().isString().withMessage('Reason must be a string')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Please fix the validation errors below',
+        errors: errors.array()
+      });
+    }
+
+    const requestId = parseInt(req.params.id);
+    const { status, reason } = req.body;
+
+    if (isNaN(requestId)) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Invalid request ID'
+      });
+    }
+
+    const request = await AccessRequest.findById(requestId);
+    if (!request) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Access request not found'
+      });
+    }
+
+    const updateData = { status };
+    if (reason) updateData.reason = reason;
+    if (status !== 'pending') updateData.processedAt = new Date().toISOString();
+
+    await request.update(updateData);
+
+    // Log status change
+    await EventLogger.log(req, 'access', 'status_changed', 'AccessRequest', request.id, `Status changed to ${status}`, `Reason: ${reason || 'No reason provided'}`);
+
+    res.json({
+      success: true,
+      message: 'Access request status updated',
+      request: request.toJSON()
+    });
+  } catch (error) {
+    console.error('Update access request error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to update access request'
+    });
+  }
+});
+
+// Delete access request (admin only)
+router.delete('/:id', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const requestId = parseInt(req.params.id);
+
+    if (isNaN(requestId)) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Invalid request ID'
+      });
+    }
+
+    const request = await AccessRequest.findById(requestId);
+    if (!request) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Access request not found'
+      });
+    }
+
+    // Log deletion
+    await EventLogger.log(req, 'access', 'deleted', 'AccessRequest', request.id, `Access request deleted`, `Request ID: ${request.id}`);
+
+    await request.delete();
+
+    res.json({
+      success: true,
+      message: 'Access request deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete access request error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to delete access request'
+    });
+  }
+});
+
+module.exports = router;

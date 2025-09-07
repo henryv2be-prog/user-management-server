@@ -1,0 +1,50 @@
+2025-09-07 21:18:12 - Starting C:\Program Files\nodejs\node.exe  --max_old_space_size=4096 C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\node_modules\node-windows\lib\wrapper.js --file C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\service-wrapper.js --scriptoptions= --log "User Management Server wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2025-09-07 21:18:12 - Started 6868
+2025-09-07 21:21:54 - Stopping usermanagementserver.exe
+2025-09-07 21:21:54 - ProcessKill 6868
+2025-09-07 21:21:54 - Shutdown exception
+Message:Class not registered
+
+Stacktrace:   at System.Runtime.InteropServices.Marshal.ThrowExceptionForHRInternal(Int32 errorCode, IntPtr errorInfo)
+   at System.Management.ManagementScope.InitializeGuts(Object o)
+   at System.Management.ManagementScope.Initialize()
+   at System.Management.ManagementObjectSearcher.Initialize()
+   at System.Management.ManagementObjectSearcher.Get()
+   at winsw.WrapperService.GetChildPids(Int32 pid)
+   at winsw.WrapperService.StopProcessAndChildren(Int32 pid)
+   at winsw.WrapperService.StopIt()
+   at winsw.WrapperService.OnShutdown()
+2025-09-07 21:22:19 - Starting C:\Program Files\nodejs\node.exe  --max_old_space_size=4096 C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\node_modules\node-windows\lib\wrapper.js --file C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\service-wrapper.js --scriptoptions= --log "User Management Server wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2025-09-07 21:22:19 - Started 7188
+2025-09-07 21:24:53 - Stopping usermanagementserver.exe
+2025-09-07 21:24:53 - ProcessKill 7188
+2025-09-07 21:24:53 - Shutdown exception
+Message:Class not registered
+
+Stacktrace:   at System.Runtime.InteropServices.Marshal.ThrowExceptionForHRInternal(Int32 errorCode, IntPtr errorInfo)
+   at System.Management.ManagementScope.InitializeGuts(Object o)
+   at System.Management.ManagementScope.Initialize()
+   at System.Management.ManagementObjectSearcher.Initialize()
+   at System.Management.ManagementObjectSearcher.Get()
+   at winsw.WrapperService.GetChildPids(Int32 pid)
+   at winsw.WrapperService.StopProcessAndChildren(Int32 pid)
+   at winsw.WrapperService.StopIt()
+   at winsw.WrapperService.OnShutdown()
+2025-09-07 21:25:19 - Starting C:\Program Files\nodejs\node.exe  --max_old_space_size=4096 C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\node_modules\node-windows\lib\wrapper.js --file C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\service-wrapper.js --scriptoptions= --log "User Management Server wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2025-09-07 21:25:19 - Started 6872
+2025-09-07 21:39:06 - Stopping usermanagementserver.exe
+2025-09-07 21:39:06 - ProcessKill 6872
+2025-09-07 21:39:06 - Shutdown exception
+Message:Class not registered
+
+Stacktrace:   at System.Runtime.InteropServices.Marshal.ThrowExceptionForHRInternal(Int32 errorCode, IntPtr errorInfo)
+   at System.Management.ManagementScope.InitializeGuts(Object o)
+   at System.Management.ManagementScope.Initialize()
+   at System.Management.ManagementObjectSearcher.Initialize()
+   at System.Management.ManagementObjectSearcher.Get()
+   at winsw.WrapperService.GetChildPids(Int32 pid)
+   at winsw.WrapperService.StopProcessAndChildren(Int32 pid)
+   at winsw.WrapperService.StopIt()
+   at winsw.WrapperService.OnShutdown()
+2025-09-07 21:39:32 - Starting C:\Program Files\nodejs\node.exe  --max_old_space_size=4096 C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\node_modules\node-windows\lib\wrapper.js --file C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\service-wrapper.js --scriptoptions= --log "User Management Server wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2025-09-07 21:39:32 - Started 6092

@@ -11,6 +11,7 @@ const {
   requireAdmin, 
   authorizeSelfOrAdmin 
 } = require('../middleware/auth');
+const EventLogger = require('../utils/eventLogger');
 
 const router = express.Router();
 
@@ -104,6 +105,9 @@ router.post('/', authenticate, requireAdmin, validateAccessGroup, async (req, re
       description
     });
     
+    // Log access group creation event
+    await EventLogger.logAccessGroupCreated(req, accessGroup);
+    
     res.status(201).json({
       message: 'Access group created successfully',
       accessGroup: accessGroup.toJSON()
@@ -132,6 +136,10 @@ router.put('/:id', authenticate, requireAdmin, validateId, validateAccessGroupUp
     
     const updatedAccessGroup = await accessGroup.update(req.body);
     
+    // Log access group update event
+    const changes = Object.keys(req.body).filter(key => req.body[key] !== undefined);
+    await EventLogger.logAccessGroupUpdated(req, updatedAccessGroup, changes);
+    
     res.json({
       message: 'Access group updated successfully',
       accessGroup: updatedAccessGroup.toJSON()
@@ -157,6 +165,9 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
         message: 'The requested access group does not exist'
       });
     }
+    
+    // Log access group deletion event before deleting
+    await EventLogger.logAccessGroupDeleted(req, accessGroup);
     
     await accessGroup.delete();
     
@@ -273,6 +284,15 @@ router.post('/:id/doors', authenticate, requireAdmin, validateId, async (req, re
     const success = await accessGroup.addDoor(doorId);
     
     if (success) {
+      // Get door details for logging
+      const { Door } = require('../database/door');
+      const door = await Door.findById(doorId);
+      
+      // Log door addition event
+      if (door) {
+        await EventLogger.logDoorAddedToAccessGroup(req, door, accessGroup);
+      }
+      
       res.json({
         message: 'Door added to access group successfully'
       });

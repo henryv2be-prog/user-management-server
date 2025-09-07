@@ -1,0 +1,32 @@
+<service>
+	<id>usermanagementserver.exe</id>
+	<name>User Management Server</name>
+	<description>User Management System with ESP32 Door Control and Tray Monitor</description>
+	<executable>C:\Program Files\nodejs\node.exe</executable>
+	<argument>--max_old_space_size=4096</argument>
+	<argument>C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\node_modules\node-windows\lib\wrapper.js</argument>
+	<argument>--file</argument>
+	<argument>C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\service-wrapper.js</argument>
+	<argument>--scriptoptions=</argument>
+	<argument>--log</argument>
+	<argument>User Management Server wrapper</argument>
+	<argument>--grow</argument>
+	<argument>0.25</argument>
+	<argument>--wait</argument>
+	<argument>1</argument>
+	<argument>--maxrestarts</argument>
+	<argument>3</argument>
+	<argument>--abortonerror</argument>
+	<argument>n</argument>
+	<argument>--stopparentfirst</argument>
+	<argument>undefined</argument>
+	<logmode>rotate</logmode>
+	<stoptimeout>30sec</stoptimeout>
+	<env name="NODE_ENV" value="production"/>
+	<serviceaccount>
+		<domain>HENRY_LAPTOP</domain>
+		<user>LocalSystem</user>
+		<password></password>
+	</serviceaccount>
+	<workingdirectory>C:\Users\henry\OneDrive\Documents\Arduino\user-management-server</workingdirectory>
+</service>
