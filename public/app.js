@@ -2,6 +2,7 @@
 let currentUser = null;
 let currentPage = 1;
 let currentFilters = {};
+let currentSection = 'dashboard';
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -166,53 +167,272 @@ function toggleNav() {
 }
 
 // Dashboard functions
+let doorRefreshInterval = null;
+
 async function loadDashboard() {
     if (!currentUser || !hasRole('admin')) {
         return;
     }
     
     try {
-        // Load user stats
-        const userStatsResponse = await fetch('/api/users/stats/overview', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        // Load door status data
+        await loadDoorStatus();
         
-        // Load door stats
-        const doorStatsResponse = await fetch('/api/doors?limit=1', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        // Load recent events
+        await loadEvents();
         
-        // Load access group stats
-        const accessGroupStatsResponse = await fetch('/api/access-groups?limit=1', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        
-        let stats = {};
-        
-        if (userStatsResponse.ok) {
-            const userData = await userStatsResponse.json();
-            stats = { ...userData.stats };
-        }
-        
-        if (doorStatsResponse.ok) {
-            const doorData = await doorStatsResponse.json();
-            stats.totalDoors = doorData.pagination.totalCount;
-        }
-        
-        if (accessGroupStatsResponse.ok) {
-            const accessGroupData = await accessGroupStatsResponse.json();
-            stats.totalAccessGroups = accessGroupData.pagination.totalCount;
-        }
-        
-        displayStats(stats);
+        // Start door status refresh
+        startDoorStatusRefresh();
     } catch (error) {
-        console.error('Failed to load dashboard stats:', error);
+        console.error('Failed to load dashboard data:', error);
+    }
+}
+
+async function loadDoorStatus() {
+    try {
+        const response = await fetch('/api/doors?limit=100', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Door status loaded:', data.doors.length, 'doors');
+            displayDoorStatus(data.doors);
+            updateDoorRefreshIndicator();
+        } else {
+            console.error('Failed to load door status');
+        }
+    } catch (error) {
+        console.error('Load door status error:', error);
+    }
+}
+
+function displayDoorStatus(doors) {
+    const doorGrid = document.getElementById('doorGrid');
+    
+    if (!doors || doors.length === 0) {
+        doorGrid.innerHTML = `
+            <div class="door-card" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+                <i class="fas fa-door-open" style="font-size: 2rem; color: #adb5bd; margin-bottom: 1rem;"></i>
+                <h3 style="color: #6c757d; margin: 0 0 0.5rem 0;">No Doors Found</h3>
+                <p style="color: #adb5bd; margin: 0;">No doors have been configured yet.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    doorGrid.innerHTML = doors.map(door => `
+        <div class="door-card ${door.isOnline ? 'online' : 'offline'}">
+            <div class="door-header">
+                <h3 class="door-name">${door.name}</h3>
+                <div class="door-status-indicator ${door.isOnline ? 'online' : 'offline'}"></div>
+            </div>
+            <div class="door-location">${door.location}</div>
+            <div class="door-status-grid">
+                <div class="door-status-item">
+                    <div class="door-status-icon ${getLockStatusClass(door)}">
+                        <i class="fas ${getLockStatusIcon(door)}"></i>
+                    </div>
+                    <span class="door-status-text">${getLockStatusText(door)}</span>
+                </div>
+                       <div class="door-status-item">
+                           <div class="door-status-icon ${getDoorPositionClass(door)}">
+                               <i class="fas ${getDoorPositionIcon(door)}"></i>
+                           </div>
+                           <span class="door-status-text">${getDoorPositionText(door)}</span>
+                       </div>
+            </div>
+            <div class="door-ip">${door.esp32Ip}</div>
+            <div class="door-last-seen">
+                ${door.lastSeen ? `Last seen: ${formatDoorTime(door.lastSeen)}` : 'Never seen'}
+            </div>
+        </div>
+    `).join('');
+}
+
+function startDoorStatusRefresh() {
+    // Clear existing interval
+    if (doorRefreshInterval) {
+        clearInterval(doorRefreshInterval);
+    }
+    
+    // Start new interval - refresh every 5 seconds for more responsive updates
+    doorRefreshInterval = setInterval(() => {
+        // Only refresh if we're on the dashboard
+        const dashboardSection = document.getElementById('dashboardSection');
+        if (dashboardSection && dashboardSection.classList.contains('active')) {
+            console.log('Refreshing door status...');
+            loadDoorStatus();
+        }
+    }, 5000); // Reduced to 5 seconds for more responsive updates
+}
+
+function stopDoorStatusRefresh() {
+    if (doorRefreshInterval) {
+        clearInterval(doorRefreshInterval);
+        doorRefreshInterval = null;
+    }
+}
+
+function refreshDoorStatus() {
+    loadDoorStatus();
+}
+
+function updateDoorRefreshIndicator() {
+    const refreshIndicator = document.getElementById('doorRefreshIndicator');
+    if (refreshIndicator) {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString();
+        refreshIndicator.innerHTML = `
+            <i class="fas fa-sync-alt"></i>
+            <span>Auto-refreshing every 10s • Last updated: ${timeString}</span>
+        `;
+    }
+}
+
+function formatDoorTime(timestamp) {
+    // Handle timezone issue - database stores UTC time but we need local time
+    let date;
+    if (timestamp.includes(' ')) {
+        // If it's in format "YYYY-MM-DD HH:mm:ss", treat as UTC and convert to local
+        // Add 'Z' to indicate UTC, then JavaScript will convert to local timezone
+        date = new Date(timestamp + 'Z');
+    } else {
+        date = new Date(timestamp);
+    }
+    
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) {
+        return 'Just now';
+    } else if (diffMins < 60) {
+        return `${diffMins}m ago`;
+    } else if (diffHours < 24) {
+        return `${diffHours}h ago`;
+    } else if (diffDays < 7) {
+        return `${diffDays}d ago`;
+    } else {
+        return date.toLocaleDateString();
+    }
+}
+
+function getLockStatusClass(door) {
+    // If door is offline, show unknown status
+    if (!door.isOnline) {
+        return 'unknown';
+    }
+    
+    // If door doesn't have a lock sensor, show N/A
+    if (!door.hasLockSensor) {
+        return 'na';
+    }
+    
+    // If isLocked is explicitly false, show unlocked
+    if (door.isLocked === false) {
+        return 'unlocked';
+    }
+    
+    // If isLocked is explicitly true, show locked
+    if (door.isLocked === true) {
+        return 'locked';
+    }
+    
+    // If isLocked is null/undefined, show unknown
+    return 'unknown';
+}
+
+function getLockStatusIcon(door) {
+    const statusClass = getLockStatusClass(door);
+    
+    switch (statusClass) {
+        case 'locked':
+            return 'fa-lock';
+        case 'unlocked':
+            return 'fa-unlock';
+        case 'na':
+            return 'fa-minus';
+        case 'unknown':
+        default:
+            return 'fa-question';
+    }
+}
+
+function getLockStatusText(door) {
+    const statusClass = getLockStatusClass(door);
+    
+    switch (statusClass) {
+        case 'locked':
+            return 'Locked';
+        case 'unlocked':
+            return 'Unlocked';
+        case 'na':
+            return 'N/A';
+        case 'unknown':
+        default:
+            return 'Unknown';
+    }
+}
+
+function getDoorPositionClass(door) {
+    // If door is offline, show unknown status
+    if (!door.isOnline) {
+        return 'unknown';
+    }
+    
+    // If door doesn't have a door position sensor, show N/A
+    if (!door.hasDoorPositionSensor) {
+        return 'na';
+    }
+    
+    // If isOpen is explicitly false, show closed
+    if (door.isOpen === false) {
+        return 'closed';
+    }
+    
+    // If isOpen is explicitly true, show open
+    if (door.isOpen === true) {
+        return 'open';
+    }
+    
+    // If isOpen is null/undefined, show unknown
+    return 'unknown';
+}
+
+function getDoorPositionIcon(door) {
+    const statusClass = getDoorPositionClass(door);
+    
+    switch (statusClass) {
+        case 'open':
+            return 'fa-door-open';
+        case 'closed':
+            return 'fa-door-closed';
+        case 'na':
+            return 'fa-minus';
+        case 'unknown':
+        default:
+            return 'fa-question';
+    }
+}
+
+function getDoorPositionText(door) {
+    const statusClass = getDoorPositionClass(door);
+    
+    switch (statusClass) {
+        case 'open':
+            return 'Open';
+        case 'closed':
+            return 'Closed';
+        case 'na':
+            return 'N/A';
+        case 'unknown':
+        default:
+            return 'Unknown';
     }
 }
 
@@ -425,7 +645,6 @@ async function editUser(userId) {
             document.getElementById('editLastName').value = user.lastName;
             document.getElementById('editEmail').value = user.email;
             document.getElementById('editRole').value = user.role;
-            document.getElementById('editIsActive').value = user.isActive.toString();
             
             document.getElementById('editUserModal').classList.add('active');
         }
@@ -445,8 +664,7 @@ async function handleEditUser(event) {
         firstName: formData.get('firstName'),
         lastName: formData.get('lastName'),
         email: formData.get('email'),
-        role: formData.get('role'),
-        isActive: formData.get('isActive') === 'true'
+        role: formData.get('role')
     };
     
     try {
@@ -645,7 +863,7 @@ function displayDoors(doors) {
                     ${door.isOnline ? 'Online' : 'Offline'}
                 </span>
             </td>
-            <td>${door.lastSeen ? new Date(door.lastSeen).toLocaleString() : 'Never'}</td>
+            <td>${door.lastSeen ? formatDoorTime(door.lastSeen) : 'Never'}</td>
             <td>
                 <div class="action-buttons">
                     <button class="action-btn edit" onclick="editDoor(${door.id})">
@@ -663,6 +881,9 @@ function displayDoors(doors) {
             </td>
         </tr>
     `).join('');
+    
+    // Update last refresh time
+    updateLastRefreshTime();
 }
 
 function displayDoorsPagination(pagination) {
@@ -739,8 +960,13 @@ async function handleCreateDoor(event) {
         name: formData.get('name'),
         location: formData.get('location'),
         esp32Ip: formData.get('esp32Ip'),
-        esp32Mac: formData.get('esp32Mac')
+        esp32Mac: formData.get('esp32Mac'),
+        hasLockSensor: formData.get('hasLockSensor') === 'true',
+        hasDoorPositionSensor: formData.get('hasDoorPositionSensor') === 'true'
     };
+    
+    // Clear previous validation errors
+    clearDoorValidationErrors();
     
     try {
         const response = await fetch('/api/doors', {
@@ -760,7 +986,24 @@ async function handleCreateDoor(event) {
             event.target.reset();
             loadDoors();
         } else {
-            showToast(data.message || 'Failed to create door', 'error');
+            // Debug: Log the response to see what we're getting
+            console.log('Door creation failed. Response:', data);
+            
+            // Handle validation errors
+            if (data.errors) {
+                console.log('Validation errors found:', data.errors);
+                displayDoorValidationErrors(data.errors);
+                // Show a general error toast for validation failures
+                const errorMessages = Object.values(data.errors);
+                if (errorMessages.some(msg => msg.includes('already in use'))) {
+                    showToast('Please fix the duplicate address errors below', 'error');
+                } else {
+                    showToast('Please fix the validation errors below', 'error');
+                }
+            } else {
+                console.log('No validation errors, showing generic message');
+                showToast(data.message || 'Failed to create door', 'error');
+            }
         }
     } catch (error) {
         console.error('Create door error:', error);
@@ -787,7 +1030,8 @@ async function editDoor(doorId) {
             document.getElementById('editDoorLocation').value = door.location;
             document.getElementById('editDoorEsp32Ip').value = door.esp32Ip;
             document.getElementById('editDoorEsp32Mac').value = door.esp32Mac || '';
-            document.getElementById('editDoorIsActive').value = door.isActive.toString();
+            document.getElementById('editDoorHasLockSensor').value = door.hasLockSensor.toString();
+            document.getElementById('editDoorHasDoorPositionSensor').value = door.hasDoorPositionSensor.toString();
             
             document.getElementById('editDoorModal').classList.add('active');
         } else {
@@ -810,8 +1054,12 @@ async function handleEditDoor(event) {
         location: formData.get('location'),
         esp32Ip: formData.get('esp32Ip'),
         esp32Mac: formData.get('esp32Mac'),
-        isActive: formData.get('isActive') === 'true'
+        hasLockSensor: formData.get('hasLockSensor') === 'true',
+        hasDoorPositionSensor: formData.get('hasDoorPositionSensor') === 'true'
     };
+    
+    // Clear previous validation errors
+    clearDoorValidationErrors();
     
     try {
         const response = await fetch(`/api/doors/${doorId}`, {
@@ -830,7 +1078,19 @@ async function handleEditDoor(event) {
             closeModal('editDoorModal');
             loadDoors();
         } else {
-            showToast(data.message || 'Failed to update door', 'error');
+            // Handle validation errors
+            if (data.errors) {
+                displayDoorValidationErrors(data.errors);
+                // Show a general error toast for validation failures
+                const errorMessages = Object.values(data.errors);
+                if (errorMessages.some(msg => msg.includes('already in use'))) {
+                    showToast('Please fix the duplicate address errors below', 'error');
+                } else {
+                    showToast('Please fix the validation errors below', 'error');
+                }
+            } else {
+                showToast(data.message || 'Failed to update door', 'error');
+            }
         }
     } catch (error) {
         console.error('Update door error:', error);
@@ -838,6 +1098,57 @@ async function handleEditDoor(event) {
     } finally {
         hideLoading();
     }
+}
+
+// Door validation error handling
+function clearDoorValidationErrors() {
+    // Clear any existing error messages
+    const errorElements = document.querySelectorAll('.door-error-message');
+    errorElements.forEach(el => el.remove());
+    
+    // Remove error styling
+    const errorInputs = document.querySelectorAll('.door-form input.error, .door-form select.error');
+    errorInputs.forEach(input => input.classList.remove('error'));
+}
+
+function displayDoorValidationErrors(errors) {
+    clearDoorValidationErrors();
+    
+    // Display validation errors
+    Object.keys(errors).forEach(field => {
+        const input = document.querySelector(`[name="${field}"]`);
+        if (input) {
+            input.classList.add('error');
+            
+            // Create error message element
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'door-error-message';
+            
+            // Format the error message with better styling
+            const errorText = errors[field];
+            if (errorText.includes('already in use')) {
+                // Style duplicate errors differently
+                errorDiv.innerHTML = `
+                    <i class="fas fa-exclamation-triangle" style="margin-right: 4px;"></i>
+                    <strong>Duplicate ${field === 'esp32Ip' ? 'IP' : 'MAC'} Address:</strong> ${errorText}
+                `;
+                errorDiv.style.background = '#fdf2f2';
+                errorDiv.style.border = '1px solid #fecaca';
+                errorDiv.style.borderRadius = '4px';
+                errorDiv.style.padding = '8px';
+            } else {
+                errorDiv.textContent = errorText;
+            }
+            
+            errorDiv.style.color = '#e74c3c';
+            errorDiv.style.fontSize = '12px';
+            errorDiv.style.marginTop = '4px';
+            errorDiv.style.display = 'block';
+            
+            // Insert after the input
+            input.parentNode.insertBefore(errorDiv, input.nextSibling);
+        }
+    });
 }
 
 async function deleteDoor(doorId) {
@@ -914,22 +1225,55 @@ async function loadAccessGroups(page = 1) {
     }
 }
 
-function displayAccessGroups(accessGroups) {
+async function displayAccessGroups(accessGroups) {
     console.log('Displaying access groups:', accessGroups);
     const tbody = document.getElementById('accessGroupsTableBody');
-    tbody.innerHTML = accessGroups.map(group => `
+    
+    // Load door information for each access group
+    const accessGroupsWithDoors = await Promise.all(
+        accessGroups.map(async (group) => {
+            try {
+                const response = await fetch(`/api/access-groups/${group.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    return {
+                        ...group,
+                        doors: data.doors || []
+                    };
+                } else {
+                    return {
+                        ...group,
+                        doors: []
+                    };
+                }
+            } catch (error) {
+                console.error(`Error loading doors for access group ${group.id}:`, error);
+                return {
+                    ...group,
+                    doors: []
+                };
+            }
+        })
+    );
+    
+    tbody.innerHTML = accessGroupsWithDoors.map(group => `
         <tr>
             <td>${group.name}</td>
             <td>${group.description || 'No description'}</td>
-            <td><span class="status-indicator active">Active</span></td>
+            <td>${formatDoorsColumn(group.doors)}</td>
             <td>${new Date(group.createdAt).toLocaleDateString()}</td>
             <td>
                 <div class="action-buttons">
                     <button class="action-btn edit" onclick="editAccessGroup(${group.id})">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="action-btn details" onclick="manageAccessGroupDetails(${group.id})">
-                        <i class="fas fa-info-circle"></i>
+                    <button class="action-btn details" onclick="manageAccessGroupDetails(${group.id})" title="Manage Doors">
+                        <i class="fas fa-door-open"></i>
                     </button>
                     <button class="action-btn delete" onclick="deleteAccessGroup(${group.id})">
                         <i class="fas fa-trash"></i>
@@ -938,6 +1282,28 @@ function displayAccessGroups(accessGroups) {
             </td>
         </tr>
     `).join('');
+}
+
+function formatDoorsColumn(doors) {
+    if (!doors || doors.length === 0) {
+        return '<span class="no-doors">No doors assigned</span>';
+    }
+    
+    if (doors.length <= 3) {
+        // Show all door names
+        return doors.map(door => `
+            <span class="door-tag">${door.name}</span>
+        `).join('');
+    } else {
+        // Show first 2 doors + count
+        const visibleDoors = doors.slice(0, 2);
+        const remainingCount = doors.length - 2;
+        
+        return `
+            ${visibleDoors.map(door => `<span class="door-tag">${door.name}</span>`).join('')}
+            <span class="door-count">+${remainingCount} more</span>
+        `;
+    }
 }
 
 function displayAccessGroupsPagination(pagination) {
@@ -971,11 +1337,6 @@ function searchAccessGroups() {
     loadAccessGroups(1);
 }
 
-function filterAccessGroups() {
-    const statusFilter = document.getElementById('accessGroupStatusFilter').value;
-    currentFilters.isActive = statusFilter;
-    loadAccessGroups(1);
-}
 
 function showCreateAccessGroupModal() {
     document.getElementById('createAccessGroupModal').classList.add('active');
@@ -1034,7 +1395,6 @@ async function editAccessGroup(accessGroupId) {
             document.getElementById('editAccessGroupId').value = accessGroup.id;
             document.getElementById('editAccessGroupName').value = accessGroup.name;
             document.getElementById('editAccessGroupDescription').value = accessGroup.description || '';
-            document.getElementById('editAccessGroupIsActive').value = accessGroup.isActive.toString();
             
             document.getElementById('editAccessGroupModal').classList.add('active');
         } else {
@@ -1054,8 +1414,7 @@ async function handleEditAccessGroup(event) {
     const accessGroupId = formData.get('id');
     const accessGroupData = {
         name: formData.get('name'),
-        description: formData.get('description'),
-        isActive: formData.get('isActive') === 'true'
+        description: formData.get('description')
     };
     
     try {
@@ -1133,17 +1492,25 @@ async function manageUserAccessGroups(userId) {
             const accessGroupsData = await accessGroupsResponse.json();
             const allAccessGroups = accessGroupsData.accessGroups;
             
-            // Get user's current access groups (we'll need to create an API endpoint for this)
-            // For now, we'll show all access groups and let the backend handle duplicates
-            const dropdown = document.getElementById('userAccessGroupSelect');
-            dropdown.innerHTML = '<option value="">Select an access group...</option>';
-            
-            allAccessGroups.forEach(group => {
-                dropdown.innerHTML += `<option value="${group.id}">${group.name}</option>`;
+            // Get user's current access groups
+            const userAccessGroupsResponse = await fetch(`/api/users/${userId}/access-groups`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
             });
             
-            // For now, we'll show an empty list since we don't have a user access groups endpoint yet
-            displayUserAccessGroups([]);
+            let currentAccessGroups = [];
+            if (userAccessGroupsResponse.ok) {
+                const userAccessGroupsData = await userAccessGroupsResponse.json();
+                currentAccessGroups = userAccessGroupsData.accessGroups;
+            }
+            
+            
+            // Display available access groups as checkboxes
+            displayAvailableUserAccessGroups(allAccessGroups, currentAccessGroups);
+            
+            // Display current access groups
+            displayUserCurrentAccessGroups(currentAccessGroups);
             
             document.getElementById('userAccessGroupsModal').classList.add('active');
         }
@@ -1153,13 +1520,46 @@ async function manageUserAccessGroups(userId) {
     }
 }
 
-function displayUserAccessGroups(accessGroups) {
-    const container = document.getElementById('userAccessGroupsList');
+function displayAvailableUserAccessGroups(allAccessGroups, currentAccessGroups) {
+    const container = document.getElementById('userAccessGroupsCheckboxList');
+    const currentGroupIds = currentAccessGroups.map(group => group.id);
+    
+    container.innerHTML = allAccessGroups.map(group => {
+        const isAlreadyAssigned = currentGroupIds.includes(group.id);
+        const isChecked = isAlreadyAssigned;
+        
+        return `
+            <div class="door-checkbox-item">
+                <label>
+                    <input type="checkbox" 
+                           value="${group.id}" 
+                           ${isChecked ? 'checked' : ''}>
+                    <div class="door-info">
+                        <div class="door-name">${group.name}</div>
+                        <div class="door-details">${group.description || 'No description'}</div>
+                    </div>
+                    <div class="door-status ${isAlreadyAssigned ? 'already-added' : 'available'}">
+                        ${isAlreadyAssigned ? 'Currently Assigned' : 'Available'}
+                    </div>
+                </label>
+            </div>
+        `;
+    }).join('');
+}
+
+function displayUserCurrentAccessGroups(accessGroups) {
+    const container = document.getElementById('userCurrentAccessGroupsList');
+    
+    if (accessGroups.length === 0) {
+        container.innerHTML = '<div class="text-muted">No access groups assigned to this user</div>';
+        return;
+    }
+    
     container.innerHTML = accessGroups.map(group => `
-        <div class="access-group-item">
-            <div>
-                <strong>${group.name}</strong>
-                ${group.description ? `<br><small>${group.description}</small>` : ''}
+        <div class="door-item">
+            <div class="door-info">
+                <div class="door-name">${group.name}</div>
+                <div class="door-details">${group.description || 'No description'}</div>
             </div>
             <button class="remove-btn" onclick="removeAccessGroupFromUser(${group.id})">
                 <i class="fas fa-times"></i> Remove
@@ -1168,42 +1568,51 @@ function displayUserAccessGroups(accessGroups) {
     `).join('');
 }
 
-async function addAccessGroupToUser() {
-    const accessGroupId = document.getElementById('userAccessGroupSelect').value;
+
+async function updateUserAccessGroups() {
+    const checkboxes = document.querySelectorAll('#userAccessGroupsCheckboxList input[type="checkbox"]:checked');
+    const accessGroupIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
     
-    if (!accessGroupId) {
-        showToast('Please select an access group', 'error');
-        return;
-    }
     
     showLoading();
     
     try {
-        const response = await fetch(`/api/access-groups/${accessGroupId}/users`, {
-            method: 'POST',
+        const response = await fetch(`/api/users/${currentUserId}/access-groups`, {
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
-            body: JSON.stringify({ 
-                userId: parseInt(currentUserId)
-            })
+            body: JSON.stringify({ accessGroupIds })
         });
         
         if (response.ok) {
-            showToast('Access group added to user successfully!', 'success');
-            document.getElementById('userAccessGroupSelect').value = '';
+            showToast('User access groups updated successfully!', 'success');
             manageUserAccessGroups(currentUserId); // Reload the modal
         } else {
             const data = await response.json();
-            showToast(data.message || 'Failed to add access group to user', 'error');
+            showToast(data.message || 'Failed to update user access groups', 'error');
         }
     } catch (error) {
-        console.error('Error adding access group to user:', error);
-        showToast('Failed to add access group to user', 'error');
+        console.error('Error updating user access groups:', error);
+        showToast('Failed to update user access groups', 'error');
     } finally {
         hideLoading();
     }
+}
+
+function selectAllUserAccessGroups() {
+    const checkboxes = document.querySelectorAll('#userAccessGroupsCheckboxList input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+}
+
+function deselectAllUserAccessGroups() {
+    const checkboxes = document.querySelectorAll('#userAccessGroupsCheckboxList input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
 }
 
 async function removeAccessGroupFromUser(accessGroupId) {
@@ -1255,9 +1664,9 @@ async function manageAccessGroupDetails(accessGroupId) {
         if (accessGroupResponse.ok) {
             const accessGroupData = await accessGroupResponse.json();
             const accessGroup = accessGroupData.accessGroup;
-            const doors = accessGroupData.doors;
+            const currentDoors = accessGroupData.doors;
             
-            // Load all doors for the dropdown
+            // Load all doors for the checkboxes
             const doorsResponse = await fetch('/api/doors?limit=100', {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1268,27 +1677,19 @@ async function manageAccessGroupDetails(accessGroupId) {
                 const doorsData = await doorsResponse.json();
                 const allDoors = doorsData.doors;
                 
-                console.log('Loaded doors for dropdown:', allDoors);
+                console.log('Loaded doors for checkboxes:', allDoors);
+                console.log('Current doors in access group:', currentDoors);
                 
-                // Populate door dropdown
-                const doorDropdown = document.getElementById('accessGroupDoorSelect');
-                doorDropdown.innerHTML = '<option value="">Select a door...</option>';
-                
-                allDoors.forEach(door => {
-                    if (!doors.find(d => d.id === door.id)) {
-                        doorDropdown.innerHTML += `<option value="${door.id}">${door.name} (${door.location})</option>`;
-                    }
-                });
-                
-                console.log('Door dropdown populated with', doorDropdown.children.length - 1, 'doors');
+                // Display available doors as checkboxes
+                displayAvailableDoors(allDoors, currentDoors);
                 
                 // Display current doors
-                displayAccessGroupDoors(doors);
+                displayAccessGroupDoors(currentDoors);
                 
                 document.getElementById('accessGroupDetailsModal').classList.add('active');
             } else {
                 console.error('Failed to load doors:', doorsResponse.status, doorsResponse.statusText);
-                showToast('Failed to load doors for dropdown', 'error');
+                showToast('Failed to load doors for selection', 'error');
             }
         }
     } catch (error) {
@@ -1297,13 +1698,60 @@ async function manageAccessGroupDetails(accessGroupId) {
     }
 }
 
+function displayAvailableDoors(allDoors, currentDoors) {
+    const container = document.getElementById('availableDoorsList');
+    const currentDoorIds = currentDoors.map(door => door.id);
+    
+    container.innerHTML = allDoors.map(door => {
+        const isAlreadyAdded = currentDoorIds.includes(door.id);
+        const statusClass = isAlreadyAdded ? 'already-added' : 'available';
+        const statusText = isAlreadyAdded ? 'Already Added' : 'Available';
+        
+        return `
+            <div class="door-checkbox-item">
+                <input type="checkbox" 
+                       id="door_${door.id}" 
+                       value="${door.id}" 
+                       ${isAlreadyAdded ? 'disabled' : ''}>
+                <label for="door_${door.id}">
+                    <div class="door-info">
+                        <div class="door-name">${door.name}</div>
+                        <div class="door-details">
+                            <i class="fas fa-map-marker-alt"></i>
+                            ${door.location} 
+                            <i class="fas fa-wifi"></i>
+                            ${door.esp32Ip}
+                        </div>
+                    </div>
+                </label>
+                <span class="door-status ${statusClass}">${statusText}</span>
+            </div>
+        `;
+    }).join('');
+}
+
 function displayAccessGroupDoors(doors) {
     const container = document.getElementById('accessGroupDoorsList');
+    if (doors.length === 0) {
+        container.innerHTML = `
+            <div class="text-muted">
+                <i class="fas fa-door-open" style="font-size: 24px; margin-bottom: 8px; display: block; opacity: 0.5;"></i>
+                No doors assigned to this access group.
+            </div>
+        `;
+        return;
+    }
+    
     container.innerHTML = doors.map(door => `
         <div class="door-item">
-            <div>
-                <strong>${door.name}</strong>
-                <br><small>${door.location} (${door.esp32Ip})</small>
+            <div class="door-info">
+                <div class="door-name">${door.name}</div>
+                <div class="door-details">
+                    <i class="fas fa-map-marker-alt"></i>
+                    ${door.location} 
+                    <i class="fas fa-wifi"></i>
+                    ${door.esp32Ip || 'N/A'}
+                </div>
             </div>
             <button class="remove-btn" onclick="removeDoorFromAccessGroup(${door.id})">
                 <i class="fas fa-times"></i> Remove
@@ -1314,43 +1762,61 @@ function displayAccessGroupDoors(doors) {
 
 
 
-async function addDoorToAccessGroup() {
-    const doorId = document.getElementById('accessGroupDoorSelect').value;
+async function addSelectedDoorsToAccessGroup() {
+    const checkboxes = document.querySelectorAll('#availableDoorsList input[type="checkbox"]:checked:not(:disabled)');
     
-    console.log('Adding door to access group:', { doorId, currentAccessGroupId });
-    
-    if (!doorId) {
-        showToast('Please select a door', 'error');
+    if (checkboxes.length === 0) {
+        showToast('Please select at least one door to add', 'error');
         return;
     }
+    
+    const doorIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+    
+    console.log('Adding doors to access group:', { doorIds, currentAccessGroupId });
     
     showLoading();
     
     try {
-        const response = await fetch(`/api/access-groups/${currentAccessGroupId}/doors`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ doorId: parseInt(doorId) })
-        });
+        // Add doors one by one (since the API doesn't support bulk operations yet)
+        const promises = doorIds.map(doorId => 
+            fetch(`/api/access-groups/${currentAccessGroupId}/doors`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ doorId })
+            })
+        );
         
-        if (response.ok) {
-            console.log('Door added to access group successfully');
-            showToast('Door added to access group successfully!', 'success');
+        const responses = await Promise.all(promises);
+        const failedResponses = responses.filter(response => !response.ok);
+        
+        if (failedResponses.length === 0) {
+            console.log('All doors added to access group successfully');
+            showToast(`${doorIds.length} door(s) added to access group successfully!`, 'success');
             manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
         } else {
-            const data = await response.json();
-            console.error('Failed to add door to access group:', response.status, data);
-            showToast(data.message || 'Failed to add door to access group', 'error');
+            console.error('Some doors failed to add:', failedResponses.length);
+            showToast(`${doorIds.length - failedResponses.length} door(s) added, ${failedResponses.length} failed`, 'warning');
+            manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
         }
     } catch (error) {
-        console.error('Error adding door to access group:', error);
-        showToast('Failed to add door to access group', 'error');
+        console.error('Error adding doors to access group:', error);
+        showToast('Failed to add doors to access group', 'error');
     } finally {
         hideLoading();
     }
+}
+
+function selectAllAvailableDoors() {
+    const checkboxes = document.querySelectorAll('#availableDoorsList input[type="checkbox"]:not(:disabled)');
+    checkboxes.forEach(cb => cb.checked = true);
+}
+
+function deselectAllAvailableDoors() {
+    const checkboxes = document.querySelectorAll('#availableDoorsList input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = false);
 }
 
 async function removeDoorFromAccessGroup(doorId) {
@@ -1389,19 +1855,26 @@ async function removeDoorFromAccessGroup(doorId) {
 function showSection(sectionName) {
     hideAllSections();
     document.getElementById(sectionName + 'Section').classList.add('active');
+    currentSection = sectionName; // Track current section for auto-refresh
     
     if (sectionName === 'dashboard') {
         loadDashboard();
-    } else if (sectionName === 'users') {
-        loadUsers();
-    } else if (sectionName === 'doors') {
-        loadDoors();
-    } else if (sectionName === 'accessGroups') {
-        loadAccessGroups();
-    } else if (sectionName === 'esp32Discovery') {
-        loadEsp32Discovery();
-    } else if (sectionName === 'profile') {
-        updateProfileInfo();
+        startEventRefresh(); // Start event refresh when on dashboard
+        startDoorStatusRefresh(); // Start door status refresh when on dashboard
+    } else {
+        stopEventRefresh(); // Stop event refresh when leaving dashboard
+        stopDoorStatusRefresh(); // Stop door refresh when leaving dashboard
+        if (sectionName === 'users') {
+            loadUsers();
+        } else if (sectionName === 'doors') {
+            loadDoors();
+        } else if (sectionName === 'accessGroups') {
+            loadAccessGroups();
+        } else if (sectionName === 'esp32Discovery') {
+            loadEsp32Discovery();
+        } else if (sectionName === 'profile') {
+            updateProfileInfo();
+        }
     }
 }
 
@@ -1814,17 +2287,313 @@ async function saveEsp32Configuration() {
 let doorStatusInterval;
 
 function startDoorStatusUpdates() {
-    // Update door status every 30 seconds
+    // Update door status every 10 seconds for more responsive updates
     doorStatusInterval = setInterval(() => {
         if (currentUser && hasRole('admin') && currentSection === 'doors') {
-            loadDoors(currentPage);
+            refreshDoorStatus();
         }
-    }, 30000);
+    }, 10000);
 }
 
 function stopDoorStatusUpdates() {
     if (doorStatusInterval) {
         clearInterval(doorStatusInterval);
+    }
+}
+
+// Refresh only door status without loading indicators
+async function refreshDoorStatus() {
+    if (!currentUser || !hasRole('admin')) {
+        return;
+    }
+    
+    try {
+        const params = new URLSearchParams({
+            page: currentPage,
+            limit: 10,
+            ...currentFilters
+        });
+        
+        const response = await fetch(`/api/doors?${params}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayDoors(data.doors);
+            // Don't refresh pagination during auto-updates
+        }
+    } catch (error) {
+        console.error('Failed to refresh door status:', error);
+        // Don't show error toast for background updates
+    }
+}
+
+// Update last refresh time indicator
+function updateLastRefreshTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString();
+    
+    // Update or create the refresh indicator
+    let refreshIndicator = document.getElementById('doorRefreshIndicator');
+    if (!refreshIndicator) {
+        // Create the indicator if it doesn't exist
+        const doorsHeader = document.querySelector('#doorsSection .section-header');
+        if (doorsHeader) {
+            refreshIndicator = document.createElement('div');
+            refreshIndicator.id = 'doorRefreshIndicator';
+            refreshIndicator.className = 'refresh-indicator';
+            refreshIndicator.innerHTML = `
+                <i class="fas fa-sync-alt"></i>
+                <span>Auto-refreshing every 10s • Last updated: ${timeString}</span>
+            `;
+            doorsHeader.appendChild(refreshIndicator);
+        }
+    } else {
+        // Update existing indicator
+        refreshIndicator.innerHTML = `
+            <i class="fas fa-sync-alt"></i>
+            <span>Auto-refreshing every 10s • Last updated: ${timeString}</span>
+        `;
+    }
+}
+
+
+// Event Log Functions
+let currentEventPage = 1;
+let currentEventType = '';
+let eventRefreshInterval = null;
+
+async function loadEvents(page = 1, type = '') {
+    try {
+        console.log('Loading events - page:', page, 'type:', type);
+        
+        const params = new URLSearchParams({
+            page: page,
+            limit: 20
+        });
+        
+        if (type) {
+            params.append('type', type);
+        }
+        
+        const response = await fetch(`/api/events?${params}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        console.log('Events response status:', response.status);
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Events data received:', data);
+            displayEvents(data.events);
+            displayEventPagination(data.pagination);
+            currentEventPage = page;
+            currentEventType = type;
+            
+            // Update refresh indicator
+            updateEventRefreshIndicator();
+        } else {
+            const errorData = await response.json();
+            console.error('Failed to load events:', errorData);
+        }
+    } catch (error) {
+        console.error('Load events error:', error);
+    }
+}
+
+function updateEventRefreshIndicator() {
+    const refreshIndicator = document.getElementById('eventRefreshIndicator');
+    if (refreshIndicator) {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString();
+        refreshIndicator.innerHTML = `
+            <i class="fas fa-sync-alt"></i>
+            <span>Auto-refreshing every 10s • Last updated: ${timeString}</span>
+        `;
+    }
+}
+
+function displayEvents(events) {
+    const eventLog = document.getElementById('eventLog');
+    
+    if (!events || events.length === 0) {
+        eventLog.innerHTML = `
+            <div class="event-log-empty">
+                <i class="fas fa-history"></i>
+                <h3>No Events Found</h3>
+                <p>No events match your current filter criteria.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    eventLog.innerHTML = events.map(event => `
+        <div class="event-item">
+            <div class="event-icon ${event.type}">
+                <i class="fas ${getEventIcon(event.type)}"></i>
+            </div>
+            <div class="event-content">
+                <div class="event-main">
+                    <div class="event-header">
+                        <span class="event-action">${formatEventAction(event.action)}</span>
+                        <span class="event-entity">${event.entityName || 'System'}</span>
+                    </div>
+                    <div class="event-details">${event.details}</div>
+                </div>
+                <div class="event-meta">
+                    <div class="event-user">
+                        <i class="fas fa-user"></i>
+                        <span>${event.userName}</span>
+                    </div>
+                    <div class="event-time">
+                        <i class="fas fa-clock"></i>
+                        <span>${formatEventTime(event.createdAt)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function displayEventPagination(pagination) {
+    const paginationDiv = document.getElementById('eventPagination');
+    
+    if (pagination.totalPages <= 1) {
+        paginationDiv.innerHTML = '';
+        return;
+    }
+    
+    let paginationHTML = '<div class="pagination">';
+    
+    // Previous button
+    paginationHTML += `
+        <button ${pagination.currentPage === 1 ? 'disabled' : ''} 
+                onclick="loadEvents(${pagination.currentPage - 1}, '${currentEventType}')">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+    `;
+    
+    // Page numbers
+    const startPage = Math.max(1, pagination.currentPage - 2);
+    const endPage = Math.min(pagination.totalPages, pagination.currentPage + 2);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <button class="${i === pagination.currentPage ? 'active' : ''}" 
+                    onclick="loadEvents(${i}, '${currentEventType}')">
+                ${i}
+            </button>
+        `;
+    }
+    
+    // Next button
+    paginationHTML += `
+        <button ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''} 
+                onclick="loadEvents(${pagination.currentPage + 1}, '${currentEventType}')">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    `;
+    
+    paginationHTML += '</div>';
+    paginationDiv.innerHTML = paginationHTML;
+}
+
+function filterEvents() {
+    const typeFilter = document.getElementById('eventTypeFilter');
+    const selectedType = typeFilter.value;
+    loadEvents(1, selectedType);
+}
+
+function startEventRefresh() {
+    // Clear existing interval
+    if (eventRefreshInterval) {
+        clearInterval(eventRefreshInterval);
+    }
+    
+    // Start new interval - refresh every 10 seconds
+    eventRefreshInterval = setInterval(() => {
+        // Only refresh if we're on the dashboard and events are visible
+        const dashboardSection = document.getElementById('dashboardSection');
+        if (dashboardSection && dashboardSection.classList.contains('active')) {
+            loadEvents(currentEventPage, currentEventType);
+        }
+    }, 10000);
+}
+
+function stopEventRefresh() {
+    if (eventRefreshInterval) {
+        clearInterval(eventRefreshInterval);
+        eventRefreshInterval = null;
+    }
+}
+
+function getEventIcon(type) {
+    const icons = {
+        'user': 'fa-user',
+        'door': 'fa-door-open',
+        'access_group': 'fa-shield-alt',
+        'auth': 'fa-key',
+        'access': 'fa-unlock',
+        'error': 'fa-exclamation-triangle',
+        'system': 'fa-cog'
+    };
+    return icons[type] || 'fa-info-circle';
+}
+
+function formatEventAction(action) {
+    const actions = {
+        'created': 'Created',
+        'updated': 'Updated',
+        'deleted': 'Deleted',
+        'login': 'Logged In',
+        'logout': 'Logged Out',
+        'granted': 'Access Granted',
+        'denied': 'Access Denied',
+        'door_added': 'Door Added',
+        'door_removed': 'Door Removed',
+        'user_added': 'User Added',
+        'user_removed': 'User Removed',
+        'occurred': 'Error Occurred'
+    };
+    return actions[action] || action;
+}
+
+function formatEventTime(timestamp) {
+    // Handle timezone issue - database stores UTC time but we need local time
+    let date;
+    if (timestamp.includes(' ')) {
+        // If it's in format "YYYY-MM-DD HH:mm:ss", treat as UTC and convert to local
+        // Add 'Z' to indicate UTC, then JavaScript will convert to local timezone
+        date = new Date(timestamp + 'Z');
+    } else {
+        date = new Date(timestamp);
+    }
+    
+    // Format as actual date and time
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const isYesterday = date.toDateString() === new Date(now.getTime() - 24 * 60 * 60 * 1000).toDateString();
+    
+    if (isToday) {
+        // Show time only for today's events
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (isYesterday) {
+        // Show "Yesterday" + time for yesterday's events
+        return `Yesterday ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else {
+        // Show full date and time for older events
+        return date.toLocaleString([], { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
     }
 }
 

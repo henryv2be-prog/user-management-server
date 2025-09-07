@@ -1,0 +1,864 @@
+2025-09-07T21:35:36: Loading route modules...
+2025-09-07T21:35:37: Auth routes module loaded
+2025-09-07T21:35:37: User routes module loaded
+2025-09-07T21:35:37: Door routes module loaded
+2025-09-07T21:35:37: Access group routes module loaded
+2025-09-07T21:35:37: Event routes module loaded
+2025-09-07T21:35:37: Access request routes module loaded
+2025-09-07T21:35:37: Logs routes module loaded
+2025-09-07T21:35:37: All routes configured successfully
+2025-09-07T21:35:37: 🗄️  Initializing database...
+2025-09-07T21:35:37: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:37: Users table created/verified
+2025-09-07T21:35:37: Doors table created/verified
+2025-09-07T21:35:37: Access groups table created/verified
+2025-09-07T21:35:37: Door access groups table created/verified
+2025-09-07T21:35:37: User access groups table created/verified
+2025-09-07T21:35:37: Access log table created/verified
+2025-09-07T21:35:37: Access requests table created/verified
+2025-09-07T21:35:37: Events table created/verified
+2025-09-07T21:35:37: Users already exist, skipping default admin creation
+2025-09-07T21:35:37: ✅ Database initialization completed
+2025-09-07T21:35:37: Starting server...
+2025-09-07T21:35:37: Port: 3000
+2025-09-07T21:35:37: Environment: development
+2025-09-07T21:35:38: Loading route modules...
+2025-09-07T21:35:38: Auth routes module loaded
+2025-09-07T21:35:38: User routes module loaded
+2025-09-07T21:35:38: Door routes module loaded
+2025-09-07T21:35:38: Access group routes module loaded
+2025-09-07T21:35:38: Event routes module loaded
+2025-09-07T21:35:38: Access request routes module loaded
+2025-09-07T21:35:38: Logs routes module loaded
+2025-09-07T21:35:38: All routes configured successfully
+2025-09-07T21:35:38: 🗄️  Initializing database...
+2025-09-07T21:35:38: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:38: Users table created/verified
+2025-09-07T21:35:38: Doors table created/verified
+2025-09-07T21:35:38: Access groups table created/verified
+2025-09-07T21:35:38: Door access groups table created/verified
+2025-09-07T21:35:38: User access groups table created/verified
+2025-09-07T21:35:38: Access log table created/verified
+2025-09-07T21:35:38: Access requests table created/verified
+2025-09-07T21:35:38: Events table created/verified
+2025-09-07T21:35:38: Users already exist, skipping default admin creation
+2025-09-07T21:35:38: ✅ Database initialization completed
+2025-09-07T21:35:38: Starting server...
+2025-09-07T21:35:38: Port: 3000
+2025-09-07T21:35:38: Environment: development
+2025-09-07T21:35:39: Loading route modules...
+2025-09-07T21:35:39: Auth routes module loaded
+2025-09-07T21:35:39: User routes module loaded
+2025-09-07T21:35:39: Door routes module loaded
+2025-09-07T21:35:39: Access group routes module loaded
+2025-09-07T21:35:39: Event routes module loaded
+2025-09-07T21:35:39: Access request routes module loaded
+2025-09-07T21:35:39: Logs routes module loaded
+2025-09-07T21:35:39: All routes configured successfully
+2025-09-07T21:35:39: 🗄️  Initializing database...
+2025-09-07T21:35:39: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:39: Users table created/verified
+2025-09-07T21:35:39: Doors table created/verified
+2025-09-07T21:35:39: Access groups table created/verified
+2025-09-07T21:35:39: Door access groups table created/verified
+2025-09-07T21:35:39: User access groups table created/verified
+2025-09-07T21:35:39: Access log table created/verified
+2025-09-07T21:35:39: Access requests table created/verified
+2025-09-07T21:35:39: Events table created/verified
+2025-09-07T21:35:39: Users already exist, skipping default admin creation
+2025-09-07T21:35:39: ✅ Database initialization completed
+2025-09-07T21:35:39: Starting server...
+2025-09-07T21:35:39: Port: 3000
+2025-09-07T21:35:39: Environment: development
+2025-09-07T21:35:39: Loading route modules...
+2025-09-07T21:35:40: Auth routes module loaded
+2025-09-07T21:35:40: User routes module loaded
+2025-09-07T21:35:40: Door routes module loaded
+2025-09-07T21:35:40: Access group routes module loaded
+2025-09-07T21:35:40: Event routes module loaded
+2025-09-07T21:35:40: Access request routes module loaded
+2025-09-07T21:35:40: Logs routes module loaded
+2025-09-07T21:35:40: All routes configured successfully
+2025-09-07T21:35:40: 🗄️  Initializing database...
+2025-09-07T21:35:40: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:40: Users table created/verified
+2025-09-07T21:35:40: Doors table created/verified
+2025-09-07T21:35:40: Access groups table created/verified
+2025-09-07T21:35:40: Door access groups table created/verified
+2025-09-07T21:35:40: User access groups table created/verified
+2025-09-07T21:35:40: Access log table created/verified
+2025-09-07T21:35:40: Access requests table created/verified
+2025-09-07T21:35:40: Events table created/verified
+2025-09-07T21:35:40: Users already exist, skipping default admin creation
+2025-09-07T21:35:40: ✅ Database initialization completed
+2025-09-07T21:35:40: Starting server...
+2025-09-07T21:35:40: Port: 3000
+2025-09-07T21:35:40: Environment: development
+2025-09-07T21:35:40: Loading route modules...
+2025-09-07T21:35:41: Auth routes module loaded
+2025-09-07T21:35:41: User routes module loaded
+2025-09-07T21:35:41: Door routes module loaded
+2025-09-07T21:35:41: Access group routes module loaded
+2025-09-07T21:35:41: Event routes module loaded
+2025-09-07T21:35:41: Access request routes module loaded
+2025-09-07T21:35:41: Logs routes module loaded
+2025-09-07T21:35:41: All routes configured successfully
+2025-09-07T21:35:41: 🗄️  Initializing database...
+2025-09-07T21:35:41: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:41: Users table created/verified
+2025-09-07T21:35:41: Doors table created/verified
+2025-09-07T21:35:41: Access groups table created/verified
+2025-09-07T21:35:41: Door access groups table created/verified
+2025-09-07T21:35:41: User access groups table created/verified
+2025-09-07T21:35:41: Access log table created/verified
+2025-09-07T21:35:41: Access requests table created/verified
+2025-09-07T21:35:41: Events table created/verified
+2025-09-07T21:35:41: Users already exist, skipping default admin creation
+2025-09-07T21:35:41: ✅ Database initialization completed
+2025-09-07T21:35:41: Starting server...
+2025-09-07T21:35:41: Port: 3000
+2025-09-07T21:35:41: Environment: development
+2025-09-07T21:35:41: Loading route modules...
+2025-09-07T21:35:41: Auth routes module loaded
+2025-09-07T21:35:41: User routes module loaded
+2025-09-07T21:35:41: Door routes module loaded
+2025-09-07T21:35:41: Access group routes module loaded
+2025-09-07T21:35:41: Event routes module loaded
+2025-09-07T21:35:41: Access request routes module loaded
+2025-09-07T21:35:41: Logs routes module loaded
+2025-09-07T21:35:41: All routes configured successfully
+2025-09-07T21:35:41: 🗄️  Initializing database...
+2025-09-07T21:35:41: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:41: Users table created/verified
+2025-09-07T21:35:41: Doors table created/verified
+2025-09-07T21:35:41: Access groups table created/verified
+2025-09-07T21:35:41: Door access groups table created/verified
+2025-09-07T21:35:41: User access groups table created/verified
+2025-09-07T21:35:41: Access log table created/verified
+2025-09-07T21:35:41: Access requests table created/verified
+2025-09-07T21:35:41: Events table created/verified
+2025-09-07T21:35:41: Users already exist, skipping default admin creation
+2025-09-07T21:35:41: ✅ Database initialization completed
+2025-09-07T21:35:41: Starting server...
+2025-09-07T21:35:41: Port: 3000
+2025-09-07T21:35:41: Environment: development
+2025-09-07T21:35:42: Loading route modules...
+2025-09-07T21:35:42: Auth routes module loaded
+2025-09-07T21:35:42: User routes module loaded
+2025-09-07T21:35:42: Door routes module loaded
+2025-09-07T21:35:42: Access group routes module loaded
+2025-09-07T21:35:42: Event routes module loaded
+2025-09-07T21:35:42: Access request routes module loaded
+2025-09-07T21:35:42: Logs routes module loaded
+2025-09-07T21:35:42: All routes configured successfully
+2025-09-07T21:35:42: 🗄️  Initializing database...
+2025-09-07T21:35:42: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:42: Users table created/verified
+2025-09-07T21:35:42: Doors table created/verified
+2025-09-07T21:35:42: Access groups table created/verified
+2025-09-07T21:35:42: Door access groups table created/verified
+2025-09-07T21:35:42: User access groups table created/verified
+2025-09-07T21:35:42: Access log table created/verified
+2025-09-07T21:35:42: Access requests table created/verified
+2025-09-07T21:35:42: Events table created/verified
+2025-09-07T21:35:42: Users already exist, skipping default admin creation
+2025-09-07T21:35:42: ✅ Database initialization completed
+2025-09-07T21:35:42: Starting server...
+2025-09-07T21:35:42: Port: 3000
+2025-09-07T21:35:42: Environment: development
+2025-09-07T21:35:43: Loading route modules...
+2025-09-07T21:35:43: Auth routes module loaded
+2025-09-07T21:35:43: User routes module loaded
+2025-09-07T21:35:43: Door routes module loaded
+2025-09-07T21:35:43: Access group routes module loaded
+2025-09-07T21:35:43: Event routes module loaded
+2025-09-07T21:35:43: Access request routes module loaded
+2025-09-07T21:35:43: Logs routes module loaded
+2025-09-07T21:35:43: All routes configured successfully
+2025-09-07T21:35:43: 🗄️  Initializing database...
+2025-09-07T21:35:43: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:43: Users table created/verified
+2025-09-07T21:35:43: Doors table created/verified
+2025-09-07T21:35:43: Access groups table created/verified
+2025-09-07T21:35:43: Door access groups table created/verified
+2025-09-07T21:35:43: User access groups table created/verified
+2025-09-07T21:35:43: Access log table created/verified
+2025-09-07T21:35:43: Access requests table created/verified
+2025-09-07T21:35:43: Events table created/verified
+2025-09-07T21:35:43: Users already exist, skipping default admin creation
+2025-09-07T21:35:43: ✅ Database initialization completed
+2025-09-07T21:35:43: Starting server...
+2025-09-07T21:35:43: Port: 3000
+2025-09-07T21:35:43: Environment: development
+2025-09-07T21:35:44: Loading route modules...
+2025-09-07T21:35:44: Auth routes module loaded
+2025-09-07T21:35:44: User routes module loaded
+2025-09-07T21:35:44: Door routes module loaded
+2025-09-07T21:35:44: Access group routes module loaded
+2025-09-07T21:35:44: Event routes module loaded
+2025-09-07T21:35:44: Access request routes module loaded
+2025-09-07T21:35:44: Logs routes module loaded
+2025-09-07T21:35:44: All routes configured successfully
+2025-09-07T21:35:44: 🗄️  Initializing database...
+2025-09-07T21:35:44: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:44: Users table created/verified
+2025-09-07T21:35:44: Doors table created/verified
+2025-09-07T21:35:44: Access groups table created/verified
+2025-09-07T21:35:44: Door access groups table created/verified
+2025-09-07T21:35:44: User access groups table created/verified
+2025-09-07T21:35:44: Access log table created/verified
+2025-09-07T21:35:44: Access requests table created/verified
+2025-09-07T21:35:44: Events table created/verified
+2025-09-07T21:35:44: Users already exist, skipping default admin creation
+2025-09-07T21:35:44: ✅ Database initialization completed
+2025-09-07T21:35:44: Starting server...
+2025-09-07T21:35:44: Port: 3000
+2025-09-07T21:35:44: Environment: development
+2025-09-07T21:35:45: Loading route modules...
+2025-09-07T21:35:45: Auth routes module loaded
+2025-09-07T21:35:45: User routes module loaded
+2025-09-07T21:35:45: Door routes module loaded
+2025-09-07T21:35:45: Access group routes module loaded
+2025-09-07T21:35:45: Event routes module loaded
+2025-09-07T21:35:45: Access request routes module loaded
+2025-09-07T21:35:45: Logs routes module loaded
+2025-09-07T21:35:45: All routes configured successfully
+2025-09-07T21:35:45: 🗄️  Initializing database...
+2025-09-07T21:35:45: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:45: Users table created/verified
+2025-09-07T21:35:45: Doors table created/verified
+2025-09-07T21:35:45: Access groups table created/verified
+2025-09-07T21:35:45: Door access groups table created/verified
+2025-09-07T21:35:45: User access groups table created/verified
+2025-09-07T21:35:45: Access log table created/verified
+2025-09-07T21:35:45: Access requests table created/verified
+2025-09-07T21:35:45: Events table created/verified
+2025-09-07T21:35:45: Users already exist, skipping default admin creation
+2025-09-07T21:35:45: ✅ Database initialization completed
+2025-09-07T21:35:45: Starting server...
+2025-09-07T21:35:45: Port: 3000
+2025-09-07T21:35:45: Environment: development
+2025-09-07T21:35:46: Loading route modules...
+2025-09-07T21:35:46: Auth routes module loaded
+2025-09-07T21:35:46: User routes module loaded
+2025-09-07T21:35:46: Door routes module loaded
+2025-09-07T21:35:46: Access group routes module loaded
+2025-09-07T21:35:46: Event routes module loaded
+2025-09-07T21:35:46: Access request routes module loaded
+2025-09-07T21:35:46: Logs routes module loaded
+2025-09-07T21:35:46: All routes configured successfully
+2025-09-07T21:35:46: 🗄️  Initializing database...
+2025-09-07T21:35:46: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:46: Users table created/verified
+2025-09-07T21:35:46: Doors table created/verified
+2025-09-07T21:35:46: Access groups table created/verified
+2025-09-07T21:35:46: Door access groups table created/verified
+2025-09-07T21:35:46: User access groups table created/verified
+2025-09-07T21:35:46: Access log table created/verified
+2025-09-07T21:35:46: Access requests table created/verified
+2025-09-07T21:35:46: Events table created/verified
+2025-09-07T21:35:46: Users already exist, skipping default admin creation
+2025-09-07T21:35:46: ✅ Database initialization completed
+2025-09-07T21:35:46: Starting server...
+2025-09-07T21:35:46: Port: 3000
+2025-09-07T21:35:46: Environment: development
+2025-09-07T21:35:47: Loading route modules...
+2025-09-07T21:35:47: Auth routes module loaded
+2025-09-07T21:35:47: User routes module loaded
+2025-09-07T21:35:47: Door routes module loaded
+2025-09-07T21:35:47: Access group routes module loaded
+2025-09-07T21:35:47: Event routes module loaded
+2025-09-07T21:35:47: Access request routes module loaded
+2025-09-07T21:35:47: Logs routes module loaded
+2025-09-07T21:35:47: All routes configured successfully
+2025-09-07T21:35:47: 🗄️  Initializing database...
+2025-09-07T21:35:47: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:47: Users table created/verified
+2025-09-07T21:35:47: Doors table created/verified
+2025-09-07T21:35:47: Access groups table created/verified
+2025-09-07T21:35:47: Door access groups table created/verified
+2025-09-07T21:35:47: User access groups table created/verified
+2025-09-07T21:35:47: Access log table created/verified
+2025-09-07T21:35:47: Access requests table created/verified
+2025-09-07T21:35:47: Events table created/verified
+2025-09-07T21:35:47: Users already exist, skipping default admin creation
+2025-09-07T21:35:47: ✅ Database initialization completed
+2025-09-07T21:35:47: Starting server...
+2025-09-07T21:35:47: Port: 3000
+2025-09-07T21:35:47: Environment: development
+2025-09-07T21:35:48: Loading route modules...
+2025-09-07T21:35:48: Auth routes module loaded
+2025-09-07T21:35:48: User routes module loaded
+2025-09-07T21:35:48: Door routes module loaded
+2025-09-07T21:35:48: Access group routes module loaded
+2025-09-07T21:35:48: Event routes module loaded
+2025-09-07T21:35:48: Access request routes module loaded
+2025-09-07T21:35:48: Logs routes module loaded
+2025-09-07T21:35:48: All routes configured successfully
+2025-09-07T21:35:48: 🗄️  Initializing database...
+2025-09-07T21:35:48: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:48: Users table created/verified
+2025-09-07T21:35:48: Doors table created/verified
+2025-09-07T21:35:48: Access groups table created/verified
+2025-09-07T21:35:48: Door access groups table created/verified
+2025-09-07T21:35:48: User access groups table created/verified
+2025-09-07T21:35:48: Access log table created/verified
+2025-09-07T21:35:48: Access requests table created/verified
+2025-09-07T21:35:48: Events table created/verified
+2025-09-07T21:35:48: Users already exist, skipping default admin creation
+2025-09-07T21:35:48: ✅ Database initialization completed
+2025-09-07T21:35:48: Starting server...
+2025-09-07T21:35:48: Port: 3000
+2025-09-07T21:35:48: Environment: development
+2025-09-07T21:35:49: Loading route modules...
+2025-09-07T21:35:49: Auth routes module loaded
+2025-09-07T21:35:49: User routes module loaded
+2025-09-07T21:35:49: Door routes module loaded
+2025-09-07T21:35:49: Access group routes module loaded
+2025-09-07T21:35:49: Event routes module loaded
+2025-09-07T21:35:49: Access request routes module loaded
+2025-09-07T21:35:49: Logs routes module loaded
+2025-09-07T21:35:49: All routes configured successfully
+2025-09-07T21:35:49: 🗄️  Initializing database...
+2025-09-07T21:35:49: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:49: Users table created/verified
+2025-09-07T21:35:49: Doors table created/verified
+2025-09-07T21:35:49: Access groups table created/verified
+2025-09-07T21:35:49: Door access groups table created/verified
+2025-09-07T21:35:49: User access groups table created/verified
+2025-09-07T21:35:49: Access log table created/verified
+2025-09-07T21:35:49: Access requests table created/verified
+2025-09-07T21:35:49: Events table created/verified
+2025-09-07T21:35:49: Users already exist, skipping default admin creation
+2025-09-07T21:35:49: ✅ Database initialization completed
+2025-09-07T21:35:49: Starting server...
+2025-09-07T21:35:49: Port: 3000
+2025-09-07T21:35:49: Environment: development
+2025-09-07T21:35:49: Loading route modules...
+2025-09-07T21:35:49: Auth routes module loaded
+2025-09-07T21:35:49: User routes module loaded
+2025-09-07T21:35:49: Door routes module loaded
+2025-09-07T21:35:49: Access group routes module loaded
+2025-09-07T21:35:49: Event routes module loaded
+2025-09-07T21:35:49: Access request routes module loaded
+2025-09-07T21:35:49: Logs routes module loaded
+2025-09-07T21:35:49: All routes configured successfully
+2025-09-07T21:35:49: 🗄️  Initializing database...
+2025-09-07T21:35:49: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:49: Users table created/verified
+2025-09-07T21:35:49: Doors table created/verified
+2025-09-07T21:35:49: Access groups table created/verified
+2025-09-07T21:35:49: Door access groups table created/verified
+2025-09-07T21:35:49: User access groups table created/verified
+2025-09-07T21:35:49: Access log table created/verified
+2025-09-07T21:35:49: Access requests table created/verified
+2025-09-07T21:35:49: Events table created/verified
+2025-09-07T21:35:49: Users already exist, skipping default admin creation
+2025-09-07T21:35:49: ✅ Database initialization completed
+2025-09-07T21:35:49: Starting server...
+2025-09-07T21:35:49: Port: 3000
+2025-09-07T21:35:49: Environment: development
+2025-09-07T21:35:50: Loading route modules...
+2025-09-07T21:35:50: Auth routes module loaded
+2025-09-07T21:35:50: User routes module loaded
+2025-09-07T21:35:50: Door routes module loaded
+2025-09-07T21:35:50: Access group routes module loaded
+2025-09-07T21:35:50: Event routes module loaded
+2025-09-07T21:35:50: Access request routes module loaded
+2025-09-07T21:35:50: Logs routes module loaded
+2025-09-07T21:35:50: All routes configured successfully
+2025-09-07T21:35:50: 🗄️  Initializing database...
+2025-09-07T21:35:50: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:50: Users table created/verified
+2025-09-07T21:35:50: Doors table created/verified
+2025-09-07T21:35:50: Access groups table created/verified
+2025-09-07T21:35:50: Door access groups table created/verified
+2025-09-07T21:35:50: User access groups table created/verified
+2025-09-07T21:35:50: Access log table created/verified
+2025-09-07T21:35:50: Access requests table created/verified
+2025-09-07T21:35:50: Events table created/verified
+2025-09-07T21:35:50: Users already exist, skipping default admin creation
+2025-09-07T21:35:50: ✅ Database initialization completed
+2025-09-07T21:35:50: Starting server...
+2025-09-07T21:35:50: Port: 3000
+2025-09-07T21:35:50: Environment: development
+2025-09-07T21:35:50: Loading route modules...
+2025-09-07T21:35:51: Auth routes module loaded
+2025-09-07T21:35:51: User routes module loaded
+2025-09-07T21:35:51: Door routes module loaded
+2025-09-07T21:35:51: Access group routes module loaded
+2025-09-07T21:35:51: Event routes module loaded
+2025-09-07T21:35:51: Access request routes module loaded
+2025-09-07T21:35:51: Logs routes module loaded
+2025-09-07T21:35:51: All routes configured successfully
+2025-09-07T21:35:51: 🗄️  Initializing database...
+2025-09-07T21:35:51: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:51: Users table created/verified
+2025-09-07T21:35:51: Doors table created/verified
+2025-09-07T21:35:51: Access groups table created/verified
+2025-09-07T21:35:51: Door access groups table created/verified
+2025-09-07T21:35:51: User access groups table created/verified
+2025-09-07T21:35:51: Access log table created/verified
+2025-09-07T21:35:51: Access requests table created/verified
+2025-09-07T21:35:51: Events table created/verified
+2025-09-07T21:35:51: Users already exist, skipping default admin creation
+2025-09-07T21:35:51: ✅ Database initialization completed
+2025-09-07T21:35:51: Starting server...
+2025-09-07T21:35:51: Port: 3000
+2025-09-07T21:35:51: Environment: development
+2025-09-07T21:35:51: Loading route modules...
+2025-09-07T21:35:51: Auth routes module loaded
+2025-09-07T21:35:51: User routes module loaded
+2025-09-07T21:35:51: Door routes module loaded
+2025-09-07T21:35:51: Access group routes module loaded
+2025-09-07T21:35:51: Event routes module loaded
+2025-09-07T21:35:51: Access request routes module loaded
+2025-09-07T21:35:51: Logs routes module loaded
+2025-09-07T21:35:51: All routes configured successfully
+2025-09-07T21:35:51: 🗄️  Initializing database...
+2025-09-07T21:35:51: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:51: Users table created/verified
+2025-09-07T21:35:51: Doors table created/verified
+2025-09-07T21:35:51: Access groups table created/verified
+2025-09-07T21:35:51: Door access groups table created/verified
+2025-09-07T21:35:51: User access groups table created/verified
+2025-09-07T21:35:51: Access log table created/verified
+2025-09-07T21:35:51: Access requests table created/verified
+2025-09-07T21:35:51: Events table created/verified
+2025-09-07T21:35:51: Users already exist, skipping default admin creation
+2025-09-07T21:35:51: ✅ Database initialization completed
+2025-09-07T21:35:51: Starting server...
+2025-09-07T21:35:51: Port: 3000
+2025-09-07T21:35:51: Environment: development
+2025-09-07T21:35:52: Loading route modules...
+2025-09-07T21:35:52: Auth routes module loaded
+2025-09-07T21:35:52: User routes module loaded
+2025-09-07T21:35:52: Door routes module loaded
+2025-09-07T21:35:52: Access group routes module loaded
+2025-09-07T21:35:52: Event routes module loaded
+2025-09-07T21:35:52: Access request routes module loaded
+2025-09-07T21:35:52: Logs routes module loaded
+2025-09-07T21:35:52: All routes configured successfully
+2025-09-07T21:35:52: 🗄️  Initializing database...
+2025-09-07T21:35:52: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:52: Users table created/verified
+2025-09-07T21:35:52: Doors table created/verified
+2025-09-07T21:35:52: Access groups table created/verified
+2025-09-07T21:35:52: Door access groups table created/verified
+2025-09-07T21:35:52: User access groups table created/verified
+2025-09-07T21:35:52: Access log table created/verified
+2025-09-07T21:35:52: Access requests table created/verified
+2025-09-07T21:35:52: Events table created/verified
+2025-09-07T21:35:52: Users already exist, skipping default admin creation
+2025-09-07T21:35:52: ✅ Database initialization completed
+2025-09-07T21:35:52: Starting server...
+2025-09-07T21:35:52: Port: 3000
+2025-09-07T21:35:52: Environment: development
+2025-09-07T21:35:52: Loading route modules...
+2025-09-07T21:35:52: Auth routes module loaded
+2025-09-07T21:35:52: User routes module loaded
+2025-09-07T21:35:52: Door routes module loaded
+2025-09-07T21:35:52: Access group routes module loaded
+2025-09-07T21:35:52: Event routes module loaded
+2025-09-07T21:35:52: Access request routes module loaded
+2025-09-07T21:35:52: Logs routes module loaded
+2025-09-07T21:35:52: All routes configured successfully
+2025-09-07T21:35:52: 🗄️  Initializing database...
+2025-09-07T21:35:52: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:52: Users table created/verified
+2025-09-07T21:35:52: Doors table created/verified
+2025-09-07T21:35:52: Access groups table created/verified
+2025-09-07T21:35:52: Door access groups table created/verified
+2025-09-07T21:35:52: User access groups table created/verified
+2025-09-07T21:35:52: Access log table created/verified
+2025-09-07T21:35:52: Access requests table created/verified
+2025-09-07T21:35:52: Events table created/verified
+2025-09-07T21:35:52: Users already exist, skipping default admin creation
+2025-09-07T21:35:52: ✅ Database initialization completed
+2025-09-07T21:35:52: Starting server...
+2025-09-07T21:35:52: Port: 3000
+2025-09-07T21:35:52: Environment: development
+2025-09-07T21:35:53: Loading route modules...
+2025-09-07T21:35:53: Auth routes module loaded
+2025-09-07T21:35:53: User routes module loaded
+2025-09-07T21:35:53: Door routes module loaded
+2025-09-07T21:35:53: Access group routes module loaded
+2025-09-07T21:35:53: Event routes module loaded
+2025-09-07T21:35:53: Access request routes module loaded
+2025-09-07T21:35:53: Logs routes module loaded
+2025-09-07T21:35:53: All routes configured successfully
+2025-09-07T21:35:53: 🗄️  Initializing database...
+2025-09-07T21:35:53: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:53: Users table created/verified
+2025-09-07T21:35:53: Doors table created/verified
+2025-09-07T21:35:53: Access groups table created/verified
+2025-09-07T21:35:53: Door access groups table created/verified
+2025-09-07T21:35:53: User access groups table created/verified
+2025-09-07T21:35:53: Access log table created/verified
+2025-09-07T21:35:53: Access requests table created/verified
+2025-09-07T21:35:53: Events table created/verified
+2025-09-07T21:35:53: Users already exist, skipping default admin creation
+2025-09-07T21:35:53: ✅ Database initialization completed
+2025-09-07T21:35:53: Starting server...
+2025-09-07T21:35:53: Port: 3000
+2025-09-07T21:35:53: Environment: development
+2025-09-07T21:35:54: Loading route modules...
+2025-09-07T21:35:54: Auth routes module loaded
+2025-09-07T21:35:54: User routes module loaded
+2025-09-07T21:35:54: Door routes module loaded
+2025-09-07T21:35:54: Access group routes module loaded
+2025-09-07T21:35:54: Event routes module loaded
+2025-09-07T21:35:54: Access request routes module loaded
+2025-09-07T21:35:54: Logs routes module loaded
+2025-09-07T21:35:54: All routes configured successfully
+2025-09-07T21:35:54: 🗄️  Initializing database...
+2025-09-07T21:35:54: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:54: Users table created/verified
+2025-09-07T21:35:54: Doors table created/verified
+2025-09-07T21:35:54: Access groups table created/verified
+2025-09-07T21:35:54: Door access groups table created/verified
+2025-09-07T21:35:54: User access groups table created/verified
+2025-09-07T21:35:54: Access log table created/verified
+2025-09-07T21:35:54: Access requests table created/verified
+2025-09-07T21:35:54: Events table created/verified
+2025-09-07T21:35:54: Users already exist, skipping default admin creation
+2025-09-07T21:35:54: ✅ Database initialization completed
+2025-09-07T21:35:54: Starting server...
+2025-09-07T21:35:54: Port: 3000
+2025-09-07T21:35:54: Environment: development
+2025-09-07T21:35:55: Loading route modules...
+2025-09-07T21:35:55: Auth routes module loaded
+2025-09-07T21:35:55: User routes module loaded
+2025-09-07T21:35:55: Door routes module loaded
+2025-09-07T21:35:55: Access group routes module loaded
+2025-09-07T21:35:55: Event routes module loaded
+2025-09-07T21:35:55: Access request routes module loaded
+2025-09-07T21:35:55: Logs routes module loaded
+2025-09-07T21:35:55: All routes configured successfully
+2025-09-07T21:35:55: 🗄️  Initializing database...
+2025-09-07T21:35:55: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:55: Users table created/verified
+2025-09-07T21:35:55: Doors table created/verified
+2025-09-07T21:35:55: Access groups table created/verified
+2025-09-07T21:35:55: Door access groups table created/verified
+2025-09-07T21:35:55: User access groups table created/verified
+2025-09-07T21:35:55: Access log table created/verified
+2025-09-07T21:35:55: Access requests table created/verified
+2025-09-07T21:35:55: Events table created/verified
+2025-09-07T21:35:55: Users already exist, skipping default admin creation
+2025-09-07T21:35:55: ✅ Database initialization completed
+2025-09-07T21:35:55: Starting server...
+2025-09-07T21:35:55: Port: 3000
+2025-09-07T21:35:55: Environment: development
+2025-09-07T21:35:55: Loading route modules...
+2025-09-07T21:35:55: Auth routes module loaded
+2025-09-07T21:35:55: User routes module loaded
+2025-09-07T21:35:55: Door routes module loaded
+2025-09-07T21:35:55: Access group routes module loaded
+2025-09-07T21:35:55: Event routes module loaded
+2025-09-07T21:35:55: Access request routes module loaded
+2025-09-07T21:35:55: Logs routes module loaded
+2025-09-07T21:35:55: All routes configured successfully
+2025-09-07T21:35:55: 🗄️  Initializing database...
+2025-09-07T21:35:55: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:55: Users table created/verified
+2025-09-07T21:35:55: Doors table created/verified
+2025-09-07T21:35:55: Access groups table created/verified
+2025-09-07T21:35:55: Door access groups table created/verified
+2025-09-07T21:35:55: User access groups table created/verified
+2025-09-07T21:35:55: Access log table created/verified
+2025-09-07T21:35:55: Access requests table created/verified
+2025-09-07T21:35:55: Events table created/verified
+2025-09-07T21:35:55: Users already exist, skipping default admin creation
+2025-09-07T21:35:55: ✅ Database initialization completed
+2025-09-07T21:35:55: Starting server...
+2025-09-07T21:35:55: Port: 3000
+2025-09-07T21:35:55: Environment: development
+2025-09-07T21:35:56: Loading route modules...
+2025-09-07T21:35:56: Auth routes module loaded
+2025-09-07T21:35:56: User routes module loaded
+2025-09-07T21:35:56: Door routes module loaded
+2025-09-07T21:35:56: Access group routes module loaded
+2025-09-07T21:35:56: Event routes module loaded
+2025-09-07T21:35:56: Access request routes module loaded
+2025-09-07T21:35:56: Logs routes module loaded
+2025-09-07T21:35:56: All routes configured successfully
+2025-09-07T21:35:56: 🗄️  Initializing database...
+2025-09-07T21:35:56: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:56: Users table created/verified
+2025-09-07T21:35:56: Doors table created/verified
+2025-09-07T21:35:56: Access groups table created/verified
+2025-09-07T21:35:56: Door access groups table created/verified
+2025-09-07T21:35:56: User access groups table created/verified
+2025-09-07T21:35:56: Access log table created/verified
+2025-09-07T21:35:56: Access requests table created/verified
+2025-09-07T21:35:56: Events table created/verified
+2025-09-07T21:35:56: Users already exist, skipping default admin creation
+2025-09-07T21:35:56: ✅ Database initialization completed
+2025-09-07T21:35:56: Starting server...
+2025-09-07T21:35:56: Port: 3000
+2025-09-07T21:35:56: Environment: development
+2025-09-07T21:35:56: Loading route modules...
+2025-09-07T21:35:56: Auth routes module loaded
+2025-09-07T21:35:56: User routes module loaded
+2025-09-07T21:35:56: Door routes module loaded
+2025-09-07T21:35:56: Access group routes module loaded
+2025-09-07T21:35:56: Event routes module loaded
+2025-09-07T21:35:56: Access request routes module loaded
+2025-09-07T21:35:56: Logs routes module loaded
+2025-09-07T21:35:56: All routes configured successfully
+2025-09-07T21:35:56: 🗄️  Initializing database...
+2025-09-07T21:35:56: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:56: Users table created/verified
+2025-09-07T21:35:56: Doors table created/verified
+2025-09-07T21:35:56: Access groups table created/verified
+2025-09-07T21:35:56: Door access groups table created/verified
+2025-09-07T21:35:56: User access groups table created/verified
+2025-09-07T21:35:56: Access log table created/verified
+2025-09-07T21:35:56: Access requests table created/verified
+2025-09-07T21:35:56: Events table created/verified
+2025-09-07T21:35:56: Users already exist, skipping default admin creation
+2025-09-07T21:35:56: ✅ Database initialization completed
+2025-09-07T21:35:56: Starting server...
+2025-09-07T21:35:56: Port: 3000
+2025-09-07T21:35:56: Environment: development
+2025-09-07T21:35:57: Loading route modules...
+2025-09-07T21:35:57: Auth routes module loaded
+2025-09-07T21:35:57: User routes module loaded
+2025-09-07T21:35:57: Door routes module loaded
+2025-09-07T21:35:57: Access group routes module loaded
+2025-09-07T21:35:57: Event routes module loaded
+2025-09-07T21:35:57: Access request routes module loaded
+2025-09-07T21:35:57: Logs routes module loaded
+2025-09-07T21:35:57: All routes configured successfully
+2025-09-07T21:35:57: 🗄️  Initializing database...
+2025-09-07T21:35:57: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:57: Users table created/verified
+2025-09-07T21:35:57: Doors table created/verified
+2025-09-07T21:35:57: Access groups table created/verified
+2025-09-07T21:35:57: Door access groups table created/verified
+2025-09-07T21:35:57: User access groups table created/verified
+2025-09-07T21:35:57: Access log table created/verified
+2025-09-07T21:35:57: Access requests table created/verified
+2025-09-07T21:35:57: Events table created/verified
+2025-09-07T21:35:57: Users already exist, skipping default admin creation
+2025-09-07T21:35:57: ✅ Database initialization completed
+2025-09-07T21:35:57: Starting server...
+2025-09-07T21:35:57: Port: 3000
+2025-09-07T21:35:57: Environment: development
+2025-09-07T21:35:57: Loading route modules...
+2025-09-07T21:35:57: Auth routes module loaded
+2025-09-07T21:35:57: User routes module loaded
+2025-09-07T21:35:57: Door routes module loaded
+2025-09-07T21:35:57: Access group routes module loaded
+2025-09-07T21:35:57: Event routes module loaded
+2025-09-07T21:35:57: Access request routes module loaded
+2025-09-07T21:35:57: Logs routes module loaded
+2025-09-07T21:35:57: All routes configured successfully
+2025-09-07T21:35:57: 🗄️  Initializing database...
+2025-09-07T21:35:57: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:58: Users table created/verified
+2025-09-07T21:35:58: Doors table created/verified
+2025-09-07T21:35:58: Access groups table created/verified
+2025-09-07T21:35:58: Door access groups table created/verified
+2025-09-07T21:35:58: User access groups table created/verified
+2025-09-07T21:35:58: Access log table created/verified
+2025-09-07T21:35:58: Access requests table created/verified
+2025-09-07T21:35:58: Events table created/verified
+2025-09-07T21:35:58: Users already exist, skipping default admin creation
+2025-09-07T21:35:58: ✅ Database initialization completed
+2025-09-07T21:35:58: Starting server...
+2025-09-07T21:35:58: Port: 3000
+2025-09-07T21:35:58: Environment: development
+2025-09-07T21:35:58: Loading route modules...
+2025-09-07T21:35:58: Auth routes module loaded
+2025-09-07T21:35:58: User routes module loaded
+2025-09-07T21:35:58: Door routes module loaded
+2025-09-07T21:35:58: Access group routes module loaded
+2025-09-07T21:35:58: Event routes module loaded
+2025-09-07T21:35:58: Access request routes module loaded
+2025-09-07T21:35:58: Logs routes module loaded
+2025-09-07T21:35:58: All routes configured successfully
+2025-09-07T21:35:58: 🗄️  Initializing database...
+2025-09-07T21:35:58: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:58: Users table created/verified
+2025-09-07T21:35:58: Doors table created/verified
+2025-09-07T21:35:58: Access groups table created/verified
+2025-09-07T21:35:58: Door access groups table created/verified
+2025-09-07T21:35:58: User access groups table created/verified
+2025-09-07T21:35:58: Access log table created/verified
+2025-09-07T21:35:58: Access requests table created/verified
+2025-09-07T21:35:58: Events table created/verified
+2025-09-07T21:35:58: Users already exist, skipping default admin creation
+2025-09-07T21:35:58: ✅ Database initialization completed
+2025-09-07T21:35:58: Starting server...
+2025-09-07T21:35:58: Port: 3000
+2025-09-07T21:35:58: Environment: development
+2025-09-07T21:35:59: Loading route modules...
+2025-09-07T21:35:59: Auth routes module loaded
+2025-09-07T21:35:59: User routes module loaded
+2025-09-07T21:35:59: Door routes module loaded
+2025-09-07T21:35:59: Access group routes module loaded
+2025-09-07T21:35:59: Event routes module loaded
+2025-09-07T21:35:59: Access request routes module loaded
+2025-09-07T21:35:59: Logs routes module loaded
+2025-09-07T21:35:59: All routes configured successfully
+2025-09-07T21:35:59: 🗄️  Initializing database...
+2025-09-07T21:35:59: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:35:59: Users table created/verified
+2025-09-07T21:35:59: Doors table created/verified
+2025-09-07T21:35:59: Access groups table created/verified
+2025-09-07T21:35:59: Door access groups table created/verified
+2025-09-07T21:35:59: User access groups table created/verified
+2025-09-07T21:35:59: Access log table created/verified
+2025-09-07T21:35:59: Access requests table created/verified
+2025-09-07T21:35:59: Events table created/verified
+2025-09-07T21:35:59: Users already exist, skipping default admin creation
+2025-09-07T21:35:59: ✅ Database initialization completed
+2025-09-07T21:35:59: Starting server...
+2025-09-07T21:35:59: Port: 3000
+2025-09-07T21:35:59: Environment: development
+2025-09-07T21:36:00: Loading route modules...
+2025-09-07T21:36:00: Auth routes module loaded
+2025-09-07T21:36:00: User routes module loaded
+2025-09-07T21:36:00: Door routes module loaded
+2025-09-07T21:36:00: Access group routes module loaded
+2025-09-07T21:36:00: Event routes module loaded
+2025-09-07T21:36:00: Access request routes module loaded
+2025-09-07T21:36:00: Logs routes module loaded
+2025-09-07T21:36:00: All routes configured successfully
+2025-09-07T21:36:00: 🗄️  Initializing database...
+2025-09-07T21:36:00: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:36:00: Users table created/verified
+2025-09-07T21:36:00: Doors table created/verified
+2025-09-07T21:36:00: Access groups table created/verified
+2025-09-07T21:36:00: Door access groups table created/verified
+2025-09-07T21:36:00: User access groups table created/verified
+2025-09-07T21:36:00: Access log table created/verified
+2025-09-07T21:36:00: Access requests table created/verified
+2025-09-07T21:36:00: Events table created/verified
+2025-09-07T21:36:00: Users already exist, skipping default admin creation
+2025-09-07T21:36:00: ✅ Database initialization completed
+2025-09-07T21:36:00: Starting server...
+2025-09-07T21:36:00: Port: 3000
+2025-09-07T21:36:00: Environment: development
+2025-09-07T21:36:00: Loading route modules...
+2025-09-07T21:36:01: Auth routes module loaded
+2025-09-07T21:36:01: User routes module loaded
+2025-09-07T21:36:01: Door routes module loaded
+2025-09-07T21:36:01: Access group routes module loaded
+2025-09-07T21:36:01: Event routes module loaded
+2025-09-07T21:36:01: Access request routes module loaded
+2025-09-07T21:36:01: Logs routes module loaded
+2025-09-07T21:36:01: All routes configured successfully
+2025-09-07T21:36:01: 🗄️  Initializing database...
+2025-09-07T21:36:01: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:36:01: Users table created/verified
+2025-09-07T21:36:01: Doors table created/verified
+2025-09-07T21:36:01: Access groups table created/verified
+2025-09-07T21:36:01: Door access groups table created/verified
+2025-09-07T21:36:01: User access groups table created/verified
+2025-09-07T21:36:01: Access log table created/verified
+2025-09-07T21:36:01: Access requests table created/verified
+2025-09-07T21:36:01: Events table created/verified
+2025-09-07T21:36:01: Users already exist, skipping default admin creation
+2025-09-07T21:36:01: ✅ Database initialization completed
+2025-09-07T21:36:01: Starting server...
+2025-09-07T21:36:01: Port: 3000
+2025-09-07T21:36:01: Environment: development
+2025-09-07T21:36:01: Loading route modules...
+2025-09-07T21:36:01: Auth routes module loaded
+2025-09-07T21:36:01: User routes module loaded
+2025-09-07T21:36:01: Door routes module loaded
+2025-09-07T21:36:01: Access group routes module loaded
+2025-09-07T21:36:01: Event routes module loaded
+2025-09-07T21:36:01: Access request routes module loaded
+2025-09-07T21:36:01: Logs routes module loaded
+2025-09-07T21:36:01: All routes configured successfully
+2025-09-07T21:36:01: 🗄️  Initializing database...
+2025-09-07T21:36:01: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:36:01: Users table created/verified
+2025-09-07T21:36:01: Doors table created/verified
+2025-09-07T21:36:01: Access groups table created/verified
+2025-09-07T21:36:01: Door access groups table created/verified
+2025-09-07T21:36:01: User access groups table created/verified
+2025-09-07T21:36:01: Access log table created/verified
+2025-09-07T21:36:01: Access requests table created/verified
+2025-09-07T21:36:01: Events table created/verified
+2025-09-07T21:36:01: Users already exist, skipping default admin creation
+2025-09-07T21:36:01: ✅ Database initialization completed
+2025-09-07T21:36:01: Starting server...
+2025-09-07T21:36:01: Port: 3000
+2025-09-07T21:36:01: Environment: development
+2025-09-07T21:36:02: Loading route modules...
+2025-09-07T21:36:02: Auth routes module loaded
+2025-09-07T21:36:02: User routes module loaded
+2025-09-07T21:36:02: Door routes module loaded
+2025-09-07T21:36:02: Access group routes module loaded
+2025-09-07T21:36:02: Event routes module loaded
+2025-09-07T21:36:02: Access request routes module loaded
+2025-09-07T21:36:02: Logs routes module loaded
+2025-09-07T21:36:02: All routes configured successfully
+2025-09-07T21:36:02: 🗄️  Initializing database...
+2025-09-07T21:36:02: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:36:02: Users table created/verified
+2025-09-07T21:36:02: Doors table created/verified
+2025-09-07T21:36:02: Access groups table created/verified
+2025-09-07T21:36:02: Door access groups table created/verified
+2025-09-07T21:36:02: User access groups table created/verified
+2025-09-07T21:36:02: Access log table created/verified
+2025-09-07T21:36:02: Access requests table created/verified
+2025-09-07T21:36:02: Events table created/verified
+2025-09-07T21:36:02: Users already exist, skipping default admin creation
+2025-09-07T21:36:02: ✅ Database initialization completed
+2025-09-07T21:36:02: Starting server...
+2025-09-07T21:36:02: Port: 3000
+2025-09-07T21:36:02: Environment: development
+2025-09-07T21:36:03: Loading route modules...
+2025-09-07T21:36:03: Auth routes module loaded
+2025-09-07T21:36:03: User routes module loaded
+2025-09-07T21:36:03: Door routes module loaded
+2025-09-07T21:36:03: Access group routes module loaded
+2025-09-07T21:36:03: Event routes module loaded
+2025-09-07T21:36:03: Access request routes module loaded
+2025-09-07T21:36:03: Logs routes module loaded
+2025-09-07T21:36:03: All routes configured successfully
+2025-09-07T21:36:03: 🗄️  Initializing database...
+2025-09-07T21:36:03: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:36:03: Users table created/verified
+2025-09-07T21:36:03: Doors table created/verified
+2025-09-07T21:36:03: Access groups table created/verified
+2025-09-07T21:36:03: Door access groups table created/verified
+2025-09-07T21:36:03: User access groups table created/verified
+2025-09-07T21:36:03: Access log table created/verified
+2025-09-07T21:36:03: Access requests table created/verified
+2025-09-07T21:36:03: Events table created/verified
+2025-09-07T21:36:03: Users already exist, skipping default admin creation
+2025-09-07T21:36:03: ✅ Database initialization completed
+2025-09-07T21:36:03: Starting server...
+2025-09-07T21:36:03: Port: 3000
+2025-09-07T21:36:03: Environment: development
+2025-09-07T21:36:05: Loading route modules...
+2025-09-07T21:36:05: Auth routes module loaded
+2025-09-07T21:36:05: User routes module loaded
+2025-09-07T21:36:05: Door routes module loaded
+2025-09-07T21:36:05: Access group routes module loaded
+2025-09-07T21:36:05: Event routes module loaded
+2025-09-07T21:36:05: Access request routes module loaded
+2025-09-07T21:36:05: Logs routes module loaded
+2025-09-07T21:36:05: All routes configured successfully
+2025-09-07T21:36:05: 🗄️  Initializing database...
+2025-09-07T21:36:05: Connected to SQLite database at: C:\Users\henry\OneDrive\Documents\Arduino\user-management-server\database\users.db
+2025-09-07T21:36:05: Users table created/verified
+2025-09-07T21:36:05: Doors table created/verified
+2025-09-07T21:36:05: Access groups table created/verified
+2025-09-07T21:36:05: Door access groups table created/verified
+2025-09-07T21:36:05: User access groups table created/verified
+2025-09-07T21:36:05: Access log table created/verified
+2025-09-07T21:36:05: Access requests table created/verified
+2025-09-07T21:36:05: Events table created/verified
+2025-09-07T21:36:05: Users already exist, skipping default admin creation
+2025-09-07T21:36:05: ✅ Database initialization completed
+2025-09-07T21:36:05: Starting server...
+2025-09-07T21:36:05: Port: 3000
+2025-09-07T21:36:05: Environment: development

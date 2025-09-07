@@ -16,6 +16,10 @@ class Door {
 
     this.lastSeen = data.last_seen;
     this.isOnline = data.is_online === 1;
+    this.isLocked = data.is_locked === 1;
+    this.isOpen = data.is_open === 1;
+    this.hasLockSensor = data.has_lock_sensor === 1;
+    this.hasDoorPositionSensor = data.has_door_position_sensor === 1;
     this.createdAt = data.created_at;
     this.updatedAt = data.updated_at;
     
@@ -39,6 +43,10 @@ class Door {
       secretKey: this.secretKey,
       lastSeen: this.lastSeen,
       isOnline: this.isOnline,
+      isLocked: this.isLocked,
+      isOpen: this.isOpen,
+      hasLockSensor: this.hasLockSensor,
+      hasDoorPositionSensor: this.hasDoorPositionSensor,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
       accessGroupId: this.accessGroupId,
@@ -49,15 +57,15 @@ class Door {
   // Static methods for database operations
   static async create(doorData) {
     return new Promise((resolve, reject) => {
-      const { name, location, esp32Ip, esp32Mac } = doorData;
+      const { name, location, esp32Ip, esp32Mac, hasLockSensor = false, hasDoorPositionSensor = false } = doorData;
       
       // Generate a secure secret key for ESP32 communication
       const secretKey = crypto.randomBytes(32).toString('hex');
       
       const db = new sqlite3.Database(DB_PATH);
       db.run(
-        'INSERT INTO doors (name, location, esp32_ip, esp32_mac) VALUES (?, ?, ?, ?)',
-        [name, location, esp32Ip, esp32Mac],
+        'INSERT INTO doors (name, location, esp32_ip, esp32_mac, has_lock_sensor, has_door_position_sensor) VALUES (?, ?, ?, ?, ?, ?)',
+        [name, location, esp32Ip, esp32Mac, hasLockSensor ? 1 : 0, hasDoorPositionSensor ? 1 : 0],
         function(err) {
           db.close();
           if (err) {
@@ -158,10 +166,14 @@ class Door {
         search
       } = options;
       
-      let query = `SELECT d.*, ag.id as access_group_id, ag.name as access_group_name 
+      let query = `SELECT d.*, 
+                          (SELECT ag.id FROM door_access_groups dag 
+                           JOIN access_groups ag ON dag.access_group_id = ag.id 
+                           WHERE dag.door_id = d.id LIMIT 1) as access_group_id,
+                          (SELECT ag.name FROM door_access_groups dag 
+                           JOIN access_groups ag ON dag.access_group_id = ag.id 
+                           WHERE dag.door_id = d.id LIMIT 1) as access_group_name
                    FROM doors d 
-                   LEFT JOIN door_access_groups dag ON d.id = dag.door_id 
-                   LEFT JOIN access_groups ag ON dag.access_group_id = ag.id 
                    WHERE 1=1`;
       const params = [];
       
@@ -217,14 +229,16 @@ class Door {
 
   async update(updateData) {
     return new Promise((resolve, reject) => {
-      const allowedFields = ['name', 'location', 'esp32_ip', 'esp32_mac'];
+      const allowedFields = ['name', 'location', 'esp32_ip', 'esp32_mac', 'has_lock_sensor', 'has_door_position_sensor'];
       const updates = [];
       const params = [];
       
       // Map camelCase to snake_case
       const fieldMapping = {
         'esp32Ip': 'esp32_ip',
-        'esp32Mac': 'esp32_mac'
+        'esp32Mac': 'esp32_mac',
+        'hasLockSensor': 'has_lock_sensor',
+        'hasDoorPositionSensor': 'has_door_position_sensor'
       };
       
       for (const [key, value] of Object.entries(updateData)) {
@@ -258,6 +272,15 @@ class Door {
           .then(updatedDoor => resolve(updatedDoor))
           .catch(reject);
       });
+    });
+  }
+
+  async save() {
+    return this.update({
+      name: this.name,
+      location: this.location,
+      esp32Ip: this.esp32Ip,
+      esp32Mac: this.esp32Mac
     });
   }
 
@@ -297,6 +320,53 @@ class Door {
           
           this.isOnline = false;
           resolve(true);
+        }
+      );
+    });
+  }
+
+  // Static method to check and update offline doors
+  static async checkOfflineDoors(timeoutMinutes = 2) {
+    return new Promise((resolve, reject) => {
+      const db = new sqlite3.Database(DB_PATH);
+      const timeoutMs = timeoutMinutes * 60 * 1000; // Convert minutes to milliseconds
+      
+      // Find doors that are marked as online but haven't sent a heartbeat recently
+      db.all(
+        `SELECT * FROM doors 
+         WHERE is_online = 1 
+         AND last_seen < datetime('now', '-${timeoutMinutes} minutes')`,
+        (err, rows) => {
+          if (err) {
+            db.close();
+            reject(err);
+            return;
+          }
+          
+          if (rows.length === 0) {
+            db.close();
+            resolve([]);
+            return;
+          }
+          
+          // Set these doors to offline
+          const doorIds = rows.map(row => row.id);
+          const placeholders = doorIds.map(() => '?').join(',');
+          
+          db.run(
+            `UPDATE doors SET is_online = 0 WHERE id IN (${placeholders})`,
+            doorIds,
+            (updateErr) => {
+              db.close();
+              if (updateErr) {
+                reject(updateErr);
+                return;
+              }
+              
+              console.log(`Marked ${rows.length} doors as offline due to timeout`);
+              resolve(rows.map(row => new Door(row)));
+            }
+          );
         }
       );
     });

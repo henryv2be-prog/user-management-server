@@ -2,6 +2,7 @@ const express = require('express');
 const { User } = require('../database/models');
 const { validateLogin, validateRegister, validatePasswordChange } = require('../middleware/validation');
 const { authenticate } = require('../middleware/auth');
+const EventLogger = require('../utils/eventLogger');
 
 const router = express.Router();
 
@@ -45,6 +46,9 @@ router.post('/login', validateLogin, async (req, res) => {
       process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production',
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
     );
+    
+    // Log user login event
+    await EventLogger.logUserLogin(req, user);
     
     res.json({
       message: 'Login successful',

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Request Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .qr-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        .step {
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Access Request Test Interface</h1>
+        
+        <div class="step">
+            <h3>Step 1: Login</h3>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" value="admin@example.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" value="admin123">
+            </div>
+            <button onclick="login()">Login</button>
+            <span id="loginStatus"></span>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Generate QR Code for Door</h3>
+            <div class="form-group">
+                <label for="doorId">Door ID:</label>
+                <input type="number" id="doorId" value="1" placeholder="Enter door ID">
+            </div>
+            <button onclick="generateQRCode()">Generate QR Code</button>
+            <div id="qrResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Simulate QR Code Scan</h3>
+            <div class="form-group">
+                <label for="qrCodeData">QR Code Data (paste from step 2):</label>
+                <textarea id="qrCodeData" rows="4" placeholder="Paste QR code data here..."></textarea>
+            </div>
+            <button onclick="simulateScan()">Simulate QR Scan</button>
+            <div id="scanResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Test Door Control (ESP32 Simulation)</h3>
+            <div class="form-group">
+                <label for="esp32DoorId">Door ID:</label>
+                <input type="number" id="esp32DoorId" value="1">
+            </div>
+            <div class="form-group">
+                <label for="secretKey">Secret Key:</label>
+                <input type="text" id="secretKey" placeholder="Enter door secret key">
+            </div>
+            <div class="form-group">
+                <label for="action">Action:</label>
+                <select id="action">
+                    <option value="open">Open Door</option>
+                    <option value="close">Close Door</option>
+                    <option value="unlock">Unlock Door</option>
+                    <option value="lock">Lock Door</option>
+                </select>
+            </div>
+            <button onclick="controlDoor()">Send Command to ESP32</button>
+            <div id="controlResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 5: View Access Requests</h3>
+            <button onclick="viewAccessRequests()">View Recent Access Requests</button>
+            <div id="requestsResult"></div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = null;
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const status = document.getElementById('loginStatus');
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    authToken = data.token;
+                    status.innerHTML = '<span style="color: green;">✅ Logged in successfully!</span>';
+                } else {
+                    status.innerHTML = `<span style="color: red;">❌ Login failed: ${data.message}</span>`;
+                }
+            } catch (error) {
+                status.innerHTML = `<span style="color: red;">❌ Error: ${error.message}</span>`;
+            }
+        }
+
+        async function generateQRCode() {
+            const doorId = document.getElementById('doorId').value;
+            const result = document.getElementById('qrResult');
+
+            if (!authToken) {
+                result.innerHTML = '<div class="result error">Please login first!</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/doors/${doorId}/qr-code`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    result.innerHTML = `
+                        <div class="result success">
+                            <strong>QR Code Generated Successfully!</strong>
+                            <div class="qr-display">${data.qrCodeData}</div>
+                            <p><strong>Door:</strong> ${data.door.name} (${data.door.location})</p>
+                            <p><strong>Instructions:</strong> ${data.instructions.message}</p>
+                        </div>
+                    `;
+                    // Auto-fill the QR code data for step 3
+                    document.getElementById('qrCodeData').value = data.qrCodeData;
+                } else {
+                    result.innerHTML = `<div class="result error">Error: ${data.message}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="result error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function simulateScan() {
+            const qrCodeData = document.getElementById('qrCodeData').value;
+            const result = document.getElementById('scanResult');
+
+            if (!authToken) {
+                result.innerHTML = '<div class="result error">Please login first!</div>';
+                return;
+            }
+
+            if (!qrCodeData) {
+                result.innerHTML = '<div class="result error">Please generate a QR code first!</div>';
+                return;
+            }
+
+            try {
+                // Parse QR code data to get door ID
+                const qrData = JSON.parse(qrCodeData);
+                const doorId = qrData.doorId;
+
+                const response = await fetch('/api/access-requests/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        doorId: doorId,
+                        requestType: 'qr_scan',
+                        qrCodeData: qrCodeData
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.access) {
+                        result.innerHTML = `
+                            <div class="result success">
+                                <strong>✅ Access Granted!</strong>
+                                <p><strong>User:</strong> ${data.user.firstName} ${data.user.lastName}</p>
+                                <p><strong>Door:</strong> ${data.door.name} (${data.door.location})</p>
+                                <p><strong>Request ID:</strong> ${data.requestId}</p>
+                            </div>
+                        `;
+                    } else {
+                        result.innerHTML = `
+                            <div class="result error">
+                                <strong>❌ Access Denied!</strong>
+                                <p><strong>Reason:</strong> ${data.reason}</p>
+                                <p><strong>Door:</strong> ${data.door.name} (${data.door.location})</p>
+                                <p><strong>Request ID:</strong> ${data.requestId}</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    result.innerHTML = `<div class="result error">Error: ${data.message}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="result error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function controlDoor() {
+            const doorId = document.getElementById('esp32DoorId').value;
+            const secretKey = document.getElementById('secretKey').value;
+            const action = document.getElementById('action').value;
+            const result = document.getElementById('controlResult');
+
+            if (!secretKey) {
+                result.innerHTML = '<div class="result error">Please enter the secret key!</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/access-requests/door-control', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        doorId: parseInt(doorId),
+                        secretKey: secretKey,
+                        action: action
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    result.innerHTML = `
+                        <div class="result success">
+                            <strong>✅ Door Command Sent!</strong>
+                            <p><strong>Action:</strong> ${data.action}</p>
+                            <p><strong>Door:</strong> ${data.door.name} (${data.door.location})</p>
+                            <p><strong>ESP32 IP:</strong> ${data.door.esp32Ip}</p>
+                            <p><strong>Timestamp:</strong> ${data.timestamp}</p>
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `<div class="result error">Error: ${data.message}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="result error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function viewAccessRequests() {
+            const result = document.getElementById('requestsResult');
+
+            if (!authToken) {
+                result.innerHTML = '<div class="result error">Please login first!</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/access-requests?limit=10', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    let html = '<div class="result info"><strong>Recent Access Requests:</strong><br><br>';
+                    
+                    if (data.requests.length === 0) {
+                        html += 'No access requests found.';
+                    } else {
+                        data.requests.forEach(request => {
+                            const status = request.status === 'granted' ? '✅' : 
+                                         request.status === 'denied' ? '❌' : 
+                                         request.status === 'expired' ? '⏰' : '⏳';
+                            
+                            html += `
+                                <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                                    ${status} <strong>${request.status.toUpperCase()}</strong><br>
+                                    <strong>User:</strong> ${request.user ? request.user.firstName + ' ' + request.user.lastName : 'Unknown'}<br>
+                                    <strong>Door:</strong> ${request.door ? request.door.name : 'Unknown'}<br>
+                                    <strong>Type:</strong> ${request.requestType}<br>
+                                    <strong>Time:</strong> ${new Date(request.requestedAt).toLocaleString()}<br>
+                                    ${request.reason ? `<strong>Reason:</strong> ${request.reason}<br>` : ''}
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    html += '</div>';
+                    result.innerHTML = html;
+                } else {
+                    result.innerHTML = `<div class="result error">Error: ${data.message}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="result error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-login on page load
+        window.onload = function() {
+            login();
+        };
+    </script>
+</body>
+</html>
+

@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 const { initDatabase } = require('./database/init');
 require('dotenv').config();
 
@@ -20,7 +21,7 @@ app.use(helmet({
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? process.env.FRONTEND_URL 
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    : true, // Allow all origins in development
   credentials: true
 }));
 
@@ -34,8 +35,22 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Debug middleware for heartbeat requests
+app.use('/api/doors/heartbeat', (req, res, next) => {
+  console.log('Heartbeat middleware hit');
+  console.log('Method:', req.method);
+  console.log('Headers:', req.headers);
+  console.log('Body:', req.body);
+  next();
+});
+
 // Serve static files
 app.use(express.static('public'));
+
+// Test page for access requests
+app.get('/test-access', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'test-access.html'));
+});
 
 // Rate limiting
 const authLimiter = rateLimit({
@@ -57,7 +72,7 @@ const generalLimiter = rateLimit({
 app.use('/api', generalLimiter);
 
 // Load and setup routes
-let authRoutes, userRoutes, doorRoutes, accessGroupRoutes;
+let authRoutes, userRoutes, doorRoutes, accessGroupRoutes, addLog;
 
 try {
   console.log('Loading route modules...');
@@ -70,16 +85,34 @@ try {
   accessGroupRoutes = require('./routes/accessGroups');
   console.log('Access group routes module loaded');
   
+eventRoutes = require('./routes/events');
+console.log('Event routes module loaded');
+
+accessRequestRoutes = require('./routes/accessRequests');
+console.log('Access request routes module loaded');
+
+const { router: logsRoutes, addLog: addLogFunction } = require('./routes/logs');
+addLog = addLogFunction;
+console.log('Logs routes module loaded');
+  
   // Setup routes
   app.use('/api/auth', authLimiter, authRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/doors', doorRoutes);
-  app.use('/api/access-groups', accessGroupRoutes);
+app.use('/api/access-groups', accessGroupRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/access-requests', accessRequestRoutes);
+app.use('/api/logs', logsRoutes);
   console.log('All routes configured successfully');
 } catch (error) {
   console.error('Error loading/setting up routes:', error);
   process.exit(1);
 }
+
+// Access page route (for QR code scanning)
+app.get('/access', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'access.html'));
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -121,7 +154,7 @@ async function startServer() {
     console.log('Port:', PORT);
     console.log('Environment:', process.env.NODE_ENV || 'development');
     
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📱 Web interface: http://localhost:${PORT}`);
       console.log(`🔧 API endpoints: http://localhost:${PORT}/api`);
@@ -130,7 +163,26 @@ async function startServer() {
       console.log(`   Email: ${process.env.ADMIN_EMAIL || 'admin@example.com'}`);
       console.log(`   Password: ${process.env.ADMIN_PASSWORD || 'admin123'}`);
       console.log(`\n⚠️  Please change the default password after first login!`);
+      
+      // Add log entries
+      addLog('success', `Server started on port ${PORT}`);
+      addLog('info', `Web interface: http://localhost:${PORT}`);
+      addLog('info', `API endpoints: http://localhost:${PORT}/api`);
+      addLog('info', `Environment: ${process.env.NODE_ENV || 'development'}`);
     });
+
+    // Start periodic offline door check
+    const { Door } = require('./database/door');
+    setInterval(async () => {
+      try {
+        const offlineDoors = await Door.checkOfflineDoors(0.17); // 10 second timeout (0.17 minutes)
+        if (offlineDoors.length > 0) {
+          console.log(`🔴 ${offlineDoors.length} doors marked as offline due to timeout`);
+        }
+      } catch (error) {
+        console.error('Error checking offline doors:', error);
+      }
+    }, 10000); // Check every 10 seconds
 
     server.on('error', (error) => {
       console.error('Server error:', error);

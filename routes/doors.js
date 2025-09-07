@@ -13,8 +13,93 @@ const {
   requireAdmin, 
   authorizeSelfOrAdmin 
 } = require('../middleware/auth');
+const EventLogger = require('../utils/eventLogger');
 
 const router = express.Router();
+
+// Public endpoint for QR Code Generator (no auth required)
+router.get('/public', async (req, res) => {
+  try {
+    const doors = await Door.findAll({ limit: 100 });
+    res.json(doors);
+  } catch (error) {
+    console.error('Error fetching doors for QR generator:', error);
+    res.status(500).json({ error: 'Failed to fetch doors' });
+  }
+});
+
+// ESP32 Heartbeat endpoint (no auth required)
+router.post('/heartbeat', async (req, res) => {
+  try {
+    console.log('Heartbeat endpoint hit');
+    console.log('Request body:', req.body);
+    console.log('Request headers:', req.headers);
+    
+    let { deviceID, deviceName, ip, mac, status, doorOpen, signal, freeHeap, uptime } = req.body;
+    
+    console.log('Heartbeat received:', { deviceID, deviceName, ip, mac, status });
+    
+    if (!deviceID || !ip) {
+      console.log('Heartbeat rejected - missing deviceID or ip');
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'deviceID and ip are required'
+      });
+    }
+    
+    // Handle empty deviceName
+    if (!deviceName || deviceName.trim() === '') {
+      deviceName = 'ESP32-' + mac.replace(/:/g, '');
+    }
+    
+    // Find door by ESP32 IP first (most reliable)
+    console.log('Looking for door with IP:', ip);
+    let door = await Door.findByIp(ip);
+    console.log('Door found by IP:', door ? 'Yes' : 'No');
+    
+    if (!door && mac) {
+      console.log('Looking for door with MAC:', mac);
+      // Try to find by MAC if IP not found, but warn about potential conflicts
+      door = await Door.findByMac(mac);
+      console.log('Door found by MAC:', door ? 'Yes' : 'No');
+      
+      if (door) {
+        console.log('WARNING: Found door by MAC but IP mismatch. Door IP:', door.esp32Ip, 'Heartbeat IP:', ip);
+        // Update the door's IP to match the current heartbeat
+        if (door.esp32Ip !== ip) {
+          console.log('Updating door IP from', door.esp32Ip, 'to', ip);
+          door.esp32Ip = ip;
+          await door.save();
+        }
+      }
+    }
+    
+    if (door) {
+      // Update last seen and online status
+      await door.updateLastSeen();
+      
+      res.json({
+        success: true,
+        message: 'Heartbeat received',
+        doorId: door.id,
+        doorName: door.name
+      });
+    } else {
+      // Door not found - could be a new ESP32
+      res.json({
+        success: true,
+        message: 'Heartbeat received but door not registered',
+        registered: false
+      });
+    }
+  } catch (error) {
+    console.error('Heartbeat error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to process heartbeat'
+    });
+  }
+});
 
 // Get all doors (admin only)
 router.get('/', authenticate, requireAdmin, validatePagination, async (req, res) => {
@@ -84,15 +169,7 @@ router.post('/', authenticate, requireAdmin, validateDoor, async (req, res) => {
   try {
     const { name, location, esp32Ip, esp32Mac, accessGroupId } = req.body;
     
-    // Check if door with this IP already exists
-    const existingDoor = await Door.findByIp(esp32Ip);
-    if (existingDoor) {
-      return res.status(409).json({
-        error: 'Door already exists',
-        message: 'A door with this ESP32 IP address already exists'
-      });
-    }
-    
+    // Validation middleware already checks for duplicate IP/MAC addresses
     const door = await Door.create({
       name,
       location,
@@ -112,6 +189,9 @@ router.post('/', authenticate, requireAdmin, validateDoor, async (req, res) => {
         });
       });
     }
+    
+    // Log door creation event
+    await EventLogger.logDoorCreated(req, door);
     
     res.status(201).json({
       message: 'Door created successfully',
@@ -171,6 +251,10 @@ router.put('/:id', authenticate, requireAdmin, validateId, validateDoorUpdate, a
     // Fetch the updated door with access group info
     const finalDoor = await Door.findById(doorId);
     
+    // Log door update event
+    const changes = Object.keys(doorUpdateData).filter(key => doorUpdateData[key] !== undefined);
+    await EventLogger.logDoorUpdated(req, finalDoor, changes);
+    
     res.json({
       message: 'Door updated successfully',
       door: finalDoor.toJSON()
@@ -196,6 +280,9 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
         message: 'The requested door does not exist'
       });
     }
+    
+    // Log door deletion event before deleting
+    await EventLogger.logDoorDeleted(req, door);
     
     await door.delete();
     
@@ -324,6 +411,68 @@ router.post('/heartbeat', async (req, res) => {
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to process heartbeat'
+    });
+  }
+});
+
+// Generate static QR code for door (admin only)
+router.get('/:id/qr-code', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const doorId = parseInt(req.params.id);
+    
+    if (isNaN(doorId)) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Invalid door ID'
+      });
+    }
+
+    const door = await Door.findById(doorId);
+    if (!door) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Door not found'
+      });
+    }
+
+    // Generate static QR code data - this will be the same every time
+    const qrCodeData = {
+      doorId: door.id,
+      doorName: door.name,
+      location: door.location,
+      esp32Ip: door.esp32Ip,
+      serverUrl: `${req.protocol}://${req.get('host')}`,
+      type: 'door_access'
+    };
+
+    // Log QR code generation
+    try {
+      await EventLogger.log(req, 'door', 'qr_generated', 'Door', door.id, `Static QR code generated for ${door.name}`, `Location: ${door.location}`);
+    } catch (logError) {
+      console.error('EventLogger error (non-fatal):', logError);
+      // Continue without logging
+    }
+
+    res.json({
+      success: true,
+      qrCodeData: JSON.stringify(qrCodeData),
+      door: {
+        id: door.id,
+        name: door.name,
+        location: door.location,
+        esp32Ip: door.esp32Ip
+      },
+      instructions: {
+        message: 'This is a static QR code for this door. Print and display it for users to scan.',
+        note: 'Users will authenticate through the mobile app when scanning this code'
+      }
+    });
+
+  } catch (error) {
+    console.error('QR code generation error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to generate QR code'
     });
   }
 });
@@ -488,51 +637,6 @@ router.post('/discover', authenticate, requireAdmin, async (req, res) => {
   }
 });
 
-// ESP32 Heartbeat endpoint
-router.post('/heartbeat', async (req, res) => {
-  try {
-    const { deviceID, deviceName, ip, mac, status, doorOpen, signal, freeHeap, uptime } = req.body;
-    
-    if (!deviceID || !ip) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'deviceID and ip are required'
-      });
-    }
-    
-    // Find door by ESP32 IP or MAC
-    let door = await Door.findByIp(ip);
-    if (!door && mac) {
-      // Try to find by MAC if IP not found
-      door = await Door.findByMac(mac);
-    }
-    
-    if (door) {
-      // Update last seen and online status
-      await door.updateLastSeen();
-      
-      res.json({
-        success: true,
-        message: 'Heartbeat received',
-        doorId: door.id,
-        doorName: door.name
-      });
-    } else {
-      // Door not found - could be a new ESP32
-      res.json({
-        success: true,
-        message: 'Heartbeat received but door not registered',
-        registered: false
-      });
-    }
-  } catch (error) {
-    console.error('Heartbeat error:', error);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to process heartbeat'
-    });
-  }
-});
 
 // ESP32 Access Request endpoint (for QR code scanning)
 router.post('/access/request', async (req, res) => {

@@ -4,13 +4,16 @@ const { body, param, query, validationResult } = require('express-validator');
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    // Convert errors to the format expected by frontend
+    const errorObj = {};
+    errors.array().forEach(err => {
+      errorObj[err.path] = err.msg;
+    });
+    
     return res.status(400).json({
       error: 'Validation Error',
-      details: errors.array().map(err => ({
-        field: err.path,
-        message: err.msg,
-        value: err.value
-      }))
+      message: 'Please fix the validation errors below',
+      errors: errorObj
     });
   }
   next();
@@ -176,11 +179,27 @@ const validateDoor = [
     .withMessage('Location must be between 2 and 100 characters'),
   body('esp32Ip')
     .isIP()
-    .withMessage('ESP32 IP must be a valid IP address'),
+    .withMessage('ESP32 IP must be a valid IP address')
+    .custom(async (value) => {
+      const { Door } = require('../database/door');
+      const existingDoor = await Door.findByIp(value);
+      if (existingDoor) {
+        throw new Error(`IP address ${value} is already in use by door "${existingDoor.name}"`);
+      }
+    }),
   body('esp32Mac')
     .optional()
     .matches(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/)
-    .withMessage('ESP32 MAC must be a valid MAC address'),
+    .withMessage('ESP32 MAC must be a valid MAC address')
+    .custom(async (value) => {
+      if (value) {
+        const { Door } = require('../database/door');
+        const existingDoor = await Door.findByMac(value);
+        if (existingDoor) {
+          throw new Error(`MAC address ${value} is already in use by door "${existingDoor.name}"`);
+        }
+      }
+    }),
   handleValidationErrors
 ];
 
@@ -198,11 +217,29 @@ const validateDoorUpdate = [
   body('esp32Ip')
     .optional()
     .isIP()
-    .withMessage('ESP32 IP must be a valid IP address'),
+    .withMessage('ESP32 IP must be a valid IP address')
+    .custom(async (value, { req }) => {
+      if (value) {
+        const { Door } = require('../database/door');
+        const existingDoor = await Door.findByIp(value);
+        if (existingDoor && existingDoor.id !== parseInt(req.params.id)) {
+          throw new Error(`IP address ${value} is already in use by door "${existingDoor.name}"`);
+        }
+      }
+    }),
   body('esp32Mac')
     .optional()
     .matches(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/)
-    .withMessage('ESP32 MAC must be a valid MAC address'),
+    .withMessage('ESP32 MAC must be a valid MAC address')
+    .custom(async (value, { req }) => {
+      if (value) {
+        const { Door } = require('../database/door');
+        const existingDoor = await Door.findByMac(value);
+        if (existingDoor && existingDoor.id !== parseInt(req.params.id)) {
+          throw new Error(`MAC address ${value} is already in use by door "${existingDoor.name}"`);
+        }
+      }
+    }),
   // isActive removed - entities are always active
   handleValidationErrors
 ];

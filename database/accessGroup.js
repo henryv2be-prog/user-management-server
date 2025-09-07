@@ -5,11 +5,10 @@ const path = require('path');
 const DB_PATH = path.join(__dirname, 'users.db');
 
 class AccessGroup {
-  constructor(data) {
+  constructor(data = {}) {
     this.id = data.id;
     this.name = data.name;
     this.description = data.description;
-
     this.createdAt = data.created_at;
     this.updatedAt = data.updated_at;
   }
@@ -19,158 +18,128 @@ class AccessGroup {
       id: this.id,
       name: this.name,
       description: this.description,
-
       createdAt: this.createdAt,
       updatedAt: this.updatedAt
     };
   }
 
   // Static methods for database operations
+
+  // Create new access group
   static async create(accessGroupData) {
-    return new Promise((resolve, reject) => {
-      const { name, description } = accessGroupData;
-      
-      const db = new sqlite3.Database(DB_PATH);
-      db.run(
-        'INSERT INTO access_groups (name, description) VALUES (?, ?)',
-        [name, description],
-        function(err) {
-          if (err) {
-            reject(err);
-            return;
-          }
-          
-          // Fetch the created access group
-          AccessGroup.findById(this.lastID)
-            .then(accessGroup => resolve(accessGroup))
-            .catch(reject);
-        }
-      );
-    });
-  }
-
-  static async findById(id) {
+    const { name, description } = accessGroupData;
+    
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(DB_PATH);
-      db.get(
-        'SELECT * FROM access_groups WHERE id = ?',
-        [id],
-        (err, row) => {
-          db.close();
-          if (err) {
-            console.error('AccessGroup.findById SQLite error:', err);
-            console.error('Query: SELECT * FROM access_groups WHERE id = ?');
-            console.error('Params:', [id]);
-            reject(err);
-            return;
-          }
-          
-          if (!row) {
-            resolve(null);
-            return;
-          }
-          
-          resolve(new AccessGroup(row));
-        }
-      );
-    });
-  }
-
-  static async findByName(name) {
-    return new Promise((resolve, reject) => {
-      const db = new sqlite3.Database(DB_PATH);
-      db.get(
-        'SELECT * FROM access_groups WHERE name = ?',
-        [name],
-        (err, row) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          
-          if (!row) {
-            resolve(null);
-            return;
-          }
-          
-          resolve(new AccessGroup(row));
-        }
-      );
-    });
-  }
-
-  static async findAll(options = {}) {
-    return new Promise((resolve, reject) => {
-      const {
-        page = 1,
-        limit = 10,
-
-        search
-      } = options;
       
-      let query = 'SELECT * FROM access_groups WHERE 1=1';
-      const params = [];
-      
-
-      
-      if (search) {
-        query += ' AND (name LIKE ? OR description LIKE ?)';
-        const searchTerm = `%${search}%`;
-        params.push(searchTerm, searchTerm);
-      }
-      
-      query += ' ORDER BY created_at DESC';
-      query += ' LIMIT ? OFFSET ?';
-      params.push(limit, (page - 1) * limit);
-      
-      const db = new sqlite3.Database(DB_PATH);
-      db.all(query, params, (err, rows) => {
-        db.close();
+      db.run("INSERT INTO access_groups (name, description) VALUES (?, ?)", 
+        [name, description], function(err) {
         if (err) {
-          console.error('AccessGroup.findAll SQLite error:', err);
-          console.error('Query:', query);
-          console.error('Params:', params);
-          reject(err);
-          return;
+          db.close();
+          if (err.message.includes('UNIQUE constraint failed: access_groups.name')) {
+            return reject(new Error('Access group name already exists'));
+          }
+          return reject(err);
         }
         
-        const accessGroups = rows.map(row => new AccessGroup(row));
-        resolve(accessGroups);
+        // Fetch the created access group
+        const accessGroupId = this.lastID;
+        db.get("SELECT * FROM access_groups WHERE id = ?", [accessGroupId], (fetchErr, row) => {
+          db.close();
+          if (fetchErr) {
+            return reject(fetchErr);
+          }
+          resolve(new AccessGroup(row));
+        });
       });
     });
   }
 
-  static async count(options = {}) {
+  // Find access group by ID
+  static async findById(id) {
     return new Promise((resolve, reject) => {
-      const { search } = options;
-      
-      let query = 'SELECT COUNT(*) as count FROM access_groups WHERE 1=1';
-      const params = [];
-      
-
-      
-      if (search) {
-        query += ' AND (name LIKE ? OR description LIKE ?)';
-        const searchTerm = `%${search}%`;
-        params.push(searchTerm, searchTerm);
-      }
-      
       const db = new sqlite3.Database(DB_PATH);
-      db.get(query, params, (err, row) => {
+      
+      db.get("SELECT * FROM access_groups WHERE id = ?", [id], (err, row) => {
         db.close();
         if (err) {
-          console.error('AccessGroup.count SQLite error:', err);
-          console.error('Query:', query);
-          console.error('Params:', params);
-          reject(err);
-          return;
+          return reject(err);
         }
-        
+        resolve(row ? new AccessGroup(row) : null);
+      });
+    });
+  }
+
+  // Find access group by name
+  static async findByName(name) {
+    return new Promise((resolve, reject) => {
+      const db = new sqlite3.Database(DB_PATH);
+      
+      db.get("SELECT * FROM access_groups WHERE name = ?", [name], (err, row) => {
+        db.close();
+        if (err) {
+          return reject(err);
+        }
+        resolve(row ? new AccessGroup(row) : null);
+      });
+    });
+  }
+
+  // Find all access groups with optional filters
+  static async findAll(options = {}) {
+    return new Promise((resolve, reject) => {
+      const db = new sqlite3.Database(DB_PATH);
+      
+      let sql = "SELECT * FROM access_groups";
+      const params = [];
+      
+      if (options.search) {
+        sql += " WHERE name LIKE ? OR description LIKE ?";
+        params.push(`%${options.search}%`, `%${options.search}%`);
+      }
+      
+      sql += " ORDER BY created_at DESC";
+      
+      // Add pagination
+      if (options.page && options.limit) {
+        const offset = (options.page - 1) * options.limit;
+        sql += ` LIMIT ${options.limit} OFFSET ${offset}`;
+      }
+      
+      db.all(sql, params, (err, rows) => {
+        db.close();
+        if (err) {
+          return reject(err);
+        }
+        resolve(rows.map(row => new AccessGroup(row)));
+      });
+    });
+  }
+
+  // Count access groups with optional filters
+  static async count(options = {}) {
+    return new Promise((resolve, reject) => {
+      const db = new sqlite3.Database(DB_PATH);
+      
+      let sql = "SELECT COUNT(*) as count FROM access_groups";
+      const params = [];
+      
+      if (options.search) {
+        sql += " WHERE name LIKE ? OR description LIKE ?";
+        params.push(`%${options.search}%`, `%${options.search}%`);
+      }
+      
+      db.get(sql, params, (err, row) => {
+        db.close();
+        if (err) {
+          return reject(err);
+        }
         resolve(row.count);
       });
     });
   }
 
+  // Update access group
   async update(updateData) {
     return new Promise((resolve, reject) => {
       const allowedFields = ['name', 'description'];
@@ -185,44 +154,73 @@ class AccessGroup {
       }
       
       if (updates.length === 0) {
-        resolve(this);
-        return;
+        return resolve(this);
       }
       
+      updates.push('updated_at = CURRENT_TIMESTAMP');
       params.push(this.id);
       
+      const sql = `UPDATE access_groups SET ${updates.join(', ')} WHERE id = ?`;
+      
       const db = new sqlite3.Database(DB_PATH);
-      db.run(
-        `UPDATE access_groups SET ${updates.join(', ')} WHERE id = ?`,
-        params,
-        (err) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          
-          // Fetch updated access group
-          AccessGroup.findById(this.id)
-            .then(updatedAccessGroup => resolve(updatedAccessGroup))
-            .catch(reject);
+      
+      db.run(sql, params, (err) => {
+        if (err) {
+          db.close();
+          return reject(err);
         }
-      );
+        
+        // Fetch updated access group
+        db.get("SELECT * FROM access_groups WHERE id = ?", [this.id], (err, row) => {
+          db.close();
+          if (err) {
+            return reject(err);
+          }
+          resolve(new AccessGroup(row));
+        });
+      });
     });
   }
 
+  // Delete access group
   async delete() {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(DB_PATH);
-      db.run(
-        'DELETE FROM access_groups WHERE id = ?',
-        [this.id],
-        (err) => {
+      
+      // First delete related records
+      db.serialize(() => {
+        db.run("DELETE FROM user_access_groups WHERE access_group_id = ?", [this.id]);
+        db.run("DELETE FROM door_access_groups WHERE access_group_id = ?", [this.id]);
+        db.run("DELETE FROM access_groups WHERE id = ?", [this.id], (err) => {
+          db.close();
+          if (err) {
+            return reject(err);
+          }
+          resolve(true);
+        });
+      });
+    });
+  }
+
+  // Static method to get access groups for a user
+  static async getUserAccessGroups(userId) {
+    return new Promise((resolve, reject) => {
+      const db = new sqlite3.Database(DB_PATH);
+      db.all(
+        `SELECT ag.* FROM access_groups ag
+         JOIN user_access_groups uag ON ag.id = uag.access_group_id
+         WHERE uag.user_id = ?
+         AND (uag.expires_at IS NULL OR uag.expires_at > CURRENT_TIMESTAMP)`,
+        [userId],
+        (err, rows) => {
+          db.close();
           if (err) {
             reject(err);
             return;
           }
           
-          resolve(true);
+          const accessGroups = rows.map(row => new AccessGroup(row));
+          resolve(accessGroups);
         }
       );
     });
@@ -233,7 +231,8 @@ class AccessGroup {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(DB_PATH);
       db.all(
-        `SELECT d.* FROM doors d
+        `SELECT d.*
+         FROM doors d
          JOIN door_access_groups dag ON d.id = dag.door_id
          WHERE dag.access_group_id = ?`,
         [this.id],
@@ -243,19 +242,18 @@ class AccessGroup {
             reject(err);
             return;
           }
-          
           resolve(rows);
         }
       );
     });
   }
 
-  // Get users in this access group
+  // Get users for this access group
   async getUsers() {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(DB_PATH);
       db.all(
-        `         SELECT u.*, uag.granted_at, uag.expires_at
+        `SELECT u.*, uag.created_at as granted_at, uag.expires_at
          FROM users u
          JOIN user_access_groups uag ON u.id = uag.user_id
          WHERE uag.access_group_id = ?
@@ -267,7 +265,6 @@ class AccessGroup {
             reject(err);
             return;
           }
-          
           resolve(rows);
         }
       );
@@ -275,21 +272,19 @@ class AccessGroup {
   }
 
   // Add user to access group
-  async addUser(userId, grantedBy) {
+  async addUser(userId, grantedBy = null) {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(DB_PATH);
+      
       db.run(
-        `INSERT OR REPLACE INTO user_access_groups 
-         (user_id, access_group_id, granted_by) 
-         VALUES (?, ?, ?)`,
+        "INSERT OR IGNORE INTO user_access_groups (user_id, access_group_id, granted_by) VALUES (?, ?, ?)",
         [userId, this.id, grantedBy],
         function(err) {
           db.close();
           if (err) {
-            reject(err);
-            return;
+            return reject(err);
           }
-          
+          // If no rows were affected, user is already in the group
           resolve(this.changes > 0);
         }
       );
@@ -300,16 +295,15 @@ class AccessGroup {
   async removeUser(userId) {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(DB_PATH);
+      
       db.run(
-        'DELETE FROM user_access_groups WHERE access_group_id = ? AND user_id = ?',
-        [this.id, userId],
+        "DELETE FROM user_access_groups WHERE user_id = ? AND access_group_id = ?",
+        [userId, this.id],
         function(err) {
           db.close();
           if (err) {
-            reject(err);
-            return;
+            return reject(err);
           }
-          
           resolve(this.changes > 0);
         }
       );
@@ -320,16 +314,16 @@ class AccessGroup {
   async addDoor(doorId) {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(DB_PATH);
+      
       db.run(
-        'INSERT OR IGNORE INTO door_access_groups (door_id, access_group_id) VALUES (?, ?)',
+        "INSERT OR IGNORE INTO door_access_groups (door_id, access_group_id) VALUES (?, ?)",
         [doorId, this.id],
         function(err) {
           db.close();
           if (err) {
-            reject(err);
-            return;
+            return reject(err);
           }
-          
+          // If no rows were affected, door is already in the group
           resolve(this.changes > 0);
         }
       );
@@ -340,16 +334,15 @@ class AccessGroup {
   async removeDoor(doorId) {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(DB_PATH);
+      
       db.run(
-        'DELETE FROM door_access_groups WHERE access_group_id = ? AND door_id = ?',
-        [this.id, doorId],
+        "DELETE FROM door_access_groups WHERE door_id = ? AND access_group_id = ?",
+        [doorId, this.id],
         function(err) {
           db.close();
           if (err) {
-            reject(err);
-            return;
+            return reject(err);
           }
-          
           resolve(this.changes > 0);
         }
       );

@@ -114,8 +114,60 @@
         <div id="dashboardSection" class="section">
             <div class="container">
                 <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
-                <div class="stats-grid" id="statsGrid">
-                    <!-- Stats will be loaded here -->
+                
+                <!-- Door Status Monitoring -->
+                <div class="door-status-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-door-open"></i> Door Status Monitoring</h2>
+                        <div class="door-controls">
+                            <button class="btn btn-secondary" onclick="refreshDoorStatus()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <div id="doorRefreshIndicator" class="refresh-indicator">
+                                <i class="fas fa-sync-alt"></i>
+                                <span>Auto-refreshing every 10s</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="door-grid" id="doorGrid">
+                        <!-- Door status cards will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- Event Log Section -->
+                <div class="event-log-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-history"></i> Recent Events</h2>
+                    <div class="event-controls">
+                        <select id="eventTypeFilter" onchange="filterEvents()">
+                            <option value="">All Types</option>
+                            <option value="user">Users</option>
+                            <option value="door">Doors</option>
+                            <option value="access_group">Access Groups</option>
+                            <option value="auth">Authentication</option>
+                            <option value="access">Access</option>
+                            <option value="error">Errors</option>
+                            <option value="system">System</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="loadEvents()">
+                            <i class="fas fa-refresh"></i> Refresh
+                        </button>
+                        <div id="eventRefreshIndicator" class="refresh-indicator">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Auto-refreshing every 10s</span>
+                        </div>
+                    </div>
+                    </div>
+                    
+                    <div class="event-log-container">
+                        <div class="event-log" id="eventLog">
+                            <!-- Events will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <div class="event-pagination" id="eventPagination">
+                        <!-- Pagination will be loaded here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -174,9 +226,14 @@
             <div class="container">
                 <div class="section-header">
                     <h1><i class="fas fa-door-open"></i> Door Management</h1>
-                    <button class="btn btn-primary" onclick="showCreateDoorModal()">
-                        <i class="fas fa-plus"></i> Add Door
-                    </button>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" onclick="refreshDoorStatus()" title="Refresh Door Status">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button class="btn btn-primary" onclick="showCreateDoorModal()">
+                            <i class="fas fa-plus"></i> Add Door
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="filters">
@@ -224,11 +281,6 @@
                 
                 <div class="filters">
                     <input type="text" id="accessGroupSearchInput" placeholder="Search access groups..." onkeyup="searchAccessGroups()">
-                    <select id="accessGroupStatusFilter" onchange="filterAccessGroups()">
-                        <option value="">All Status</option>
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
-                    </select>
                 </div>
 
                 <div class="access-groups-table-container">
@@ -237,7 +289,7 @@
                             <tr>
                                 <th>Name</th>
                                 <th>Description</th>
-                                <th>Status</th>
+                                <th>Doors</th>
                                 <th>Created</th>
                                 <th>Actions</th>
                             </tr>
@@ -289,6 +341,7 @@
                 </div>
             </div>
         </div>
+
 
         <!-- Profile -->
         <div id="profileSection" class="section">
@@ -385,13 +438,6 @@
                         <option value="admin">Admin</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="editIsActive">Status</label>
-                    <select id="editIsActive" name="isActive" required>
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
-                    </select>
-                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('editUserModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">Update User</button>
@@ -432,16 +478,29 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="userAccessGroupSelect">Add Access Group</label>
-                    <select id="userAccessGroupSelect">
-                        <option value="">Select an access group...</option>
-                    </select>
-                    <button type="button" class="btn btn-primary" onclick="addAccessGroupToUser()">
-                        <i class="fas fa-plus"></i> Add
-                    </button>
+                    <label>Manage Access Groups</label>
+                    <div class="door-selection-container">
+                        <div class="door-selection-header">
+                            <button type="button" class="btn btn-primary" onclick="updateUserAccessGroups()">
+                                <i class="fas fa-shield-alt"></i> Update Access Groups
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="selectAllUserAccessGroups()">
+                                <i class="fas fa-check-square"></i> Select All
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="deselectAllUserAccessGroups()">
+                                <i class="fas fa-square"></i> Deselect All
+                            </button>
+                        </div>
+                        <div id="userAccessGroupsCheckboxList" class="door-checkbox-list">
+                            <!-- Access groups will be loaded here as checkboxes -->
+                        </div>
+                    </div>
                 </div>
-                <div id="userAccessGroupsList">
-                    <!-- Access groups will be loaded here -->
+                <div class="form-group">
+                    <label>Current Access Groups</label>
+                    <div id="userCurrentAccessGroupsList">
+                        <!-- Current access groups will be loaded here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -454,7 +513,7 @@
                 <h3><i class="fas fa-door-open"></i> Create New Door</h3>
                 <span class="close" onclick="closeModal('createDoorModal')">&times;</span>
             </div>
-            <form id="createDoorForm" onsubmit="handleCreateDoor(event)">
+            <form id="createDoorForm" class="door-form" onsubmit="handleCreateDoor(event)">
                 <div class="form-group">
                     <label for="createDoorName">Door Name</label>
                     <input type="text" id="createDoorName" name="name" required>
@@ -471,6 +530,20 @@
                     <label for="createDoorEsp32Mac">ESP32 MAC Address (Optional)</label>
                     <input type="text" id="createDoorEsp32Mac" name="esp32Mac" placeholder="AA:BB:CC:DD:EE:FF">
                 </div>
+                <div class="form-group">
+                    <label for="createDoorHasLockSensor">Lock Sensor</label>
+                    <select id="createDoorHasLockSensor" name="hasLockSensor" required>
+                        <option value="false">No Lock Sensor</option>
+                        <option value="true">Has Lock Sensor</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="createDoorHasDoorPositionSensor">Door Position Sensor</label>
+                    <select id="createDoorHasDoorPositionSensor" name="hasDoorPositionSensor" required>
+                        <option value="false">No Door Position Sensor</option>
+                        <option value="true">Has Door Position Sensor</option>
+                    </select>
+                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('createDoorModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">Create Door</button>
@@ -485,7 +558,7 @@
                 <h3><i class="fas fa-edit"></i> Edit Door</h3>
                 <span class="close" onclick="closeModal('editDoorModal')">&times;</span>
             </div>
-            <form id="editDoorForm" onsubmit="handleEditDoor(event)">
+            <form id="editDoorForm" class="door-form" onsubmit="handleEditDoor(event)">
                 <input type="hidden" id="editDoorId" name="id">
                 <div class="form-group">
                     <label for="editDoorName">Door Name</label>
@@ -504,10 +577,17 @@
                     <input type="text" id="editDoorEsp32Mac" name="esp32Mac">
                 </div>
                 <div class="form-group">
-                    <label for="editDoorIsActive">Status</label>
-                    <select id="editDoorIsActive" name="isActive" required>
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
+                    <label for="editDoorHasLockSensor">Lock Sensor</label>
+                    <select id="editDoorHasLockSensor" name="hasLockSensor" required>
+                        <option value="false">No Lock Sensor</option>
+                        <option value="true">Has Lock Sensor</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editDoorHasDoorPositionSensor">Door Position Sensor</label>
+                    <select id="editDoorHasDoorPositionSensor" name="hasDoorPositionSensor" required>
+                        <option value="false">No Door Position Sensor</option>
+                        <option value="true">Has Door Position Sensor</option>
                     </select>
                 </div>
                 <div class="modal-actions">
@@ -560,13 +640,6 @@
                     <label for="editAccessGroupDescription">Description</label>
                     <textarea id="editAccessGroupDescription" name="description" rows="3"></textarea>
                 </div>
-                <div class="form-group">
-                    <label for="editAccessGroupIsActive">Status</label>
-                    <select id="editAccessGroupIsActive" name="isActive" required>
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
-                    </select>
-                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('editAccessGroupModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">Update Access Group</button>
@@ -583,16 +656,29 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="accessGroupDoorSelect">Add Door</label>
-                    <select id="accessGroupDoorSelect">
-                        <option value="">Select a door...</option>
-                    </select>
-                    <button type="button" class="btn btn-primary" onclick="addDoorToAccessGroup()">
-                        <i class="fas fa-plus"></i> Add
-                    </button>
+                    <label>Manage Doors</label>
+                    <div class="door-selection-container">
+                        <div class="door-selection-header">
+                            <button type="button" class="btn btn-primary" onclick="addSelectedDoorsToAccessGroup()">
+                                <i class="fas fa-door-open"></i> Assign Selected Doors
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="selectAllAvailableDoors()">
+                                <i class="fas fa-check-square"></i> Select All
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="deselectAllAvailableDoors()">
+                                <i class="fas fa-square"></i> Deselect All
+                            </button>
+                        </div>
+                        <div id="availableDoorsList" class="door-checkbox-list">
+                            <!-- Available doors will be loaded here as checkboxes -->
+                        </div>
+                    </div>
                 </div>
-                <div id="accessGroupDoorsList">
-                    <!-- Doors will be loaded here -->
+                <div class="form-group">
+                    <label>Current Doors in Access Group</label>
+                    <div id="accessGroupDoorsList">
+                        <!-- Current doors will be loaded here -->
+                    </div>
                 </div>
             </div>
         </div>
