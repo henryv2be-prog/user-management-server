@@ -154,16 +154,19 @@ function showLogin() {
     hideAllSections();
     document.getElementById('loginSection').classList.add('active');
     document.getElementById('registerSection').classList.remove('active');
+    document.getElementById('mainNavbar').style.display = 'none';
 }
 
 function showRegister() {
     hideAllSections();
     document.getElementById('registerSection').classList.add('active');
+    document.getElementById('mainNavbar').style.display = 'none';
 }
 
 function showAuthenticatedUI() {
     hideAllSections();
     document.getElementById('dashboardSection').classList.add('active');
+    document.getElementById('mainNavbar').style.display = 'block';
     updateProfileInfo();
 }
 
