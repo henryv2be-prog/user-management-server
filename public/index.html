@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management System</title>
+    <title>SimplifiAccess - Smart Access Control</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="styles.css" rel="stylesheet">
 </head>
 <body>
@@ -13,8 +15,8 @@
         <nav class="navbar">
             <div class="nav-container">
                 <div class="nav-brand">
-                    <i class="fas fa-users"></i>
-                    <span>User Management</span>
+                    <i class="fas fa-shield-alt"></i>
+                    <span>SimplifiAccess</span>
                 </div>
                 <div class="nav-menu" id="navMenu">
                     <a href="#" class="nav-link" onclick="showSection('dashboard')">
@@ -50,8 +52,9 @@
             <div class="login-container">
                 <div class="login-card">
                     <div class="login-header">
-                        <i class="fas fa-lock"></i>
-                        <h2>Login</h2>
+                        <i class="fas fa-shield-alt"></i>
+                        <h2>SimplifiAccess</h2>
+                        <p>Smart Access Control System</p>
                     </div>
                     <form id="loginForm" onsubmit="handleLogin(event)">
                         <div class="form-group">
@@ -79,7 +82,8 @@
                 <div class="login-card">
                     <div class="login-header">
                         <i class="fas fa-user-plus"></i>
-                        <h2>Register</h2>
+                        <h2>Join SimplifiAccess</h2>
+                        <p>Create your account</p>
                     </div>
                     <form id="registerForm" onsubmit="handleRegister(event)">
                         <div class="form-group">
@@ -113,7 +117,7 @@
         <!-- Dashboard -->
         <div id="dashboardSection" class="section">
             <div class="container">
-                <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+                <h1><i class="fas fa-tachometer-alt"></i> SimplifiAccess Dashboard</h1>
                 
                 <!-- Door Status Monitoring -->
                 <div class="door-status-section">
