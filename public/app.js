@@ -261,7 +261,7 @@ function displayDoorStatus(doors) {
                            <span class="door-status-text">${getDoorPositionText(door)}</span>
                        </div>
             </div>
-            <div class="door-ip">${door.esp32Ip}</div>
+            <div class="door-ip">${door.controllerIp}</div>
             <div class="door-last-seen">
                 ${door.lastSeen ? `Last seen: ${formatDoorTime(door.lastSeen)}` : 'Never seen'}
             </div>
@@ -862,7 +862,7 @@ function displayDoors(doors) {
         <tr>
             <td>${door.name}</td>
             <td>${door.location}</td>
-            <td>${door.esp32Ip}</td>
+            <td>${door.controllerIp}</td>
             <td>
                 <span class="status-indicator ${door.isOnline ? 'online' : 'offline'}">
                     <i class="fas fa-circle"></i>
@@ -964,8 +964,8 @@ async function handleCreateDoor(event) {
     const doorData = {
         name: formData.get('name'),
         location: formData.get('location'),
-        esp32Ip: formData.get('esp32Ip'),
-        esp32Mac: formData.get('esp32Mac'),
+        controllerIp: formData.get('controllerIp'),
+        controllerMac: formData.get('controllerMac'),
         hasLockSensor: formData.get('hasLockSensor') === 'true',
         hasDoorPositionSensor: formData.get('hasDoorPositionSensor') === 'true'
     };
@@ -1033,8 +1033,8 @@ async function editDoor(doorId) {
             document.getElementById('editDoorId').value = door.id;
             document.getElementById('editDoorName').value = door.name;
             document.getElementById('editDoorLocation').value = door.location;
-            document.getElementById('editDoorEsp32Ip').value = door.esp32Ip;
-            document.getElementById('editDoorEsp32Mac').value = door.esp32Mac || '';
+            document.getElementById('editDoorControllerIp').value = door.controllerIp;
+            document.getElementById('editDoorControllerMac').value = door.controllerMac || '';
             document.getElementById('editDoorHasLockSensor').value = door.hasLockSensor.toString();
             document.getElementById('editDoorHasDoorPositionSensor').value = door.hasDoorPositionSensor.toString();
             
@@ -1057,8 +1057,8 @@ async function handleEditDoor(event) {
     const doorData = {
         name: formData.get('name'),
         location: formData.get('location'),
-        esp32Ip: formData.get('esp32Ip'),
-        esp32Mac: formData.get('esp32Mac'),
+        controllerIp: formData.get('controllerIp'),
+        controllerMac: formData.get('controllerMac'),
         hasLockSensor: formData.get('hasLockSensor') === 'true',
         hasDoorPositionSensor: formData.get('hasDoorPositionSensor') === 'true'
     };
@@ -1135,7 +1135,7 @@ function displayDoorValidationErrors(errors) {
                 // Style duplicate errors differently
                 errorDiv.innerHTML = `
                     <i class="fas fa-exclamation-triangle" style="margin-right: 4px;"></i>
-                    <strong>Duplicate ${field === 'esp32Ip' ? 'IP' : 'MAC'} Address:</strong> ${errorText}
+                    <strong>Duplicate ${field === 'controllerIp' ? 'IP' : 'MAC'} Address:</strong> ${errorText}
                 `;
                 errorDiv.style.background = '#fdf2f2';
                 errorDiv.style.border = '1px solid #fecaca';
@@ -1725,7 +1725,7 @@ function displayAvailableDoors(allDoors, currentDoors) {
                             <i class="fas fa-map-marker-alt"></i>
                             ${door.location} 
                             <i class="fas fa-wifi"></i>
-                            ${door.esp32Ip}
+                            ${door.controllerIp}
                         </div>
                     </div>
                 </label>
@@ -1755,7 +1755,7 @@ function displayAccessGroupDoors(doors) {
                     <i class="fas fa-map-marker-alt"></i>
                     ${door.location} 
                     <i class="fas fa-wifi"></i>
-                    ${door.esp32Ip || 'N/A'}
+                    ${door.controllerIp || 'N/A'}
                 </div>
             </div>
             <button class="remove-btn" onclick="removeDoorFromAccessGroup(${door.id})">
@@ -1896,12 +1896,12 @@ async function loadDoorControllerDiscovery() {
     }
     
     // Reset the discovery state
-    discoveredEsp32s = [];
+    discoveredControllers = [];
     scanInProgress = false;
     
     // Show initial scan status
     updateScanStatus('ready');
-    displayDiscoveredEsp32s();
+    displayDiscoveredControllers();
 }
 
 function updateScanStatus(status) {
@@ -1912,7 +1912,7 @@ function updateScanStatus(status) {
             scanStatusDiv.innerHTML = `
                 <div class="scan-info">
                     <i class="fas fa-info-circle"></i>
-                    <span>Click "Scan for ESP32s" to discover devices on your network</span>
+                    <span>Click "Scan for Controllers" to discover devices on your network</span>
                 </div>
             `;
             break;
@@ -1920,7 +1920,7 @@ function updateScanStatus(status) {
             scanStatusDiv.innerHTML = `
                 <div class="scan-progress">
                     <i class="fas fa-spinner fa-spin"></i>
-                    <span>Scanning network for ESP32 devices...</span>
+                    <span>Scanning network for Door Controller devices...</span>
                 </div>
             `;
             break;
@@ -1928,7 +1928,7 @@ function updateScanStatus(status) {
             scanStatusDiv.innerHTML = `
                 <div class="scan-info">
                     <i class="fas fa-check-circle"></i>
-                    <span>Scan complete. Found ${discoveredEsp32s.length} ESP32 device(s)</span>
+                    <span>Scan complete. Found ${discoveredControllers.length} Door Controller device(s)</span>
                 </div>
             `;
             break;
@@ -1943,18 +1943,18 @@ function updateScanStatus(status) {
     }
 }
 
-async function startEsp32Scan() {
+async function startDoorControllerScan() {
     if (scanInProgress) {
         return;
     }
     
     scanInProgress = true;
-    discoveredEsp32s = [];
+    discoveredControllers = [];
     updateScanStatus('scanning');
-    displayDiscoveredEsp32s();
+    displayDiscoveredControllers();
     
     try {
-        // Call the backend API to discover ESP32 devices
+        // Call the backend API to discover Door Controller devices
         const response = await fetch('/api/doors/discover', {
             method: 'POST',
             headers: {
@@ -1964,71 +1964,71 @@ async function startEsp32Scan() {
         
         if (response.ok) {
             const data = await response.json();
-            discoveredEsp32s = data.devices;
+            discoveredControllers = data.devices;
             updateScanStatus('complete');
-            displayDiscoveredEsp32s();
+            displayDiscoveredControllers();
             
             // Show "Add All" button if devices were found
-            if (discoveredEsp32s.length > 0) {
+            if (discoveredControllers.length > 0) {
                 document.getElementById('addAllBtn').style.display = 'block';
             }
         } else {
             const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to discover ESP32 devices');
+            throw new Error(errorData.message || 'Failed to discover Door Controller devices');
         }
         
     } catch (error) {
-        console.error('ESP32 scan failed:', error);
+        console.error('Door Controller scan failed:', error);
         updateScanStatus('error');
-        showToast('Failed to scan for ESP32 devices: ' + error.message, 'error');
+        showToast('Failed to scan for Door Controller devices: ' + error.message, 'error');
     } finally {
         scanInProgress = false;
     }
 }
 
 
-function displayDiscoveredEsp32s() {
-    const container = document.getElementById('discoveredEsp32s');
+function displayDiscoveredControllers() {
+    const container = document.getElementById('discoveredControllers');
     
-    if (discoveredEsp32s.length === 0) {
+    if (discoveredControllers.length === 0) {
         container.innerHTML = `
             <div class="no-devices">
                 <i class="fas fa-wifi"></i>
-                <p>No ESP32 devices discovered yet. Click "Scan for ESP32s" to start discovery.</p>
+                <p>No Door Controller devices discovered yet. Click "Scan for Controllers" to start discovery.</p>
             </div>
         `;
         return;
     }
     
-    container.innerHTML = discoveredEsp32s.map(esp32 => `
-        <div class="esp32-card ${esp32.status}">
-            <div class="esp32-header">
-                <div class="esp32-title">${esp32.name}</div>
-                <div class="esp32-status ${esp32.status}">${esp32.status}</div>
+    container.innerHTML = discoveredControllers.map(controller => `
+        <div class="controller-card ${controller.status}">
+            <div class="controller-header">
+                <div class="controller-title">${controller.name}</div>
+                <div class="controller-status ${controller.status}">${controller.status}</div>
             </div>
-            <div class="esp32-details">
-                <div class="esp32-detail">
-                    <span class="esp32-detail-label">MAC Address:</span>
-                    <span class="esp32-detail-value">${esp32.mac}</span>
+            <div class="controller-details">
+                <div class="controller-detail">
+                    <span class="controller-detail-label">MAC Address:</span>
+                    <span class="controller-detail-value">${controller.mac}</span>
                 </div>
-                <div class="esp32-detail">
-                    <span class="esp32-detail-label">IP Address:</span>
-                    <span class="esp32-detail-value">${esp32.ip}</span>
+                <div class="controller-detail">
+                    <span class="controller-detail-label">IP Address:</span>
+                    <span class="controller-detail-value">${controller.ip}</span>
                 </div>
-                <div class="esp32-detail">
-                    <span class="esp32-detail-label">Signal Strength:</span>
-                    <span class="esp32-detail-value">${esp32.signal ? `${esp32.signal} dBm` : 'N/A'}</span>
+                <div class="controller-detail">
+                    <span class="controller-detail-label">Signal Strength:</span>
+                    <span class="controller-detail-value">${controller.signal ? `${controller.signal} dBm` : 'N/A'}</span>
                 </div>
-                <div class="esp32-detail">
-                    <span class="esp32-detail-label">Last Seen:</span>
-                    <span class="esp32-detail-value">${new Date(esp32.lastSeen).toLocaleString()}</span>
+                <div class="controller-detail">
+                    <span class="controller-detail-label">Last Seen:</span>
+                    <span class="controller-detail-value">${new Date(controller.lastSeen).toLocaleString()}</span>
                 </div>
             </div>
-            <div class="esp32-actions">
-                <button class="btn btn-primary" onclick="configureEsp32('${esp32.mac}', '${esp32.ip}')" ${esp32.status === 'offline' ? 'disabled' : ''}>
+            <div class="controller-actions">
+                <button class="btn btn-primary" onclick="configureController('${controller.mac}', '${controller.ip}')" ${controller.status === 'offline' ? 'disabled' : ''}>
                     <i class="fas fa-cog"></i> Configure
                 </button>
-                <button class="btn btn-secondary" onclick="testEsp32Connection('${esp32.mac}', '${esp32.ip}')" ${esp32.status === 'offline' ? 'disabled' : ''}>
+                <button class="btn btn-secondary" onclick="testControllerConnection('${controller.mac}', '${controller.ip}')" ${controller.status === 'offline' ? 'disabled' : ''}>
                     <i class="fas fa-plug"></i> Test
                 </button>
             </div>
@@ -2036,7 +2036,7 @@ function displayDiscoveredEsp32s() {
     `).join('');
 }
 
-async function configureEsp32(mac, ip) {
+async function configureController(mac, ip) {
     // Load access groups for the dropdown
     try {
         const response = await fetch('/api/access-groups?limit=100', {
@@ -2049,7 +2049,7 @@ async function configureEsp32(mac, ip) {
             const data = await response.json();
             const accessGroups = data.accessGroups;
             
-            const dropdown = document.getElementById('esp32ConfigAccessGroup');
+            const dropdown = document.getElementById('doorControllerConfigAccessGroup');
             dropdown.innerHTML = '<option value="">Select an access group...</option>';
             
             accessGroups.forEach(group => {
@@ -2057,13 +2057,13 @@ async function configureEsp32(mac, ip) {
             });
             
             // Populate the form
-            document.getElementById('esp32ConfigMac').value = mac;
-            document.getElementById('esp32ConfigIp').value = ip;
-            document.getElementById('esp32ConfigName').value = `Door ${mac.split(':').pop()}`;
-            document.getElementById('esp32ConfigLocation').value = 'Building A, Floor 1';
+            document.getElementById('doorControllerConfigMac').value = mac;
+            document.getElementById('doorControllerConfigIp').value = ip;
+            document.getElementById('doorControllerConfigName').value = `Door ${mac.split(':').pop()}`;
+            document.getElementById('doorControllerConfigLocation').value = 'Building A, Floor 1';
             
             // Show the modal
-            document.getElementById('esp32ConfigModal').style.display = 'block';
+            document.getElementById('doorControllerConfigModal').style.display = 'block';
         }
     } catch (error) {
         console.error('Failed to load access groups:', error);
@@ -2071,7 +2071,7 @@ async function configureEsp32(mac, ip) {
     }
 }
 
-async function handleEsp32Config(event) {
+async function handleDoorControllerConfig(event) {
     event.preventDefault();
     showLoading();
     
@@ -2079,8 +2079,8 @@ async function handleEsp32Config(event) {
     const doorData = {
         name: formData.get('name'),
         location: formData.get('location'),
-        esp32Ip: formData.get('ip'),
-        esp32Mac: formData.get('mac'),
+        controllerIp: formData.get('ip'),
+        controllerMac: formData.get('mac'),
         accessGroupId: formData.get('accessGroupId') || null
     };
     
@@ -2097,15 +2097,15 @@ async function handleEsp32Config(event) {
         const data = await response.json();
         
         if (response.ok) {
-            showToast('ESP32 configured as door successfully!', 'success');
-            closeModal('esp32ConfigModal');
+            showToast('Door Controller configured as door successfully!', 'success');
+            closeModal('doorControllerConfigModal');
             
-            // Remove the configured ESP32 from the discovered list
-            discoveredEsp32s = discoveredEsp32s.filter(esp32 => esp32.mac !== doorData.esp32Mac);
-            displayDiscoveredEsp32s();
+            // Remove the configured controller from the discovered list
+            discoveredControllers = discoveredControllers.filter(controller => controller.mac !== doorData.controllerMac);
+            displayDiscoveredControllers();
             
             // Update the scan status
-            if (discoveredEsp32s.length === 0) {
+            if (discoveredControllers.length === 0) {
                 updateScanStatus('complete');
                 document.getElementById('addAllBtn').style.display = 'none';
             }
@@ -2115,46 +2115,46 @@ async function handleEsp32Config(event) {
                 loadDoors();
             }
         } else {
-            showToast(data.message || 'Failed to configure ESP32 as door', 'error');
+            showToast(data.message || 'Failed to configure Door Controller as door', 'error');
         }
     } catch (error) {
-        console.error('Configure ESP32 error:', error);
-        showToast('Failed to configure ESP32 as door', 'error');
+        console.error('Configure Door Controller error:', error);
+        showToast('Failed to configure Door Controller as door', 'error');
     } finally {
         hideLoading();
     }
 }
 
-async function testEsp32Connection(mac, ip) {
+async function testControllerConnection(mac, ip) {
     showLoading();
     
     try {
-        // Test connection to ESP32
+        // Test connection to Door Controller
         const response = await fetch(`http://${ip}/status`, {
             method: 'GET',
             timeout: 5000
         });
         
         if (response.ok) {
-            showToast('ESP32 connection test successful!', 'success');
+            showToast('Door Controller connection test successful!', 'success');
         } else {
-            showToast('ESP32 connection test failed', 'error');
+            showToast('Door Controller connection test failed', 'error');
         }
     } catch (error) {
-        console.error('ESP32 connection test failed:', error);
-        showToast('ESP32 connection test failed - device may be offline', 'error');
+        console.error('Door Controller connection test failed:', error);
+        showToast('Door Controller connection test failed - device may be offline', 'error');
     } finally {
         hideLoading();
     }
 }
 
-async function addAllDiscoveredEsp32s() {
-    if (discoveredEsp32s.length === 0) {
-        showToast('No ESP32 devices to add', 'info');
+async function addAllDiscoveredControllers() {
+    if (discoveredControllers.length === 0) {
+        showToast('No Door Controller devices to add', 'info');
         return;
     }
     
-    if (!confirm(`Add all ${discoveredEsp32s.length} discovered ESP32 devices as doors?`)) {
+    if (!confirm(`Add all ${discoveredControllers.length} discovered Door Controller devices as doors?`)) {
         return;
     }
     
@@ -2176,13 +2176,13 @@ async function addAllDiscoveredEsp32s() {
             }
         }
         
-        // Add each ESP32 as a door
-        const promises = discoveredEsp32s.map(esp32 => {
+        // Add each Door Controller as a door
+        const promises = discoveredControllers.map(controller => {
             const doorData = {
-                name: `Door ${esp32.mac.split(':').pop()}`,
+                name: `Door ${controller.mac.split(':').pop()}`,
                 location: 'Building A, Floor 1',
-                esp32Ip: esp32.ip,
-                esp32Mac: esp32.mac,
+                controllerIp: controller.ip,
+                controllerMac: controller.mac,
                 accessGroupId: defaultAccessGroupId
             };
             
@@ -2201,16 +2201,16 @@ async function addAllDiscoveredEsp32s() {
         const failed = results.length - successful;
         
         if (successful > 0) {
-            showToast(`Successfully added ${successful} ESP32 device(s) as doors`, 'success');
+            showToast(`Successfully added ${successful} Door Controller device(s) as doors`, 'success');
         }
         
         if (failed > 0) {
-            showToast(`Failed to add ${failed} ESP32 device(s)`, 'error');
+            showToast(`Failed to add ${failed} Door Controller device(s)`, 'error');
         }
         
         // Clear the discovered list
-        discoveredEsp32s = [];
-        displayDiscoveredEsp32s();
+        discoveredControllers = [];
+        displayDiscoveredControllers();
         updateScanStatus('complete');
         document.getElementById('addAllBtn').style.display = 'none';
         
@@ -2220,20 +2220,20 @@ async function addAllDiscoveredEsp32s() {
         }
         
     } catch (error) {
-        console.error('Add all ESP32s error:', error);
-        showToast('Failed to add ESP32 devices', 'error');
+        console.error('Add all Door Controllers error:', error);
+        showToast('Failed to add Door Controller devices', 'error');
     } finally {
         hideLoading();
     }
 }
 
-function closeEsp32ConfigModal() {
-    document.getElementById('esp32ConfigModal').style.display = 'none';
-    document.getElementById('esp32ConfigForm').reset();
+function closeDoorControllerConfigModal() {
+    document.getElementById('doorControllerConfigModal').style.display = 'none';
+    document.getElementById('doorControllerConfigForm').reset();
 }
 
-async function saveEsp32Configuration() {
-    const form = document.getElementById('esp32ConfigForm');
+async function saveDoorControllerConfiguration() {
+    const form = document.getElementById('doorControllerConfigForm');
     const formData = new FormData(form);
     
     const configData = {
@@ -2254,7 +2254,7 @@ async function saveEsp32Configuration() {
     try {
         showLoading();
         
-        // Create a new door with the ESP32 configuration
+        // Create a new door with the Door Controller configuration
         const response = await fetch('/api/doors', {
             method: 'POST',
             headers: {
@@ -2265,15 +2265,15 @@ async function saveEsp32Configuration() {
                 name: configData.name,
                 location: configData.location,
                 description: configData.description,
-                esp32Ip: configData.ip,
-                esp32Mac: configData.mac,
+                controllerIp: configData.ip,
+                controllerMac: configData.mac,
                 accessGroupId: configData.accessGroupId
             })
         });
         
         if (response.ok) {
-            showToast('ESP32 device configured successfully!', 'success');
-            closeEsp32ConfigModal();
+            showToast('Door Controller device configured successfully!', 'success');
+            closeDoorControllerConfigModal();
             
             // Refresh the doors list if we're on that page
             if (currentSection === 'doors') {
@@ -2281,11 +2281,11 @@ async function saveEsp32Configuration() {
             }
         } else {
             const error = await response.json();
-            showToast(error.message || 'Failed to configure ESP32 device', 'error');
+            showToast(error.message || 'Failed to configure Door Controller device', 'error');
         }
     } catch (error) {
-        console.error('Failed to configure ESP32 device:', error);
-        showToast('Failed to configure ESP32 device', 'error');
+        console.error('Failed to configure Door Controller device:', error);
+        showToast('Failed to configure Door Controller device', 'error');
     } finally {
         hideLoading();
     }
