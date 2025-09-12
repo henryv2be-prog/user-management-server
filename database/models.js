@@ -134,17 +134,39 @@ class User {
             
             let sql = "SELECT * FROM users";
             const params = [];
+            const conditions = [];
             
             if (options.activeOnly) {
-
+                conditions.push("is_active = 1");
             }
             
             if (options.role) {
-                sql += options.activeOnly ? " AND role = ?" : " WHERE role = ?";
+                conditions.push("role = ?");
                 params.push(options.role);
+            }
+            
+            if (options.search) {
+                conditions.push("(first_name LIKE ? OR last_name LIKE ? OR email LIKE ? OR username LIKE ?)");
+                const searchTerm = `%${options.search}%`;
+                params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+            }
+            
+            if (conditions.length > 0) {
+                sql += " WHERE " + conditions.join(" AND ");
             }
 
             sql += " ORDER BY created_at DESC";
+            
+            // Add pagination if specified
+            if (options.limit) {
+                sql += " LIMIT ?";
+                params.push(options.limit);
+                
+                if (options.page && options.page > 1) {
+                    sql += " OFFSET ?";
+                    params.push((options.page - 1) * options.limit);
+                }
+            }
             
             db.all(sql, params, (err, rows) => {
                 db.close();
@@ -163,14 +185,25 @@ class User {
             
             let sql = "SELECT COUNT(*) as count FROM users";
             const params = [];
+            const conditions = [];
             
             if (options.activeOnly) {
-                sql += " WHERE is_active = 1";
+                conditions.push("is_active = 1");
             }
             
             if (options.role) {
-                sql += options.activeOnly ? " AND role = ?" : " WHERE role = ?";
+                conditions.push("role = ?");
                 params.push(options.role);
+            }
+            
+            if (options.search) {
+                conditions.push("(first_name LIKE ? OR last_name LIKE ? OR email LIKE ? OR username LIKE ?)");
+                const searchTerm = `%${options.search}%`;
+                params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+            }
+            
+            if (conditions.length > 0) {
+                sql += " WHERE " + conditions.join(" AND ");
             }
             
             db.get(sql, params, (err, row) => {

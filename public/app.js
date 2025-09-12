@@ -501,8 +501,13 @@ async function loadUsers(page = 1) {
         if (response.ok) {
             const data = await response.json();
             displayUsers(data.users);
-            // Simple pagination - just show all users for now
-            displaySimplePagination(data.totalCount);
+            
+            // Use proper pagination if available, otherwise simple pagination
+            if (data.pagination) {
+                displayPagination(data.pagination);
+            } else {
+                displaySimplePagination(data.totalCount);
+            }
         } else {
             showToast('Failed to load users', 'error');
         }

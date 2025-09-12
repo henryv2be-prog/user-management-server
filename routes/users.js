@@ -63,19 +63,38 @@ router.get('/with-access-groups', authenticate, requireAdmin, async (req, res) =
 // Get all users (admin only)
 router.get('/', authenticate, requireAdmin, async (req, res) => {
   try {
-    const { role } = req.query;
+    const { role, search, page = 1, limit = 10 } = req.query;
     
-    const options = {};
+    const options = {
+      page: parseInt(page),
+      limit: parseInt(limit)
+    };
     
     if (role) {
       options.role = role;
     }
     
-    const users = await User.findAll(options);
+    if (search) {
+      options.search = search;
+    }
+    
+    const [users, totalCount] = await Promise.all([
+      User.findAll(options),
+      User.count(options)
+    ]);
+    
+    const totalPages = Math.ceil(totalCount / options.limit);
     
     res.json({
       users: users.map(user => user.toJSON()),
-      totalCount: users.length
+      pagination: {
+        page: options.page,
+        limit: options.limit,
+        totalCount,
+        totalPages,
+        hasNext: options.page < totalPages,
+        hasPrev: options.page > 1
+      }
     });
   } catch (error) {
     console.error('Get users error:', error);
