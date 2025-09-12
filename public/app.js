@@ -218,7 +218,6 @@ async function loadDoorStatus() {
             const data = await response.json();
             console.log('Door status loaded:', data.doors.length, 'doors');
             displayDoorStatus(data.doors);
-            updateDoorRefreshIndicator();
         } else {
             console.error('Failed to load door status');
         }
@@ -298,17 +297,6 @@ function refreshDoorStatus() {
     loadDoorStatus();
 }
 
-function updateDoorRefreshIndicator() {
-    const refreshIndicator = document.getElementById('doorRefreshIndicator');
-    if (refreshIndicator) {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString();
-        refreshIndicator.innerHTML = `
-            <i class="fas fa-sync-alt"></i>
-            <span>Auto-refreshing every 10s • Last updated: ${timeString}</span>
-        `;
-    }
-}
 
 function formatDoorTime(timestamp) {
     // Handle timezone issue - database stores UTC time but we need local time
@@ -901,7 +889,6 @@ function displayDoors(doors) {
     `).join('');
     
     // Update last refresh time
-    updateLastRefreshTime();
 }
 
 function displayDoorsPagination(pagination) {
@@ -2352,34 +2339,6 @@ async function refreshDoorStatus() {
     }
 }
 
-// Update last refresh time indicator
-function updateLastRefreshTime() {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString();
-    
-    // Update or create the refresh indicator
-    let refreshIndicator = document.getElementById('doorRefreshIndicator');
-    if (!refreshIndicator) {
-        // Create the indicator if it doesn't exist
-        const doorsHeader = document.querySelector('#doorsSection .section-header');
-        if (doorsHeader) {
-            refreshIndicator = document.createElement('div');
-            refreshIndicator.id = 'doorRefreshIndicator';
-            refreshIndicator.className = 'refresh-indicator';
-            refreshIndicator.innerHTML = `
-                <i class="fas fa-sync-alt"></i>
-                <span>Auto-refreshing every 10s • Last updated: ${timeString}</span>
-            `;
-            doorsHeader.appendChild(refreshIndicator);
-        }
-    } else {
-        // Update existing indicator
-        refreshIndicator.innerHTML = `
-            <i class="fas fa-sync-alt"></i>
-            <span>Auto-refreshing every 10s • Last updated: ${timeString}</span>
-        `;
-    }
-}
 
 
 // Event Log Functions
@@ -2417,7 +2376,6 @@ async function loadEvents(page = 1, type = '') {
             currentEventType = type;
             
             // Update refresh indicator
-            updateEventRefreshIndicator();
         } else {
             const errorData = await response.json();
             console.error('Failed to load events:', errorData);
@@ -2427,17 +2385,6 @@ async function loadEvents(page = 1, type = '') {
     }
 }
 
-function updateEventRefreshIndicator() {
-    const refreshIndicator = document.getElementById('eventRefreshIndicator');
-    if (refreshIndicator) {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString();
-        refreshIndicator.innerHTML = `
-            <i class="fas fa-sync-alt"></i>
-            <span>Auto-refreshing every 10s • Last updated: ${timeString}</span>
-        `;
-    }
-}
 
 function displayEvents(events) {
     const eventLog = document.getElementById('eventLog');
