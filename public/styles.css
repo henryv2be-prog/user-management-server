@@ -1028,7 +1028,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 1.25rem 1.5rem;
-    background: linear-gradient(135deg, var(--success-color) 0%, var(--success-light) 100%);
+    background: var(--primary-gradient);
     color: var(--text-inverse);
     margin: 0;
     border-radius: 8px 8px 0 0;
