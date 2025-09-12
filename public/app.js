@@ -779,6 +779,14 @@ async function handleChangePassword(event) {
 // Utility functions
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
+    
+    // Reset form if it's the door controller config modal
+    if (modalId === 'doorControllerConfigModal') {
+        const form = document.getElementById('doorControllerConfigForm');
+        if (form) {
+            form.reset();
+        }
+    }
 }
 
 function showLoading() {
@@ -2058,7 +2066,7 @@ async function configureController(mac, ip) {
             document.getElementById('doorControllerConfigLocation').value = 'Building A, Floor 1';
             
             // Show the modal
-            document.getElementById('doorControllerConfigModal').style.display = 'block';
+            document.getElementById('doorControllerConfigModal').classList.add('active');
         }
     } catch (error) {
         console.error('Failed to load access groups:', error);
@@ -2222,10 +2230,6 @@ async function addAllDiscoveredControllers() {
     }
 }
 
-function closeDoorControllerConfigModal() {
-    document.getElementById('doorControllerConfigModal').style.display = 'none';
-    document.getElementById('doorControllerConfigForm').reset();
-}
 
 async function saveDoorControllerConfiguration() {
     const form = document.getElementById('doorControllerConfigForm');
@@ -2268,7 +2272,7 @@ async function saveDoorControllerConfiguration() {
         
         if (response.ok) {
             showToast('Door Controller device configured successfully!', 'success');
-            closeDoorControllerConfigModal();
+            closeModal('doorControllerConfigModal');
             
             // Refresh the doors list if we're on that page
             if (currentSection === 'doors') {
