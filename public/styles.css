@@ -913,6 +913,7 @@ body {
     background: linear-gradient(135deg, var(--secondary-color) 0%, #059669 100%);
     color: white;
     margin: 0;
+    border-radius: 8px 8px 0 0;
 }
 
 .door-status-section .section-header h2 {
@@ -1103,6 +1104,7 @@ body {
     background: var(--primary-gradient);
     color: white;
     margin: 0;
+    border-radius: 8px 8px 0 0;
 }
 
 .event-log-section .section-header h2 {
