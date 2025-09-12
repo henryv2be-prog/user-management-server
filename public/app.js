@@ -48,6 +48,18 @@ function setupEventListeners() {
             event.target.classList.remove('active');
         }
     });
+    
+    // Close mobile menu when clicking outside
+    window.addEventListener('click', function(event) {
+        const navMenu = document.getElementById('navMenu');
+        const navToggle = document.querySelector('.nav-toggle');
+        
+        if (navMenu.classList.contains('active') && 
+            !navMenu.contains(event.target) && 
+            !navToggle.contains(event.target)) {
+            closeMobileMenu();
+        }
+    });
 }
 
 // Authentication functions
@@ -132,6 +144,7 @@ async function handleRegister(event) {
 function logout() {
     localStorage.removeItem('token');
     currentUser = null;
+    closeMobileMenu(); // Close mobile menu on logout
     showLogin();
     showToast('Logged out successfully', 'info');
 }
@@ -164,6 +177,11 @@ function hideAllSections() {
 function toggleNav() {
     const navMenu = document.getElementById('navMenu');
     navMenu.classList.toggle('active');
+}
+
+function closeMobileMenu() {
+    const navMenu = document.getElementById('navMenu');
+    navMenu.classList.remove('active');
 }
 
 // Dashboard functions
@@ -1856,6 +1874,9 @@ function showSection(sectionName) {
     hideAllSections();
     document.getElementById(sectionName + 'Section').classList.add('active');
     currentSection = sectionName; // Track current section for auto-refresh
+    
+    // Close mobile menu after navigation
+    closeMobileMenu();
     
     if (sectionName === 'dashboard') {
         loadDashboard();
