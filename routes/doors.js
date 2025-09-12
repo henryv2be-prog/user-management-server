@@ -167,14 +167,14 @@ router.get('/:id', authenticate, requireAdmin, validateId, async (req, res) => {
 // Create new door (admin only)
 router.post('/', authenticate, requireAdmin, validateDoor, async (req, res) => {
   try {
-    const { name, location, esp32Ip, esp32Mac, accessGroupId } = req.body;
+    const { name, location, controllerIp, controllerMac, accessGroupId } = req.body;
     
     // Validation middleware already checks for duplicate IP/MAC addresses
     const door = await Door.create({
       name,
       location,
-      esp32Ip,
-      esp32Mac
+      controllerIp,
+      controllerMac
     });
     
     // Add to access group if specified

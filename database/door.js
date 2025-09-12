@@ -57,7 +57,11 @@ class Door {
   // Static methods for database operations
   static async create(doorData) {
     return new Promise((resolve, reject) => {
-      const { name, location, esp32Ip, esp32Mac, hasLockSensor = false, hasDoorPositionSensor = false } = doorData;
+      const { name, location, esp32Ip, esp32Mac, controllerIp, controllerMac, hasLockSensor = false, hasDoorPositionSensor = false } = doorData;
+      
+      // Use new field names if provided, otherwise fall back to old field names for backward compatibility
+      const ip = controllerIp || esp32Ip;
+      const mac = controllerMac || esp32Mac;
       
       // Generate a secure secret key for ESP32 communication
       const secretKey = crypto.randomBytes(32).toString('hex');
@@ -65,7 +69,7 @@ class Door {
       const db = new sqlite3.Database(DB_PATH);
       db.run(
         'INSERT INTO doors (name, location, esp32_ip, esp32_mac, has_lock_sensor, has_door_position_sensor) VALUES (?, ?, ?, ?, ?, ?)',
-        [name, location, esp32Ip, esp32Mac, hasLockSensor ? 1 : 0, hasDoorPositionSensor ? 1 : 0],
+        [name, location, ip, mac, hasLockSensor ? 1 : 0, hasDoorPositionSensor ? 1 : 0],
         function(err) {
           db.close();
           if (err) {
@@ -237,6 +241,8 @@ class Door {
       const fieldMapping = {
         'esp32Ip': 'esp32_ip',
         'esp32Mac': 'esp32_mac',
+        'controllerIp': 'esp32_ip',
+        'controllerMac': 'esp32_mac',
         'hasLockSensor': 'has_lock_sensor',
         'hasDoorPositionSensor': 'has_door_position_sensor'
       };

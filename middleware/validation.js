@@ -177,9 +177,9 @@ const validateDoor = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Location must be between 2 and 100 characters'),
-  body('esp32Ip')
+  body('controllerIp')
     .isIP()
-    .withMessage('ESP32 IP must be a valid IP address')
+    .withMessage('Controller IP must be a valid IP address')
     .custom(async (value) => {
       const { Door } = require('../database/door');
       const existingDoor = await Door.findByIp(value);
@@ -187,10 +187,10 @@ const validateDoor = [
         throw new Error(`IP address ${value} is already in use by door "${existingDoor.name}"`);
       }
     }),
-  body('esp32Mac')
+  body('controllerMac')
     .optional()
     .matches(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/)
-    .withMessage('ESP32 MAC must be a valid MAC address')
+    .withMessage('Controller MAC must be a valid MAC address')
     .custom(async (value) => {
       if (value) {
         const { Door } = require('../database/door');
@@ -214,10 +214,10 @@ const validateDoorUpdate = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Location must be between 2 and 100 characters'),
-  body('esp32Ip')
+  body('controllerIp')
     .optional()
     .isIP()
-    .withMessage('ESP32 IP must be a valid IP address')
+    .withMessage('Controller IP must be a valid IP address')
     .custom(async (value, { req }) => {
       if (value) {
         const { Door } = require('../database/door');
@@ -227,10 +227,10 @@ const validateDoorUpdate = [
         }
       }
     }),
-  body('esp32Mac')
+  body('controllerMac')
     .optional()
     .matches(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/)
-    .withMessage('ESP32 MAC must be a valid MAC address')
+    .withMessage('Controller MAC must be a valid MAC address')
     .custom(async (value, { req }) => {
       if (value) {
         const { Door } = require('../database/door');
