@@ -125,8 +125,16 @@ app.get('/api/health', (req, res) => {
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
+app.use(async (err, req, res, next) => {
   console.error('Error:', err);
+  
+  // Log error event
+  try {
+    const EventLogger = require('./utils/eventLogger');
+    await EventLogger.logError(req, err, `Route: ${req.method} ${req.path}`);
+  } catch (logError) {
+    console.error('Failed to log error event:', logError);
+  }
   
   // Don't leak error details in production
   const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -154,7 +162,7 @@ async function startServer() {
     console.log('Port:', PORT);
     console.log('Environment:', process.env.NODE_ENV || 'development');
     
-    const server = app.listen(PORT, '0.0.0.0', () => {
+    const server = app.listen(PORT, '0.0.0.0', async () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📱 Web interface: http://localhost:${PORT}`);
       console.log(`🔧 API endpoints: http://localhost:${PORT}/api`);
@@ -169,6 +177,14 @@ async function startServer() {
       addLog('info', `Web interface: http://localhost:${PORT}`);
       addLog('info', `API endpoints: http://localhost:${PORT}/api`);
       addLog('info', `Environment: ${process.env.NODE_ENV || 'development'}`);
+      
+      // Log system startup event
+      try {
+        const EventLogger = require('./utils/eventLogger');
+        await EventLogger.logSystemEvent({ ip: '127.0.0.1' }, 'startup', `SimplifiAccess server started on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+      } catch (logError) {
+        console.error('Failed to log startup event:', logError);
+      }
     });
 
     // Start periodic offline door check
@@ -178,6 +194,12 @@ async function startServer() {
         const offlineDoors = await Door.checkOfflineDoors(0.17); // 10 second timeout (0.17 minutes)
         if (offlineDoors.length > 0) {
           console.log(`🔴 ${offlineDoors.length} doors marked as offline due to timeout`);
+          
+          // Log offline door events
+          const EventLogger = require('./utils/eventLogger');
+          for (const door of offlineDoors) {
+            await EventLogger.log({ ip: '127.0.0.1' }, 'door', 'offline', 'door', door.id, door.name, `Door marked as offline due to heartbeat timeout`);
+          }
         }
       } catch (error) {
         console.error('Error checking offline doors:', error);
@@ -211,13 +233,31 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('SIGTERM received. Shutting down gracefully...');
+  
+  // Log system shutdown event
+  try {
+    const EventLogger = require('./utils/eventLogger');
+    await EventLogger.logSystemEvent({ ip: '127.0.0.1' }, 'shutdown', 'SimplifiAccess server shutting down gracefully (SIGTERM)');
+  } catch (logError) {
+    console.error('Failed to log shutdown event:', logError);
+  }
+  
   process.exit(0);
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('SIGINT received. Shutting down gracefully...');
+  
+  // Log system shutdown event
+  try {
+    const EventLogger = require('./utils/eventLogger');
+    await EventLogger.logSystemEvent({ ip: '127.0.0.1' }, 'shutdown', 'SimplifiAccess server shutting down gracefully (SIGINT)');
+  } catch (logError) {
+    console.error('Failed to log shutdown event:', logError);
+  }
+  
   process.exit(0);
 });
 

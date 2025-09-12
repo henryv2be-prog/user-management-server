@@ -32,6 +32,9 @@ router.get('/public', async (req, res) => {
 router.post('/heartbeat', async (req, res) => {
   try {
     console.log('Heartbeat endpoint hit');
+    
+    // Log heartbeat event
+    await EventLogger.log(req, 'system', 'esp32_heartbeat', 'system', null, 'System', `Door Controller heartbeat received from IP: ${req.ip}`);
     console.log('Request body:', req.body);
     console.log('Request headers:', req.headers);
     
@@ -75,8 +78,16 @@ router.post('/heartbeat', async (req, res) => {
     }
     
     if (door) {
+      // Check if door was previously offline
+      const wasOffline = !door.isOnline;
+      
       // Update last seen and online status
       await door.updateLastSeen();
+      
+      // Log door coming back online if it was previously offline
+      if (wasOffline) {
+        await EventLogger.log(req, 'door', 'online', 'door', door.id, door.name, `Door came back online - heartbeat received from IP: ${ip}`);
+      }
       
       res.json({
         success: true,
@@ -599,6 +610,9 @@ router.get('/accessible/me', authenticate, async (req, res) => {
 // ESP32 Discovery endpoint
 router.post('/discover', authenticate, requireAdmin, async (req, res) => {
   try {
+    // Log ESP32 discovery event
+    await EventLogger.log(req, 'system', 'esp32_discovery_started', 'system', null, 'System', 'Door Controller discovery scan initiated');
+    
     // Mock ESP32 discovery - in a real implementation, this would scan the network
     const mockDevices = [
       {
@@ -622,6 +636,9 @@ router.post('/discover', authenticate, requireAdmin, async (req, res) => {
         firmware: '1.0.0'
       }
     ];
+    
+    // Log discovery completion
+    await EventLogger.log(req, 'system', 'esp32_discovery_completed', 'system', null, 'System', `Door Controller discovery completed - found ${mockDevices.length} devices`);
     
     res.json({
       message: 'ESP32 discovery completed',
@@ -729,13 +746,17 @@ router.post('/:id/control', authenticate, requireAdmin, validateId, async (req, 
     const doorId = parseInt(req.params.id);
     const { action } = req.body;
     
+    // Get door details for logging
     const door = await Door.findById(doorId);
     if (!door) {
       return res.status(404).json({
-        error: 'Door Not Found',
+        error: 'Door not found',
         message: 'The requested door does not exist'
       });
     }
+    
+    // Log door control event
+    await EventLogger.log(req, 'door', 'control', 'door', door.id, door.name, `Door control command: ${action}`);
     
     if (!door.isOnline) {
       return res.status(400).json({

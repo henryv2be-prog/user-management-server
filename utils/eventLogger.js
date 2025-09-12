@@ -78,6 +78,39 @@ class EventLogger {
     });
   }
 
+  static async logUserRegistration(req, user) {
+    await this.logEvent(req, {
+      type: 'auth',
+      action: 'registered',
+      entityType: 'user',
+      entityId: user.id,
+      entityName: `${user.firstName} ${user.lastName}`,
+      details: `User registered with email: ${user.email}`
+    });
+  }
+
+  static async logFailedLogin(req, email, reason) {
+    await this.logEvent(req, {
+      type: 'auth',
+      action: 'login_failed',
+      entityType: 'user',
+      entityId: null,
+      entityName: email,
+      details: `Failed login attempt: ${reason}`
+    });
+  }
+
+  static async logPasswordChange(req, user) {
+    await this.logEvent(req, {
+      type: 'auth',
+      action: 'password_changed',
+      entityType: 'user',
+      entityId: user.id,
+      entityName: `${user.firstName} ${user.lastName}`,
+      details: 'User changed password'
+    });
+  }
+
   // Door events
   static async logDoorCreated(req, door) {
     await this.logEvent(req, {

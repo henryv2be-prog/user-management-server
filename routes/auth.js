@@ -18,6 +18,8 @@ router.post('/login', validateLogin, async (req, res) => {
     }
     
     if (!user) {
+      // Log failed login attempt
+      await EventLogger.logFailedLogin(req, email, 'User not found');
       return res.status(401).json({
         error: 'Authentication failed',
         message: 'Invalid username/email or password'
@@ -28,6 +30,8 @@ router.post('/login', validateLogin, async (req, res) => {
     
     const isValidPassword = await user.verifyPassword(password);
     if (!isValidPassword) {
+      // Log failed login attempt
+      await EventLogger.logFailedLogin(req, email, 'Invalid password');
       return res.status(401).json({
         error: 'Authentication failed',
         message: 'Invalid email or password'
@@ -85,6 +89,9 @@ router.post('/register', validateRegister, async (req, res) => {
       role: 'user'
     });
     
+    // Log user registration event
+    await EventLogger.logUserRegistration(req, user);
+    
     // Generate JWT token
     const jwt = require('jsonwebtoken');
     const token = jwt.sign(
@@ -136,6 +143,9 @@ router.post('/change-password', authenticate, validatePasswordChange, async (req
     
     await user.update({ password: newPassword });
     
+    // Log password change event
+    await EventLogger.logPasswordChange(req, user);
+    
     res.json({
       message: 'Password changed successfully'
     });
@@ -156,7 +166,10 @@ router.get('/me', authenticate, (req, res) => {
 });
 
 // Logout endpoint (client-side token removal)
-router.post('/logout', authenticate, (req, res) => {
+router.post('/logout', authenticate, async (req, res) => {
+  // Log user logout event
+  await EventLogger.logUserLogout(req, req.user);
+  
   res.json({
     message: 'Logout successful'
   });
