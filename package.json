@@ -1,7 +1,7 @@
 {
-  "name": "user-management-server",
+  "name": "simplifiaccess",
   "version": "1.0.0",
-  "description": "Linux-based cloud web server for user management",
+  "description": "SimplifiAccess - Smart Access Control System with ESP32 Integration",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -10,12 +10,15 @@
     "migrate": "node scripts/migrate.js"
   },
   "keywords": [
+    "access-control",
+    "iot",
+    "esp32",
+    "smart-doors",
     "user-management",
-    "web-server",
-    "cloud",
-    "linux"
+    "security",
+    "simplifiaccess"
   ],
-  "author": "Your Name",
+  "author": "SimplifiAccess Team",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.11.0",
