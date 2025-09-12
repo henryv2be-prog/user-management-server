@@ -340,10 +340,55 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 30px;
-    background: white;
+    background: var(--background-primary);
     padding: 20px;
     border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px var(--shadow-sm);
+    border: 1px solid var(--border-light);
+}
+
+/* Users Section Header */
+#usersSection .section-header {
+    background: var(--primary-gradient);
+    color: var(--text-inverse);
+    border-radius: 12px;
+}
+
+#usersSection .section-header h1 {
+    color: var(--text-inverse);
+}
+
+/* Access Groups Section Header */
+#accessGroupsSection .section-header {
+    background: var(--primary-gradient);
+    color: var(--text-inverse);
+    border-radius: 12px;
+}
+
+#accessGroupsSection .section-header h1 {
+    color: var(--text-inverse);
+}
+
+/* Doors Section Header */
+#doorsSection .section-header {
+    background: var(--primary-gradient);
+    color: var(--text-inverse);
+    border-radius: 12px;
+}
+
+#doorsSection .section-header h1 {
+    color: var(--text-inverse);
+}
+
+/* ESP32 Discovery Section Header */
+#esp32DiscoverySection .section-header {
+    background: var(--primary-gradient);
+    color: var(--text-inverse);
+    border-radius: 12px;
+}
+
+#esp32DiscoverySection .section-header h1 {
+    color: var(--text-inverse);
 }
 
 .section-header h1 {
