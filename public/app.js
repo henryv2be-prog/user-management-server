@@ -1878,19 +1878,19 @@ function showSection(sectionName) {
             loadDoors();
         } else if (sectionName === 'accessGroups') {
             loadAccessGroups();
-        } else if (sectionName === 'esp32Discovery') {
-            loadEsp32Discovery();
+        } else if (sectionName === 'doorControllerDiscovery') {
+            loadDoorControllerDiscovery();
         } else if (sectionName === 'profile') {
             updateProfileInfo();
         }
     }
 }
 
-// ESP32 Discovery Functions
-let discoveredEsp32s = [];
+// Door Controller Discovery Functions
+let discoveredControllers = [];
 let scanInProgress = false;
 
-async function loadEsp32Discovery() {
+async function loadDoorControllerDiscovery() {
     if (!currentUser || !hasRole('admin')) {
         return;
     }
