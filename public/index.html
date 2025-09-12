@@ -31,8 +31,8 @@
                     <a href="#" class="nav-link" onclick="showSection('accessGroups')">
                         <i class="fas fa-shield-alt"></i> Access Groups
                     </a>
-                    <a href="#" class="nav-link" onclick="showSection('esp32Discovery')">
-                        <i class="fas fa-wifi"></i> ESP32 Discovery
+                    <a href="#" class="nav-link" onclick="showSection('doorControllerDiscovery')">
+                        <i class="fas fa-wifi"></i> Door Controller Discovery
                     </a>
                     <a href="#" class="nav-link" onclick="showSection('profile')">
                         <i class="fas fa-user"></i> Profile
@@ -247,7 +247,7 @@
                             <tr>
                                 <th>Name</th>
                                 <th>Location</th>
-                                <th>ESP32 IP</th>
+                                <th>Controller IP</th>
                                 <th>Online Status</th>
                                 <th>Last Seen</th>
                                 <th>Actions</th>
@@ -302,14 +302,14 @@
             </div>
         </div>
 
-        <!-- ESP32 Discovery Management -->
-        <div id="esp32DiscoverySection" class="section">
+        <!-- Door Controller Discovery Management -->
+        <div id="doorControllerDiscoverySection" class="section">
             <div class="container">
                 <div class="section-header">
-                    <h1><i class="fas fa-wifi"></i> ESP32 Discovery</h1>
+                    <h1><i class="fas fa-wifi"></i> Door Controller Discovery</h1>
                     <div class="header-actions">
-                        <button class="btn btn-secondary" onclick="startEsp32Scan()">
-                            <i class="fas fa-search"></i> Scan for ESP32s
+                        <button class="btn btn-secondary" onclick="startDoorControllerScan()">
+                            <i class="fas fa-search"></i> Scan for Controllers
                         </button>
                         <button class="btn btn-primary" onclick="showCreateDoorModal()">
                             <i class="fas fa-plus"></i> Add Door
@@ -317,20 +317,20 @@
                     </div>
                 </div>
                 
-                <div class="esp32-discovery-container">
+                <div class="door-controller-discovery-container">
                     <div class="scan-status" id="scanStatus">
                         <div class="scan-info">
                             <i class="fas fa-info-circle"></i>
-                            <span>Click "Scan for ESP32s" to discover devices on your network</span>
+                            <span>Click "Scan for Controllers" to discover devices on your network</span>
                         </div>
                     </div>
 
-                    <div class="discovered-esp32s" id="discoveredEsp32s">
-                        <!-- Discovered ESP32s will be loaded here -->
+                    <div class="discovered-controllers" id="discoveredControllers">
+                        <!-- Discovered Door Controllers will be loaded here -->
                     </div>
 
-                    <div class="esp32-actions">
-                        <button class="btn btn-success" onclick="addAllDiscoveredEsp32s()" id="addAllBtn" style="display: none;">
+                    <div class="controller-actions">
+                        <button class="btn btn-success" onclick="addAllDiscoveredControllers()" id="addAllBtn" style="display: none;">
                             <i class="fas fa-plus-circle"></i> Add All to Doors
                         </button>
                     </div>
@@ -519,12 +519,12 @@
                     <input type="text" id="createDoorLocation" name="location" required>
                 </div>
                 <div class="form-group">
-                    <label for="createDoorEsp32Ip">ESP32 IP Address</label>
-                    <input type="text" id="createDoorEsp32Ip" name="esp32Ip" required placeholder="192.168.1.100">
+                    <label for="createDoorControllerIp">Controller IP Address</label>
+                    <input type="text" id="createDoorControllerIp" name="controllerIp" required placeholder="192.168.1.100">
                 </div>
                 <div class="form-group">
-                    <label for="createDoorEsp32Mac">ESP32 MAC Address (Optional)</label>
-                    <input type="text" id="createDoorEsp32Mac" name="esp32Mac" placeholder="AA:BB:CC:DD:EE:FF">
+                    <label for="createDoorControllerMac">Controller MAC Address (Optional)</label>
+                    <input type="text" id="createDoorControllerMac" name="controllerMac" placeholder="AA:BB:CC:DD:EE:FF">
                 </div>
                 <div class="form-group">
                     <label for="createDoorHasLockSensor">Lock Sensor</label>
@@ -565,12 +565,12 @@
                     <input type="text" id="editDoorLocation" name="location" required>
                 </div>
                 <div class="form-group">
-                    <label for="editDoorEsp32Ip">ESP32 IP Address</label>
-                    <input type="text" id="editDoorEsp32Ip" name="esp32Ip" required>
+                    <label for="editDoorControllerIp">Controller IP Address</label>
+                    <input type="text" id="editDoorControllerIp" name="controllerIp" required>
                 </div>
                 <div class="form-group">
-                    <label for="editDoorEsp32Mac">ESP32 MAC Address</label>
-                    <input type="text" id="editDoorEsp32Mac" name="esp32Mac">
+                    <label for="editDoorControllerMac">Controller MAC Address</label>
+                    <input type="text" id="editDoorControllerMac" name="controllerMac">
                 </div>
                 <div class="form-group">
                     <label for="editDoorHasLockSensor">Lock Sensor</label>
@@ -680,86 +680,41 @@
         </div>
     </div>
 
-    <!-- ESP32 Discovery Modal -->
-    <div id="esp32ConfigModal" class="modal">
+    <!-- Door Controller Configuration Modal -->
+    <div id="doorControllerConfigModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-wifi"></i> Configure ESP32</h3>
-                <span class="close" onclick="closeModal('esp32ConfigModal')">&times;</span>
+                <h3><i class="fas fa-wifi"></i> Configure Door Controller</h3>
+                <span class="close" onclick="closeModal('doorControllerConfigModal')">&times;</span>
             </div>
-            <form id="esp32ConfigForm" onsubmit="handleEsp32Config(event)">
-                <input type="hidden" id="esp32ConfigMac" name="mac">
+            <form id="doorControllerConfigForm" onsubmit="handleDoorControllerConfig(event)">
+                <input type="hidden" id="doorControllerConfigMac" name="mac">
                 <div class="form-group">
-                    <label for="esp32ConfigName">Door Name</label>
-                    <input type="text" id="esp32ConfigName" name="name" required placeholder="e.g., Main Entrance">
+                    <label for="doorControllerConfigName">Door Name</label>
+                    <input type="text" id="doorControllerConfigName" name="name" required placeholder="e.g., Main Entrance">
                 </div>
                 <div class="form-group">
-                    <label for="esp32ConfigLocation">Location</label>
-                    <input type="text" id="esp32ConfigLocation" name="location" required placeholder="e.g., Building A, Floor 1">
+                    <label for="doorControllerConfigLocation">Location</label>
+                    <input type="text" id="doorControllerConfigLocation" name="location" required placeholder="e.g., Building A, Floor 1">
                 </div>
                 <div class="form-group">
-                    <label for="esp32ConfigIp">IP Address</label>
-                    <input type="text" id="esp32ConfigIp" name="ip" required placeholder="192.168.1.100">
+                    <label for="doorControllerConfigIp">IP Address</label>
+                    <input type="text" id="doorControllerConfigIp" name="ip" required placeholder="192.168.1.100">
                 </div>
                 <div class="form-group">
-                    <label for="esp32ConfigAccessGroup">Access Group</label>
-                    <select id="esp32ConfigAccessGroup" name="accessGroupId">
+                    <label for="doorControllerConfigAccessGroup">Access Group</label>
+                    <select id="doorControllerConfigAccessGroup" name="accessGroupId">
                         <option value="">Select an access group...</option>
                     </select>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('esp32ConfigModal')">Cancel</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('doorControllerConfigModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">Add as Door</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- ESP32 Configuration Modal -->
-    <div id="esp32ConfigModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-wifi"></i> Configure ESP32 Device</h2>
-                <span class="close" onclick="closeEsp32ConfigModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <form id="esp32ConfigForm">
-                    <div class="form-group">
-                        <label for="esp32ConfigName">Device Name:</label>
-                        <input type="text" id="esp32ConfigName" name="name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="esp32ConfigMac">MAC Address:</label>
-                        <input type="text" id="esp32ConfigMac" name="mac" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label for="esp32ConfigIp">IP Address:</label>
-                        <input type="text" id="esp32ConfigIp" name="ip" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label for="esp32ConfigAccessGroup">Access Group:</label>
-                        <select id="esp32ConfigAccessGroup" name="accessGroupId" required>
-                            <option value="">Select Access Group</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="esp32ConfigLocation">Location:</label>
-                        <input type="text" id="esp32ConfigLocation" name="location" placeholder="e.g., Main Entrance, Office Door">
-                    </div>
-                    <div class="form-group">
-                        <label for="esp32ConfigDescription">Description:</label>
-                        <textarea id="esp32ConfigDescription" name="description" rows="3" placeholder="Optional description"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeEsp32ConfigModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveEsp32Configuration()">
-                    <i class="fas fa-save"></i> Save Configuration
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
