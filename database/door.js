@@ -12,6 +12,9 @@ class Door {
     this.location = data.location;
     this.esp32Ip = data.esp32_ip;
     this.esp32Mac = data.esp32_mac;
+    // Add new field names for frontend compatibility
+    this.controllerIp = data.esp32_ip;
+    this.controllerMac = data.esp32_mac;
     this.secretKey = data.secret_key;
 
     this.lastSeen = data.last_seen;
@@ -40,6 +43,8 @@ class Door {
       location: this.location,
       esp32Ip: this.esp32Ip,
       esp32Mac: this.esp32Mac,
+      controllerIp: this.controllerIp,
+      controllerMac: this.controllerMac,
       secretKey: this.secretKey,
       lastSeen: this.lastSeen,
       isOnline: this.isOnline,
@@ -286,7 +291,9 @@ class Door {
       name: this.name,
       location: this.location,
       esp32Ip: this.esp32Ip,
-      esp32Mac: this.esp32Mac
+      esp32Mac: this.esp32Mac,
+      controllerIp: this.controllerIp,
+      controllerMac: this.controllerMac
     });
   }
 
