@@ -460,11 +460,6 @@ function displayStats(stats) {
             <h3>${stats.adminUsers}</h3>
             <p>Administrators</p>
         </div>
-        <div class="stat-card moderators">
-            <i class="fas fa-user-cog"></i>
-            <h3>${stats.moderatorUsers}</h3>
-            <p>Moderators</p>
-        </div>
         <div class="stat-card doors">
             <i class="fas fa-door-open"></i>
             <h3>${stats.totalDoors || 0}</h3>

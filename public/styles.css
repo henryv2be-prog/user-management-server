@@ -321,7 +321,6 @@ body {
 .stat-card.users i { color: #667eea; }
 .stat-card.active i { color: #28a745; }
 .stat-card.admins i { color: #dc3545; }
-.stat-card.moderators i { color: #ffc107; }
 
 .stat-card h3 {
     font-size: 2.5rem;
@@ -487,11 +486,6 @@ body {
 .role-badge.admin {
     background: #dc3545;
     color: white;
-}
-
-.role-badge.moderator {
-    background: #ffc107;
-    color: #333;
 }
 
 .role-badge.user {

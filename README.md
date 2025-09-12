@@ -7,7 +7,7 @@ SimplifiAccess is a comprehensive, IoT-based access control system that simplifi
 ## 🚀 Key Features
 
 - **🔐 Smart Access Control**: ESP32-powered door controllers with real-time monitoring
-- **👥 Advanced User Management**: Role-based access control with admin, moderator, and user roles
+- **👥 Advanced User Management**: Role-based access control with admin and user roles
 - **🚪 Door Management**: Real-time door status monitoring, lock control, and position sensing
 - **🛡️ Access Groups**: Flexible permission management for different areas and time schedules
 - **📱 Modern Web Interface**: Responsive, intuitive dashboard for all management tasks

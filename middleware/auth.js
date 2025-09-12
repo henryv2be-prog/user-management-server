@@ -119,9 +119,6 @@ const authorizeSelfOrAdmin = (req, res, next) => {
 // Admin only authorization
 const requireAdmin = authorize('admin');
 
-// Moderator or admin authorization
-const requireModerator = authorize('moderator');
-
 // User or higher authorization
 const requireUser = authorize('user');
 
@@ -131,6 +128,5 @@ module.exports = {
   optionalAuth,
   authorizeSelfOrAdmin,
   requireAdmin,
-  requireModerator,
   requireUser
 };

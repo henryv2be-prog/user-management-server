@@ -263,10 +263,9 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
 // Get user statistics (admin only)
 router.get('/stats/overview', authenticate, requireAdmin, async (req, res) => {
   try {
-    const [totalUsers, adminUsers, moderatorUsers] = await Promise.all([
+    const [totalUsers, adminUsers] = await Promise.all([
       User.count({}),
-      User.count({ role: 'admin' }),
-      User.count({ role: 'moderator' })
+      User.count({ role: 'admin' })
     ]);
     
     // For now, assume all users are active since we don't have an is_active column
@@ -278,8 +277,7 @@ router.get('/stats/overview', authenticate, requireAdmin, async (req, res) => {
         activeUsers,
         inactiveUsers: totalUsers - activeUsers,
         adminUsers,
-        moderatorUsers,
-        regularUsers: totalUsers - adminUsers - moderatorUsers
+        regularUsers: totalUsers - adminUsers
       }
     });
   } catch (error) {
