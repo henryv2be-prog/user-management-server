@@ -1,32 +1,36 @@
-# User Management Server
+# SimplifiAccess
 
-A Linux-based cloud web server for user management with a complete web interface.
+**Smart Access Control System with ESP32 Integration**
 
-## Features
+SimplifiAccess is a comprehensive, IoT-based access control system that simplifies secure door management through ESP32 controllers. Built for modern facilities requiring reliable, scalable, and user-friendly access control solutions.
 
-- **User Authentication**: Secure login with JWT tokens
-- **User Management**: Create, read, update, and delete users
-- **Role-Based Access Control**: Admin, moderator, and user roles
-- **Password Management**: Secure password hashing with bcrypt
-- **Web Interface**: Modern, responsive web UI
-- **Database**: SQLite database with proper schema
-- **Security**: Rate limiting, CORS, input validation
-- **Production Ready**: PM2 process management, Nginx configuration
+## 🚀 Key Features
 
-## Quick Start
+- **🔐 Smart Access Control**: ESP32-powered door controllers with real-time monitoring
+- **👥 Advanced User Management**: Role-based access control with admin, moderator, and user roles
+- **🚪 Door Management**: Real-time door status monitoring, lock control, and position sensing
+- **🛡️ Access Groups**: Flexible permission management for different areas and time schedules
+- **📱 Modern Web Interface**: Responsive, intuitive dashboard for all management tasks
+- **🔍 ESP32 Discovery**: Automatic network scanning and device configuration
+- **📊 Real-time Monitoring**: Live door status, access events, and system health
+- **🔒 Enterprise Security**: JWT authentication, password hashing, rate limiting, and audit logs
+- **⚡ Production Ready**: PM2 process management, Nginx configuration, and scalable architecture
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js (v16 or higher)
 - npm
 - Linux environment
+- ESP32 devices (for door controllers)
 
 ### Installation
 
-1. **Clone the repository:**
+1. **Clone the SimplifiAccess repository:**
    ```bash
-   git clone https://github.com/henryv2be-prog/user-management-server.git
-   cd user-management-server
+   git clone https://github.com/simplifiaccess/simplifiaccess.git
+   cd simplifiaccess
    ```
 
 2. **Run the automated installer:**
@@ -35,7 +39,7 @@ A Linux-based cloud web server for user management with a complete web interface
    ./install.sh
    ```
 
-3. **Access the web interface:**
+3. **Access the SimplifiAccess Dashboard:**
    - Open your browser to `http://localhost:3000`
    - Login with default admin credentials:
      - Email: `admin@example.com`
@@ -59,10 +63,10 @@ node database/init.js
 npm start
 ```
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-user-management-server/
+simplifiaccess/
 ├── database/
 │   ├── init.js          # Database initialization
 │   └── models.js        # User model and database operations
@@ -73,9 +77,11 @@ user-management-server/
 │   ├── auth.js          # Authentication routes
 │   └── users.js         # User management routes
 ├── public/
-│   ├── index.html       # Web interface
+│   ├── index.html       # SimplifiAccess Dashboard
 │   ├── app.js           # Frontend JavaScript
-│   └── styles.css       # Styling
+│   └── styles.css       # Modern UI styling
+├── ESP32_Door_Controller/
+│   └── ESP32_Door_Controller.ino  # ESP32 firmware
 ├── server.js            # Main server file
 ├── package.json         # Dependencies and scripts
 ├── ecosystem.config.js  # PM2 configuration
@@ -83,7 +89,7 @@ user-management-server/
 └── env.example          # Environment variables template
 ```
 
-## API Endpoints
+## 🔌 API Endpoints
 
 ### Authentication
 - `POST /api/auth/login` - User login
@@ -95,6 +101,23 @@ user-management-server/
 - `GET /api/users/:id` - Get user by ID
 - `PUT /api/users/:id` - Update user
 - `DELETE /api/users/:id` - Delete user
+
+### Door Management
+- `GET /api/doors` - Get all doors
+- `POST /api/doors` - Create new door
+- `PUT /api/doors/:id` - Update door
+- `DELETE /api/doors/:id` - Delete door
+- `POST /api/doors/:id/control` - Control door lock
+
+### Access Groups
+- `GET /api/access-groups` - Get all access groups
+- `POST /api/access-groups` - Create access group
+- `PUT /api/access-groups/:id` - Update access group
+- `DELETE /api/access-groups/:id` - Delete access group
+
+### ESP32 Discovery
+- `POST /api/esp32/scan` - Scan for ESP32 devices
+- `GET /api/esp32/discovered` - Get discovered devices
 
 ### Health Check
 - `GET /api/health` - Server health status
@@ -206,10 +229,38 @@ After first installation, you can login with:
 4. Test thoroughly
 5. Submit a pull request
 
-## License
+## 🏢 Use Cases
 
-This project is open source and available under the MIT License.
+- **Office Buildings**: Secure access to different floors and departments
+- **Educational Institutions**: Campus-wide access control for students and staff
+- **Healthcare Facilities**: Restricted access to sensitive areas
+- **Manufacturing Plants**: Zone-based access control for safety and security
+- **Residential Complexes**: Smart building access management
 
-## Support
+## 🤝 Contributing
 
-For issues and questions, please create an issue in the GitHub repository.
+We welcome contributions to SimplifiAccess! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+SimplifiAccess is open source and available under the [MIT License](LICENSE).
+
+## 🆘 Support
+
+- 📧 **Email**: support@simplifiaccess.com
+- 🐛 **Issues**: [GitHub Issues](https://github.com/simplifiaccess/simplifiaccess/issues)
+- 📖 **Documentation**: [docs.simplifiaccess.com](https://docs.simplifiaccess.com)
+- 💬 **Community**: [Discord Server](https://discord.gg/simplifiaccess)
+
+---
+
+<div align="center">
+  <strong>SimplifiAccess - Simplifying Smart Access Control</strong><br>
+  Made with ❤️ by the SimplifiAccess Team
+</div>
