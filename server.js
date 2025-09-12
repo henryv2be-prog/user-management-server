@@ -181,7 +181,12 @@ async function startServer() {
       // Log system startup event
       try {
         const EventLogger = require('./utils/eventLogger');
-        await EventLogger.logSystemEvent({ ip: '127.0.0.1' }, 'startup', `SimplifiAccess server started on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+        const mockReq = { 
+          ip: '127.0.0.1', 
+          headers: { 'user-agent': 'SimplifiAccess-Server' },
+          get: () => 'SimplifiAccess-Server'
+        };
+        await EventLogger.logSystemEvent(mockReq, 'startup', `SimplifiAccess server started on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
       } catch (logError) {
         console.error('Failed to log startup event:', logError);
       }
@@ -197,8 +202,13 @@ async function startServer() {
           
           // Log offline door events
           const EventLogger = require('./utils/eventLogger');
+          const mockReq = { 
+            ip: '127.0.0.1', 
+            headers: { 'user-agent': 'SimplifiAccess-System' },
+            get: () => 'SimplifiAccess-System'
+          };
           for (const door of offlineDoors) {
-            await EventLogger.log({ ip: '127.0.0.1' }, 'door', 'offline', 'door', door.id, door.name, `Door marked as offline due to heartbeat timeout`);
+            await EventLogger.log(mockReq, 'door', 'offline', 'door', door.id, door.name, `Door marked as offline due to heartbeat timeout`);
           }
         }
       } catch (error) {
@@ -239,7 +249,12 @@ process.on('SIGTERM', async () => {
   // Log system shutdown event
   try {
     const EventLogger = require('./utils/eventLogger');
-    await EventLogger.logSystemEvent({ ip: '127.0.0.1' }, 'shutdown', 'SimplifiAccess server shutting down gracefully (SIGTERM)');
+    const mockReq = { 
+      ip: '127.0.0.1', 
+      headers: { 'user-agent': 'SimplifiAccess-Server' },
+      get: () => 'SimplifiAccess-Server'
+    };
+    await EventLogger.logSystemEvent(mockReq, 'shutdown', 'SimplifiAccess server shutting down gracefully (SIGTERM)');
   } catch (logError) {
     console.error('Failed to log shutdown event:', logError);
   }
@@ -253,7 +268,12 @@ process.on('SIGINT', async () => {
   // Log system shutdown event
   try {
     const EventLogger = require('./utils/eventLogger');
-    await EventLogger.logSystemEvent({ ip: '127.0.0.1' }, 'shutdown', 'SimplifiAccess server shutting down gracefully (SIGINT)');
+    const mockReq = { 
+      ip: '127.0.0.1', 
+      headers: { 'user-agent': 'SimplifiAccess-Server' },
+      get: () => 'SimplifiAccess-Server'
+    };
+    await EventLogger.logSystemEvent(mockReq, 'shutdown', 'SimplifiAccess server shutting down gracefully (SIGINT)');
   } catch (logError) {
     console.error('Failed to log shutdown event:', logError);
   }

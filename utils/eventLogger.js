@@ -4,8 +4,15 @@ class EventLogger {
   static async logEvent(req, eventData) {
     try {
       const user = req.user || null;
-      const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
-      const userAgent = req.get('User-Agent') || 'unknown';
+      const ipAddress = req.ip || req.connection?.remoteAddress || 'unknown';
+      
+      // Safely get User-Agent header
+      let userAgent = 'unknown';
+      if (req && typeof req.get === 'function') {
+        userAgent = req.get('User-Agent') || 'unknown';
+      } else if (req && req.headers && req.headers['user-agent']) {
+        userAgent = req.headers['user-agent'];
+      }
 
       const event = {
         ...eventData,
