@@ -40,8 +40,8 @@ const validateUser = [
     .withMessage('Last name must be between 1 and 50 characters'),
   body('role')
     .optional()
-    .isIn(['user', 'moderator', 'admin'])
-    .withMessage('Role must be user, moderator, or admin'),
+    .isIn(['user', 'admin'])
+    .withMessage('Role must be user or admin'),
   handleValidationErrors
 ];
 
@@ -63,8 +63,8 @@ const validateUserUpdate = [
     .withMessage('Last name must be between 1 and 50 characters'),
   body('role')
     .optional()
-    .isIn(['user', 'moderator', 'admin'])
-    .withMessage('Role must be user, moderator, or admin'),
+    .isIn(['user', 'admin'])
+    .withMessage('Role must be user or admin'),
   // isActive removed - entities are always active
   body('emailVerified')
     .optional()
@@ -161,8 +161,8 @@ const validatePagination = [
     .withMessage('Search term must be less than 100 characters'),
   query('role')
     .optional()
-    .isIn(['user', 'moderator', 'admin'])
-    .withMessage('Role must be user, moderator, or admin'),
+    .isIn(['user', 'admin'])
+    .withMessage('Role must be user or admin'),
   // isActive removed - accounts are always active
   handleValidationErrors
 ];
