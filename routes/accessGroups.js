@@ -207,6 +207,15 @@ router.post('/:id/users', authenticate, requireAdmin, validateId, async (req, re
     const success = await accessGroup.addUser(userId, req.user.id);
     
     if (success) {
+      // Get user details for logging
+      const { User } = require('../database/models');
+      const user = await User.findById(userId);
+      
+      // Log user addition event
+      if (user) {
+        await EventLogger.logUserAddedToAccessGroup(req, user, accessGroup);
+      }
+      
       res.json({
         message: 'User added to access group successfully'
       });
@@ -242,6 +251,15 @@ router.delete('/:id/users/:userId', authenticate, requireAdmin, validateId, asyn
     const success = await accessGroup.removeUser(userId);
     
     if (success) {
+      // Get user details for logging
+      const { User } = require('../database/models');
+      const user = await User.findById(userId);
+      
+      // Log user removal event
+      if (user) {
+        await EventLogger.logUserRemovedFromAccessGroup(req, user, accessGroup);
+      }
+      
       res.json({
         message: 'User removed from access group successfully'
       });
@@ -328,6 +346,15 @@ router.delete('/:id/doors/:doorId', authenticate, requireAdmin, validateId, asyn
     const success = await accessGroup.removeDoor(doorId);
     
     if (success) {
+      // Get door details for logging
+      const { Door } = require('../database/door');
+      const door = await Door.findById(doorId);
+      
+      // Log door removal event
+      if (door) {
+        await EventLogger.logDoorRemovedFromAccessGroup(req, door, accessGroup);
+      }
+      
       res.json({
         message: 'Door removed from access group successfully'
       });
