@@ -91,7 +91,7 @@ body {
     align-items: center;
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--primary-color);
     letter-spacing: -0.025em;
 }
 
@@ -444,13 +444,13 @@ body {
 }
 
 .status-indicator.active {
-    background: #d4edda;
-    color: #155724;
+    background: var(--success-light);
+    color: var(--text-inverse);
 }
 
 .status-indicator.inactive {
-    background: #f8d7da;
-    color: #721c24;
+    background: var(--danger-light);
+    color: var(--text-inverse);
 }
 
 .status-indicator::before {
@@ -469,13 +469,13 @@ body {
 }
 
 .status-indicator.online {
-    background: #d4edda;
-    color: #155724;
+    background: var(--success-light);
+    color: var(--text-inverse);
 }
 
 .status-indicator.offline {
-    background: #f8d7da;
-    color: #721c24;
+    background: var(--danger-light);
+    color: var(--text-inverse);
 }
 
 .status-indicator.online::before {
@@ -602,14 +602,14 @@ body {
     align-items: center;
     padding: 20px 24px;
     border-bottom: 1px solid var(--border-light);
-    background: var(--background-tertiary);
-    color: var(--text-primary);
+    background: var(--primary-gradient);
+    color: var(--text-inverse);
     border-radius: 12px 12px 0 0;
     box-shadow: 0 1px 3px var(--shadow-sm);
 }
 
 .modal-header h3 {
-    color: var(--text-primary);
+    color: var(--text-inverse);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -621,7 +621,7 @@ body {
 .close {
     font-size: 1.5rem;
     cursor: pointer;
-    color: var(--text-secondary);
+    color: var(--text-inverse);
     transition: all 0.2s ease;
     padding: 4px;
     border-radius: 4px;
@@ -629,8 +629,8 @@ body {
 }
 
 .close:hover {
-    background-color: var(--background-primary);
-    color: var(--text-primary);
+    background-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-inverse);
     transform: scale(1.05);
 }
 
@@ -961,8 +961,8 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 1.25rem 1.5rem;
-    background: var(--background-tertiary);
-    color: var(--text-primary);
+    background: linear-gradient(135deg, var(--success-color) 0%, var(--success-light) 100%);
+    color: var(--text-inverse);
     margin: 0;
     border-radius: 8px 8px 0 0;
     -webkit-border-radius: 8px 8px 0 0;
@@ -1148,8 +1148,8 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 1.25rem 1.5rem;
-    background: var(--background-tertiary);
-    color: var(--text-primary);
+    background: var(--primary-gradient);
+    color: var(--text-inverse);
     margin: 0;
     border-radius: 8px 8px 0 0;
     -webkit-border-radius: 8px 8px 0 0;
