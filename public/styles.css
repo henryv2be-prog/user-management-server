@@ -903,6 +903,8 @@ body {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    -webkit-border-radius: 8px;
+    -moz-border-radius: 8px;
 }
 
 .door-status-section .section-header {
@@ -914,6 +916,10 @@ body {
     color: white;
     margin: 0;
     border-radius: 8px 8px 0 0;
+    -webkit-border-radius: 8px 8px 0 0;
+    -moz-border-radius: 8px 8px 0 0;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
 }
 
 .door-status-section .section-header h2 {
@@ -1094,6 +1100,8 @@ body {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    -webkit-border-radius: 8px;
+    -moz-border-radius: 8px;
 }
 
 .event-log-section .section-header {
@@ -1105,6 +1113,10 @@ body {
     color: white;
     margin: 0;
     border-radius: 8px 8px 0 0;
+    -webkit-border-radius: 8px 8px 0 0;
+    -moz-border-radius: 8px 8px 0 0;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
 }
 
 .event-log-section .section-header h2 {
@@ -1570,6 +1582,25 @@ body {
         flex-direction: column;
         gap: 20px;
         align-items: stretch;
+    }
+
+    /* Mobile-specific fixes for dashboard sections */
+    .door-status-section,
+    .event-log-section {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .door-status-section .section-header,
+    .event-log-section .section-header {
+        border-radius: 8px 8px 0 0;
+        margin: 0;
+    }
+
+    .door-status-section .section-header:first-child,
+    .event-log-section .section-header:first-child {
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
     }
 
     .filters {
