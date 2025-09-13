@@ -359,8 +359,6 @@ async function runStressTest(testId, config) {
   addTestLog(testId, 'info', 'Creating test users in database...');
   for (let i = 0; i < Math.min(concurrentUsers, 5); i++) { // Limit to 5 test users
     try {
-      const bcrypt = require('bcryptjs');
-      const hashedPassword = bcrypt.hashSync('testpass123', 10);
       const timestamp = Date.now() + i + Math.random() * 1000; // Ensure unique timestamps
       const username = `stressuser${timestamp}`;
       const email = `stressuser${timestamp}@test.com`;
@@ -379,11 +377,10 @@ async function runStressTest(testId, config) {
       const testUser = await User.create({
         username: username,
         email: email,
-        password_hash: hashedPassword,
-        first_name: `StressUser${timestamp}`,
-        last_name: 'Test',
-        role: 'user',
-        email_verified: 1
+        password: 'testpass123', // User.create will hash this automatically
+        firstName: `StressUser${timestamp}`,
+        lastName: 'Test',
+        role: 'user'
       });
       
       testData.createdUsers.push(testUser.id);
@@ -583,18 +580,15 @@ async function testAuthentication(testData) {
 
 async function testUserManagement(testData) {
   // Create a test user that will appear in dashboard
-  const bcrypt = require('bcryptjs');
-  const hashedPassword = bcrypt.hashSync('testpass123', 10);
   const timestamp = Date.now();
   
   const testUser = await User.create({
     username: `stressuser${timestamp}`,
     email: `stressuser${timestamp}@test.com`,
-    password_hash: hashedPassword,
-    first_name: `TestUser${timestamp}`,
-    last_name: 'StressTest',
-    role: 'user',
-    email_verified: 1
+    password: 'testpass123', // User.create will hash this automatically
+    firstName: `TestUser${timestamp}`,
+    lastName: 'StressTest',
+    role: 'user'
   });
   
   if (!testUser) {
