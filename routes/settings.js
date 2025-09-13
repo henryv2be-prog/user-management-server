@@ -434,14 +434,16 @@ async function runStressTest(testId, config) {
   const interval = 1000 / requestRate; // milliseconds between requests
   let requestCount = 0;
   let testInterval = null;
+  let isTestRunning = true;
   
   const runRequests = async () => {
     const currentTime = Date.now();
     
     // Check if test should stop
-    if (currentTime >= endTime || test.status === 'stopped') {
-      addTestLog(testId, 'info', `Test stopping - Current time: ${currentTime}, End time: ${endTime}, Status: ${test.status}`);
+    if (currentTime >= endTime || test.status === 'stopped' || !isTestRunning) {
+      addTestLog(testId, 'info', `Test stopping - Current time: ${currentTime}, End time: ${endTime}, Status: ${test.status}, Running: ${isTestRunning}`);
       
+      isTestRunning = false;
       test.status = 'completed';
       test.endTime = currentTime;
       addTestLog(testId, 'info', `Stress test completed. Total requests: ${requestCount}`);
@@ -511,6 +513,8 @@ async function runStressTest(testId, config) {
   const timeoutId = setTimeout(async () => {
     addTestLog(testId, 'info', 'Timeout reached - forcing test completion');
     
+    isTestRunning = false;
+    
     if (testInterval) {
       clearInterval(testInterval);
       testInterval = null;
@@ -525,7 +529,7 @@ async function runStressTest(testId, config) {
       // Cleanup test data
       await cleanupTestData(testId, testData);
     }
-  }, testDuration * 1000 + 5000); // Add 5 second buffer
+  }, testDuration * 1000); // Exact duration, no buffer
   
   // Store timeout ID for potential cleanup
   test.timeoutId = timeoutId;
@@ -659,7 +663,8 @@ async function testEventLogging(testData) {
   const randomAction = eventActions[Math.floor(Math.random() * eventActions.length)];
   
   try {
-    const testEvent = await Event.create({
+    // Create a more realistic event
+    const eventData = {
       type: randomType,
       action: randomAction,
       entity_type: 'stress_test',
@@ -670,17 +675,21 @@ async function testEventLogging(testData) {
       details: `Stress test event: ${randomType} ${randomAction} at ${new Date().toISOString()}`,
       ip_address: '127.0.0.1',
       user_agent: 'StressTest/1.0'
-    });
+    };
+    
+    console.log('Creating event with data:', eventData);
+    
+    const testEvent = await Event.create(eventData);
     
     if (!testEvent) {
       throw new Error(`Event creation test failed - no event returned`);
     }
     
     // Log successful event creation
-    console.log(`Created event: ${randomType} ${randomAction} (ID: ${testEvent.id})`);
+    console.log(`✅ Created event: ${randomType} ${randomAction} (ID: ${testEvent.id})`);
     return testEvent;
   } catch (error) {
-    console.error('Event creation error:', error);
+    console.error('❌ Event creation error:', error);
     throw new Error(`Event creation test failed: ${error.message}`);
   }
 }
