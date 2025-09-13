@@ -351,33 +351,62 @@ async function runStressTest(testId, config) {
       password: 'testpass123'
     });
   }
+  
+  // Create test users in database for authentication tests
+  addTestLog(testId, 'info', 'Creating test users in database...');
+  for (let i = 0; i < Math.min(concurrentUsers, 5); i++) { // Limit to 5 test users
+    try {
+      const bcrypt = require('bcryptjs');
+      const hashedPassword = bcrypt.hashSync('testpass123', 10);
+      
+      await User.create({
+        username: `testuser${i}`,
+        email: `testuser${i}@stress.test`,
+        password_hash: hashedPassword,
+        first_name: `TestUser${i}`,
+        last_name: 'StressTest',
+        role: 'user',
+        email_verified: 1
+      });
+    } catch (error) {
+      // User might already exist, continue
+    }
+  }
 
   // Test functions
   const testFunctions = [];
   
   if (testOptions.testAuth) {
     testFunctions.push(() => testAuthentication(testUsers[Math.floor(Math.random() * testUsers.length)]));
+    addTestLog(testId, 'info', 'Added authentication test function');
   }
   
   if (testOptions.testUsers) {
     testFunctions.push(() => testUserManagement(adminUser));
+    addTestLog(testId, 'info', 'Added user management test function');
   }
   
   if (testOptions.testDoors) {
     testFunctions.push(() => testDoorManagement(adminUser));
+    addTestLog(testId, 'info', 'Added door management test function');
   }
   
   if (testOptions.testAccessGroups) {
     testFunctions.push(() => testAccessGroupManagement(adminUser));
+    addTestLog(testId, 'info', 'Added access group test function');
   }
   
   if (testOptions.testEvents) {
     testFunctions.push(() => testEventLogging(adminUser));
+    addTestLog(testId, 'info', 'Added event logging test function');
   }
   
   if (testOptions.testDatabase) {
     testFunctions.push(() => testDatabaseOperations(adminUser));
+    addTestLog(testId, 'info', 'Added database operations test function');
   }
+  
+  addTestLog(testId, 'info', `Total test functions available: ${testFunctions.length}`);
 
   // Run stress test
   const interval = 1000 / requestRate; // milliseconds between requests
@@ -407,15 +436,26 @@ async function runStressTest(testId, config) {
       }
     }
     
+    if (promises.length === 0) {
+      addTestLog(testId, 'warning', 'No test functions available to execute');
+      return;
+    }
+    
     try {
-      await Promise.allSettled(promises);
-      requestCount += concurrentUsers;
+      const results = await Promise.allSettled(promises);
+      requestCount += promises.length;
+      
+      // Count successful vs failed tests
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
       
       // Update progress
       test.results.totalRequests = requestCount;
+      test.results.successfulRequests = (test.results.successfulRequests || 0) + successful;
+      test.results.failedRequests = (test.results.failedRequests || 0) + failed;
       test.progress = Math.min(100, ((currentTime - startTime) / (testDuration * 1000)) * 100);
       
-      addTestLog(testId, 'info', `Progress: ${test.progress.toFixed(1)}% - Requests: ${requestCount}`);
+      addTestLog(testId, 'info', `Progress: ${test.progress.toFixed(1)}% - Requests: ${requestCount} (${successful} success, ${failed} failed)`);
     } catch (error) {
       addTestLog(testId, 'error', `Error in test execution: ${error.message}`);
     }
@@ -427,15 +467,16 @@ async function runStressTest(testId, config) {
   
   // Set a timeout to ensure test ends
   setTimeout(() => {
+    if (testInterval) {
+      clearInterval(testInterval);
+      testInterval = null;
+    }
     if (test.status === 'running') {
       test.status = 'completed';
       test.endTime = Date.now();
       addTestLog(testId, 'info', 'Stress test completed by timeout');
-      if (testInterval) {
-        clearInterval(testInterval);
-      }
     }
-  }, testDuration * 1000 + 5000); // Add 5 second buffer
+  }, testDuration * 1000 + 2000); // Add 2 second buffer
 }
 
 // Execute individual test
