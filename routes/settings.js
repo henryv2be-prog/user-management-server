@@ -343,33 +343,44 @@ async function runStressTest(testId, config) {
     return;
   }
   
-  // Create test users for authentication tests
-  const testUsers = [];
-  for (let i = 0; i < concurrentUsers; i++) {
-    testUsers.push({
-      email: `testuser${i}@stress.test`,
-      password: 'testpass123'
-    });
-  }
+  // Create test data structure for tracking created items
+  const testData = {
+    adminUser,
+    createdUsers: [],
+    createdDoors: [],
+    createdAccessGroups: [],
+    testUsers: []
+  };
   
-  // Create test users in database for authentication tests
+  // Store testData in the test object for cleanup
+  test.testData = testData;
+  
+  // Create test users for authentication tests
   addTestLog(testId, 'info', 'Creating test users in database...');
   for (let i = 0; i < Math.min(concurrentUsers, 5); i++) { // Limit to 5 test users
     try {
       const bcrypt = require('bcryptjs');
       const hashedPassword = bcrypt.hashSync('testpass123', 10);
+      const timestamp = Date.now() + i; // Ensure unique timestamps
       
-      await User.create({
-        username: `testuser${i}`,
-        email: `testuser${i}@stress.test`,
+      const testUser = await User.create({
+        username: `testuser${timestamp}`,
+        email: `testuser${timestamp}@stress.test`,
         password_hash: hashedPassword,
-        first_name: `TestUser${i}`,
+        first_name: `TestUser${timestamp}`,
         last_name: 'StressTest',
         role: 'user',
         email_verified: 1
       });
+      
+      testData.createdUsers.push(testUser.id);
+      testData.testUsers.push({
+        email: testUser.email,
+        password: 'testpass123'
+      });
     } catch (error) {
       // User might already exist, continue
+      addTestLog(testId, 'warning', `Test user ${i} might already exist: ${error.message}`);
     }
   }
 
@@ -377,32 +388,32 @@ async function runStressTest(testId, config) {
   const testFunctions = [];
   
   if (testOptions.testAuth) {
-    testFunctions.push(() => testAuthentication(testUsers[Math.floor(Math.random() * testUsers.length)]));
+    testFunctions.push(() => testAuthentication(testData.testUsers[Math.floor(Math.random() * testData.testUsers.length)]));
     addTestLog(testId, 'info', 'Added authentication test function');
   }
   
   if (testOptions.testUsers) {
-    testFunctions.push(() => testUserManagement(adminUser));
+    testFunctions.push(() => testUserManagement(testData));
     addTestLog(testId, 'info', 'Added user management test function');
   }
   
   if (testOptions.testDoors) {
-    testFunctions.push(() => testDoorManagement(adminUser));
+    testFunctions.push(() => testDoorManagement(testData));
     addTestLog(testId, 'info', 'Added door management test function');
   }
   
   if (testOptions.testAccessGroups) {
-    testFunctions.push(() => testAccessGroupManagement(adminUser));
+    testFunctions.push(() => testAccessGroupManagement(testData));
     addTestLog(testId, 'info', 'Added access group test function');
   }
   
   if (testOptions.testEvents) {
-    testFunctions.push(() => testEventLogging(adminUser));
+    testFunctions.push(() => testEventLogging(testData));
     addTestLog(testId, 'info', 'Added event logging test function');
   }
   
   if (testOptions.testDatabase) {
-    testFunctions.push(() => testDatabaseOperations(adminUser));
+    testFunctions.push(() => testDatabaseOperations(testData));
     addTestLog(testId, 'info', 'Added database operations test function');
   }
   
@@ -423,6 +434,12 @@ async function runStressTest(testId, config) {
       if (testInterval) {
         clearInterval(testInterval);
         testInterval = null;
+      }
+      
+      // Cleanup test data
+      const testData = test.testData; // We need to store this in the test object
+      if (testData) {
+        await cleanupTestData(testId, testData);
       }
       return;
     }
@@ -466,7 +483,7 @@ async function runStressTest(testId, config) {
   testInterval = setInterval(runRequests, interval);
   
   // Set a timeout to ensure test ends
-  setTimeout(() => {
+  setTimeout(async () => {
     if (testInterval) {
       clearInterval(testInterval);
       testInterval = null;
@@ -475,6 +492,9 @@ async function runStressTest(testId, config) {
       test.status = 'completed';
       test.endTime = Date.now();
       addTestLog(testId, 'info', 'Stress test completed by timeout');
+      
+      // Cleanup test data
+      await cleanupTestData(testId, testData);
     }
   }, testDuration * 1000 + 2000); // Add 2 second buffer
 }
@@ -508,35 +528,35 @@ async function executeTest(testFunction, testId) {
   }
 }
 
-// Test functions
-async function testAuthentication(user) {
+// Test functions - these will create real data visible in dashboard
+async function testAuthentication(testData) {
   // Test authentication by trying to find user in database
-  const foundUser = await User.findByEmail(user.email);
+  const foundUser = await User.findByEmail(testData.email);
   if (!foundUser) {
     throw new Error(`Auth test failed: User not found`);
   }
   
-  // Simulate password check (in real scenario, you'd use bcrypt)
-  if (foundUser.passwordHash !== user.password) {
+  // Simulate password check
+  const bcrypt = require('bcryptjs');
+  const isValid = await bcrypt.compare(testData.password, foundUser.passwordHash);
+  if (!isValid) {
     throw new Error(`Auth test failed: Invalid password`);
   }
   
   return foundUser;
 }
 
-async function testUserManagement(adminUser) {
-  // Test 1: Count existing users
-  const userCount = await User.count();
-  
-  // Test 2: Create a test user
+async function testUserManagement(testData) {
+  // Create a test user that will appear in dashboard
   const bcrypt = require('bcryptjs');
   const hashedPassword = bcrypt.hashSync('testpass123', 10);
+  const timestamp = Date.now();
   
   const testUser = await User.create({
-    username: `stressuser${Date.now()}`,
-    email: `stressuser${Date.now()}@test.com`,
+    username: `stressuser${timestamp}`,
+    email: `stressuser${timestamp}@test.com`,
     password_hash: hashedPassword,
-    first_name: `TestUser${Date.now()}`,
+    first_name: `TestUser${timestamp}`,
     last_name: 'StressTest',
     role: 'user',
     email_verified: 1
@@ -546,19 +566,23 @@ async function testUserManagement(adminUser) {
     throw new Error(`User creation test failed`);
   }
   
+  // Store for cleanup
+  testData.createdUsers = testData.createdUsers || [];
+  testData.createdUsers.push(testUser.id);
+  
   return testUser;
 }
 
-async function testDoorManagement(adminUser) {
-  // Test 1: Count existing doors
-  const doorCount = await Door.count();
+async function testDoorManagement(testData) {
+  // Create a test door that will appear in dashboard
+  const timestamp = Date.now();
+  const randomSuffix = Math.floor(Math.random() * 1000);
   
-  // Test 2: Create a test door
   const testDoor = await Door.create({
-    name: `StressTestDoor${Date.now()}`,
-    location: 'Stress Test Location',
+    name: `StressTestDoor${timestamp}`,
+    location: `Stress Test Location ${randomSuffix}`,
     esp32_ip: `192.168.1.${Math.floor(Math.random() * 255)}`,
-    esp32_mac: `AA:BB:CC:DD:EE:${Math.floor(Math.random() * 100).toString(16).padStart(2, '0')}`,
+    esp32_mac: `AA:BB:CC:DD:EE:${randomSuffix.toString(16).padStart(2, '0')}`,
     has_lock_sensor: 1,
     has_door_position_sensor: 1,
     is_online: 0,
@@ -570,40 +594,50 @@ async function testDoorManagement(adminUser) {
     throw new Error(`Door creation test failed`);
   }
   
+  // Store for cleanup
+  testData.createdDoors = testData.createdDoors || [];
+  testData.createdDoors.push(testDoor.id);
+  
   return testDoor;
 }
 
-async function testAccessGroupManagement(adminUser) {
-  // Test 1: Count existing access groups
-  const accessGroupCount = await AccessGroup.count();
+async function testAccessGroupManagement(testData) {
+  // Create a test access group that will appear in dashboard
+  const timestamp = Date.now();
   
-  // Test 2: Create a test access group
   const testAccessGroup = await AccessGroup.create({
-    name: `StressTestGroup${Date.now()}`,
-    description: 'Stress test access group'
+    name: `StressTestGroup${timestamp}`,
+    description: `Stress test access group created at ${new Date().toISOString()}`
   });
   
   if (!testAccessGroup) {
     throw new Error(`Access group creation test failed`);
   }
   
+  // Store for cleanup
+  testData.createdAccessGroups = testData.createdAccessGroups || [];
+  testData.createdAccessGroups.push(testAccessGroup.id);
+  
   return testAccessGroup;
 }
 
-async function testEventLogging(adminUser) {
-  // Test 1: Count existing events
-  const eventCount = await Event.count();
+async function testEventLogging(testData) {
+  // Create a test event that will appear in event logs
+  const timestamp = Date.now();
+  const eventTypes = ['door_access', 'user_login', 'system_event', 'access_denied'];
+  const eventActions = ['granted', 'denied', 'attempted', 'logged'];
+  const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+  const randomAction = eventActions[Math.floor(Math.random() * eventActions.length)];
   
-  // Test 2: Create a test event
   const testEvent = await Event.create({
-    type: 'stress_test',
-    action: 'test_event',
-    entity_type: 'system',
-    entity_id: null,
-    entity_name: 'Stress Test',
-    user_id: adminUser.id,
-    user_name: `${adminUser.firstName} ${adminUser.lastName}`,
-    details: 'Stress test event created',
+    type: randomType,
+    action: randomAction,
+    entity_type: 'stress_test',
+    entity_id: timestamp,
+    entity_name: `Stress Test Event ${timestamp}`,
+    user_id: testData.adminUser.id,
+    user_name: `${testData.adminUser.firstName} ${testData.adminUser.lastName}`,
+    details: `Stress test event: ${randomType} ${randomAction} at ${new Date().toISOString()}`,
     ip_address: '127.0.0.1',
     user_agent: 'StressTest/1.0'
   });
@@ -615,14 +649,14 @@ async function testEventLogging(adminUser) {
   return testEvent;
 }
 
-async function testDatabaseOperations(adminUser) {
-  // Test 1: Test database connectivity
+async function testDatabaseOperations(testData) {
+  // Test database connectivity and performance
   const userCount = await User.count();
   const doorCount = await Door.count();
   const accessGroupCount = await AccessGroup.count();
   const eventCount = await Event.count();
   
-  // Test 2: Test complex query
+  // Test complex query
   const recentEvents = await Event.findAll({ limit: 10 });
   
   if (userCount < 0 || doorCount < 0 || accessGroupCount < 0 || eventCount < 0) {
@@ -636,6 +670,78 @@ async function testDatabaseOperations(adminUser) {
     eventCount,
     recentEventsCount: recentEvents.length
   };
+}
+
+// Cleanup function to remove test data
+async function cleanupTestData(testId, testData) {
+  addTestLog(testId, 'info', 'Starting cleanup of test data...');
+  
+  try {
+    const sqlite3 = require('sqlite3').verbose();
+    const path = require('path');
+    const DB_PATH = path.join(__dirname, '../database/users.db');
+    
+    // Cleanup created users
+    if (testData.createdUsers && testData.createdUsers.length > 0) {
+      addTestLog(testId, 'info', `Cleaning up ${testData.createdUsers.length} test users...`);
+      for (const userId of testData.createdUsers) {
+        try {
+          await new Promise((resolve, reject) => {
+            const db = new sqlite3.Database(DB_PATH);
+            db.run("DELETE FROM users WHERE id = ?", [userId], function(err) {
+              db.close();
+              if (err) reject(err);
+              else resolve();
+            });
+          });
+        } catch (error) {
+          addTestLog(testId, 'warning', `Failed to delete user ${userId}: ${error.message}`);
+        }
+      }
+    }
+    
+    // Cleanup created doors
+    if (testData.createdDoors && testData.createdDoors.length > 0) {
+      addTestLog(testId, 'info', `Cleaning up ${testData.createdDoors.length} test doors...`);
+      for (const doorId of testData.createdDoors) {
+        try {
+          await new Promise((resolve, reject) => {
+            const db = new sqlite3.Database(DB_PATH);
+            db.run("DELETE FROM doors WHERE id = ?", [doorId], function(err) {
+              db.close();
+              if (err) reject(err);
+              else resolve();
+            });
+          });
+        } catch (error) {
+          addTestLog(testId, 'warning', `Failed to delete door ${doorId}: ${error.message}`);
+        }
+      }
+    }
+    
+    // Cleanup created access groups
+    if (testData.createdAccessGroups && testData.createdAccessGroups.length > 0) {
+      addTestLog(testId, 'info', `Cleaning up ${testData.createdAccessGroups.length} test access groups...`);
+      for (const groupId of testData.createdAccessGroups) {
+        try {
+          await new Promise((resolve, reject) => {
+            const db = new sqlite3.Database(DB_PATH);
+            db.run("DELETE FROM access_groups WHERE id = ?", [groupId], function(err) {
+              db.close();
+              if (err) reject(err);
+              else resolve();
+            });
+          });
+        } catch (error) {
+          addTestLog(testId, 'warning', `Failed to delete access group ${groupId}: ${error.message}`);
+        }
+      }
+    }
+    
+    addTestLog(testId, 'info', 'Test data cleanup completed');
+  } catch (error) {
+    addTestLog(testId, 'error', `Error during cleanup: ${error.message}`);
+  }
 }
 
 function addTestLog(testId, level, message) {
