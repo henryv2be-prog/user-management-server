@@ -302,14 +302,13 @@ async function runStressTest(testId, config) {
   // Get admin user directly from database for testing
   let adminUser = null;
   try {
-    // Try multiple ways to find admin user
-    adminUser = await User.findOne({ where: { email: 'admin@example.com' } }) ||
-                await User.findOne({ where: { username: 'admin' } }) ||
-                await User.findOne({ where: { role: 'admin' } });
+    // Try multiple ways to find admin user using the correct methods
+    adminUser = await User.findByEmail('admin@example.com') ||
+                await User.findByUsername('admin');
     
     if (!adminUser) {
       addTestLog(testId, 'error', 'Admin user not found in database. Available users:');
-      const allUsers = await User.findAll({ attributes: ['id', 'email', 'username', 'role'] });
+      const allUsers = await User.findAll();
       allUsers.forEach(user => {
         addTestLog(testId, 'error', `- ID: ${user.id}, Email: ${user.email}, Username: ${user.username}, Role: ${user.role}`);
       });
@@ -471,13 +470,13 @@ async function executeTest(testFunction, testId) {
 // Test functions
 async function testAuthentication(user) {
   // Test authentication by trying to find user in database
-  const foundUser = await User.findOne({ where: { email: user.email } });
+  const foundUser = await User.findByEmail(user.email);
   if (!foundUser) {
     throw new Error(`Auth test failed: User not found`);
   }
   
   // Simulate password check (in real scenario, you'd use bcrypt)
-  if (foundUser.password_hash !== user.password) {
+  if (foundUser.passwordHash !== user.password) {
     throw new Error(`Auth test failed: Invalid password`);
   }
   
@@ -562,7 +561,7 @@ async function testEventLogging(adminUser) {
     entity_id: null,
     entity_name: 'Stress Test',
     user_id: adminUser.id,
-    user_name: `${adminUser.first_name} ${adminUser.last_name}`,
+    user_name: `${adminUser.firstName} ${adminUser.lastName}`,
     details: 'Stress test event created',
     ip_address: '127.0.0.1',
     user_agent: 'StressTest/1.0'
@@ -583,10 +582,7 @@ async function testDatabaseOperations(adminUser) {
   const eventCount = await Event.count();
   
   // Test 2: Test complex query
-  const recentEvents = await Event.findAll({
-    limit: 10,
-    order: [['created_at', 'DESC']]
-  });
+  const recentEvents = await Event.findAll({ limit: 10 });
   
   if (userCount < 0 || doorCount < 0 || accessGroupCount < 0 || eventCount < 0) {
     throw new Error(`Database operation test failed`);
