@@ -94,6 +94,9 @@ console.log('Access request routes module loaded');
 const { router: logsRoutes, addLog: addLogFunction } = require('./routes/logs');
 addLog = addLogFunction;
 console.log('Logs routes module loaded');
+
+settingsRoutes = require('./routes/settings');
+console.log('Settings routes module loaded');
   
   // Setup routes
   app.use('/api/auth', authLimiter, authRoutes);
@@ -103,6 +106,7 @@ app.use('/api/access-groups', accessGroupRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/access-requests', accessRequestRoutes);
 app.use('/api/logs', logsRoutes);
+app.use('/api/settings', settingsRoutes);
   console.log('All routes configured successfully');
 } catch (error) {
   console.error('Error loading/setting up routes:', error);
