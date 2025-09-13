@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { User } = require('../database/models');
 const { Door } = require('../database/door');
@@ -296,6 +297,21 @@ async function runStressTest(testId, config) {
   const startTime = Date.now();
   const endTime = startTime + (testDuration * 1000);
   
+  // Get admin token for authenticated requests
+  let adminToken = null;
+  try {
+    const adminResponse = await axios.post(`${process.env.BASE_URL || 'http://localhost:3000'}/api/auth/login`, {
+      email: 'admin@example.com',
+      password: 'admin123'
+    });
+    adminToken = adminResponse.data.token;
+    addTestLog(testId, 'info', 'Admin token obtained for stress testing');
+  } catch (error) {
+    addTestLog(testId, 'error', `Failed to get admin token: ${error.message}`);
+    test.status = 'failed';
+    return;
+  }
+  
   // Create test users for authentication tests
   const testUsers = [];
   for (let i = 0; i < concurrentUsers; i++) {
@@ -313,33 +329,38 @@ async function runStressTest(testId, config) {
   }
   
   if (testOptions.testUsers) {
-    testFunctions.push(() => testUserManagement());
+    testFunctions.push(() => testUserManagement(adminToken));
   }
   
   if (testOptions.testDoors) {
-    testFunctions.push(() => testDoorManagement());
+    testFunctions.push(() => testDoorManagement(adminToken));
   }
   
   if (testOptions.testAccessGroups) {
-    testFunctions.push(() => testAccessGroupManagement());
+    testFunctions.push(() => testAccessGroupManagement(adminToken));
   }
   
   if (testOptions.testEvents) {
-    testFunctions.push(() => testEventLogging());
+    testFunctions.push(() => testEventLogging(adminToken));
   }
   
   if (testOptions.testDatabase) {
-    testFunctions.push(() => testDatabaseOperations());
+    testFunctions.push(() => testDatabaseOperations(adminToken));
   }
 
   // Run stress test
   const interval = 1000 / requestRate; // milliseconds between requests
   let requestCount = 0;
+  let testInterval = null;
   
   const runRequests = async () => {
     if (Date.now() >= endTime || test.status === 'stopped') {
       test.status = 'completed';
       test.endTime = Date.now();
+      addTestLog(testId, 'info', `Stress test completed. Total requests: ${requestCount}`);
+      if (testInterval) {
+        clearInterval(testInterval);
+      }
       return;
     }
 
@@ -355,12 +376,26 @@ async function runStressTest(testId, config) {
     await Promise.allSettled(promises);
     requestCount += concurrentUsers;
     
-    // Schedule next batch
-    setTimeout(runRequests, interval);
+    // Update progress
+    test.results.totalRequests = requestCount;
+    test.progress = Math.min(100, ((Date.now() - startTime) / (testDuration * 1000)) * 100);
   };
 
-  // Start the test
-  runRequests();
+  // Start the test with proper interval
+  addTestLog(testId, 'info', `Starting stress test with ${concurrentUsers} concurrent users for ${testDuration} seconds`);
+  testInterval = setInterval(runRequests, interval);
+  
+  // Set a timeout to ensure test ends
+  setTimeout(() => {
+    if (test.status === 'running') {
+      test.status = 'completed';
+      test.endTime = Date.now();
+      addTestLog(testId, 'info', 'Stress test completed by timeout');
+      if (testInterval) {
+        clearInterval(testInterval);
+      }
+    }
+  }, testDuration * 1000 + 5000); // Add 5 second buffer
 }
 
 // Execute individual test
@@ -394,69 +429,161 @@ async function executeTest(testFunction, testId) {
 
 // Test functions
 async function testAuthentication(user) {
-  const response = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(user)
-  });
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  const response = await axios.post(`${baseUrl}/api/auth/login`, user);
   
-  if (!response.ok) {
+  if (response.status !== 200) {
     throw new Error(`Auth test failed: ${response.status}`);
   }
+  
+  return response.data.token;
 }
 
-async function testUserManagement() {
-  const response = await fetch('/api/users', {
-    headers: { 'Authorization': `Bearer ${getTestToken()}` }
+async function testUserManagement(adminToken) {
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  
+  // Test 1: Get users list
+  const listResponse = await axios.get(`${baseUrl}/api/users`, {
+    headers: { 'Authorization': `Bearer ${adminToken}` }
   });
   
-  if (!response.ok) {
-    throw new Error(`User management test failed: ${response.status}`);
+  if (listResponse.status !== 200) {
+    throw new Error(`User list test failed: ${listResponse.status}`);
   }
-}
-
-async function testDoorManagement() {
-  const response = await fetch('/api/doors', {
-    headers: { 'Authorization': `Bearer ${getTestToken()}` }
+  
+  // Test 2: Create a test user
+  const testUser = {
+    firstName: `TestUser${Date.now()}`,
+    lastName: 'StressTest',
+    email: `stressuser${Date.now()}@test.com`,
+    password: 'testpass123',
+    role: 'user'
+  };
+  
+  const createResponse = await axios.post(`${baseUrl}/api/users`, testUser, {
+    headers: { 'Authorization': `Bearer ${adminToken}` }
   });
   
-  if (!response.ok) {
-    throw new Error(`Door management test failed: ${response.status}`);
+  if (createResponse.status !== 200 && createResponse.status !== 201) {
+    throw new Error(`User creation test failed: ${createResponse.status}`);
   }
+  
+  return createResponse.data;
 }
 
-async function testAccessGroupManagement() {
-  const response = await fetch('/api/access-groups', {
-    headers: { 'Authorization': `Bearer ${getTestToken()}` }
+async function testDoorManagement(adminToken) {
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  
+  // Test 1: Get doors list
+  const listResponse = await axios.get(`${baseUrl}/api/doors`, {
+    headers: { 'Authorization': `Bearer ${adminToken}` }
   });
   
-  if (!response.ok) {
-    throw new Error(`Access group test failed: ${response.status}`);
+  if (listResponse.status !== 200) {
+    throw new Error(`Door list test failed: ${listResponse.status}`);
   }
-}
-
-async function testEventLogging() {
-  const response = await fetch('/api/events', {
-    headers: { 'Authorization': `Bearer ${getTestToken()}` }
+  
+  // Test 2: Create a test door
+  const testDoor = {
+    name: `StressTestDoor${Date.now()}`,
+    location: 'Stress Test Location',
+    esp32Ip: `192.168.1.${Math.floor(Math.random() * 255)}`,
+    esp32Mac: `AA:BB:CC:DD:EE:${Math.floor(Math.random() * 100).toString(16).padStart(2, '0')}`,
+    hasLockSensor: true,
+    hasDoorPositionSensor: true
+  };
+  
+  const createResponse = await axios.post(`${baseUrl}/api/doors`, testDoor, {
+    headers: { 'Authorization': `Bearer ${adminToken}` }
   });
   
-  if (!response.ok) {
-    throw new Error(`Event logging test failed: ${response.status}`);
+  if (createResponse.status !== 200 && createResponse.status !== 201) {
+    throw new Error(`Door creation test failed: ${createResponse.status}`);
   }
-}
-
-async function testDatabaseOperations() {
-  const response = await fetch('/api/health');
   
-  if (!response.ok) {
-    throw new Error(`Database test failed: ${response.status}`);
-  }
+  return createResponse.data;
 }
 
-// Helper functions
-function getTestToken() {
-  // In a real implementation, you'd get a valid test token
-  return 'test-token';
+async function testAccessGroupManagement(adminToken) {
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  
+  // Test 1: Get access groups list
+  const listResponse = await axios.get(`${baseUrl}/api/access-groups`, {
+    headers: { 'Authorization': `Bearer ${adminToken}` }
+  });
+  
+  if (listResponse.status !== 200) {
+    throw new Error(`Access group list test failed: ${listResponse.status}`);
+  }
+  
+  // Test 2: Create a test access group
+  const testAccessGroup = {
+    name: `StressTestGroup${Date.now()}`,
+    description: 'Stress test access group'
+  };
+  
+  const createResponse = await axios.post(`${baseUrl}/api/access-groups`, testAccessGroup, {
+    headers: { 'Authorization': `Bearer ${adminToken}` }
+  });
+  
+  if (createResponse.status !== 200 && createResponse.status !== 201) {
+    throw new Error(`Access group creation test failed: ${createResponse.status}`);
+  }
+  
+  return createResponse.data;
+}
+
+async function testEventLogging(adminToken) {
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  
+  // Test 1: Get events list
+  const listResponse = await axios.get(`${baseUrl}/api/events`, {
+    headers: { 'Authorization': `Bearer ${adminToken}` }
+  });
+  
+  if (listResponse.status !== 200) {
+    throw new Error(`Event list test failed: ${listResponse.status}`);
+  }
+  
+  // Test 2: Simulate an access request event
+  const accessRequest = {
+    doorId: 1, // Assuming door with ID 1 exists
+    requestType: 'stress_test',
+    userAgent: 'StressTest/1.0',
+    ipAddress: '127.0.0.1'
+  };
+  
+  const accessResponse = await axios.post(`${baseUrl}/api/access-requests/request`, accessRequest, {
+    headers: { 'Authorization': `Bearer ${adminToken}` }
+  });
+  
+  if (accessResponse.status !== 200 && accessResponse.status !== 201) {
+    throw new Error(`Access request test failed: ${accessResponse.status}`);
+  }
+  
+  return accessResponse.data;
+}
+
+async function testDatabaseOperations(adminToken) {
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  
+  // Test health endpoint
+  const healthResponse = await axios.get(`${baseUrl}/api/health`);
+  
+  if (healthResponse.status !== 200) {
+    throw new Error(`Health check test failed: ${healthResponse.status}`);
+  }
+  
+  // Test system info endpoint
+  const systemInfoResponse = await axios.get(`${baseUrl}/api/settings/system-info`, {
+    headers: { 'Authorization': `Bearer ${adminToken}` }
+  });
+  
+  if (systemInfoResponse.status !== 200) {
+    throw new Error(`System info test failed: ${systemInfoResponse.status}`);
+  }
+  
+  return systemInfoResponse.data;
 }
 
 function addTestLog(testId, level, message) {
