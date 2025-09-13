@@ -361,14 +361,27 @@ async function runStressTest(testId, config) {
     try {
       const bcrypt = require('bcryptjs');
       const hashedPassword = bcrypt.hashSync('testpass123', 10);
-      const timestamp = Date.now() + i; // Ensure unique timestamps
+      const timestamp = Date.now() + i + Math.random() * 1000; // Ensure unique timestamps
+      const username = `stressuser${timestamp}`;
+      const email = `stressuser${timestamp}@test.com`;
+      
+      // Check if user already exists
+      const existingUser = await User.findByEmail(email) || await User.findByUsername(username);
+      if (existingUser) {
+        addTestLog(testId, 'info', `Using existing test user: ${email}`);
+        testData.testUsers.push({
+          email: existingUser.email,
+          password: 'testpass123'
+        });
+        continue;
+      }
       
       const testUser = await User.create({
-        username: `testuser${timestamp}`,
-        email: `testuser${timestamp}@stress.test`,
+        username: username,
+        email: email,
         password_hash: hashedPassword,
-        first_name: `TestUser${timestamp}`,
-        last_name: 'StressTest',
+        first_name: `StressUser${timestamp}`,
+        last_name: 'Test',
         role: 'user',
         email_verified: 1
       });
@@ -378,9 +391,10 @@ async function runStressTest(testId, config) {
         email: testUser.email,
         password: 'testpass123'
       });
+      
+      addTestLog(testId, 'info', `Created test user: ${email}`);
     } catch (error) {
-      // User might already exist, continue
-      addTestLog(testId, 'warning', `Test user ${i} might already exist: ${error.message}`);
+      addTestLog(testId, 'error', `Failed to create test user ${i}: ${error.message}`);
     }
   }
 
@@ -427,17 +441,22 @@ async function runStressTest(testId, config) {
   const runRequests = async () => {
     const currentTime = Date.now();
     
+    // Check if test should stop
     if (currentTime >= endTime || test.status === 'stopped') {
+      addTestLog(testId, 'info', `Test stopping - Current time: ${currentTime}, End time: ${endTime}, Status: ${test.status}`);
+      
       test.status = 'completed';
       test.endTime = currentTime;
       addTestLog(testId, 'info', `Stress test completed. Total requests: ${requestCount}`);
+      
       if (testInterval) {
         clearInterval(testInterval);
         testInterval = null;
+        addTestLog(testId, 'info', 'Test interval cleared');
       }
       
       // Cleanup test data
-      const testData = test.testData; // We need to store this in the test object
+      const testData = test.testData;
       if (testData) {
         await cleanupTestData(testId, testData);
       }
@@ -466,6 +485,15 @@ async function runStressTest(testId, config) {
       const successful = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
       
+      // Log individual test results for debugging
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          addTestLog(testId, 'success', `Test ${index + 1} completed successfully`);
+        } else {
+          addTestLog(testId, 'error', `Test ${index + 1} failed: ${result.reason.message}`);
+        }
+      });
+      
       // Update progress
       test.results.totalRequests = requestCount;
       test.results.successfulRequests = (test.results.successfulRequests || 0) + successful;
@@ -483,11 +511,15 @@ async function runStressTest(testId, config) {
   testInterval = setInterval(runRequests, interval);
   
   // Set a timeout to ensure test ends
-  setTimeout(async () => {
+  const timeoutId = setTimeout(async () => {
+    addTestLog(testId, 'info', 'Timeout reached - forcing test completion');
+    
     if (testInterval) {
       clearInterval(testInterval);
       testInterval = null;
+      addTestLog(testId, 'info', 'Test interval cleared by timeout');
     }
+    
     if (test.status === 'running') {
       test.status = 'completed';
       test.endTime = Date.now();
@@ -496,7 +528,10 @@ async function runStressTest(testId, config) {
       // Cleanup test data
       await cleanupTestData(testId, testData);
     }
-  }, testDuration * 1000 + 2000); // Add 2 second buffer
+  }, testDuration * 1000 + 5000); // Add 5 second buffer
+  
+  // Store timeout ID for potential cleanup
+  test.timeoutId = timeoutId;
 }
 
 // Execute individual test
@@ -629,24 +664,31 @@ async function testEventLogging(testData) {
   const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
   const randomAction = eventActions[Math.floor(Math.random() * eventActions.length)];
   
-  const testEvent = await Event.create({
-    type: randomType,
-    action: randomAction,
-    entity_type: 'stress_test',
-    entity_id: timestamp,
-    entity_name: `Stress Test Event ${timestamp}`,
-    user_id: testData.adminUser.id,
-    user_name: `${testData.adminUser.firstName} ${testData.adminUser.lastName}`,
-    details: `Stress test event: ${randomType} ${randomAction} at ${new Date().toISOString()}`,
-    ip_address: '127.0.0.1',
-    user_agent: 'StressTest/1.0'
-  });
-  
-  if (!testEvent) {
-    throw new Error(`Event creation test failed`);
+  try {
+    const testEvent = await Event.create({
+      type: randomType,
+      action: randomAction,
+      entity_type: 'stress_test',
+      entity_id: timestamp,
+      entity_name: `Stress Test Event ${timestamp}`,
+      user_id: testData.adminUser.id,
+      user_name: `${testData.adminUser.firstName} ${testData.adminUser.lastName}`,
+      details: `Stress test event: ${randomType} ${randomAction} at ${new Date().toISOString()}`,
+      ip_address: '127.0.0.1',
+      user_agent: 'StressTest/1.0'
+    });
+    
+    if (!testEvent) {
+      throw new Error(`Event creation test failed - no event returned`);
+    }
+    
+    // Log successful event creation
+    console.log(`Created event: ${randomType} ${randomAction} (ID: ${testEvent.id})`);
+    return testEvent;
+  } catch (error) {
+    console.error('Event creation error:', error);
+    throw new Error(`Event creation test failed: ${error.message}`);
   }
-  
-  return testEvent;
 }
 
 async function testDatabaseOperations(testData) {
