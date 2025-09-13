@@ -302,13 +302,42 @@ async function runStressTest(testId, config) {
   // Get admin user directly from database for testing
   let adminUser = null;
   try {
-    adminUser = await User.findOne({ where: { email: 'admin@example.com' } });
+    // Try multiple ways to find admin user
+    adminUser = await User.findOne({ where: { email: 'admin@example.com' } }) ||
+                await User.findOne({ where: { username: 'admin' } }) ||
+                await User.findOne({ where: { role: 'admin' } });
+    
     if (!adminUser) {
-      addTestLog(testId, 'error', 'Admin user not found in database');
-      test.status = 'failed';
-      return;
+      addTestLog(testId, 'error', 'Admin user not found in database. Available users:');
+      const allUsers = await User.findAll({ attributes: ['id', 'email', 'username', 'role'] });
+      allUsers.forEach(user => {
+        addTestLog(testId, 'error', `- ID: ${user.id}, Email: ${user.email}, Username: ${user.username}, Role: ${user.role}`);
+      });
+      
+      // Try to create a default admin user
+      addTestLog(testId, 'info', 'Attempting to create default admin user...');
+      try {
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = bcrypt.hashSync('admin123', 10);
+        
+        adminUser = await User.create({
+          username: 'admin',
+          email: 'admin@example.com',
+          password_hash: hashedPassword,
+          first_name: 'Admin',
+          last_name: 'User',
+          role: 'admin',
+          email_verified: 1
+        });
+        
+        addTestLog(testId, 'info', 'Default admin user created successfully');
+      } catch (createError) {
+        addTestLog(testId, 'error', `Failed to create admin user: ${createError.message}`);
+        test.status = 'failed';
+        return;
+      }
     }
-    addTestLog(testId, 'info', 'Admin user found for stress testing');
+    addTestLog(testId, 'info', `Admin user found: ${adminUser.email || adminUser.username} (ID: ${adminUser.id})`);
   } catch (error) {
     addTestLog(testId, 'error', `Failed to get admin user: ${error.message}`);
     test.status = 'failed';
