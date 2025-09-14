@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Management System</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="styles.css" rel="stylesheet">
 </head>
 <body>
@@ -18,29 +21,41 @@
                 </div>
                 <div class="nav-menu" id="navMenu">
                     <a href="#" class="nav-link" onclick="showSection('dashboard')">
-                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
                     </a>
                     <a href="#" class="nav-link" onclick="showSection('users')">
-                        <i class="fas fa-users"></i> Users
+                        <i class="fas fa-users"></i>
+                        <span>Users</span>
                     </a>
                     <a href="#" class="nav-link" onclick="showSection('doors')">
-                        <i class="fas fa-door-open"></i> Doors
+                        <i class="fas fa-door-open"></i>
+                        <span>Doors</span>
                     </a>
                     <a href="#" class="nav-link" onclick="showSection('accessGroups')">
-                        <i class="fas fa-shield-alt"></i> Access Groups
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Access Groups</span>
                     </a>
                     <a href="#" class="nav-link" onclick="showSection('esp32Discovery')">
-                        <i class="fas fa-wifi"></i> ESP32 Discovery
+                        <i class="fas fa-wifi"></i>
+                        <span>ESP32 Discovery</span>
                     </a>
                     <a href="#" class="nav-link" onclick="showSection('profile')">
-                        <i class="fas fa-user"></i> Profile
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
                     </a>
                     <a href="#" class="nav-link" onclick="logout()">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
                     </a>
                 </div>
-                <div class="nav-toggle" onclick="toggleNav()">
-                    <i class="fas fa-bars"></i>
+                <div class="nav-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
+                        <i class="fas fa-moon" id="theme-icon"></i>
+                    </button>
+                    <div class="nav-toggle" onclick="toggleNav()">
+                        <i class="fas fa-bars"></i>
+                    </div>
                 </div>
             </div>
         </nav>
