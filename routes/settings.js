@@ -411,30 +411,42 @@ async function runStressTest(testId, config) {
   
   if (testOptions.testUsers) {
     testFunctions.push(() => testUserManagement(testData));
+    console.log('✅ Added user management test function');
     addTestLog(testId, 'info', 'Added user management test function');
   }
   
   if (testOptions.testDoors) {
     testFunctions.push(() => testDoorManagement(testData));
+    console.log('✅ Added door management test function');
     addTestLog(testId, 'info', 'Added door management test function');
   }
   
   if (testOptions.testAccessGroups) {
     testFunctions.push(() => testAccessGroupManagement(testData));
+    console.log('✅ Added access group test function');
     addTestLog(testId, 'info', 'Added access group test function');
   }
   
   if (testOptions.testEvents) {
     testFunctions.push(() => testEventLogging(testData));
+    console.log('✅ Added event logging test function');
     addTestLog(testId, 'info', 'Added event logging test function');
   }
   
   if (testOptions.testDatabase) {
     testFunctions.push(() => testDatabaseOperations(testData));
+    console.log('✅ Added database operations test function');
     addTestLog(testId, 'info', 'Added database operations test function');
   }
   
   addTestLog(testId, 'info', `Total test functions available: ${testFunctions.length}`);
+  console.log(`🎯 TOTAL TEST FUNCTIONS: ${testFunctions.length}`);
+
+  // Add a simple test function to verify execution
+  testFunctions.push(() => {
+    console.log('🔥 SIMPLE TEST FUNCTION EXECUTED!');
+    return { success: true, message: 'Simple test executed' };
+  });
 
   // Run stress test
   const interval = 1000 / requestRate; // milliseconds between requests
@@ -470,15 +482,18 @@ async function runStressTest(testId, config) {
       return;
     }
 
-    // Run concurrent requests
-    const promises = [];
-    for (let i = 0; i < concurrentUsers; i++) {
-      if (testFunctions.length > 0) {
-        const testFunction = testFunctions[Math.floor(Math.random() * testFunctions.length)];
-        addTestLog(testId, 'info', `Executing test function ${i + 1}/${concurrentUsers} (${testFunctions.length} available)`);
-        promises.push(executeTest(testFunction, testId));
-      }
+  // Run concurrent requests
+  const promises = [];
+  for (let i = 0; i < concurrentUsers; i++) {
+    if (testFunctions.length > 0) {
+      const testFunction = testFunctions[Math.floor(Math.random() * testFunctions.length)];
+      addTestLog(testId, 'info', `Executing test function ${i + 1}/${concurrentUsers} (${testFunctions.length} available)`);
+      console.log(`🔥 RUNNING TEST FUNCTION ${i + 1}/${concurrentUsers}`);
+      promises.push(executeTest(testFunction, testId));
+    } else {
+      console.log(`❌ NO TEST FUNCTIONS AVAILABLE!`);
     }
+  }
     
     if (promises.length === 0) {
       addTestLog(testId, 'warning', 'No test functions available to execute');
@@ -527,6 +542,7 @@ async function runStressTest(testId, config) {
   
   // Set a timeout to ensure test ends
   const timeoutId = setTimeout(async () => {
+    console.log(`🚨 TIMEOUT REACHED AFTER ${testDuration} SECONDS - FORCING TEST COMPLETION`);
     addTestLog(testId, 'info', `Timeout reached after ${testDuration} seconds - forcing test completion`);
     
     isTestRunning = false;
@@ -534,12 +550,14 @@ async function runStressTest(testId, config) {
     if (testInterval) {
       clearInterval(testInterval);
       testInterval = null;
+      console.log('🚨 TEST INTERVAL CLEARED BY TIMEOUT');
       addTestLog(testId, 'info', 'Test interval cleared by timeout');
     }
     
     if (test.status === 'running') {
       test.status = 'completed';
       test.endTime = Date.now();
+      console.log('🚨 TEST COMPLETED BY TIMEOUT');
       addTestLog(testId, 'info', 'Stress test completed by timeout');
       
       // Cleanup test data
