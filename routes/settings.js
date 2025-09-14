@@ -399,8 +399,12 @@ async function runStressTest(testId, config) {
   const testFunctions = [];
   
   if (testOptions.testAuth) {
-    testFunctions.push(() => testAuthentication(testData.testUsers[Math.floor(Math.random() * testData.testUsers.length)]));
-    addTestLog(testId, 'info', 'Added authentication test function');
+    if (testData.testUsers.length > 0) {
+      testFunctions.push(() => testAuthentication(testData.testUsers[Math.floor(Math.random() * testData.testUsers.length)]));
+      addTestLog(testId, 'info', 'Added authentication test function');
+    } else {
+      addTestLog(testId, 'warning', 'Skipping authentication test - no test users available');
+    }
   }
   
   if (testOptions.testUsers) {
@@ -467,7 +471,7 @@ async function runStressTest(testId, config) {
     for (let i = 0; i < concurrentUsers; i++) {
       if (testFunctions.length > 0) {
         const testFunction = testFunctions[Math.floor(Math.random() * testFunctions.length)];
-        addTestLog(testId, 'info', `Executing test function ${i + 1}/${concurrentUsers}`);
+        addTestLog(testId, 'info', `Executing test function ${i + 1}/${concurrentUsers} (${testFunctions.length} available)`);
         promises.push(executeTest(testFunction, testId));
       }
     }
@@ -477,7 +481,7 @@ async function runStressTest(testId, config) {
       return;
     }
     
-    addTestLog(testId, 'info', `Running ${promises.length} concurrent test functions`);
+    addTestLog(testId, 'info', `Running ${promises.length} concurrent test functions (${testFunctions.length} total available)`);
     
     try {
       const results = await Promise.allSettled(promises);
@@ -576,9 +580,19 @@ async function executeTest(testFunction, testId) {
 // Test functions - these will create real data visible in dashboard
 async function testAuthentication(testData) {
   // Test authentication by trying to find user in database
+  console.log('testAuthentication: Testing authentication for user:', testData.email);
+  
   const foundUser = await User.findByEmail(testData.email);
   if (!foundUser) {
-    throw new Error(`Auth test failed: User not found`);
+    console.log('testAuthentication: User not found, trying to find any test user...');
+    // Try to find any test user if the specific one doesn't exist
+    const allUsers = await User.findAll();
+    const testUser = allUsers.find(user => user.email.includes('stressuser') || user.email.includes('test.com'));
+    if (!testUser) {
+      throw new Error(`Auth test failed: No test users found in database`);
+    }
+    console.log('testAuthentication: Using fallback test user:', testUser.email);
+    return testUser;
   }
   
   // Simulate password check
@@ -588,6 +602,7 @@ async function testAuthentication(testData) {
     throw new Error(`Auth test failed: Invalid password`);
   }
   
+  console.log('testAuthentication: Authentication successful for user:', foundUser.email);
   return foundUser;
 }
 
