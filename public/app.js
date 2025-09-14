@@ -1,14 +1,302 @@
-// Global variables
+// Modern ES6+ Application State Management
+class AppState {
+    constructor() {
+        this.currentUser = null;
+        this.currentPage = 1;
+        this.currentFilters = {};
+        this.currentSection = 'dashboard';
+        this.isOnline = navigator.onLine;
+        this.eventListeners = new Map();
+    }
+
+    // State management methods
+    setUser(user) {
+        this.currentUser = user;
+        this.notifyStateChange('user', user);
+    }
+
+    setSection(section) {
+        this.currentSection = section;
+        this.notifyStateChange('section', section);
+    }
+
+    setOnlineStatus(isOnline) {
+        this.isOnline = isOnline;
+        this.notifyStateChange('online', isOnline);
+    }
+
+    // Observer pattern for state changes
+    subscribe(event, callback) {
+        if (!this.eventListeners.has(event)) {
+            this.eventListeners.set(event, []);
+        }
+        this.eventListeners.get(event).push(callback);
+    }
+
+    notifyStateChange(event, data) {
+        if (this.eventListeners.has(event)) {
+            this.eventListeners.get(event).forEach(callback => callback(data));
+        }
+    }
+}
+
+// Global app state
+const appState = new AppState();
+
+// Modern Application Class
+class SimplifiAccessApp {
+    constructor() {
+        this.apiBase = '/api';
+        this.retryAttempts = 3;
+        this.retryDelay = 1000;
+    }
+
+    // Initialize the application
+    async init() {
+        try {
+            await this.checkAuthStatus();
+            this.setupEventListeners();
+            this.setupOnlineStatusListener();
+            this.setupKeyboardNavigation();
+            console.log('✅ SimplifiAccess app initialized successfully');
+        } catch (error) {
+            console.error('❌ App initialization failed:', error);
+            this.showError('Failed to initialize application');
+        }
+    }
+
+    // Modern async/await error handling
+    async makeRequest(url, options = {}) {
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            },
+            ...options
+        };
+
+        // Add auth token if available
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+
+        for (let attempt = 1; attempt <= this.retryAttempts; attempt++) {
+            try {
+                const response = await fetch(`${this.apiBase}${url}`, config);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.warn(`Request attempt ${attempt} failed:`, error.message);
+                
+                if (attempt === this.retryAttempts) {
+                    throw error;
+                }
+                
+                // Exponential backoff
+                await new Promise(resolve => 
+                    setTimeout(resolve, this.retryDelay * Math.pow(2, attempt - 1))
+                );
+            }
+        }
+    }
+
+    // Check authentication status
+    async checkAuthStatus() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            this.showLogin();
+            return;
+        }
+
+        try {
+            const data = await this.makeRequest('/auth/verify');
+            appState.setUser(data.user);
+            this.showAuthenticatedUI();
+            await this.loadDashboard();
+        } catch (error) {
+            console.error('Auth check failed:', error);
+            localStorage.removeItem('token');
+            this.showLogin();
+        }
+    }
+
+    // Setup modern event listeners
+    setupEventListeners() {
+        // Modal management
+        document.addEventListener('click', this.handleModalClick.bind(this));
+        
+        // Form submissions
+        document.addEventListener('submit', this.handleFormSubmit.bind(this));
+        
+        // Navigation
+        document.addEventListener('click', this.handleNavigationClick.bind(this));
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', this.handleKeyboardShortcuts.bind(this));
+        
+        // Window events
+        window.addEventListener('beforeunload', this.handleBeforeUnload.bind(this));
+    }
+
+    // Setup online/offline status monitoring
+    setupOnlineStatusListener() {
+        window.addEventListener('online', () => {
+            appState.setOnlineStatus(true);
+            this.showNotification('Connection restored', 'success');
+        });
+
+        window.addEventListener('offline', () => {
+            appState.setOnlineStatus(false);
+            this.showNotification('Connection lost - working offline', 'warning');
+        });
+    }
+
+    // Setup keyboard navigation for accessibility
+    setupKeyboardNavigation() {
+        document.addEventListener('keydown', (event) => {
+            // Escape key closes modals
+            if (event.key === 'Escape') {
+                this.closeAllModals();
+            }
+            
+            // Tab navigation improvements
+            if (event.key === 'Tab') {
+                this.handleTabNavigation(event);
+            }
+        });
+    }
+
+    // Event handlers
+    handleModalClick(event) {
+        if (event.target.classList.contains('modal')) {
+            this.closeModal(event.target.id);
+        }
+    }
+
+    handleFormSubmit(event) {
+        const form = event.target;
+        if (form.dataset.async) {
+            event.preventDefault();
+            this.handleAsyncForm(form);
+        }
+    }
+
+    handleNavigationClick(event) {
+        const link = event.target.closest('[data-section]');
+        if (link) {
+            event.preventDefault();
+            const section = link.dataset.section;
+            this.showSection(section);
+        }
+    }
+
+    handleKeyboardShortcuts(event) {
+        // Ctrl/Cmd + K for search
+        if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+            event.preventDefault();
+            this.focusSearch();
+        }
+    }
+
+    handleBeforeUnload(event) {
+        // Save any pending changes
+        this.savePendingChanges();
+    }
+
+    // Modern UI methods
+    showAuthenticatedUI() {
+        const navbar = document.getElementById('mainNavbar');
+        const loginSection = document.getElementById('loginSection');
+        
+        if (navbar && loginSection) {
+            navbar.style.display = 'block';
+            loginSection.classList.remove('active');
+            this.showSection('dashboard');
+        }
+    }
+
+    showLogin() {
+        const navbar = document.getElementById('mainNavbar');
+        const loginSection = document.getElementById('loginSection');
+        
+        if (navbar && loginSection) {
+            navbar.style.display = 'none';
+            loginSection.classList.add('active');
+        }
+    }
+
+    // Modern notification system
+    showNotification(message, type = 'info', duration = 5000) {
+        const container = document.getElementById('toastContainer') || this.createToastContainer();
+        
+        const notification = document.createElement('div');
+        notification.className = `toast toast-${type}`;
+        notification.innerHTML = `
+            <div class="toast-content">
+                <i class="fas fa-${this.getNotificationIcon(type)}"></i>
+                <span>${message}</span>
+            </div>
+            <button class="toast-close" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        container.appendChild(notification);
+        
+        // Auto remove after duration
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, duration);
+    }
+
+    createToastContainer() {
+        const container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+        return container;
+    }
+
+    getNotificationIcon(type) {
+        const icons = {
+            success: 'check-circle',
+            error: 'exclamation-circle',
+            warning: 'exclamation-triangle',
+            info: 'info-circle'
+        };
+        return icons[type] || 'info-circle';
+    }
+
+    // Error handling
+    showError(message) {
+        this.showNotification(message, 'error', 10000);
+    }
+
+    showSuccess(message) {
+        this.showNotification(message, 'success');
+    }
+}
+
+// Initialize the modern app
+const app = new SimplifiAccessApp();
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    app.init();
+});
+
+// Legacy compatibility - keep existing functions for now
 let currentUser = null;
 let currentPage = 1;
 let currentFilters = {};
 let currentSection = 'dashboard';
-
-// Initialize the application
-document.addEventListener('DOMContentLoaded', function() {
-    checkAuthStatus();
-    setupEventListeners();
-});
 
 // Check if user is authenticated
 async function checkAuthStatus() {
