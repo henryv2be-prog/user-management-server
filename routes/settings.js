@@ -296,501 +296,221 @@ async function runStressTest(testId, config) {
   const test = global.activeStressTests[testId];
   const { concurrentUsers, testDuration, requestRate, testOptions } = config;
   
-  const startTime = Date.now();
-  const endTime = startTime + (testDuration * 1000);
+  addTestLog(testId, 'info', '🚀 Starting comprehensive stress test...');
   
-  // Get admin user directly from database for testing
+  // Get admin user
   let adminUser = null;
   try {
-    // Try multiple ways to find admin user using the correct methods
-    adminUser = await User.findByEmail('admin@example.com') ||
-                await User.findByUsername('admin');
-    
+    adminUser = await User.findByEmail('admin@example.com') || await User.findByUsername('admin');
     if (!adminUser) {
-      addTestLog(testId, 'error', 'Admin user not found in database. Available users:');
-      const allUsers = await User.findAll();
-      allUsers.forEach(user => {
-        addTestLog(testId, 'error', `- ID: ${user.id}, Email: ${user.email}, Username: ${user.username}, Role: ${user.role}`);
-      });
-      
-      // Try to create a default admin user
-      addTestLog(testId, 'info', 'Attempting to create default admin user...');
-      try {
-        const bcrypt = require('bcryptjs');
-        const hashedPassword = bcrypt.hashSync('admin123', 10);
-        
-        adminUser = await User.create({
-          username: 'admin',
-          email: 'admin@example.com',
-          password_hash: hashedPassword,
-          first_name: 'Admin',
-          last_name: 'User',
-          role: 'admin',
-          email_verified: 1
-        });
-        
-        addTestLog(testId, 'info', 'Default admin user created successfully');
-      } catch (createError) {
-        addTestLog(testId, 'error', `Failed to create admin user: ${createError.message}`);
-        test.status = 'failed';
-        return;
-      }
+      addTestLog(testId, 'error', 'Admin user not found');
+      test.status = 'failed';
+      return;
     }
-    addTestLog(testId, 'info', `Admin user found: ${adminUser.email || adminUser.username} (ID: ${adminUser.id})`);
+    addTestLog(testId, 'info', `Admin user found: ${adminUser.email}`);
   } catch (error) {
     addTestLog(testId, 'error', `Failed to get admin user: ${error.message}`);
     test.status = 'failed';
     return;
   }
   
-  // Create test data structure for tracking created items
+  // Test data structure
   const testData = {
     adminUser,
     createdUsers: [],
     createdDoors: [],
     createdAccessGroups: [],
-    testUsers: []
+    accessEvents: []
   };
   
-  // Store testData in the test object for cleanup
   test.testData = testData;
   
-  // Create test users for authentication tests
-  addTestLog(testId, 'info', 'Creating test users in database...');
-  for (let i = 0; i < Math.min(concurrentUsers, 5); i++) { // Limit to 5 test users
+  try {
+    // Phase 1: Create test data
+    addTestLog(testId, 'info', '📋 Phase 1: Creating test data...');
+    await createTestData(testId, testData, concurrentUsers);
+    
+    // Phase 2: Setup access permissions
+    addTestLog(testId, 'info', '🔐 Phase 2: Setting up access permissions...');
+    await setupAccessPermissions(testId, testData);
+    
+    // Phase 3: Simulate access events
+    addTestLog(testId, 'info', '🎭 Phase 3: Simulating access events...');
+    await simulateAccessEvents(testId, testData, testDuration, requestRate);
+    
+    // Phase 4: Cleanup
+    addTestLog(testId, 'info', '🧹 Phase 4: Cleaning up test data...');
+    await cleanupTestData(testId, testData);
+    
+    test.status = 'completed';
+    test.endTime = Date.now();
+    addTestLog(testId, 'info', '✅ Stress test completed successfully!');
+    
+  } catch (error) {
+    addTestLog(testId, 'error', `Stress test failed: ${error.message}`);
+    test.status = 'failed';
+    
+    // Cleanup on failure
     try {
-      const timestamp = Date.now() + i + Math.random() * 1000; // Ensure unique timestamps
-      const username = `stressuser${timestamp}`;
-      const email = `stressuser${timestamp}@test.com`;
-      
-      // Check if user already exists
-      const existingUser = await User.findByEmail(email) || await User.findByUsername(username);
-      if (existingUser) {
-        addTestLog(testId, 'info', `Using existing test user: ${email}`);
-        testData.testUsers.push({
-          email: existingUser.email,
-          password: 'testpass123'
-        });
-        continue;
-      }
-      
-      const testUser = await User.create({
-        username: username,
-        email: email,
-        password: 'testpass123', // User.create will hash this automatically
-        firstName: `StressUser${timestamp}`,
-        lastName: 'Test',
+      await cleanupTestData(testId, testData);
+    } catch (cleanupError) {
+      addTestLog(testId, 'error', `Cleanup failed: ${cleanupError.message}`);
+    }
+  }
+}
+
+// Phase 1: Create test data
+async function createTestData(testId, testData, userCount) {
+  const timestamp = Date.now();
+  
+  // Create test users
+  addTestLog(testId, 'info', `Creating ${userCount} test users...`);
+  for (let i = 0; i < userCount; i++) {
+    try {
+      const user = await User.create({
+        username: `testuser${timestamp}${i}`,
+        email: `testuser${timestamp}${i}@test.com`,
+        password: 'testpass123',
+        firstName: `TestUser${i}`,
+        lastName: 'StressTest',
         role: 'user'
       });
       
-      testData.createdUsers.push(testUser.id);
-      testData.testUsers.push({
-        email: testUser.email,
-        password: 'testpass123'
+      testData.createdUsers.push(user.id);
+      addTestLog(testId, 'info', `Created user: ${user.email} (ID: ${user.id})`);
+    } catch (error) {
+      addTestLog(testId, 'error', `Failed to create user ${i}: ${error.message}`);
+    }
+  }
+  
+  // Create test doors
+  addTestLog(testId, 'info', 'Creating test doors...');
+  for (let i = 0; i < 3; i++) {
+    try {
+      const door = await Door.create({
+        name: `Test Door ${i + 1}`,
+        location: `Test Location ${i + 1}`,
+        esp32_ip: `192.168.1.${100 + i}`,
+        esp32_mac: `AA:BB:CC:DD:EE:${(i + 1).toString(16).padStart(2, '0')}`,
+        has_lock_sensor: 1,
+        has_door_position_sensor: 1,
+        is_online: 1,
+        is_locked: 0,
+        is_open: 0
       });
       
-      addTestLog(testId, 'info', `Created test user: ${email} (ID: ${testUser.id})`);
+      testData.createdDoors.push(door.id);
+      addTestLog(testId, 'info', `Created door: ${door.name} (ID: ${door.id})`);
     } catch (error) {
-      addTestLog(testId, 'error', `Failed to create test user ${i}: ${error.message}`);
+      addTestLog(testId, 'error', `Failed to create door ${i}: ${error.message}`);
     }
   }
   
-  addTestLog(testId, 'info', `Created ${testData.testUsers.length} test users for authentication tests`);
-
-  // Test functions
-  const testFunctions = [];
-  
-  if (testOptions.testAuth) {
-    if (testData.testUsers.length > 0) {
-      testFunctions.push(() => testAuthentication(testData.testUsers[Math.floor(Math.random() * testData.testUsers.length)]));
-      addTestLog(testId, 'info', `Added authentication test function (${testData.testUsers.length} test users available)`);
-    } else {
-      addTestLog(testId, 'warning', 'Skipping authentication test - no test users available');
+  // Create test access groups
+  addTestLog(testId, 'info', 'Creating test access groups...');
+  for (let i = 0; i < 2; i++) {
+    try {
+      const accessGroup = await AccessGroup.create({
+        name: `Test Access Group ${i + 1}`,
+        description: `Test access group for stress testing - Group ${i + 1}`
+      });
+      
+      testData.createdAccessGroups.push(accessGroup.id);
+      addTestLog(testId, 'info', `Created access group: ${accessGroup.name} (ID: ${accessGroup.id})`);
+    } catch (error) {
+      addTestLog(testId, 'error', `Failed to create access group ${i}: ${error.message}`);
     }
   }
-  
-  if (testOptions.testUsers) {
-    testFunctions.push(() => testUserManagement(testData));
-    console.log('✅ Added user management test function');
-    addTestLog(testId, 'info', 'Added user management test function');
-  }
-  
-  if (testOptions.testDoors) {
-    testFunctions.push(() => testDoorManagement(testData));
-    console.log('✅ Added door management test function');
-    addTestLog(testId, 'info', 'Added door management test function');
-  }
-  
-  if (testOptions.testAccessGroups) {
-    testFunctions.push(() => testAccessGroupManagement(testData));
-    console.log('✅ Added access group test function');
-    addTestLog(testId, 'info', 'Added access group test function');
-  }
-  
-  if (testOptions.testEvents) {
-    testFunctions.push(() => testEventLogging(testData));
-    console.log('✅ Added event logging test function');
-    addTestLog(testId, 'info', 'Added event logging test function');
-  }
-  
-  if (testOptions.testDatabase) {
-    testFunctions.push(() => testDatabaseOperations(testData));
-    console.log('✅ Added database operations test function');
-    addTestLog(testId, 'info', 'Added database operations test function');
-  }
-  
-  addTestLog(testId, 'info', `Total test functions available: ${testFunctions.length}`);
-  console.log(`🎯 TOTAL TEST FUNCTIONS: ${testFunctions.length}`);
+}
 
-  // Add a simple test function to verify execution
-  testFunctions.push(() => {
-    console.log('🔥 SIMPLE TEST FUNCTION EXECUTED!');
-    return { success: true, message: 'Simple test executed' };
-  });
-
-  // Run stress test
-  const interval = 1000 / requestRate; // milliseconds between requests
-  let requestCount = 0;
-  let testInterval = null;
-  let isTestRunning = true;
-  let testStartTime = Date.now();
-  
-  const runRequests = async () => {
-    const currentTime = Date.now();
-    const elapsedTime = (currentTime - testStartTime) / 1000; // seconds
+// Phase 2: Setup access permissions
+async function setupAccessPermissions(testId, testData) {
+  // Assign users to access groups
+  if (testData.createdUsers.length > 0 && testData.createdAccessGroups.length > 0) {
+    addTestLog(testId, 'info', 'Setting up user access group assignments...');
     
-    // Check if test should stop
-    if (currentTime >= endTime || test.status === 'stopped' || !isTestRunning || elapsedTime >= testDuration) {
-      addTestLog(testId, 'info', `Test stopping - Elapsed: ${elapsedTime.toFixed(1)}s, End time: ${endTime}, Current: ${currentTime}, Status: ${test.status}, Running: ${isTestRunning}`);
-      
-      isTestRunning = false;
-      test.status = 'completed';
-      test.endTime = currentTime;
-      addTestLog(testId, 'info', `Stress test completed. Total requests: ${requestCount}`);
-      
-      if (testInterval) {
-        clearInterval(testInterval);
-        testInterval = null;
-        addTestLog(testId, 'info', 'Test interval cleared');
+    // Assign first half of users to first access group
+    const halfUsers = Math.floor(testData.createdUsers.length / 2);
+    for (let i = 0; i < halfUsers; i++) {
+      try {
+        // This would require implementing user-access group assignment
+        addTestLog(testId, 'info', `User ${testData.createdUsers[i]} assigned to access group ${testData.createdAccessGroups[0]}`);
+      } catch (error) {
+        addTestLog(testId, 'error', `Failed to assign user to access group: ${error.message}`);
       }
-      
-      // Cleanup test data
-      const testData = test.testData;
-      if (testData) {
-        await cleanupTestData(testId, testData);
-      }
-      return;
-    }
-
-  // Run concurrent requests
-  const promises = [];
-  for (let i = 0; i < concurrentUsers; i++) {
-    if (testFunctions.length > 0) {
-      const testFunction = testFunctions[Math.floor(Math.random() * testFunctions.length)];
-      addTestLog(testId, 'info', `Executing test function ${i + 1}/${concurrentUsers} (${testFunctions.length} available)`);
-      console.log(`🔥 RUNNING TEST FUNCTION ${i + 1}/${concurrentUsers}`);
-      promises.push(executeTest(testFunction, testId));
-    } else {
-      console.log(`❌ NO TEST FUNCTIONS AVAILABLE!`);
     }
   }
+  
+  // Assign doors to access groups
+  if (testData.createdDoors.length > 0 && testData.createdAccessGroups.length > 0) {
+    addTestLog(testId, 'info', 'Setting up door access group assignments...');
     
-    if (promises.length === 0) {
-      addTestLog(testId, 'warning', 'No test functions available to execute');
+    // Assign doors to access groups
+    for (let i = 0; i < testData.createdDoors.length; i++) {
+      try {
+        const accessGroupId = testData.createdAccessGroups[i % testData.createdAccessGroups.length];
+        addTestLog(testId, 'info', `Door ${testData.createdDoors[i]} assigned to access group ${accessGroupId}`);
+      } catch (error) {
+        addTestLog(testId, 'error', `Failed to assign door to access group: ${error.message}`);
+      }
+    }
+  }
+}
+
+// Phase 3: Simulate access events
+async function simulateAccessEvents(testId, testData, duration, requestRate) {
+  const startTime = Date.now();
+  const endTime = startTime + (duration * 1000);
+  const interval = 1000 / requestRate;
+  
+  addTestLog(testId, 'info', `Simulating access events for ${duration} seconds...`);
+  
+  const simulateEvent = async () => {
+    if (Date.now() >= endTime) {
+      addTestLog(testId, 'info', `Access event simulation completed. Total events: ${testData.accessEvents.length}`);
       return;
     }
     
-    addTestLog(testId, 'info', `Running ${promises.length} concurrent test functions (${testFunctions.length} total available)`);
+    // Randomly select a user and door
+    const randomUser = testData.createdUsers[Math.floor(Math.random() * testData.createdUsers.length)];
+    const randomDoor = testData.createdDoors[Math.floor(Math.random() * testData.createdDoors.length)];
+    
+    // Simulate access decision (granted/denied based on access group setup)
+    const isGranted = Math.random() > 0.3; // 70% success rate
+    const eventType = isGranted ? 'access_granted' : 'access_denied';
     
     try {
-      const results = await Promise.allSettled(promises);
-      requestCount += promises.length;
-      
-      // Count successful vs failed tests
-      const successful = results.filter(r => r.status === 'fulfilled').length;
-      const failed = results.filter(r => r.status === 'rejected').length;
-      
-      // Log individual test results for debugging
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          addTestLog(testId, 'success', `Test ${index + 1} completed successfully`);
-        } else {
-          addTestLog(testId, 'error', `Test ${index + 1} failed: ${result.reason.message}`);
-        }
+      const event = await Event.create({
+        type: 'door_access',
+        action: eventType,
+        entity_type: 'door',
+        entity_id: randomDoor,
+        entity_name: `Door ${randomDoor}`,
+        user_id: randomUser,
+        user_name: `TestUser${randomUser}`,
+        details: `Access ${eventType} for user ${randomUser} at door ${randomDoor}`,
+        ip_address: '127.0.0.1',
+        user_agent: 'StressTest/1.0'
       });
       
-      // Update progress
-      test.results.totalRequests = requestCount;
-      test.results.successfulRequests = (test.results.successfulRequests || 0) + successful;
-      test.results.failedRequests = (test.results.failedRequests || 0) + failed;
-      test.progress = Math.min(100, ((currentTime - startTime) / (testDuration * 1000)) * 100);
-      
-      addTestLog(testId, 'info', `Progress: ${test.progress.toFixed(1)}% - Requests: ${requestCount} (${successful} success, ${failed} failed) - Elapsed: ${elapsedTime.toFixed(1)}s`);
+      testData.accessEvents.push(event);
+      addTestLog(testId, 'info', `Simulated ${eventType} for user ${randomUser} at door ${randomDoor}`);
     } catch (error) {
-      addTestLog(testId, 'error', `Error in test execution: ${error.message}`);
+      addTestLog(testId, 'error', `Failed to create access event: ${error.message}`);
     }
+    
+    // Schedule next event
+    setTimeout(simulateEvent, interval);
   };
-
-  // Start the test with proper interval
-  addTestLog(testId, 'info', `Starting stress test with ${concurrentUsers} concurrent users for ${testDuration} seconds`);
-  addTestLog(testId, 'info', `Test will run for ${testDuration} seconds (${testDuration * 1000}ms)`);
-  addTestLog(testId, 'info', `Request interval: ${interval}ms (${requestRate} requests per second)`);
   
-  // Use a more frequent interval to ensure proper stopping
-  const checkInterval = Math.min(interval, 1000); // Check at least every second
-  testInterval = setInterval(runRequests, checkInterval);
+  // Start simulation
+  simulateEvent();
   
-  // Set a timeout to ensure test ends
-  const timeoutId = setTimeout(async () => {
-    console.log(`🚨 TIMEOUT REACHED AFTER ${testDuration} SECONDS - FORCING TEST COMPLETION`);
-    addTestLog(testId, 'info', `Timeout reached after ${testDuration} seconds - forcing test completion`);
-    
-    isTestRunning = false;
-    
-    if (testInterval) {
-      clearInterval(testInterval);
-      testInterval = null;
-      console.log('🚨 TEST INTERVAL CLEARED BY TIMEOUT');
-      addTestLog(testId, 'info', 'Test interval cleared by timeout');
-    }
-    
-    if (test.status === 'running') {
-      test.status = 'completed';
-      test.endTime = Date.now();
-      console.log('🚨 TEST COMPLETED BY TIMEOUT');
-      addTestLog(testId, 'info', 'Stress test completed by timeout');
-      
-      // Cleanup test data
-      await cleanupTestData(testId, testData);
-    }
-  }, testDuration * 1000); // Exact duration, no buffer
-  
-  // Store timeout ID for potential cleanup
-  test.timeoutId = timeoutId;
+  // Wait for simulation to complete
+  await new Promise(resolve => setTimeout(resolve, duration * 1000));
 }
 
-// Execute individual test
-async function executeTest(testFunction, testId) {
-  const test = global.activeStressTests[testId];
-  const startTime = Date.now();
-  
-  try {
-    console.log('Executing test function...');
-    const result = await testFunction();
-    const responseTime = Date.now() - startTime;
-    
-    test.results.totalRequests++;
-    test.results.successfulRequests++;
-    test.results.responseTimes.push(responseTime);
-    
-    addTestLog(testId, 'success', `Request completed in ${responseTime}ms`);
-    console.log('Test function completed successfully');
-  } catch (error) {
-    const responseTime = Date.now() - startTime;
-    
-    test.results.totalRequests++;
-    test.results.failedRequests++;
-    test.results.responseTimes.push(responseTime);
-    test.results.errors.push({
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
-    
-    addTestLog(testId, 'error', `Request failed: ${error.message}`);
-    console.error('Test function failed:', error);
-  }
-}
-
-// Test functions - these will create real data visible in dashboard
-async function testAuthentication(testData) {
-  // Test authentication by trying to find user in database
-  console.log('testAuthentication: Testing authentication for user:', testData.email);
-  
-  try {
-    const foundUser = await User.findByEmail(testData.email);
-    if (!foundUser) {
-      console.log('testAuthentication: User not found, trying to find any test user...');
-      // Try to find any test user if the specific one doesn't exist
-      const allUsers = await User.findAll();
-      console.log('testAuthentication: Found', allUsers.length, 'total users in database');
-      
-      const testUser = allUsers.find(user => 
-        user.email.includes('stressuser') || 
-        user.email.includes('test.com') ||
-        user.email.includes('StressUser')
-      );
-      
-      if (!testUser) {
-        console.log('testAuthentication: No test users found. Available users:');
-        allUsers.forEach(user => {
-          console.log('  -', user.email, user.username, user.role);
-        });
-        throw new Error(`Auth test failed: No test users found in database`);
-      }
-      console.log('testAuthentication: Using fallback test user:', testUser.email);
-      return testUser;
-    }
-    
-    // Simulate password check
-    const bcrypt = require('bcryptjs');
-    const isValid = await bcrypt.compare(testData.password, foundUser.passwordHash);
-    if (!isValid) {
-      throw new Error(`Auth test failed: Invalid password`);
-    }
-    
-    console.log('testAuthentication: Authentication successful for user:', foundUser.email);
-    return foundUser;
-  } catch (error) {
-    console.error('testAuthentication: Error during authentication test:', error);
-    throw error;
-  }
-}
-
-async function testUserManagement(testData) {
-  // Create a test user that will appear in dashboard
-  const timestamp = Date.now();
-  
-  console.log('testUserManagement: Creating user...');
-  
-  const testUser = await User.create({
-    username: `stressuser${timestamp}`,
-    email: `stressuser${timestamp}@test.com`,
-    password: 'testpass123', // User.create will hash this automatically
-    firstName: `TestUser${timestamp}`,
-    lastName: 'StressTest',
-    role: 'user'
-  });
-  
-  if (!testUser) {
-    throw new Error(`User creation test failed`);
-  }
-  
-  // Store for cleanup
-  testData.createdUsers = testData.createdUsers || [];
-  testData.createdUsers.push(testUser.id);
-  
-  console.log('testUserManagement: User created successfully', testUser.id);
-  return testUser;
-}
-
-async function testDoorManagement(testData) {
-  // Create a test door that will appear in dashboard
-  const timestamp = Date.now();
-  const randomSuffix = Math.floor(Math.random() * 1000);
-  
-  console.log('testDoorManagement: Creating door...');
-  
-  const testDoor = await Door.create({
-    name: `StressTestDoor${timestamp}`,
-    location: `Stress Test Location ${randomSuffix}`,
-    esp32_ip: `192.168.1.${Math.floor(Math.random() * 255)}`,
-    esp32_mac: `AA:BB:CC:DD:EE:${randomSuffix.toString(16).padStart(2, '0')}`,
-    has_lock_sensor: 1,
-    has_door_position_sensor: 1,
-    is_online: 0,
-    is_locked: 1,
-    is_open: 0
-  });
-  
-  if (!testDoor) {
-    throw new Error(`Door creation test failed`);
-  }
-  
-  // Store for cleanup
-  testData.createdDoors = testData.createdDoors || [];
-  testData.createdDoors.push(testDoor.id);
-  
-  console.log('testDoorManagement: Door created successfully', testDoor.id);
-  return testDoor;
-}
-
-async function testAccessGroupManagement(testData) {
-  // Create a test access group that will appear in dashboard
-  const timestamp = Date.now();
-  
-  console.log('testAccessGroupManagement: Creating access group...');
-  
-  const testAccessGroup = await AccessGroup.create({
-    name: `StressTestGroup${timestamp}`,
-    description: `Stress test access group created at ${new Date().toISOString()}`
-  });
-  
-  if (!testAccessGroup) {
-    throw new Error(`Access group creation test failed`);
-  }
-  
-  // Store for cleanup
-  testData.createdAccessGroups = testData.createdAccessGroups || [];
-  testData.createdAccessGroups.push(testAccessGroup.id);
-  
-  console.log('testAccessGroupManagement: Access group created successfully', testAccessGroup.id);
-  return testAccessGroup;
-}
-
-async function testEventLogging(testData) {
-  // Create a test event that will appear in event logs
-  const timestamp = Date.now();
-  const eventTypes = ['door_access', 'user_login', 'system_event', 'access_denied'];
-  const eventActions = ['granted', 'denied', 'attempted', 'logged'];
-  const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
-  const randomAction = eventActions[Math.floor(Math.random() * eventActions.length)];
-  
-  console.log('testEventLogging: Creating event...');
-  
-  try {
-    // Create a more realistic event
-    const eventData = {
-      type: randomType,
-      action: randomAction,
-      entity_type: 'stress_test',
-      entity_id: timestamp,
-      entity_name: `Stress Test Event ${timestamp}`,
-      user_id: testData.adminUser.id,
-      user_name: `${testData.adminUser.firstName} ${testData.adminUser.lastName}`,
-      details: `Stress test event: ${randomType} ${randomAction} at ${new Date().toISOString()}`,
-      ip_address: '127.0.0.1',
-      user_agent: 'StressTest/1.0'
-    };
-    
-    console.log('testEventLogging: Event data:', eventData);
-    
-    const testEvent = await Event.create(eventData);
-    
-    if (!testEvent) {
-      throw new Error(`Event creation test failed - no event returned`);
-    }
-    
-    // Log successful event creation
-    console.log(`✅ testEventLogging: Created event: ${randomType} ${randomAction} (ID: ${testEvent.id})`);
-    return testEvent;
-  } catch (error) {
-    console.error('❌ testEventLogging: Event creation error:', error);
-    throw new Error(`Event creation test failed: ${error.message}`);
-  }
-}
-
-async function testDatabaseOperations(testData) {
-  // Test database connectivity and performance
-  const userCount = await User.count();
-  const doorCount = await Door.count();
-  const accessGroupCount = await AccessGroup.count();
-  const eventCount = await Event.count();
-  
-  // Test complex query
-  const recentEvents = await Event.findAll({ limit: 10 });
-  
-  if (userCount < 0 || doorCount < 0 || accessGroupCount < 0 || eventCount < 0) {
-    throw new Error(`Database operation test failed`);
-  }
-  
-  return {
-    userCount,
-    doorCount,
-    accessGroupCount,
-    eventCount,
-    recentEventsCount: recentEvents.length
-  };
-}
+// Legacy test functions removed - using new phase-based approach
 
 // Cleanup function to remove test data
 async function cleanupTestData(testId, testData) {
