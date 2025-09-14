@@ -441,13 +441,15 @@ async function runStressTest(testId, config) {
   let requestCount = 0;
   let testInterval = null;
   let isTestRunning = true;
+  let testStartTime = Date.now();
   
   const runRequests = async () => {
     const currentTime = Date.now();
+    const elapsedTime = (currentTime - testStartTime) / 1000; // seconds
     
     // Check if test should stop
-    if (currentTime >= endTime || test.status === 'stopped' || !isTestRunning) {
-      addTestLog(testId, 'info', `Test stopping - Current time: ${currentTime}, End time: ${endTime}, Status: ${test.status}, Running: ${isTestRunning}`);
+    if (currentTime >= endTime || test.status === 'stopped' || !isTestRunning || elapsedTime >= testDuration) {
+      addTestLog(testId, 'info', `Test stopping - Elapsed: ${elapsedTime.toFixed(1)}s, End time: ${endTime}, Current: ${currentTime}, Status: ${test.status}, Running: ${isTestRunning}`);
       
       isTestRunning = false;
       test.status = 'completed';
@@ -508,7 +510,7 @@ async function runStressTest(testId, config) {
       test.results.failedRequests = (test.results.failedRequests || 0) + failed;
       test.progress = Math.min(100, ((currentTime - startTime) / (testDuration * 1000)) * 100);
       
-      addTestLog(testId, 'info', `Progress: ${test.progress.toFixed(1)}% - Requests: ${requestCount} (${successful} success, ${failed} failed)`);
+      addTestLog(testId, 'info', `Progress: ${test.progress.toFixed(1)}% - Requests: ${requestCount} (${successful} success, ${failed} failed) - Elapsed: ${elapsedTime.toFixed(1)}s`);
     } catch (error) {
       addTestLog(testId, 'error', `Error in test execution: ${error.message}`);
     }
@@ -519,7 +521,9 @@ async function runStressTest(testId, config) {
   addTestLog(testId, 'info', `Test will run for ${testDuration} seconds (${testDuration * 1000}ms)`);
   addTestLog(testId, 'info', `Request interval: ${interval}ms (${requestRate} requests per second)`);
   
-  testInterval = setInterval(runRequests, interval);
+  // Use a more frequent interval to ensure proper stopping
+  const checkInterval = Math.min(interval, 1000); // Check at least every second
+  testInterval = setInterval(runRequests, checkInterval);
   
   // Set a timeout to ensure test ends
   const timeoutId = setTimeout(async () => {
@@ -713,6 +717,8 @@ async function testEventLogging(testData) {
   const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
   const randomAction = eventActions[Math.floor(Math.random() * eventActions.length)];
   
+  console.log('testEventLogging: Creating event...');
+  
   try {
     // Create a more realistic event
     const eventData = {
@@ -728,7 +734,7 @@ async function testEventLogging(testData) {
       user_agent: 'StressTest/1.0'
     };
     
-    console.log('Creating event with data:', eventData);
+    console.log('testEventLogging: Event data:', eventData);
     
     const testEvent = await Event.create(eventData);
     
@@ -737,10 +743,10 @@ async function testEventLogging(testData) {
     }
     
     // Log successful event creation
-    console.log(`✅ Created event: ${randomType} ${randomAction} (ID: ${testEvent.id})`);
+    console.log(`✅ testEventLogging: Created event: ${randomType} ${randomAction} (ID: ${testEvent.id})`);
     return testEvent;
   } catch (error) {
-    console.error('❌ Event creation error:', error);
+    console.error('❌ testEventLogging: Event creation error:', error);
     throw new Error(`Event creation test failed: ${error.message}`);
   }
 }
