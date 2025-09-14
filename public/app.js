@@ -284,13 +284,8 @@ class SimplifiAccessApp {
     }
 }
 
-// Initialize the modern app
-const app = new SimplifiAccessApp();
-
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    app.init();
-});
+// Modern app class available but not auto-initialized to avoid conflicts
+// const app = new SimplifiAccessApp();
 
 // Legacy compatibility - keep existing functions for now
 let currentUser = null;
@@ -3265,8 +3260,10 @@ function formatEventTime(timestamp) {
     }
 }
 
-// Initialize periodic updates when the app loads
+// Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
+    checkAuthStatus();
+    setupEventListeners();
     // Start periodic door status updates
     startDoorStatusUpdates();
 });
