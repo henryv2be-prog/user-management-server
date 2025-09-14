@@ -325,6 +325,19 @@ async function runStressTest(testId, config) {
   
   test.testData = testData;
   
+  // Initialize test results
+  test.results = {
+    totalRequests: 0,
+    successfulRequests: 0,
+    failedRequests: 0,
+    responseTimes: [],
+    errors: [],
+    usersCreated: 0,
+    doorsCreated: 0,
+    accessGroupsCreated: 0,
+    eventsCreated: 0
+  };
+  
   try {
     // Phase 1: Create test data
     addTestLog(testId, 'info', '📋 Phase 1: Creating test data...');
@@ -341,6 +354,16 @@ async function runStressTest(testId, config) {
     // Phase 4: Cleanup
     addTestLog(testId, 'info', '🧹 Phase 4: Cleaning up test data...');
     await cleanupTestData(testId, testData);
+    
+    // Final results summary
+    addTestLog(testId, 'info', '📊 Test Results Summary:');
+    addTestLog(testId, 'info', `  Users Created: ${test.results.usersCreated}`);
+    addTestLog(testId, 'info', `  Doors Created: ${test.results.doorsCreated}`);
+    addTestLog(testId, 'info', `  Access Groups Created: ${test.results.accessGroupsCreated}`);
+    addTestLog(testId, 'info', `  Events Created: ${test.results.eventsCreated}`);
+    addTestLog(testId, 'info', `  Total Requests: ${test.results.totalRequests}`);
+    addTestLog(testId, 'info', `  Successful Requests: ${test.results.successfulRequests}`);
+    addTestLog(testId, 'info', `  Failed Requests: ${test.results.failedRequests}`);
     
     test.status = 'completed';
     test.endTime = Date.now();
@@ -361,6 +384,7 @@ async function runStressTest(testId, config) {
 
 // Phase 1: Create test data
 async function createTestData(testId, testData, userCount) {
+  const test = global.activeStressTests[testId];
   const timestamp = Date.now();
   
   // Create test users
@@ -377,8 +401,15 @@ async function createTestData(testId, testData, userCount) {
       });
       
       testData.createdUsers.push(user.id);
+      test.results.usersCreated++;
+      test.results.successfulRequests++;
       addTestLog(testId, 'info', `Created user: ${user.email} (ID: ${user.id})`);
     } catch (error) {
+      test.results.failedRequests++;
+      test.results.errors.push({
+        message: `Failed to create user ${i}: ${error.message}`,
+        timestamp: new Date().toISOString()
+      });
       addTestLog(testId, 'error', `Failed to create user ${i}: ${error.message}`);
     }
   }
@@ -400,8 +431,15 @@ async function createTestData(testId, testData, userCount) {
       });
       
       testData.createdDoors.push(door.id);
+      test.results.doorsCreated++;
+      test.results.successfulRequests++;
       addTestLog(testId, 'info', `Created door: ${door.name} (ID: ${door.id})`);
     } catch (error) {
+      test.results.failedRequests++;
+      test.results.errors.push({
+        message: `Failed to create door ${i}: ${error.message}`,
+        timestamp: new Date().toISOString()
+      });
       addTestLog(testId, 'error', `Failed to create door ${i}: ${error.message}`);
     }
   }
@@ -416,11 +454,21 @@ async function createTestData(testId, testData, userCount) {
       });
       
       testData.createdAccessGroups.push(accessGroup.id);
+      test.results.accessGroupsCreated++;
+      test.results.successfulRequests++;
       addTestLog(testId, 'info', `Created access group: ${accessGroup.name} (ID: ${accessGroup.id})`);
     } catch (error) {
+      test.results.failedRequests++;
+      test.results.errors.push({
+        message: `Failed to create access group ${i}: ${error.message}`,
+        timestamp: new Date().toISOString()
+      });
       addTestLog(testId, 'error', `Failed to create access group ${i}: ${error.message}`);
     }
   }
+  
+  // Update total requests
+  test.results.totalRequests = test.results.successfulRequests + test.results.failedRequests;
 }
 
 // Phase 2: Setup access permissions
@@ -459,6 +507,7 @@ async function setupAccessPermissions(testId, testData) {
 
 // Phase 3: Simulate access events
 async function simulateAccessEvents(testId, testData, duration, requestRate) {
+  const test = global.activeStressTests[testId];
   const startTime = Date.now();
   const endTime = startTime + (duration * 1000);
   const interval = 1000 / requestRate;
@@ -494,8 +543,17 @@ async function simulateAccessEvents(testId, testData, duration, requestRate) {
       });
       
       testData.accessEvents.push(event);
+      test.results.eventsCreated++;
+      test.results.successfulRequests++;
+      test.results.totalRequests++;
       addTestLog(testId, 'info', `Simulated ${eventType} for user ${randomUser} at door ${randomDoor}`);
     } catch (error) {
+      test.results.failedRequests++;
+      test.results.totalRequests++;
+      test.results.errors.push({
+        message: `Failed to create access event: ${error.message}`,
+        timestamp: new Date().toISOString()
+      });
       addTestLog(testId, 'error', `Failed to create access event: ${error.message}`);
     }
     
