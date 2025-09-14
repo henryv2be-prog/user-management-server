@@ -467,6 +467,7 @@ async function runStressTest(testId, config) {
     for (let i = 0; i < concurrentUsers; i++) {
       if (testFunctions.length > 0) {
         const testFunction = testFunctions[Math.floor(Math.random() * testFunctions.length)];
+        addTestLog(testId, 'info', `Executing test function ${i + 1}/${concurrentUsers}`);
         promises.push(executeTest(testFunction, testId));
       }
     }
@@ -475,6 +476,8 @@ async function runStressTest(testId, config) {
       addTestLog(testId, 'warning', 'No test functions available to execute');
       return;
     }
+    
+    addTestLog(testId, 'info', `Running ${promises.length} concurrent test functions`);
     
     try {
       const results = await Promise.allSettled(promises);
@@ -507,11 +510,14 @@ async function runStressTest(testId, config) {
 
   // Start the test with proper interval
   addTestLog(testId, 'info', `Starting stress test with ${concurrentUsers} concurrent users for ${testDuration} seconds`);
+  addTestLog(testId, 'info', `Test will run for ${testDuration} seconds (${testDuration * 1000}ms)`);
+  addTestLog(testId, 'info', `Request interval: ${interval}ms (${requestRate} requests per second)`);
+  
   testInterval = setInterval(runRequests, interval);
   
   // Set a timeout to ensure test ends
   const timeoutId = setTimeout(async () => {
-    addTestLog(testId, 'info', 'Timeout reached - forcing test completion');
+    addTestLog(testId, 'info', `Timeout reached after ${testDuration} seconds - forcing test completion`);
     
     isTestRunning = false;
     
@@ -541,7 +547,8 @@ async function executeTest(testFunction, testId) {
   const startTime = Date.now();
   
   try {
-    await testFunction();
+    console.log('Executing test function...');
+    const result = await testFunction();
     const responseTime = Date.now() - startTime;
     
     test.results.totalRequests++;
@@ -549,6 +556,7 @@ async function executeTest(testFunction, testId) {
     test.results.responseTimes.push(responseTime);
     
     addTestLog(testId, 'success', `Request completed in ${responseTime}ms`);
+    console.log('Test function completed successfully');
   } catch (error) {
     const responseTime = Date.now() - startTime;
     
@@ -561,6 +569,7 @@ async function executeTest(testFunction, testId) {
     });
     
     addTestLog(testId, 'error', `Request failed: ${error.message}`);
+    console.error('Test function failed:', error);
   }
 }
 
@@ -586,6 +595,8 @@ async function testUserManagement(testData) {
   // Create a test user that will appear in dashboard
   const timestamp = Date.now();
   
+  console.log('testUserManagement: Creating user...');
+  
   const testUser = await User.create({
     username: `stressuser${timestamp}`,
     email: `stressuser${timestamp}@test.com`,
@@ -603,6 +614,7 @@ async function testUserManagement(testData) {
   testData.createdUsers = testData.createdUsers || [];
   testData.createdUsers.push(testUser.id);
   
+  console.log('testUserManagement: User created successfully', testUser.id);
   return testUser;
 }
 
@@ -610,6 +622,8 @@ async function testDoorManagement(testData) {
   // Create a test door that will appear in dashboard
   const timestamp = Date.now();
   const randomSuffix = Math.floor(Math.random() * 1000);
+  
+  console.log('testDoorManagement: Creating door...');
   
   const testDoor = await Door.create({
     name: `StressTestDoor${timestamp}`,
@@ -631,12 +645,15 @@ async function testDoorManagement(testData) {
   testData.createdDoors = testData.createdDoors || [];
   testData.createdDoors.push(testDoor.id);
   
+  console.log('testDoorManagement: Door created successfully', testDoor.id);
   return testDoor;
 }
 
 async function testAccessGroupManagement(testData) {
   // Create a test access group that will appear in dashboard
   const timestamp = Date.now();
+  
+  console.log('testAccessGroupManagement: Creating access group...');
   
   const testAccessGroup = await AccessGroup.create({
     name: `StressTestGroup${timestamp}`,
@@ -651,6 +668,7 @@ async function testAccessGroupManagement(testData) {
   testData.createdAccessGroups = testData.createdAccessGroups || [];
   testData.createdAccessGroups.push(testAccessGroup.id);
   
+  console.log('testAccessGroupManagement: Access group created successfully', testAccessGroup.id);
   return testAccessGroup;
 }
 
