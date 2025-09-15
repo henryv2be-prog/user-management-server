@@ -3,6 +3,7 @@ const Event = require('../database/event');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { validatePagination } = require('../middleware/validation');
 const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 const router = express.Router();
 
@@ -36,9 +37,15 @@ router.get('/stream', (req, res) => {
   
   // Verify token and get user
   try {
+    console.log('🔍 SSE: Verifying token...');
+    console.log('🔍 SSE: JWT_SECRET available:', !!process.env.JWT_SECRET);
+    console.log('🔍 SSE: Token length:', token.length);
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('🔍 SSE: Token decoded successfully:', { id: decoded.id, role: decoded.role });
+    
     if (decoded.role !== 'admin') {
-      console.log('❌ SSE: Non-admin user attempted to connect');
+      console.log('❌ SSE: Non-admin user attempted to connect:', decoded.role);
       res.write(`data: ${JSON.stringify({ 
         type: 'error', 
         message: 'Admin access required for event stream',
@@ -48,12 +55,13 @@ router.get('/stream', (req, res) => {
       return;
     }
     req.user = decoded;
-    console.log(`✅ SSE: Admin user ${req.user.id} authenticated`);
+    console.log(`✅ SSE: Admin user ${req.user.id} authenticated successfully`);
   } catch (error) {
-    console.log('❌ SSE: Invalid token:', error.message);
+    console.log('❌ SSE: Token verification failed:', error.message);
+    console.log('❌ SSE: Error type:', error.name);
     res.write(`data: ${JSON.stringify({ 
       type: 'error', 
-      message: 'Invalid token',
+      message: `Token validation failed: ${error.message}`,
       timestamp: new Date().toISOString()
     })}\n\n`);
     res.end();
