@@ -3223,6 +3223,13 @@ function connectEventStream() {
         console.log('✅ Event stream connected successfully');
         isEventStreamConnected = true;
         updateEventStreamStatus(true);
+        
+        // Ensure status stays connected
+        setTimeout(() => {
+            if (isEventStreamConnected) {
+                updateEventStreamStatus(true);
+            }
+        }, 1000);
     };
     
     eventSource.onmessage = function(event) {
@@ -3244,16 +3251,23 @@ function connectEventStream() {
     eventSource.onerror = function(event) {
         console.error('❌ Event stream error:', event);
         console.log('EventSource readyState:', eventSource.readyState);
-        isEventStreamConnected = false;
-        updateEventStreamStatus(false);
         
-        // Attempt to reconnect after 5 seconds
-        setTimeout(() => {
-            if (!isEventStreamConnected) {
-                console.log('🔄 Attempting to reconnect event stream...');
-                connectEventStream();
-            }
-        }, 5000);
+        // Only mark as disconnected if readyState is CLOSED (2)
+        if (eventSource.readyState === 2) {
+            console.log('📡 Connection closed, marking as disconnected');
+            isEventStreamConnected = false;
+            updateEventStreamStatus(false);
+            
+            // Attempt to reconnect after 5 seconds
+            setTimeout(() => {
+                if (!isEventStreamConnected) {
+                    console.log('🔄 Attempting to reconnect event stream...');
+                    connectEventStream();
+                }
+            }, 5000);
+        } else {
+            console.log('📡 Connection error but still open, keeping status as connected');
+        }
     };
 }
 
@@ -3343,6 +3357,16 @@ function updateEventStreamStatus(connected) {
     
     eventControls.appendChild(statusElement);
     console.log(`✅ Status indicator added: ${connected ? 'Live' : 'Offline'}`);
+    
+    // Force a re-render by adding a small delay and checking
+    setTimeout(() => {
+        const checkStatus = eventControls.querySelector('.stream-status');
+        if (checkStatus) {
+            console.log(`✅ Status confirmed in DOM: ${checkStatus.textContent.trim()}`);
+        } else {
+            console.log('❌ Status indicator not found in DOM after creation');
+        }
+    }, 100);
 }
 
 function getEventIcon(type) {
