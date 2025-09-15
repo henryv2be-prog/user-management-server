@@ -3213,97 +3213,32 @@ function connectEventStream() {
     
     console.log('Connecting to event stream...');
     
-    // Use fetch with ReadableStream for SSE with custom headers
-    connectEventStreamWithFetch(token);
-}
-
-function connectEventStreamWithFetch(token) {
-    if (eventSource) {
-        eventSource.close();
-    }
+    eventSource = new EventSource(`/api/events/stream?token=${encodeURIComponent(token)}`);
     
-    // Create a custom EventSource-like object
-    eventSource = {
-        close: function() {
-            if (this.controller) {
-                this.controller.abort();
-            }
-        }
-    };
-    
-    const controller = new AbortController();
-    eventSource.controller = controller;
-    
-    fetch('/api/events/stream', {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'text/event-stream',
-            'Cache-Control': 'no-cache'
-        },
-        signal: controller.signal
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
+    eventSource.onopen = function(event) {
         console.log('Event stream connected');
         isEventStreamConnected = true;
         updateEventStreamStatus(true);
-        
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        
-        function readStream() {
-            reader.read().then(({ done, value }) => {
-                if (done) {
-                    console.log('Event stream ended');
-                    isEventStreamConnected = false;
-                    updateEventStreamStatus(false);
-                    return;
-                }
-                
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n');
-                
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const data = JSON.parse(line.substring(6));
-                            console.log('Received event stream data:', data);
-                            
-                            if (data.type === 'new_event') {
-                                addNewEventToList(data.event);
-                            } else if (data.type === 'connection') {
-                                console.log('Event stream connection established');
-                            }
-                        } catch (error) {
-                            console.error('Error parsing event stream data:', error);
-                        }
-                    }
-                }
-                
-                readStream();
-            }).catch(error => {
-                console.error('Event stream read error:', error);
-                isEventStreamConnected = false;
-                updateEventStreamStatus(false);
-                
-                // Attempt to reconnect after 5 seconds
-                setTimeout(() => {
-                    if (!isEventStreamConnected) {
-                        console.log('Attempting to reconnect event stream...');
-                        connectEventStream();
-                    }
-                }, 5000);
-            });
+    };
+    
+    eventSource.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            console.log('Received event stream data:', data);
+            
+            if (data.type === 'new_event') {
+                // Add new event to the top of the list
+                addNewEventToList(data.event);
+            } else if (data.type === 'connection') {
+                console.log('Event stream connection established');
+            }
+        } catch (error) {
+            console.error('Error parsing event stream data:', error);
         }
-        
-        readStream();
-    })
-    .catch(error => {
-        console.error('Event stream connection error:', error);
+    };
+    
+    eventSource.onerror = function(event) {
+        console.error('Event stream error:', event);
         isEventStreamConnected = false;
         updateEventStreamStatus(false);
         
@@ -3314,8 +3249,9 @@ function connectEventStreamWithFetch(token) {
                 connectEventStream();
             }
         }, 5000);
-    });
+    };
 }
+
 
 function disconnectEventStream() {
     if (eventSource) {
