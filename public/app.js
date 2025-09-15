@@ -3201,22 +3201,26 @@ function stopEventRefresh() {
 
 // Server-Sent Events (SSE) functions for live updates
 function connectEventStream() {
+    console.log('🔄 connectEventStream() called');
+    
     if (eventSource) {
+        console.log('📡 Closing existing event source');
         eventSource.close();
     }
     
     const token = localStorage.getItem('token');
     if (!token) {
-        console.log('No token available for event stream');
+        console.log('❌ No token available for event stream');
         return;
     }
     
-    console.log('Connecting to event stream...');
+    console.log('🔑 Token found, connecting to event stream...');
+    console.log('📡 EventSource URL:', `/api/events/stream?token=${encodeURIComponent(token)}`);
     
     eventSource = new EventSource(`/api/events/stream?token=${encodeURIComponent(token)}`);
     
     eventSource.onopen = function(event) {
-        console.log('Event stream connected');
+        console.log('✅ Event stream connected successfully');
         isEventStreamConnected = true;
         updateEventStreamStatus(true);
     };
@@ -3238,14 +3242,15 @@ function connectEventStream() {
     };
     
     eventSource.onerror = function(event) {
-        console.error('Event stream error:', event);
+        console.error('❌ Event stream error:', event);
+        console.log('EventSource readyState:', eventSource.readyState);
         isEventStreamConnected = false;
         updateEventStreamStatus(false);
         
         // Attempt to reconnect after 5 seconds
         setTimeout(() => {
             if (!isEventStreamConnected) {
-                console.log('Attempting to reconnect event stream...');
+                console.log('🔄 Attempting to reconnect event stream...');
                 connectEventStream();
             }
         }, 5000);
@@ -3315,8 +3320,12 @@ function addNewEventToList(event) {
 }
 
 function updateEventStreamStatus(connected) {
+    console.log(`📡 Updating event stream status: ${connected ? 'Live' : 'Offline'}`);
     const eventControls = document.querySelector('.event-controls');
-    if (!eventControls) return;
+    if (!eventControls) {
+        console.log('❌ Event controls not found');
+        return;
+    }
     
     // Remove existing status indicator
     const existingStatus = eventControls.querySelector('.stream-status');
@@ -3333,6 +3342,7 @@ function updateEventStreamStatus(connected) {
     `;
     
     eventControls.appendChild(statusElement);
+    console.log(`✅ Status indicator added: ${connected ? 'Live' : 'Offline'}`);
 }
 
 function getEventIcon(type) {

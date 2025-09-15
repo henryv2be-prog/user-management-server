@@ -55,6 +55,7 @@ router.get('/stream', (req, res) => {
 
   // Add to connections set
   sseConnections.add(connection);
+  console.log(`📡 SSE connection established for user ${req.user.id}. Total connections: ${sseConnections.size}`);
 
   // Send initial connection message
   res.write(`data: ${JSON.stringify({
@@ -66,10 +67,8 @@ router.get('/stream', (req, res) => {
   // Handle client disconnect
   req.on('close', () => {
     sseConnections.delete(connection);
-    console.log(`SSE connection closed for user ${req.user.id}`);
+    console.log(`📡 SSE connection closed for user ${req.user.id}. Remaining connections: ${sseConnections.size}`);
   });
-
-  console.log(`SSE connection established for user ${req.user.id}`);
 });
 
 // Get events with pagination and filtering (admin only)
@@ -206,6 +205,8 @@ router.get('/stats/overview', authenticate, requireAdmin, async (req, res) => {
 
 // Function to broadcast new events to all connected clients
 function broadcastEvent(event) {
+  console.log(`📡 Broadcasting event: ${event.id} (${event.type}:${event.action}) to ${sseConnections.size} clients`);
+  
   const eventData = {
     type: 'new_event',
     event: event.toJSON(),
@@ -214,11 +215,12 @@ function broadcastEvent(event) {
 
   const message = `data: ${JSON.stringify(eventData)}\n\n`;
   
-  sseConnections.forEach(connection => {
+  sseConnections.forEach((connection, index) => {
     try {
       connection.res.write(message);
+      console.log(`✅ Event sent to client ${index + 1}`);
     } catch (error) {
-      console.error('Error sending SSE message:', error);
+      console.error(`❌ Error sending SSE message to client ${index + 1}:`, error);
       sseConnections.delete(connection);
     }
   });
