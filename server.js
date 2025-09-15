@@ -127,6 +127,24 @@ console.log('Settings routes module loaded');
     });
   });
 
+  // Additional keep-alive endpoints
+  app.get('/api/ping', (req, res) => {
+    res.json({ pong: Date.now() });
+  });
+
+  app.get('/api/status', (req, res) => {
+    res.json({ 
+      status: 'active',
+      timestamp: new Date().toISOString(),
+      pid: process.pid
+    });
+  });
+
+  // Simple text response for external services
+  app.get('/ping', (req, res) => {
+    res.send('pong');
+  });
+
   app.use('/api/auth', authLimiter, authRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/doors', doorRoutes);
@@ -314,13 +332,14 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-// Keep-alive mechanism to prevent Render instance from sleeping
+// Aggressive keep-alive mechanism to prevent Render instance from sleeping
 function startKeepAlive() {
-  const keepAliveInterval = 10 * 60 * 1000; // 10 minutes
+  const keepAliveInterval = 2 * 60 * 1000; // 2 minutes - more aggressive
+  const externalPingInterval = 3 * 60 * 1000; // 3 minutes for external pings
   
+  // Internal ping (self-ping)
   setInterval(async () => {
     try {
-      // Make a request to our own health endpoint
       const response = await fetch(`http://localhost:${PORT}/api/health`, {
         method: 'GET',
         headers: {
@@ -329,16 +348,76 @@ function startKeepAlive() {
       });
       
       if (response.ok) {
-        console.log('✅ Keep-alive ping successful');
+        console.log('✅ Internal keep-alive ping successful');
       } else {
-        console.log('⚠️ Keep-alive ping failed:', response.status);
+        console.log('⚠️ Internal keep-alive ping failed:', response.status);
       }
     } catch (error) {
-      console.log('❌ Keep-alive ping error:', error.message);
+      console.log('❌ Internal keep-alive ping error:', error.message);
     }
   }, keepAliveInterval);
   
-  console.log(`🔄 Keep-alive mechanism started (every ${keepAliveInterval / 1000 / 60} minutes)`);
+  // External ping (if we have a public URL)
+  if (process.env.RENDER_EXTERNAL_URL) {
+    setInterval(async () => {
+      try {
+        const response = await fetch(`${process.env.RENDER_EXTERNAL_URL}/api/health`, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'ExternalKeepAlive/1.0'
+          }
+        });
+        
+        if (response.ok) {
+          console.log('✅ External keep-alive ping successful');
+        } else {
+          console.log('⚠️ External keep-alive ping failed:', response.status);
+        }
+      } catch (error) {
+        console.log('❌ External keep-alive ping error:', error.message);
+      }
+    }, externalPingInterval);
+  }
+  
+  // Additional activity generation
+  setInterval(() => {
+    // Generate some CPU activity to keep instance active
+    const start = Date.now();
+    let result = 0;
+    for (let i = 0; i < 1000000; i++) {
+      result += Math.random();
+    }
+    const duration = Date.now() - start;
+    console.log(`🔄 CPU activity generated (${duration}ms)`);
+  }, 4 * 60 * 1000); // Every 4 minutes
+
+  // Multiple ping strategies
+  const pingEndpoints = ['/api/health', '/api/ping', '/api/status', '/ping'];
+  let currentEndpointIndex = 0;
+  
+  setInterval(async () => {
+    const endpoint = pingEndpoints[currentEndpointIndex];
+    currentEndpointIndex = (currentEndpointIndex + 1) % pingEndpoints.length;
+    
+    try {
+      const response = await fetch(`http://localhost:${PORT}${endpoint}`, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'MultiPing/1.0'
+        }
+      });
+      
+      if (response.ok) {
+        console.log(`✅ Multi-ping successful: ${endpoint}`);
+      } else {
+        console.log(`⚠️ Multi-ping failed: ${endpoint} (${response.status})`);
+      }
+    } catch (error) {
+      console.log(`❌ Multi-ping error: ${endpoint} - ${error.message}`);
+    }
+  }, 90 * 1000); // Every 90 seconds
+  
+  console.log(`🔄 Aggressive keep-alive mechanism started (internal: ${keepAliveInterval / 1000 / 60}min, external: ${externalPingInterval / 1000 / 60}min)`);
 }
 
 // Start the server

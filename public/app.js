@@ -3121,10 +3121,17 @@ let debugPanelVisible = false;
 let keepAliveInterval = null;
 
 function startKeepAlive() {
-    // Ping server every 5 minutes to keep Render instance awake
+    // Multiple ping strategies for better keep-alive
+    const pingEndpoints = ['/api/health', '/api/ping', '/api/status'];
+    let currentEndpointIndex = 0;
+    
+    // Primary keep-alive (every 2 minutes)
     keepAliveInterval = setInterval(async () => {
+        const endpoint = pingEndpoints[currentEndpointIndex];
+        currentEndpointIndex = (currentEndpointIndex + 1) % pingEndpoints.length;
+        
         try {
-            const response = await fetch(addCacheBusting('/api/health'), {
+            const response = await fetch(addCacheBusting(endpoint), {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -3132,29 +3139,55 @@ function startKeepAlive() {
             });
             
             if (response.ok) {
-                console.log('🔄 Frontend keep-alive ping successful');
-                addDebugLog('Keep-alive ping successful', 'info');
+                console.log(`🔄 Frontend keep-alive ping successful: ${endpoint}`);
+                addDebugLog(`Keep-alive ping successful: ${endpoint}`, 'info');
             } else {
-                console.log('⚠️ Frontend keep-alive ping failed:', response.status);
-                addDebugLog(`Keep-alive ping failed: ${response.status}`, 'warning');
+                console.log(`⚠️ Frontend keep-alive ping failed: ${endpoint} (${response.status})`);
+                addDebugLog(`Keep-alive ping failed: ${endpoint} (${response.status})`, 'warning');
             }
         } catch (error) {
-            console.log('❌ Frontend keep-alive ping error:', error.message);
-            addDebugLog(`Keep-alive ping error: ${error.message}`, 'error');
+            console.log(`❌ Frontend keep-alive ping error: ${endpoint} - ${error.message}`);
+            addDebugLog(`Keep-alive ping error: ${endpoint} - ${error.message}`, 'error');
         }
-    }, 5 * 60 * 1000); // 5 minutes
+    }, 2 * 60 * 1000); // 2 minutes - more aggressive
     
-    console.log('🔄 Frontend keep-alive mechanism started');
-    addDebugLog('Frontend keep-alive started (every 5 minutes)', 'info');
+    // Additional aggressive ping (every 30 seconds)
+    const aggressiveInterval = setInterval(async () => {
+        try {
+            const response = await fetch(addCacheBusting('/ping'), {
+                method: 'GET'
+            });
+            
+            if (response.ok) {
+                console.log('🔄 Aggressive ping successful');
+                addDebugLog('Aggressive ping successful', 'info');
+            }
+        } catch (error) {
+            console.log('❌ Aggressive ping error:', error.message);
+            addDebugLog(`Aggressive ping error: ${error.message}`, 'error');
+        }
+    }, 30 * 1000); // Every 30 seconds
+    
+    // Store interval for cleanup
+    window.aggressiveKeepAliveInterval = aggressiveInterval;
+    
+    console.log('🔄 Frontend keep-alive mechanism started (2min + 30s aggressive)');
+    addDebugLog('Frontend keep-alive started (2min + 30s aggressive)', 'info');
 }
 
 function stopKeepAlive() {
     if (keepAliveInterval) {
         clearInterval(keepAliveInterval);
         keepAliveInterval = null;
-        console.log('🔄 Frontend keep-alive mechanism stopped');
-        addDebugLog('Frontend keep-alive stopped', 'info');
     }
+    
+    if (window.aggressiveKeepAliveInterval) {
+        clearInterval(window.aggressiveKeepAliveInterval);
+        window.aggressiveKeepAliveInterval = null;
+    }
+    
+    console.log('🔄 Frontend keep-alive mechanism stopped');
+    addDebugLog('Frontend keep-alive stopped', 'info');
 }
 
 async function loadEvents(page = 1, type = '') {
