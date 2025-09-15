@@ -1,5 +1,5 @@
 // Service Worker for SimplifiAccess PWA
-const CACHE_NAME = 'simplifiaccess-v1';
+const CACHE_NAME = 'simplifiaccess-v2';
 const urlsToCache = [
   '/',
   '/styles.css',
