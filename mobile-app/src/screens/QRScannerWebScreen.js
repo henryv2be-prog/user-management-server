@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     height: 30,
     borderLeftWidth: 4,
     borderTopWidth: 4,
-    borderColor: '#667eea',
+    borderColor: '#36454F',
     top: 0,
     left: 0,
   },
@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   button: {
-    backgroundColor: '#667eea',
+    backgroundColor: '#36454F',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   processingText: {
-    color: '#667eea',
+    color: '#36454F',
     fontSize: 16,
     fontWeight: '600',
   },
