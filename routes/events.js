@@ -14,30 +14,7 @@ router.get('/stream', (req, res) => {
   // Extract token from query parameter
   const token = req.query.token;
   
-  if (!token) {
-    return res.status(401).json({
-      error: 'Unauthorized',
-      message: 'Token required for event stream'
-    });
-  }
-  
-  // Verify token and get user
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (decoded.role !== 'admin') {
-      return res.status(403).json({
-        error: 'Forbidden',
-        message: 'Admin access required for event stream'
-      });
-    }
-    req.user = decoded;
-  } catch (error) {
-    return res.status(401).json({
-      error: 'Unauthorized',
-      message: 'Invalid token'
-    });
-  }
-  // Set SSE headers
+  // Set SSE headers first to establish the connection
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
@@ -45,12 +22,50 @@ router.get('/stream', (req, res) => {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Cache-Control'
   });
+  
+  if (!token) {
+    console.log('❌ SSE: No token provided');
+    res.write(`data: ${JSON.stringify({ 
+      type: 'error', 
+      message: 'Token required for event stream',
+      timestamp: new Date().toISOString()
+    })}\n\n`);
+    res.end();
+    return;
+  }
+  
+  // Verify token and get user
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.role !== 'admin') {
+      console.log('❌ SSE: Non-admin user attempted to connect');
+      res.write(`data: ${JSON.stringify({ 
+        type: 'error', 
+        message: 'Admin access required for event stream',
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+      res.end();
+      return;
+    }
+    req.user = decoded;
+    console.log(`✅ SSE: Admin user ${req.user.id} authenticated`);
+  } catch (error) {
+    console.log('❌ SSE: Invalid token:', error.message);
+    res.write(`data: ${JSON.stringify({ 
+      type: 'error', 
+      message: 'Invalid token',
+      timestamp: new Date().toISOString()
+    })}\n\n`);
+    res.end();
+    return;
+  }
 
   // Create connection object
   const connection = {
     res,
     userId: req.user.id,
-    lastEventId: req.headers['last-event-id'] || 0
+    lastEventId: req.headers['last-event-id'] || 0,
+    lastHeartbeat: Date.now()
   };
 
   // Add to connections set
@@ -64,10 +79,37 @@ router.get('/stream', (req, res) => {
     timestamp: new Date().toISOString()
   })}\n\n`);
 
+  // Set up heartbeat to keep connection alive
+  const heartbeatInterval = setInterval(() => {
+    try {
+      if (sseConnections.has(connection)) {
+        res.write(`data: ${JSON.stringify({ 
+          type: 'heartbeat', 
+          timestamp: new Date().toISOString()
+        })}\n\n`);
+        connection.lastHeartbeat = Date.now();
+      } else {
+        clearInterval(heartbeatInterval);
+      }
+    } catch (error) {
+      console.log(`❌ SSE heartbeat error for user ${req.user.id}:`, error.message);
+      clearInterval(heartbeatInterval);
+      sseConnections.delete(connection);
+    }
+  }, 30000); // Send heartbeat every 30 seconds
+
   // Handle client disconnect
   req.on('close', () => {
+    clearInterval(heartbeatInterval);
     sseConnections.delete(connection);
     console.log(`📡 SSE connection closed for user ${req.user.id}. Remaining connections: ${sseConnections.size}`);
+  });
+
+  // Handle connection errors
+  req.on('error', (error) => {
+    console.log(`❌ SSE connection error for user ${req.user.id}:`, error.message);
+    clearInterval(heartbeatInterval);
+    sseConnections.delete(connection);
   });
 });
 
