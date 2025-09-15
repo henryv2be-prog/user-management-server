@@ -1644,6 +1644,7 @@ textarea:focus-visible {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
+    color: white;
 }
 
 .door-controls {
@@ -1831,6 +1832,7 @@ textarea:focus-visible {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
+    color: white;
 }
 
 .event-controls {
