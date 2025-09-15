@@ -2,8 +2,8 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const crypto = require('crypto');
 
-// Database path
-const DB_PATH = path.join(__dirname, 'users.db');
+// Database path - use environment variable for Render compatibility
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'users.db');
 
 class Door {
   constructor(data) {
