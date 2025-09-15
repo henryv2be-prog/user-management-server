@@ -611,7 +611,7 @@ router.get('/accessible/me', authenticate, async (req, res) => {
 router.post('/discover', authenticate, requireAdmin, async (req, res) => {
   try {
     // Log ESP32 discovery event
-    await EventLogger.log(req, 'system', 'esp32_discovery_started', 'system', null, 'System', 'Door Controller discovery scan initiated');
+    await EventLogger.log(req, 'system', 'door_controller_discovery_started', 'system', null, 'System', 'Door Controller discovery scan initiated');
     
     // Mock ESP32 discovery - in a real implementation, this would scan the network
     const mockDevices = [
@@ -638,18 +638,18 @@ router.post('/discover', authenticate, requireAdmin, async (req, res) => {
     ];
     
     // Log discovery completion
-    await EventLogger.log(req, 'system', 'esp32_discovery_completed', 'system', null, 'System', `Door Controller discovery completed - found ${mockDevices.length} devices`);
+    await EventLogger.log(req, 'system', 'door_controller_discovery_completed', 'system', null, 'System', `Door Controller discovery completed - found ${mockDevices.length} devices`);
     
     res.json({
-      message: 'ESP32 discovery completed',
+      message: 'Door Controller discovery completed',
       devices: mockDevices,
       count: mockDevices.length
     });
   } catch (error) {
-    console.error('ESP32 discovery error:', error);
+    console.error('Door Controller discovery error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to discover ESP32 devices'
+      message: 'Failed to discover door controller devices'
     });
   }
 });
