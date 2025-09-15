@@ -11,6 +11,11 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy for rate limiting (required for deployments behind proxies like Render)
+// This tells Express to trust the first proxy in front of it, which is necessary
+// for accurate IP detection and rate limiting when deployed behind services like Render
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: false, // Disable CSP for development
