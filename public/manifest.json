@@ -1,7 +1,7 @@
 {
   "name": "SimplifiAccess - Smart Access Control",
   "short_name": "SimplifiAccess",
-  "description": "Modern Smart Access Control System with real-time monitoring and management",
+  "description": "Simple Smart Secure Access with real-time monitoring and management",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
