@@ -189,7 +189,7 @@ body {
 }
 
 .page-header h1 i {
-    color: white;
+    color: var(--primary-color);
 }
 
 .page-description {
@@ -282,7 +282,7 @@ body {
 }
 
 .section-header h2 i {
-    color: white;
+    color: var(--primary-color);
 }
 
 /* Modern Button Styles */
@@ -973,6 +973,10 @@ textarea:focus-visible {
     color: var(--text-inverse);
 }
 
+#usersSection .section-header h1 i {
+    color: var(--text-inverse);
+}
+
 /* Access Groups Section Header */
 #accessGroupsSection .section-header {
     background: var(--primary-gradient);
@@ -981,6 +985,10 @@ textarea:focus-visible {
 }
 
 #accessGroupsSection .section-header h1 {
+    color: var(--text-inverse);
+}
+
+#accessGroupsSection .section-header h1 i {
     color: var(--text-inverse);
 }
 
@@ -995,6 +1003,10 @@ textarea:focus-visible {
     color: var(--text-inverse);
 }
 
+#doorsSection .section-header h1 i {
+    color: var(--text-inverse);
+}
+
 /* Door Controller Discovery Section Header */
 #doorControllerDiscoverySection .section-header {
     background: var(--primary-gradient);
@@ -1003,6 +1015,10 @@ textarea:focus-visible {
 }
 
 #doorControllerDiscoverySection .section-header h1 {
+    color: var(--text-inverse);
+}
+
+#doorControllerDiscoverySection .section-header h1 i {
     color: var(--text-inverse);
 }
 
@@ -1017,6 +1033,10 @@ textarea:focus-visible {
     border: 1px solid var(--border-light);
 }
 
+#dashboardSection h1 i {
+    color: var(--text-inverse);
+}
+
 /* Profile Section Header */
 #profileSection h1 {
     background: var(--primary-gradient);
@@ -1026,6 +1046,10 @@ textarea:focus-visible {
     margin-bottom: 30px;
     box-shadow: 0 1px 3px var(--shadow-sm);
     border: 1px solid var(--border-light);
+}
+
+#profileSection h1 i {
+    color: var(--text-inverse);
 }
 
 .section-header h1 {
@@ -1293,6 +1317,10 @@ textarea:focus-visible {
     font-weight: 600;
     font-size: 1.2rem;
     margin: 0;
+}
+
+.modal-header h3 i {
+    color: var(--text-inverse);
 }
 
 .close {
@@ -1655,6 +1683,10 @@ textarea:focus-visible {
     font-weight: 600;
 }
 
+.door-status-section .section-header h2 i {
+    color: var(--text-inverse);
+}
+
 .door-controls {
     display: flex;
     gap: 1rem;
@@ -1840,6 +1872,10 @@ textarea:focus-visible {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
+}
+
+.event-log-section .section-header h2 i {
+    color: var(--text-inverse);
 }
 
 .event-controls {
@@ -2800,6 +2836,10 @@ textarea:focus-visible {
     margin: 0 0 0.5rem 0;
     font-size: 1.25rem;
     font-weight: 600;
+}
+
+.panel-header h2 i {
+    color: var(--text-inverse);
 }
 
 .panel-header p {
