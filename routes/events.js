@@ -10,7 +10,33 @@ const router = express.Router();
 const sseConnections = new Set();
 
 // Server-Sent Events endpoint for live event updates (admin only)
-router.get('/stream', authenticate, requireAdmin, (req, res) => {
+router.get('/stream', (req, res) => {
+  // Extract token from query parameter
+  const token = req.query.token;
+  
+  if (!token) {
+    return res.status(401).json({
+      error: 'Unauthorized',
+      message: 'Token required for event stream'
+    });
+  }
+  
+  // Verify token and get user
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.role !== 'admin') {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Admin access required for event stream'
+      });
+    }
+    req.user = decoded;
+  } catch (error) {
+    return res.status(401).json({
+      error: 'Unauthorized',
+      message: 'Invalid token'
+    });
+  }
   // Set SSE headers
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
