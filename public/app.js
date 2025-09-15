@@ -1,3 +1,9 @@
+// Cache-busting helper function
+function addCacheBusting(url) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}_cb=${Date.now()}&_r=${Math.random().toString(36).substr(2, 9)}`;
+}
+
 // Modern ES6+ Application State Management
 class AppState {
     constructor() {
@@ -1235,7 +1241,7 @@ async function loadUsers(page = 1) {
             ...currentFilters
         });
         
-        const response = await fetch(`/api/users?${params}`, {
+        const response = await fetch(addCacheBusting(`/api/users?${params}`), {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -1589,7 +1595,7 @@ async function loadDoors(page = 1) {
             ...currentFilters
         });
         
-        const response = await fetch(`/api/doors?${params}`, {
+        const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -1961,7 +1967,7 @@ async function loadAccessGroups(page = 1) {
             ...currentFilters
         });
         
-        const response = await fetch(`/api/access-groups?${params}`, {
+        const response = await fetch(addCacheBusting(`/api/access-groups?${params}`), {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -3076,7 +3082,7 @@ async function refreshDoorStatus() {
             ...currentFilters
         });
         
-        const response = await fetch(`/api/doors?${params}`, {
+        const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -3119,7 +3125,7 @@ async function loadEvents(page = 1, type = '') {
             params.append('type', type);
         }
         
-        const response = await fetch(`/api/events?${params}`, {
+        const response = await fetch(addCacheBusting(`/api/events?${params}`), {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }

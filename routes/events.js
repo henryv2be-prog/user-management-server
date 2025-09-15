@@ -10,6 +10,18 @@ const router = express.Router();
 // Store active SSE connections
 const sseConnections = new Set();
 
+// Cache prevention middleware for all routes
+router.use((req, res, next) => {
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate, private',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Last-Modified': new Date().toUTCString(),
+    'ETag': `"${Date.now()}"`
+  });
+  next();
+});
+
 // Server-Sent Events endpoint for live event updates (admin only)
 router.get('/stream', (req, res) => {
   // Extract token from query parameter

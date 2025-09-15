@@ -15,6 +15,18 @@ const EventLogger = require('../utils/eventLogger');
 
 const router = express.Router();
 
+// Cache prevention middleware for all routes
+router.use((req, res, next) => {
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate, private',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Last-Modified': new Date().toUTCString(),
+    'ETag': `"${Date.now()}"`
+  });
+  next();
+});
+
 // Get users with their access groups (admin only) - MUST be before /:id route
 router.get('/with-access-groups', authenticate, requireAdmin, async (req, res) => {
   try {
