@@ -357,7 +357,10 @@ async function loadSettings() {
     }
     
     try {
-        await loadSystemInfo();
+        await Promise.all([
+            loadSystemInfo(),
+            loadVersionInfo()
+        ]);
     } catch (error) {
         console.error('Failed to load settings:', error);
         showToast('Failed to load settings', 'error');
@@ -390,6 +393,60 @@ function updateSystemInfo(info) {
     document.getElementById('serverEnvironment').textContent = info.environment;
     document.getElementById('totalUsers').textContent = info.totalUsers;
     document.getElementById('totalDoors').textContent = info.totalDoors;
+}
+
+// Load version information
+async function loadVersionInfo() {
+    try {
+        const response = await fetch('/api/settings/version-info', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            updateVersionInfo(data);
+        } else {
+            console.error('Failed to load version info');
+        }
+    } catch (error) {
+        console.error('Version info error:', error);
+    }
+}
+
+// Update version information display
+function updateVersionInfo(info) {
+    document.getElementById('commitSha').textContent = info.commitSha;
+    document.getElementById('buildDate').textContent = formatDate(info.buildDate);
+    document.getElementById('buildEnvironment').textContent = info.environment;
+    document.getElementById('nodeVersion').textContent = info.nodeVersion;
+}
+
+// Format date in human readable format
+function formatDate(dateString) {
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleString();
+    } catch (error) {
+        return dateString;
+    }
+}
+
+// Copy commit SHA to clipboard
+function copyCommitSha() {
+    const commitSha = document.getElementById('commitSha').textContent;
+    navigator.clipboard.writeText(commitSha).then(() => {
+        showToast('Commit SHA copied to clipboard!', 'success');
+    }).catch(() => {
+        showToast('Failed to copy commit SHA', 'error');
+    });
+}
+
+// Refresh version information
+function refreshVersionInfo() {
+    loadVersionInfo();
+    showToast('Version information refreshed', 'success');
 }
 
 // Format uptime in human readable format
