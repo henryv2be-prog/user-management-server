@@ -3313,6 +3313,15 @@ function connectEventStream() {
             } else if (data.type === 'connection') {
                 console.log('Event stream connection established');
                 addDebugLog('Connection confirmation received', 'info');
+            } else if (data.type === 'heartbeat') {
+                console.log('SSE heartbeat received');
+                addDebugLog('Heartbeat received', 'info');
+                // Update last event timestamp
+                document.getElementById('debugLastEvent').textContent = `Heartbeat - ${new Date(data.timestamp).toLocaleTimeString()}`;
+            } else if (data.type === 'error') {
+                console.error('SSE Error:', data.message);
+                addDebugLog(`SSE Error: ${data.message}`, 'error');
+                // Don't close connection on error, let it retry
             }
         } catch (error) {
             console.error('Error parsing event stream data:', error);
