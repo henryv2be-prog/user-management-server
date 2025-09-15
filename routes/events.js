@@ -2,6 +2,7 @@ const express = require('express');
 const Event = require('../database/event');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { validatePagination } = require('../middleware/validation');
+const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
