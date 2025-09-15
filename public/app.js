@@ -2647,6 +2647,11 @@ function showSection(sectionName) {
         } else if (sectionName === 'settings') {
             loadSettings();
         }
+        
+        // Ensure keep-alive is running when user is active
+        if (!keepAliveInterval) {
+            startKeepAlive();
+        }
     }
 }
 
@@ -3111,6 +3116,46 @@ let isEventStreamConnected = false;
 // Debug panel variables
 let debugLogs = [];
 let debugPanelVisible = false;
+
+// Keep-alive mechanism for Render instance
+let keepAliveInterval = null;
+
+function startKeepAlive() {
+    // Ping server every 5 minutes to keep Render instance awake
+    keepAliveInterval = setInterval(async () => {
+        try {
+            const response = await fetch(addCacheBusting('/api/health'), {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (response.ok) {
+                console.log('🔄 Frontend keep-alive ping successful');
+                addDebugLog('Keep-alive ping successful', 'info');
+            } else {
+                console.log('⚠️ Frontend keep-alive ping failed:', response.status);
+                addDebugLog(`Keep-alive ping failed: ${response.status}`, 'warning');
+            }
+        } catch (error) {
+            console.log('❌ Frontend keep-alive ping error:', error.message);
+            addDebugLog(`Keep-alive ping error: ${error.message}`, 'error');
+        }
+    }, 5 * 60 * 1000); // 5 minutes
+    
+    console.log('🔄 Frontend keep-alive mechanism started');
+    addDebugLog('Frontend keep-alive started (every 5 minutes)', 'info');
+}
+
+function stopKeepAlive() {
+    if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+        keepAliveInterval = null;
+        console.log('🔄 Frontend keep-alive mechanism stopped');
+        addDebugLog('Frontend keep-alive stopped', 'info');
+    }
+}
 
 async function loadEvents(page = 1, type = '') {
     try {
@@ -3644,4 +3689,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     // Start periodic door status updates
     startDoorStatusUpdates();
+    // Start keep-alive mechanism
+    startKeepAlive();
 });
