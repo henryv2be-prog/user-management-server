@@ -1,6 +1,21 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
   <rect width="32" height="32" rx="8" fill="#2563eb"/>
-  <path d="M16 6L26 12V20L16 26L6 20V12L16 6Z" fill="white"/>
-  <path d="M16 10L22 13.5V18.5L16 22L10 18.5V13.5L16 10Z" fill="#2563eb"/>
-  <circle cx="16" cy="16" r="2" fill="white"/>
+  
+  <!-- Main Shield -->
+  <path d="M16 4L24 8V16L16 20L8 16V8L16 4Z" fill="white" stroke="#2563eb" stroke-width="0.5"/>
+  
+  <!-- Inner Shield -->
+  <path d="M16 7L21 9V14L16 16L11 14V9L16 7Z" fill="#2563eb"/>
+  
+  <!-- Door Symbol -->
+  <rect x="14" y="10" width="4" height="6" rx="0.5" fill="white"/>
+  <circle cx="17" cy="13" r="0.8" fill="#2563eb"/>
+  
+  <!-- Connection Lines (IoT) -->
+  <path d="M2 12L6 12M26 12L30 12M2 14L6 14M26 14L30 14" stroke="#10b981" stroke-width="1" stroke-linecap="round"/>
+  <circle cx="2" cy="12" r="0.8" fill="#10b981"/>
+  <circle cx="30" cy="12" r="0.8" fill="#10b981"/>
+  <circle cx="2" cy="14" r="0.8" fill="#10b981"/>
+  <circle cx="30" cy="14" r="0.8" fill="#10b981"/>
 </svg>

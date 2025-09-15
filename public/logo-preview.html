@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimplifiAccess Logo Preview</title>
+    <style>
+        body {
+            font-family: Inter, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #1f2937;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .logo-section {
+            margin-bottom: 60px;
+            padding: 30px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: #f9fafb;
+        }
+        
+        .logo-section h2 {
+            color: #2563eb;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .logo-preview {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .logo-info {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #6b7280;
+            text-align: center;
+        }
+        
+        .color-palette {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .color-swatch {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .primary-blue { background: #2563eb; }
+        .primary-blue-dark { background: #1d4ed8; }
+        .success-green { background: #10b981; }
+        .text-primary { background: #1f2937; }
+        .text-secondary { background: #6b7280; }
+        
+        .usage-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+        
+        .usage-card {
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+        }
+        
+        .usage-card h3 {
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        
+        .usage-card p {
+            color: #6b7280;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SimplifiAccess Logo Preview</h1>
+        
+        <!-- Main Logo -->
+        <div class="logo-section">
+            <h2>Main Logo (Horizontal)</h2>
+            <div class="logo-preview">
+                <img src="simplifiaccess-logo.svg" alt="SimplifiAccess Main Logo" width="200" height="60">
+            </div>
+            <div class="logo-info">
+                <strong>File:</strong> simplifiaccess-logo.svg | <strong>Dimensions:</strong> 200×60px | <strong>Usage:</strong> Primary logo for web headers and general applications
+            </div>
+        </div>
+        
+        <!-- Extended Logo -->
+        <div class="logo-section">
+            <h2>Extended Logo (Wide Format)</h2>
+            <div class="logo-preview">
+                <img src="simplifiaccess-logo-horizontal.svg" alt="SimplifiAccess Extended Logo" width="300" height="80">
+            </div>
+            <div class="logo-info">
+                <strong>File:</strong> simplifiaccess-logo-horizontal.svg | <strong>Dimensions:</strong> 300×80px | <strong>Usage:</strong> Website headers and presentations
+            </div>
+        </div>
+        
+        <!-- Stacked Logo -->
+        <div class="logo-section">
+            <h2>Stacked Logo (Vertical)</h2>
+            <div class="logo-preview">
+                <img src="simplifiaccess-logo-vertical.svg" alt="SimplifiAccess Stacked Logo" width="120" height="140">
+            </div>
+            <div class="logo-info">
+                <strong>File:</strong> simplifiaccess-logo-vertical.svg | <strong>Dimensions:</strong> 120×140px | <strong>Usage:</strong> Mobile apps and vertical layouts
+            </div>
+        </div>
+        
+        <!-- Icon Only -->
+        <div class="logo-section">
+            <h2>Icon Only</h2>
+            <div class="logo-preview">
+                <img src="simplifiaccess-icon.svg" alt="SimplifiAccess Icon" width="64" height="64">
+            </div>
+            <div class="logo-info">
+                <strong>File:</strong> simplifiaccess-icon.svg | <strong>Dimensions:</strong> 64×64px | <strong>Usage:</strong> App icons and social media profiles
+            </div>
+        </div>
+        
+        <!-- Favicon -->
+        <div class="logo-section">
+            <h2>Favicon</h2>
+            <div class="logo-preview">
+                <img src="favicon.svg" alt="SimplifiAccess Favicon" width="32" height="32">
+            </div>
+            <div class="logo-info">
+                <strong>File:</strong> favicon.svg | <strong>Dimensions:</strong> 32×32px | <strong>Usage:</strong> Browser tabs and bookmarks
+            </div>
+        </div>
+        
+        <!-- Color Palette -->
+        <div class="logo-section">
+            <h2>Brand Color Palette</h2>
+            <div class="color-palette">
+                <div class="color-swatch primary-blue">#2563eb</div>
+                <div class="color-swatch primary-blue-dark">#1d4ed8</div>
+                <div class="color-swatch success-green">#10b981</div>
+                <div class="color-swatch text-primary">#1f2937</div>
+                <div class="color-swatch text-secondary">#6b7280</div>
+            </div>
+        </div>
+        
+        <!-- Usage Examples -->
+        <div class="logo-section">
+            <h2>Usage Examples</h2>
+            <div class="usage-examples">
+                <div class="usage-card">
+                    <h3>Web Headers</h3>
+                    <p>Use the main horizontal logo in website navigation headers with proper clear space around the logo.</p>
+                </div>
+                <div class="usage-card">
+                    <h3>Mobile Applications</h3>
+                    <p>Use the stacked vertical logo for mobile app splash screens and the icon-only version for app icons.</p>
+                </div>
+                <div class="usage-card">
+                    <h3>Documentation</h3>
+                    <p>Include the extended logo in documentation headers and cover pages for professional presentation.</p>
+                </div>
+                <div class="usage-card">
+                    <h3>Social Media</h3>
+                    <p>Use the icon-only version for profile pictures and the main logo for cover images.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
