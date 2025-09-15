@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#667eea',
+    color: '#36454F',
     marginBottom: 8,
   },
   subtitle: {
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   loginButton: {
-    backgroundColor: '#667eea',
+    backgroundColor: '#36454F',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',

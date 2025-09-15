@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 20,
     paddingTop: 60,
-    backgroundColor: '#667eea',
+    backgroundColor: '#36454F',
   },
   backButton: {
     padding: 8,
