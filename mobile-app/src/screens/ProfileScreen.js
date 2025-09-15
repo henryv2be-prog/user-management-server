@@ -43,7 +43,7 @@ export default function ProfileScreen({ navigation }) {
       <View style={styles.content}>
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
-            <Ionicons name="person" size={48} color="#667eea" />
+            <Ionicons name="person" size={48} color="#36454F" />
           </View>
           
           <View style={styles.userInfo}>
@@ -61,19 +61,19 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={styles.menu}>
           <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="settings" size={24} color="#667eea" />
+            <Ionicons name="settings" size={24} color="#36454F" />
             <Text style={styles.menuText}>Settings</Text>
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="help-circle" size={24} color="#667eea" />
+            <Ionicons name="help-circle" size={24} color="#36454F" />
             <Text style={styles.menuText}>Help & Support</Text>
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="information-circle" size={24} color="#667eea" />
+            <Ionicons name="information-circle" size={24} color="#36454F" />
             <Text style={styles.menuText}>About</Text>
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </TouchableOpacity>
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 20,
     paddingTop: 60,
-    backgroundColor: '#667eea',
+    backgroundColor: '#36454F',
   },
   backButton: {
     padding: 8,
