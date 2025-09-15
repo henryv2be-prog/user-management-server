@@ -47,6 +47,16 @@ app.use('/api/doors/heartbeat', (req, res, next) => {
 // Serve static files
 app.use(express.static('public'));
 
+// Disable caching for API endpoints
+app.use('/api', (req, res, next) => {
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+  next();
+});
+
 // Test page for access requests
 app.get('/test-access', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'test-access.html'));
@@ -159,6 +169,7 @@ async function startServer() {
   try {
     // Initialize database first
     console.log('🗄️  Initializing database...');
+    console.log('Database path:', process.env.DB_PATH || path.join(__dirname, 'database', 'users.db'));
     await initDatabase();
     console.log('✅ Database initialization completed');
     

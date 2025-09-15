@@ -2,8 +2,8 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-// Database path
-const DB_PATH = path.join(__dirname, 'users.db');
+// Database path - use environment variable for Render compatibility
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'users.db');
 
 // Ensure database directory exists
 const dbDir = path.dirname(DB_PATH);
