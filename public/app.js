@@ -3278,9 +3278,26 @@ function connectEventStream() {
         return;
     }
     
+    // Check if token is expired
+    try {
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        const now = Math.floor(Date.now() / 1000);
+        if (tokenPayload.exp && tokenPayload.exp < now) {
+            console.log('❌ Token is expired');
+            addDebugLog('Authentication token is expired', 'error');
+            return;
+        }
+        console.log('🔑 Token is valid, expires at:', new Date(tokenPayload.exp * 1000).toLocaleString());
+    } catch (error) {
+        console.log('❌ Error checking token expiration:', error.message);
+        addDebugLog('Error validating token expiration', 'warning');
+    }
+    
     console.log('🔑 Token found, connecting to event stream...');
+    console.log('🔑 Token length:', token.length);
+    console.log('🔑 Token preview:', token.substring(0, 20) + '...');
     console.log('📡 EventSource URL:', `/api/events/stream?token=${encodeURIComponent(token)}`);
-    addDebugLog('Token found, creating EventSource', 'info');
+    addDebugLog(`Token found (${token.length} chars), creating EventSource`, 'info');
     
     eventSource = new EventSource(`/api/events/stream?token=${encodeURIComponent(token)}`);
     
