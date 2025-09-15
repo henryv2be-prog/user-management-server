@@ -5,6 +5,7 @@ const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const fetch = require('node-fetch');
 const { initDatabase } = require('./database/init');
 require('dotenv').config();
 
@@ -115,6 +116,17 @@ settingsRoutes = require('./routes/settings');
 console.log('Settings routes module loaded');
   
   // Setup routes
+  // Health check endpoint for keep-alive
+  app.get('/api/health', (req, res) => {
+    res.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      version: process.version
+    });
+  });
+
   app.use('/api/auth', authLimiter, authRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/doors', doorRoutes);
@@ -302,5 +314,37 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
+// Keep-alive mechanism to prevent Render instance from sleeping
+function startKeepAlive() {
+  const keepAliveInterval = 10 * 60 * 1000; // 10 minutes
+  
+  setInterval(async () => {
+    try {
+      // Make a request to our own health endpoint
+      const response = await fetch(`http://localhost:${PORT}/api/health`, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'KeepAlive/1.0'
+        }
+      });
+      
+      if (response.ok) {
+        console.log('✅ Keep-alive ping successful');
+      } else {
+        console.log('⚠️ Keep-alive ping failed:', response.status);
+      }
+    } catch (error) {
+      console.log('❌ Keep-alive ping error:', error.message);
+    }
+  }, keepAliveInterval);
+  
+  console.log(`🔄 Keep-alive mechanism started (every ${keepAliveInterval / 1000 / 60} minutes)`);
+}
+
 // Start the server
 startServer();
+
+// Start keep-alive after server is running
+setTimeout(() => {
+  startKeepAlive();
+}, 5000); // Wait 5 seconds for server to fully start
