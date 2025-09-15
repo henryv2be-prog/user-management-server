@@ -167,10 +167,7 @@
                     <header class="section-header">
                         <h2><i class="fas fa-door-open" aria-hidden="true"></i> Door Status Monitoring</h2>
                         <div class="door-controls">
-                            <button class="btn btn-secondary" onclick="refreshDoorStatus()" aria-label="Refresh door status">
-                                <i class="fas fa-sync-alt" aria-hidden="true"></i> 
-                                <span>Refresh</span>
-                            </button>
+                            <!-- Auto-refresh enabled - no manual refresh needed -->
                         </div>
                     </header>
                     <div class="door-grid" id="doorGrid" role="grid" aria-label="Door status grid">
@@ -194,10 +191,7 @@
                                 <option value="error">Errors</option>
                                 <option value="system">System</option>
                             </select>
-                            <button class="btn btn-secondary" onclick="loadEvents()" aria-label="Refresh events">
-                                <i class="fas fa-refresh" aria-hidden="true"></i> 
-                                <span>Refresh</span>
-                            </button>
+                            <!-- Live events enabled - no manual refresh needed -->
                         </div>
                     </header>
                     
@@ -268,9 +262,6 @@
                 <div class="section-header">
                     <h1><i class="fas fa-door-open"></i> Door Management</h1>
                     <div class="header-actions">
-                        <button class="btn btn-secondary" onclick="refreshDoorStatus()" title="Refresh Door Status">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
                         <button class="btn btn-primary" onclick="showCreateDoorModal()">
                             <i class="fas fa-plus"></i> Add Door
                         </button>
