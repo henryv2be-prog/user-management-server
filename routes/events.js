@@ -5,6 +5,46 @@ const { validatePagination } = require('../middleware/validation');
 
 const router = express.Router();
 
+// Store active SSE connections
+const sseConnections = new Set();
+
+// Server-Sent Events endpoint for live event updates (admin only)
+router.get('/stream', authenticate, requireAdmin, (req, res) => {
+  // Set SSE headers
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Cache-Control'
+  });
+
+  // Create connection object
+  const connection = {
+    res,
+    userId: req.user.id,
+    lastEventId: req.headers['last-event-id'] || 0
+  };
+
+  // Add to connections set
+  sseConnections.add(connection);
+
+  // Send initial connection message
+  res.write(`data: ${JSON.stringify({
+    type: 'connection',
+    message: 'Connected to event stream',
+    timestamp: new Date().toISOString()
+  })}\n\n`);
+
+  // Handle client disconnect
+  req.on('close', () => {
+    sseConnections.delete(connection);
+    console.log(`SSE connection closed for user ${req.user.id}`);
+  });
+
+  console.log(`SSE connection established for user ${req.user.id}`);
+});
+
 // Get events with pagination and filtering (admin only)
 router.get('/', authenticate, requireAdmin, validatePagination, async (req, res) => {
   try {
@@ -137,4 +177,25 @@ router.get('/stats/overview', authenticate, requireAdmin, async (req, res) => {
   }
 });
 
-module.exports = router;
+// Function to broadcast new events to all connected clients
+function broadcastEvent(event) {
+  const eventData = {
+    type: 'new_event',
+    event: event.toJSON(),
+    timestamp: new Date().toISOString()
+  };
+
+  const message = `data: ${JSON.stringify(eventData)}\n\n`;
+  
+  sseConnections.forEach(connection => {
+    try {
+      connection.res.write(message);
+    } catch (error) {
+      console.error('Error sending SSE message:', error);
+      sseConnections.delete(connection);
+    }
+  });
+}
+
+// Export the broadcast function for use in other modules
+module.exports = { router, broadcastEvent };

@@ -1,5 +1,4 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { runQuery, getQuery, allQuery } = require('./connection');
 
 class Event {
   constructor(data = {}) {
@@ -49,9 +48,7 @@ class Event {
       userAgent
     } = eventData;
 
-    const db = new sqlite3.Database(path.join(__dirname, 'users.db'));
-    
-    return new Promise((resolve, reject) => {
+    try {
       const sql = `
         INSERT INTO events (
           type, action, entity_type, entity_id, entity_name,
@@ -59,38 +56,33 @@ class Event {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `;
       
-      db.run(sql, [
+      const result = await runQuery(sql, [
         type, action, entityType, entityId, entityName,
         userId, userName, details, ipAddress, userAgent
-      ], function(err) {
-        db.close();
-        if (err) {
-          reject(err);
-        } else {
-          resolve(new Event({
-            id: this.lastID,
-            type,
-            action,
-            entityType,
-            entityId,
-            entityName,
-            userId,
-            userName,
-            details,
-            ipAddress,
-            userAgent,
-            created_at: new Date().toISOString()
-          }));
-        }
+      ]);
+      
+      return new Event({
+        id: result.lastID,
+        type,
+        action,
+        entityType,
+        entityId,
+        entityName,
+        userId,
+        userName,
+        details,
+        ipAddress,
+        userAgent,
+        created_at: new Date().toISOString()
       });
-    });
+    } catch (error) {
+      throw error;
+    }
   }
 
   static async findAll(options = {}) {
     const { page = 1, limit = 50, type, action, entityType, userId } = options;
     const offset = (page - 1) * limit;
-    
-    const db = new sqlite3.Database(path.join(__dirname, 'users.db'));
     
     let sql = 'SELECT * FROM events WHERE 1=1';
     const params = [];
@@ -118,22 +110,16 @@ class Event {
     sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
     
-    return new Promise((resolve, reject) => {
-      db.all(sql, params, (err, rows) => {
-        db.close();
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rows.map(row => new Event(row)));
-        }
-      });
-    });
+    try {
+      const rows = await allQuery(sql, params);
+      return rows.map(row => new Event(row));
+    } catch (error) {
+      throw error;
+    }
   }
 
   static async count(options = {}) {
     const { type, action, entityType, userId } = options;
-    
-    const db = new sqlite3.Database(path.join(__dirname, 'users.db'));
     
     let sql = 'SELECT COUNT(*) as count FROM events WHERE 1=1';
     const params = [];
@@ -158,52 +144,39 @@ class Event {
       params.push(userId);
     }
     
-    return new Promise((resolve, reject) => {
-      db.get(sql, params, (err, row) => {
-        db.close();
-        if (err) {
-          reject(err);
-        } else {
-          resolve(row.count);
-        }
-      });
-    });
+    try {
+      const row = await getQuery(sql, params);
+      return row.count;
+    } catch (error) {
+      throw error;
+    }
   }
 
   static async findById(id) {
-    const db = new sqlite3.Database(path.join(__dirname, 'users.db'));
-    
-    return new Promise((resolve, reject) => {
-      db.get('SELECT * FROM events WHERE id = ?', [id], (err, row) => {
-        db.close();
-        if (err) {
-          reject(err);
-        } else if (row) {
-          resolve(new Event(row));
-        } else {
-          resolve(null);
-        }
-      });
-    });
+    try {
+      const row = await getQuery('SELECT * FROM events WHERE id = ?', [id]);
+      
+      if (row) {
+        return new Event(row);
+      } else {
+        return null;
+      }
+    } catch (error) {
+      throw error;
+    }
   }
 
   static async getRecentEvents(limit = 10) {
-    const db = new sqlite3.Database(path.join(__dirname, 'users.db'));
-    
-    return new Promise((resolve, reject) => {
-      db.all(
+    try {
+      const rows = await allQuery(
         'SELECT * FROM events ORDER BY created_at DESC LIMIT ?',
-        [limit],
-        (err, rows) => {
-          db.close();
-          if (err) {
-            reject(err);
-          } else {
-            resolve(rows.map(row => new Event(row)));
-          }
-        }
+        [limit]
       );
-    });
+      
+      return rows.map(row => new Event(row));
+    } catch (error) {
+      throw error;
+    }
   }
 }
 

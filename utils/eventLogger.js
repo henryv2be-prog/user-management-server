@@ -22,7 +22,19 @@ class EventLogger {
         userAgent
       };
 
-      await Event.create(event);
+      const createdEvent = await Event.create(event);
+      
+      // Broadcast the event to connected SSE clients
+      if (global.broadcastEvent) {
+        try {
+          console.log('Broadcasting event:', createdEvent.id, createdEvent.type, createdEvent.action);
+          global.broadcastEvent(createdEvent);
+        } catch (broadcastError) {
+          console.error('Error broadcasting event:', broadcastError);
+        }
+      } else {
+        console.log('broadcastEvent function not available globally');
+      }
     } catch (error) {
       console.error('Error logging event:', error);
       // Don't throw error to avoid breaking the main operation

@@ -95,7 +95,8 @@ try {
   accessGroupRoutes = require('./routes/accessGroups');
   console.log('Access group routes module loaded');
   
-eventRoutes = require('./routes/events');
+const { router: eventRoutes, broadcastEvent } = require('./routes/events');
+global.broadcastEvent = broadcastEvent; // Make available globally
 console.log('Event routes module loaded');
 
 accessRequestRoutes = require('./routes/accessRequests');

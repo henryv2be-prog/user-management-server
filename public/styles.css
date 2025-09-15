@@ -1841,6 +1841,33 @@ textarea:focus-visible {
     align-items: center;
 }
 
+.stream-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.stream-status.connected {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.stream-status.disconnected {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.stream-status i {
+    font-size: 0.75rem;
+}
+
 
 .event-controls select {
     padding: 0.5rem;
@@ -1883,6 +1910,29 @@ textarea:focus-visible {
 
 .event-item:last-child {
     border-bottom: none;
+}
+
+.event-item.new-event {
+    animation: slideInFromTop 0.5s ease-out;
+    background: linear-gradient(90deg, rgba(34, 197, 94, 0.1) 0%, transparent 100%);
+    border-left: 3px solid #22c55e;
+}
+
+@keyframes slideInFromTop {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+        background: rgba(34, 197, 94, 0.2);
+    }
+    50% {
+        opacity: 0.8;
+        transform: translateY(-5px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+        background: linear-gradient(90deg, rgba(34, 197, 94, 0.1) 0%, transparent 100%);
+    }
 }
 
 .event-icon {

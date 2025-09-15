@@ -2565,9 +2565,11 @@ function showSection(sectionName) {
     if (sectionName === 'dashboard') {
         loadDashboard();
         startEventRefresh(); // Start event refresh when on dashboard
+        connectEventStream(); // Connect to live event stream
         startDoorStatusRefresh(); // Start door status refresh when on dashboard
     } else {
         stopEventRefresh(); // Stop event refresh when leaving dashboard
+        disconnectEventStream(); // Disconnect event stream when leaving dashboard
         stopDoorStatusRefresh(); // Stop door refresh when leaving dashboard
         if (sectionName === 'users') {
             loadUsers();
@@ -3040,6 +3042,8 @@ async function refreshDoorStatus() {
 let currentEventPage = 1;
 let currentEventType = '';
 let eventRefreshInterval = null;
+let eventSource = null;
+let isEventStreamConnected = false;
 
 async function loadEvents(page = 1, type = '') {
     try {
@@ -3193,6 +3197,145 @@ function stopEventRefresh() {
         clearInterval(eventRefreshInterval);
         eventRefreshInterval = null;
     }
+}
+
+// Server-Sent Events (SSE) functions for live updates
+function connectEventStream() {
+    if (eventSource) {
+        eventSource.close();
+    }
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('No token available for event stream');
+        return;
+    }
+    
+    console.log('Connecting to event stream...');
+    
+    eventSource = new EventSource(`/api/events/stream`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    
+    eventSource.onopen = function(event) {
+        console.log('Event stream connected');
+        isEventStreamConnected = true;
+        updateEventStreamStatus(true);
+    };
+    
+    eventSource.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            console.log('Received event stream data:', data);
+            
+            if (data.type === 'new_event') {
+                // Add new event to the top of the list
+                addNewEventToList(data.event);
+            } else if (data.type === 'connection') {
+                console.log('Event stream connection established');
+            }
+        } catch (error) {
+            console.error('Error parsing event stream data:', error);
+        }
+    };
+    
+    eventSource.onerror = function(event) {
+        console.error('Event stream error:', event);
+        isEventStreamConnected = false;
+        updateEventStreamStatus(false);
+        
+        // Attempt to reconnect after 5 seconds
+        setTimeout(() => {
+            if (!isEventStreamConnected) {
+                console.log('Attempting to reconnect event stream...');
+                connectEventStream();
+            }
+        }, 5000);
+    };
+}
+
+function disconnectEventStream() {
+    if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+        isEventStreamConnected = false;
+        updateEventStreamStatus(false);
+        console.log('Event stream disconnected');
+    }
+}
+
+function addNewEventToList(event) {
+    const eventLog = document.getElementById('eventLog');
+    if (!eventLog) return;
+    
+    // Create new event element
+    const newEventElement = document.createElement('div');
+    newEventElement.className = 'event-item new-event';
+    newEventElement.innerHTML = `
+        <div class="event-icon ${event.type}">
+            <i class="fas ${getEventIcon(event.type)}"></i>
+        </div>
+        <div class="event-content">
+            <div class="event-main">
+                <div class="event-header">
+                    <span class="event-action">${formatEventAction(event.action)}</span>
+                    <span class="event-entity">${event.entityName || 'System'}</span>
+                </div>
+                <div class="event-details">${event.details}</div>
+            </div>
+            <div class="event-meta">
+                <div class="event-user">
+                    <i class="fas fa-user"></i>
+                    <span>${event.userName}</span>
+                </div>
+                <div class="event-time">
+                    <i class="fas fa-clock"></i>
+                    <span>${formatEventTime(event.createdAt)}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add to top of event list
+    const firstEvent = eventLog.querySelector('.event-item');
+    if (firstEvent) {
+        eventLog.insertBefore(newEventElement, firstEvent);
+    } else {
+        eventLog.appendChild(newEventElement);
+    }
+    
+    // Add animation class
+    setTimeout(() => {
+        newEventElement.classList.remove('new-event');
+    }, 1000);
+    
+    // Remove animation class after animation completes
+    setTimeout(() => {
+        newEventElement.classList.remove('new-event');
+    }, 3000);
+}
+
+function updateEventStreamStatus(connected) {
+    const eventControls = document.querySelector('.event-controls');
+    if (!eventControls) return;
+    
+    // Remove existing status indicator
+    const existingStatus = eventControls.querySelector('.stream-status');
+    if (existingStatus) {
+        existingStatus.remove();
+    }
+    
+    // Add new status indicator
+    const statusElement = document.createElement('div');
+    statusElement.className = `stream-status ${connected ? 'connected' : 'disconnected'}`;
+    statusElement.innerHTML = `
+        <i class="fas ${connected ? 'fa-wifi' : 'fa-wifi-slash'}"></i>
+        <span>${connected ? 'Live' : 'Offline'}</span>
+    `;
+    
+    eventControls.appendChild(statusElement);
 }
 
 function getEventIcon(type) {
