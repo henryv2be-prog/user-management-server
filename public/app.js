@@ -3102,6 +3102,10 @@ let eventRefreshInterval = null;
 let eventSource = null;
 let isEventStreamConnected = false;
 
+// Debug panel variables
+let debugLogs = [];
+let debugPanelVisible = false;
+
 async function loadEvents(page = 1, type = '') {
     try {
         console.log('Loading events - page:', page, 'type:', type);
@@ -3259,32 +3263,39 @@ function stopEventRefresh() {
 // Server-Sent Events (SSE) functions for live updates
 function connectEventStream() {
     console.log('🔄 connectEventStream() called');
+    addDebugLog('Starting SSE connection attempt', 'info');
     
     if (eventSource) {
         console.log('📡 Closing existing event source');
+        addDebugLog('Closing existing EventSource', 'warning');
         eventSource.close();
     }
     
     const token = localStorage.getItem('token');
     if (!token) {
         console.log('❌ No token available for event stream');
+        addDebugLog('No authentication token available', 'error');
         return;
     }
     
     console.log('🔑 Token found, connecting to event stream...');
     console.log('📡 EventSource URL:', `/api/events/stream?token=${encodeURIComponent(token)}`);
+    addDebugLog('Token found, creating EventSource', 'info');
     
     eventSource = new EventSource(`/api/events/stream?token=${encodeURIComponent(token)}`);
     
     eventSource.onopen = function(event) {
         console.log('✅ Event stream connected successfully');
+        addDebugLog('SSE connection established successfully', 'success');
         isEventStreamConnected = true;
         updateEventStreamStatus(true);
+        updateDebugStatus();
         
         // Ensure status stays connected
         setTimeout(() => {
             if (isEventStreamConnected) {
                 updateEventStreamStatus(true);
+                updateDebugStatus();
             }
         }, 1000);
     };
@@ -3293,37 +3304,46 @@ function connectEventStream() {
         try {
             const data = JSON.parse(event.data);
             console.log('Received event stream data:', data);
+            addDebugLog(`Received event: ${data.type}`, 'info');
             
             if (data.type === 'new_event') {
                 // Add new event to the top of the list
                 addNewEventToList(data.event);
+                addDebugLog(`New event added: ${data.event.type}:${data.event.action}`, 'success');
             } else if (data.type === 'connection') {
                 console.log('Event stream connection established');
+                addDebugLog('Connection confirmation received', 'info');
             }
         } catch (error) {
             console.error('Error parsing event stream data:', error);
+            addDebugLog(`Error parsing event data: ${error.message}`, 'error');
         }
     };
     
     eventSource.onerror = function(event) {
         console.error('❌ Event stream error:', event);
+        addDebugLog(`SSE error occurred: readyState=${eventSource.readyState}`, 'error');
         console.log('EventSource readyState:', eventSource.readyState);
         
         // Only mark as disconnected if readyState is CLOSED (2)
         if (eventSource.readyState === 2) {
             console.log('📡 Connection closed, marking as disconnected');
+            addDebugLog('SSE connection closed, marking as disconnected', 'warning');
             isEventStreamConnected = false;
             updateEventStreamStatus(false);
+            updateDebugStatus();
             
             // Attempt to reconnect after 5 seconds
             setTimeout(() => {
                 if (!isEventStreamConnected) {
                     console.log('🔄 Attempting to reconnect event stream...');
+                    addDebugLog('Attempting to reconnect SSE', 'info');
                     connectEventStream();
                 }
             }, 5000);
         } else {
             console.log('📡 Connection error but still open, keeping status as connected');
+            addDebugLog('SSE error but connection still open, keeping status', 'warning');
         }
     };
 }
@@ -3335,6 +3355,8 @@ function disconnectEventStream() {
         eventSource = null;
         isEventStreamConnected = false;
         updateEventStreamStatus(false);
+        updateDebugStatus();
+        addDebugLog('SSE connection manually disconnected', 'info');
         console.log('Event stream disconnected');
     }
 }
@@ -3392,9 +3414,12 @@ function addNewEventToList(event) {
 
 function updateEventStreamStatus(connected) {
     console.log(`📡 Updating event stream status: ${connected ? 'Live' : 'Offline'}`);
+    addDebugLog(`Updating status indicator: ${connected ? 'Live' : 'Offline'}`, 'info');
+    
     const eventControls = document.querySelector('.event-controls');
     if (!eventControls) {
         console.log('❌ Event controls not found');
+        addDebugLog('Event controls element not found', 'error');
         return;
     }
     
@@ -3402,6 +3427,7 @@ function updateEventStreamStatus(connected) {
     const existingStatus = eventControls.querySelector('.stream-status');
     if (existingStatus) {
         existingStatus.remove();
+        addDebugLog('Removed existing status indicator', 'info');
     }
     
     // Add new status indicator
@@ -3414,14 +3440,17 @@ function updateEventStreamStatus(connected) {
     
     eventControls.appendChild(statusElement);
     console.log(`✅ Status indicator added: ${connected ? 'Live' : 'Offline'}`);
+    addDebugLog(`Status indicator added to DOM: ${connected ? 'Live' : 'Offline'}`, 'success');
     
     // Force a re-render by adding a small delay and checking
     setTimeout(() => {
         const checkStatus = eventControls.querySelector('.stream-status');
         if (checkStatus) {
             console.log(`✅ Status confirmed in DOM: ${checkStatus.textContent.trim()}`);
+            addDebugLog(`Status confirmed in DOM: ${checkStatus.textContent.trim()}`, 'success');
         } else {
             console.log('❌ Status indicator not found in DOM after creation');
+            addDebugLog('Status indicator not found in DOM after creation', 'error');
         }
     }, 100);
 }
@@ -3489,6 +3518,92 @@ function formatEventTime(timestamp) {
             minute: '2-digit' 
         });
     }
+}
+
+// Debug Panel Functions
+function addDebugLog(message, type = 'info') {
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = {
+        timestamp,
+        message,
+        type
+    };
+    
+    debugLogs.push(logEntry);
+    
+    // Keep only last 50 logs
+    if (debugLogs.length > 50) {
+        debugLogs.shift();
+    }
+    
+    updateDebugLogDisplay();
+}
+
+function updateDebugLogDisplay() {
+    const container = document.getElementById('debugLogContainer');
+    if (!container) return;
+    
+    container.innerHTML = debugLogs.map(log => 
+        `<div class="log-entry ${log.type}">[${log.timestamp}] ${log.message}</div>`
+    ).join('');
+    
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+}
+
+function updateDebugStatus() {
+    // Update SSE connection status
+    const sseStatus = document.getElementById('debugSseStatus');
+    if (sseStatus) {
+        sseStatus.textContent = isEventStreamConnected ? 'Connected' : 'Disconnected';
+        sseStatus.className = `status-badge ${isEventStreamConnected ? 'connected' : 'disconnected'}`;
+    }
+    
+    // Update EventSource state
+    const eventSourceState = document.getElementById('debugEventSourceState');
+    if (eventSourceState && eventSource) {
+        const states = ['CONNECTING', 'OPEN', 'CLOSED'];
+        eventSourceState.textContent = states[eventSource.readyState] || 'Unknown';
+        eventSourceState.className = `status-badge ${
+            eventSource.readyState === 1 ? 'connected' : 
+            eventSource.readyState === 2 ? 'disconnected' : 'unknown'
+        }`;
+    }
+    
+    // Update connection URL
+    const connectionUrl = document.getElementById('debugConnectionUrl');
+    if (connectionUrl && eventSource) {
+        connectionUrl.textContent = eventSource.url || 'Not connected';
+    }
+}
+
+function toggleDebugPanel() {
+    const panel = document.getElementById('debugPanel');
+    const toggleIcon = document.getElementById('debugToggleIcon');
+    const toggleText = document.getElementById('debugToggleText');
+    
+    if (!panel) return;
+    
+    debugPanelVisible = !debugPanelVisible;
+    
+    if (debugPanelVisible) {
+        panel.style.display = 'block';
+        toggleIcon.className = 'fas fa-eye-slash';
+        toggleText.textContent = 'Hide Debug';
+        updateDebugStatus();
+        addDebugLog('Debug panel opened', 'info');
+    } else {
+        panel.style.display = 'none';
+        toggleIcon.className = 'fas fa-eye';
+        toggleText.textContent = 'Show Debug';
+        addDebugLog('Debug panel closed', 'info');
+    }
+}
+
+function clearDebugLog() {
+    debugLogs = [];
+    updateDebugLogDisplay();
+    addDebugLog('Debug log cleared', 'info');
 }
 
 // Initialize the application
