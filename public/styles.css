@@ -391,7 +391,8 @@ body {
 
 .nav-logo {
     height: 36px;
-    width: 120px;
+    width: auto;
+    max-width: 120px;
     transition: opacity 0.2s ease;
 }
 
@@ -403,14 +404,14 @@ body {
 @media (max-width: 768px) {
     .nav-logo {
         height: 28px;
-        width: 93px;
+        max-width: 93px;
     }
 }
 
 @media (max-width: 480px) {
     .nav-logo {
         height: 24px;
-        width: 80px;
+        max-width: 80px;
     }
 }
 
@@ -766,7 +767,8 @@ textarea:focus-visible {
 
 .nav-logo {
     height: 36px;
-    width: 120px;
+    width: auto;
+    max-width: 120px;
     transition: opacity 0.2s ease;
 }
 

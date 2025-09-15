@@ -1,33 +1,18 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background with gradient -->
-  <defs>
-    <linearGradient id="faviconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#374151;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1f2937;stop-opacity:1" />
-    </linearGradient>
-    <linearGradient id="faviconAccent" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#4f46e5;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-  
-  <rect width="32" height="32" rx="8" fill="url(#faviconGradient)"/>
+  <!-- Background -->
+  <rect width="32" height="32" rx="8" fill="#374151"/>
   
   <!-- Main Shield -->
-  <path d="M16 4L24 8V16L16 20L8 16V8L16 4Z" fill="white" stroke="#111827" stroke-width="0.3"/>
+  <path d="M16 4L24 8V16L16 20L8 16V8L16 4Z" fill="white"/>
   
   <!-- Inner Shield -->
-  <path d="M16 7L21 9V14L16 16L11 14V9L16 7Z" fill="url(#faviconGradient)"/>
+  <path d="M16 6L21 8V14L16 16L11 14V8L16 6Z" fill="#374151"/>
   
-  <!-- Door Symbol with refined design -->
-  <rect x="14" y="10" width="4" height="6" rx="0.8" fill="url(#faviconAccent)"/>
-  <rect x="14.8" y="10.8" width="2.4" height="4.4" rx="0.3" fill="white"/>
-  <circle cx="17" cy="13" r="0.8" fill="url(#faviconAccent)"/>
+  <!-- Door Symbol -->
+  <rect x="14" y="10" width="4" height="6" rx="0.5" fill="#6366f1"/>
+  <circle cx="17" cy="13" r="0.8" fill="white"/>
   
-  <!-- Connection Lines (IoT) - refined -->
-  <path d="M2 12L6 12M26 12L30 12M2 14L6 14M26 14L30 14" stroke="#6366f1" stroke-width="0.8" stroke-linecap="round" opacity="0.8"/>
-  <circle cx="2" cy="12" r="0.8" fill="#6366f1" opacity="0.8"/>
-  <circle cx="30" cy="12" r="0.8" fill="#6366f1" opacity="0.8"/>
-  <circle cx="2" cy="14" r="0.8" fill="#6366f1" opacity="0.8"/>
-  <circle cx="30" cy="14" r="0.8" fill="#6366f1" opacity="0.8"/>
+  <!-- Connection Dots -->
+  <circle cx="4" cy="12" r="1" fill="#6366f1"/>
+  <circle cx="28" cy="12" r="1" fill="#6366f1"/>
 </svg>
