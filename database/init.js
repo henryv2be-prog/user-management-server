@@ -1,30 +1,9 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const fs = require('fs');
-
-// Database path - use environment variable for Render compatibility
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'users.db');
-
-// Ensure database directory exists
-const dbDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-}
-
-// Create database connection
-const db = new sqlite3.Database(DB_PATH, (err) => {
-    if (err) {
-        console.error('Error opening database:', err.message);
-        process.exit(1);
-    }
-    console.log('Connected to SQLite database at:', DB_PATH);
-});
+const { getDatabase, DB_PATH } = require('./connection');
 
 // Initialize database tables
 const initDatabase = () => {
     return new Promise((resolve, reject) => {
-        const dbPath = path.join(__dirname, 'users.db');
-        const db = new sqlite3.Database(dbPath);
+        const db = getDatabase();
         
         let completedTables = 0;
         const totalTables = 9; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, access_requests, events, admin_user
@@ -32,7 +11,6 @@ const initDatabase = () => {
         const checkCompletion = () => {
             completedTables++;
             if (completedTables === totalTables) {
-                db.close();
                 resolve();
             }
         };
@@ -327,18 +305,10 @@ if (require.main === module) {
     initDatabase()
         .then(() => {
             console.log('Database initialization completed successfully');
-            db.close((err) => {
-                if (err) {
-                    console.error('Error closing database:', err.message);
-                    process.exit(1);
-                }
-                console.log('Database connection closed');
-                process.exit(0);
-            });
+            process.exit(0);
         })
         .catch((err) => {
             console.error('Database initialization failed:', err.message);
-            db.close();
             process.exit(1);
         });
 }
