@@ -189,7 +189,7 @@ body {
 }
 
 .page-header h1 i {
-    color: var(--primary-color);
+    color: white;
 }
 
 .page-description {
@@ -282,7 +282,7 @@ body {
 }
 
 .section-header h2 i {
-    color: var(--primary-color);
+    color: white;
 }
 
 /* Modern Button Styles */
