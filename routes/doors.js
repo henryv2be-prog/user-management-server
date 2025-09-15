@@ -123,10 +123,14 @@ router.get('/', authenticate, requireAdmin, validatePagination, async (req, res)
       search
     };
     
+    console.log('Fetching doors with options:', options);
+    
     const [doors, totalCount] = await Promise.all([
       Door.findAll(options),
       Door.count(options)
     ]);
+    
+    console.log(`Found ${doors.length} doors, total count: ${totalCount}`);
     
     const totalPages = Math.ceil(totalCount / options.limit);
     
@@ -180,6 +184,8 @@ router.post('/', authenticate, requireAdmin, validateDoor, async (req, res) => {
   try {
     const { name, location, controllerIp, controllerMac, accessGroupId } = req.body;
     
+    console.log('Creating door with data:', { name, location, controllerIp, controllerMac, accessGroupId });
+    
     // Validation middleware already checks for duplicate IP/MAC addresses
     const door = await Door.create({
       name,
@@ -187,6 +193,8 @@ router.post('/', authenticate, requireAdmin, validateDoor, async (req, res) => {
       controllerIp,
       controllerMac
     });
+    
+    console.log('Door created successfully with ID:', door.id);
     
     // Add to access group if specified
     if (accessGroupId) {
