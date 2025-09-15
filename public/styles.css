@@ -934,7 +934,7 @@ textarea:focus-visible {
     margin-bottom: 15px;
 }
 
-.stat-card.users i { color: #667eea; }
+.stat-card.users i { color: #36454F; }
 .stat-card.active i { color: #28a745; }
 .stat-card.admins i { color: #dc3545; }
 
@@ -1184,7 +1184,7 @@ textarea:focus-visible {
 }
 
 .action-btn.edit {
-    background: #007bff;
+    background: #36454F;
     color: white;
 }
 
@@ -1225,7 +1225,7 @@ textarea:focus-visible {
 .profile-avatar {
     width: 100px;
     height: 100px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #36454F 0%, #2C3E50 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1381,7 +1381,7 @@ textarea:focus-visible {
 .door-checkbox-item input[type="checkbox"] {
     margin-right: 12px;
     transform: scale(1.3);
-    accent-color: #667eea;
+    accent-color: #36454F;
     cursor: pointer;
 }
 
@@ -1436,7 +1436,7 @@ textarea:focus-visible {
 
 .door-checkbox-item .door-status.available {
     background-color: #e3f2fd;
-    color: #1976d2;
+    color: #36454F;
 }
 
 /* Current doors section styling */
@@ -1545,7 +1545,7 @@ textarea:focus-visible {
 /* Door tags in access groups table */
 .door-tag {
     display: inline-block;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #36454F 0%, #2C3E50 100%);
     color: white;
     padding: 4px 8px;
     border-radius: 12px;
@@ -1553,13 +1553,13 @@ textarea:focus-visible {
     font-weight: 500;
     margin: 2px 4px 2px 0;
     white-space: nowrap;
-    box-shadow: 0 1px 3px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 1px 3px rgba(54, 69, 79, 0.3);
     transition: all 0.2s ease;
 }
 
 .door-tag:hover {
     transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 2px 6px rgba(54, 69, 79, 0.4);
 }
 
 .door-count {
@@ -1904,7 +1904,7 @@ textarea:focus-visible {
     flex-shrink: 0;
 }
 
-.event-icon.user { background: #007bff; }
+.event-icon.user { background: #36454F; }
 .event-icon.door { background: #28a745; }
 .event-icon.access_group { background: #6f42c1; }
 .event-icon.auth { background: #fd7e14; }
@@ -2005,9 +2005,9 @@ textarea:focus-visible {
 }
 
 .event-pagination .pagination button.active {
-    background: #007bff;
+    background: #36454F;
     color: white;
-    border-color: #007bff;
+    border-color: #36454F;
 }
 
 /* Empty state for events */
@@ -2247,7 +2247,7 @@ textarea:focus-visible {
 }
 
 .toast.info {
-    border-left: 4px solid #007bff;
+    border-left: 4px solid #36454F;
 }
 
 @keyframes slideIn {
@@ -2432,12 +2432,12 @@ textarea:focus-visible {
 }
 
 .tab-button.active {
-    color: #667eea;
-    border-bottom-color: #667eea;
+    color: #36454F;
+    border-bottom-color: #36454F;
 }
 
 .tab-button:hover {
-    color: #667eea;
+    color: #36454F;
 }
 
 .tab-content {
@@ -2536,7 +2536,7 @@ textarea:focus-visible {
     
     .tab-button.active {
         border-bottom-color: #eee;
-        border-left: 3px solid #667eea;
+        border-left: 3px solid #36454F;
     }
 }
 
@@ -2560,7 +2560,7 @@ textarea:focus-visible {
     padding: 15px;
     background: #e3f2fd;
     border-radius: 10px;
-    color: #1976d2;
+    color: #36454F;
     font-weight: 500;
 }
 
@@ -2605,8 +2605,8 @@ textarea:focus-visible {
 }
 
 .controller-card:hover {
-    border-color: #667eea;
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+    border-color: #36454F;
+    box-shadow: 0 5px 15px rgba(54, 69, 79, 0.2);
 }
 
 .controller-card.discovered {
@@ -2736,7 +2736,7 @@ textarea:focus-visible {
 .controller-config-form input:focus,
 .controller-config-form select:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #36454F;
 }
 
 /* Header Actions */

@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   },
   roleText: {
     fontSize: 12,
-    color: '#1976d2',
+    color: '#36454F',
     fontWeight: '600',
   },
   menu: {
