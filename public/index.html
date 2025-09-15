@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SimplifiAccess - Modern Smart Access Control System with real-time monitoring and management">
-    <meta name="keywords" content="access control, smart doors, security, management, dashboard">
+    <meta name="description" content="SimplifiAccess - Simple Smart Access Control System with ESP32 integration and real-time monitoring">
+    <meta name="keywords" content="access control, smart doors, security, management, dashboard, ESP32, IoT">
     <meta name="author" content="SimplifiAccess">
     <meta name="theme-color" content="#374151">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="SimplifiAccess - Smart Access Control">
-    <meta property="og:description" content="Modern Smart Access Control System with real-time monitoring">
+    <meta property="og:title" content="SimplifiAccess - Simple Smart Access Control">
+    <meta property="og:description" content="Simple Smart Access Control System with ESP32 integration and real-time monitoring">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:title" content="SimplifiAccess - Smart Access Control">
-    <meta property="twitter:description" content="Modern Smart Access Control System with real-time monitoring">
+    <meta property="twitter:title" content="SimplifiAccess - Simple Smart Access Control">
+    <meta property="twitter:description" content="Simple Smart Access Control System with ESP32 integration and real-time monitoring">
     
-    <title>SimplifiAccess - Smart Access Control</title>
+    <title>SimplifiAccess - Simple Smart Access Control</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="apple-touch-icon" href="favicon.svg">
     <link rel="manifest" href="manifest.json">
@@ -49,8 +49,7 @@
         <nav class="navbar" id="mainNavbar" style="display: none;" role="navigation" aria-label="Main navigation">
             <div class="nav-container">
                 <div class="nav-brand">
-                    <i class="fas fa-shield-alt" aria-hidden="true"></i>
-                    <span>SimplifiAccess</span>
+                    <img src="simplifiaccess-logo-nav.svg" alt="SimplifiAccess" class="nav-logo">
                 </div>
                 <button class="nav-toggle" onclick="toggleNav()" aria-label="Toggle navigation menu" aria-expanded="false">
                     <i class="fas fa-bars" aria-hidden="true"></i>
@@ -97,9 +96,8 @@
             <div class="login-container">
                 <div class="login-card">
                     <div class="login-header">
-                        <i class="fas fa-shield-alt"></i>
-                        <h2>SimplifiAccess</h2>
-                        <p>Smart Access Control System</p>
+                        <img src="simplifiaccess-logo.svg" alt="SimplifiAccess" class="login-logo" width="160" height="48">
+                        <p>Simple Smart Access Control</p>
                     </div>
                     <form id="loginForm" onsubmit="handleLogin(event)">
                         <div class="form-group">
@@ -123,7 +121,7 @@
             <div class="login-container">
                 <div class="login-card">
                     <div class="login-header">
-                        <i class="fas fa-user-plus"></i>
+                        <img src="simplifiaccess-logo.svg" alt="SimplifiAccess" class="login-logo" width="160" height="48">
                         <h2>Join SimplifiAccess</h2>
                         <p>Create your account</p>
                     </div>
@@ -160,8 +158,13 @@
         <main id="dashboardSection" class="section" role="main" aria-label="Dashboard">
             <div class="container">
                 <header class="page-header">
-                    <h1><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Dashboard</h1>
-                    <p class="page-description">Real-time monitoring and system overview</p>
+                    <div class="header-brand">
+                        <img src="simplifiaccess-icon.svg" alt="SimplifiAccess" class="header-logo" width="32" height="32">
+                        <div class="header-text">
+                            <h1><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Dashboard</h1>
+                            <p class="page-description">Real-time monitoring and system overview</p>
+                        </div>
+                    </div>
                 </header>
                 
                 <!-- System Stats Cards -->
