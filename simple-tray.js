@@ -22,8 +22,8 @@ function createIcon(color = 'red') {
     r = 0; g = 255; b = 0;
     console.log('Creating GREEN icon');
   } else if (color === 'blue') {
-    r = 0; g = 0; b = 255;
-    console.log('Creating BLUE icon');
+    r = 54; g = 69; b = 79;
+    console.log('Creating CHARCOAL icon');
   } else {
     r = 128; g = 128; b = 128;
     console.log('Creating GRAY icon');

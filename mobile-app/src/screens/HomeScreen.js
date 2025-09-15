@@ -65,7 +65,7 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.header}>
         <Text style={styles.welcomeText}>Welcome, {user?.first_name || 'User'}!</Text>
         <TouchableOpacity onPress={handleProfile} style={styles.profileButton}>
-          <Ionicons name="person-circle" size={32} color="#667eea" />
+          <Ionicons name="person-circle" size={32} color="#36454F" />
         </TouchableOpacity>
       </View>
 
@@ -82,7 +82,7 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.secondaryButton} onPress={handleAccessHistory}>
-            <Ionicons name="time" size={24} color="#667eea" />
+            <Ionicons name="time" size={24} color="#36454F" />
             <Text style={styles.secondaryButtonText}>Access History</Text>
           </TouchableOpacity>
         </View>
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   primaryButton: {
-    backgroundColor: '#667eea',
+    backgroundColor: '#36454F',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -174,10 +174,10 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#667eea',
+    borderColor: '#36454F',
   },
   secondaryButtonText: {
-    color: '#667eea',
+    color: '#36454F',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
