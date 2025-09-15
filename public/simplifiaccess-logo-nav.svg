@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="120" height="36" viewBox="0 0 120 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="120" height="36" rx="6" fill="white"/>
+  
+  <!-- Logo Icon -->
+  <g transform="translate(6, 6)">
+    <!-- Main Shield with gradient -->
+    <defs>
+      <linearGradient id="shieldGradientNav" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#374151;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#1f2937;stop-opacity:1" />
+      </linearGradient>
+      <linearGradient id="accentGradientNav" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#4f46e5;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+    
+    <!-- Main Shield -->
+    <path d="M12 1.2L21 4.8V13.2L12 16.8L3 13.2V4.8L12 1.2Z" fill="url(#shieldGradientNav)" stroke="#111827" stroke-width="0.2"/>
+    
+    <!-- Inner Shield -->
+    <path d="M12 3.6L18 6V10.8L12 13.2L6 10.8V6L12 3.6Z" fill="white"/>
+    
+    <!-- Door Symbol with refined design -->
+    <rect x="9.6" y="7.2" width="4.8" height="4.8" rx="0.9" fill="url(#accentGradientNav)"/>
+    <rect x="10.5" y="8.1" width="3" height="3" rx="0.3" fill="white"/>
+    <circle cx="12" cy="9.6" r="0.7" fill="url(#accentGradientNav)"/>
+    
+    <!-- Connection Lines (IoT) - refined -->
+    <path d="M1.2 9L3.6 9M20.4 9L22.8 9M1.2 12L3.6 12M20.4 12L22.8 12" stroke="#6366f1" stroke-width="0.7" stroke-linecap="round" opacity="0.8"/>
+    <circle cx="1.2" cy="9" r="0.7" fill="#6366f1" opacity="0.8"/>
+    <circle cx="22.8" cy="9" r="0.7" fill="#6366f1" opacity="0.8"/>
+    <circle cx="1.2" cy="12" r="0.7" fill="#6366f1" opacity="0.8"/>
+    <circle cx="22.8" cy="12" r="0.7" fill="#6366f1" opacity="0.8"/>
+  </g>
+  
+  <!-- Typography -->
+  <g transform="translate(36, 9)">
+    <!-- Main Text -->
+    <text x="0" y="12" font-family="Inter, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" font-size="11" font-weight="700" fill="#1f2937">Simplifi</text>
+    <text x="51" y="12" font-family="Inter, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" font-size="11" font-weight="700" fill="#374151">Access</text>
+    
+    <!-- Tagline -->
+    <text x="0" y="21" font-family="Inter, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" font-size="6" font-weight="400" fill="#6b7280">Simple Smart Access Control</text>
+  </g>
+</svg>
