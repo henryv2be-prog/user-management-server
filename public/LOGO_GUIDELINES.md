@@ -16,7 +16,7 @@ The SimplifiAccess logo represents our core values of **simplicity**, **security
 - **File**: `simplifiaccess-logo-horizontal.svg`
 - **Dimensions**: 300×80px
 - **Usage**: Website headers, presentations, and wide format applications
-- **Elements**: Shield icon + "SimplifiAccess" text + full tagline
+- **Elements**: Shield icon + "SimplifiAccess" text + "Simple Smart Access Control" tagline
 
 ### 3. Stacked Logo (Vertical)
 - **File**: `simplifiaccess-logo-vertical.svg`
@@ -62,10 +62,11 @@ The SimplifiAccess logo represents our core values of **simplicity**, **security
 
 ## Color Specifications
 
-### Primary Colors
-- **Primary Blue**: #2563eb (RGB: 37, 99, 235)
-- **Primary Blue Dark**: #1d4ed8 (RGB: 29, 78, 216)
-- **Success Green**: #10b981 (RGB: 16, 185, 129)
+### Primary Colors (Charcoal Theme)
+- **Primary Charcoal**: #374151 (RGB: 55, 65, 81)
+- **Primary Charcoal Dark**: #1f2937 (RGB: 31, 41, 55)
+- **Accent Indigo**: #6366f1 (RGB: 99, 102, 241)
+- **Accent Indigo Dark**: #4f46e5 (RGB: 79, 70, 229)
 
 ### Text Colors
 - **Primary Text**: #1f2937 (RGB: 31, 41, 55)
