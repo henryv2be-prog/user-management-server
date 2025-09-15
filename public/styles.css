@@ -1693,6 +1693,22 @@ textarea:focus-visible {
     align-items: center;
 }
 
+.door-controls .btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-inverse);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.door-controls .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: var(--text-inverse);
+}
+
+.door-controls .btn-secondary i {
+    color: var(--text-inverse);
+}
+
 
 .door-grid {
     display: grid;
@@ -1882,6 +1898,22 @@ textarea:focus-visible {
     display: flex;
     gap: 1rem;
     align-items: center;
+}
+
+.event-controls .btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-inverse);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.event-controls .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: var(--text-inverse);
+}
+
+.event-controls .btn-secondary i {
+    color: var(--text-inverse);
 }
 
 
