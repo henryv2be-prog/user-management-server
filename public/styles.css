@@ -1868,6 +1868,29 @@ textarea:focus-visible {
     font-size: 0.75rem;
 }
 
+/* Version Information Styles */
+.version-info {
+    padding: 1.5rem;
+}
+
+.version-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-light);
+}
+
+.commit-sha {
+    font-family: 'Courier New', monospace;
+    background: var(--background-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    border: 1px solid var(--border-light);
+}
+
 
 .event-controls select {
     padding: 0.5rem;

@@ -582,6 +582,44 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Version Information Panel -->
+                    <div class="settings-panel">
+                        <div class="panel-header">
+                            <h2><i class="fas fa-code-branch"></i> Version Information</h2>
+                            <p>Current deployment version and build information</p>
+                        </div>
+                        
+                        <div class="version-info">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <label>Commit SHA</label>
+                                    <span id="commitSha" class="commit-sha">Loading...</span>
+                                </div>
+                                <div class="info-item">
+                                    <label>Build Date</label>
+                                    <span id="buildDate">Loading...</span>
+                                </div>
+                                <div class="info-item">
+                                    <label>Environment</label>
+                                    <span id="buildEnvironment">Loading...</span>
+                                </div>
+                                <div class="info-item">
+                                    <label>Node Version</label>
+                                    <span id="nodeVersion">Loading...</span>
+                                </div>
+                            </div>
+                            
+                            <div class="version-actions">
+                                <button class="btn btn-secondary" onclick="copyCommitSha()">
+                                    <i class="fas fa-copy"></i> Copy Commit SHA
+                                </button>
+                                <button class="btn btn-outline" onclick="refreshVersionInfo()">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
