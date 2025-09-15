@@ -177,6 +177,28 @@ body {
     text-align: center;
 }
 
+.header-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.header-logo {
+    height: 32px;
+    width: 32px;
+    transition: opacity 0.2s ease;
+}
+
+.header-logo:hover {
+    opacity: 0.8;
+}
+
+.header-text {
+    text-align: center;
+}
+
 .page-header h1 {
     font-size: var(--text-4xl);
     font-weight: 700;
@@ -361,6 +383,17 @@ body {
     font-size: var(--text-xl);
     font-weight: 700;
     color: var(--text-primary);
+}
+
+.nav-logo {
+    height: 36px;
+    width: auto;
+    max-width: 120px;
+    transition: opacity 0.2s ease;
+}
+
+.nav-logo:hover {
+    opacity: 0.8;
 }
 
 .nav-brand i {
@@ -711,6 +744,17 @@ textarea:focus-visible {
     letter-spacing: -0.025em;
 }
 
+.nav-logo {
+    height: 36px;
+    width: auto;
+    max-width: 120px;
+    transition: opacity 0.2s ease;
+}
+
+.nav-logo:hover {
+    opacity: 0.8;
+}
+
 .nav-brand i {
     margin-right: 10px;
 }
@@ -777,6 +821,18 @@ textarea:focus-visible {
 .login-header {
     text-align: center;
     margin-bottom: 30px;
+}
+
+.login-logo {
+    height: 48px;
+    width: auto;
+    max-width: 160px;
+    margin-bottom: 12px;
+    transition: opacity 0.2s ease;
+}
+
+.login-logo:hover {
+    opacity: 0.8;
 }
 
 .login-header i {

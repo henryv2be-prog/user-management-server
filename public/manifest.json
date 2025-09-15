@@ -1,7 +1,7 @@
 {
-  "name": "SimplifiAccess - Smart Access Control",
+  "name": "SimplifiAccess - Simple Smart Access Control",
   "short_name": "SimplifiAccess",
-  "description": "Modern Smart Access Control System with real-time monitoring and management",
+  "description": "Simple Smart Access Control System with ESP32 integration and real-time monitoring",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
