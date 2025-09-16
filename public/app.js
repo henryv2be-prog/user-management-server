@@ -3409,7 +3409,24 @@ function connectEventStream() {
     
     eventSource = new EventSource(`/api/events/stream?token=${encodeURIComponent(token)}`);
     
+    // Add immediate logging
+    console.log('📡 EventSource created, readyState:', eventSource.readyState);
+    addDebugLog(`EventSource created, readyState: ${eventSource.readyState}`, 'info');
+    
+    // Add timeout to detect connection issues
+    const connectionTimeout = setTimeout(() => {
+        if (eventSource.readyState !== 1) {
+            console.log('⏰ SSE connection timeout - readyState still:', eventSource.readyState);
+            addDebugLog(`SSE connection timeout - readyState: ${eventSource.readyState}`, 'warning');
+            
+            // Try to get more info about the connection
+            console.log('📡 EventSource URL:', eventSource.url);
+            console.log('📡 EventSource withCredentials:', eventSource.withCredentials);
+        }
+    }, 10000); // 10 second timeout
+    
     eventSource.onopen = function(event) {
+        clearTimeout(connectionTimeout);
         console.log('✅ Event stream connected successfully');
         addDebugLog('SSE connection established successfully', 'success');
         isEventStreamConnected = true;
@@ -3514,6 +3531,11 @@ function connectEventStream() {
         console.error('❌ Event stream error:', event);
         addDebugLog(`SSE error occurred: readyState=${eventSource.readyState}`, 'error');
         console.log('EventSource readyState:', eventSource.readyState);
+        console.log('EventSource URL:', eventSource.url);
+        console.log('Error event:', event);
+        
+        // Clear the timeout since we got an error
+        clearTimeout(connectionTimeout);
         
         // Only mark as disconnected if readyState is CLOSED (2)
         if (eventSource.readyState === 2) {
