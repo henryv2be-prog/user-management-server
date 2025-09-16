@@ -51,7 +51,13 @@ router.get('/stream', (req, res) => {
   try {
     console.log('🔍 SSE: Verifying token...');
     console.log('🔍 SSE: JWT_SECRET available:', !!process.env.JWT_SECRET);
+    console.log('🔍 SSE: JWT_SECRET length:', process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 'undefined');
     console.log('🔍 SSE: Token length:', token.length);
+    console.log('🔍 SSE: Token preview:', token.substring(0, 20) + '...');
+    
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET environment variable is not set');
+    }
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log('🔍 SSE: Token decoded successfully:', { id: decoded.id, role: decoded.role });
@@ -71,9 +77,22 @@ router.get('/stream', (req, res) => {
   } catch (error) {
     console.log('❌ SSE: Token verification failed:', error.message);
     console.log('❌ SSE: Error type:', error.name);
+    console.log('❌ SSE: Full error:', error);
+    
+    let errorMessage = 'Token validation failed';
+    if (error.message.includes('secret')) {
+      errorMessage = 'JWT secret configuration error';
+    } else if (error.name === 'JsonWebTokenError') {
+      errorMessage = 'Invalid token format';
+    } else if (error.name === 'TokenExpiredError') {
+      errorMessage = 'Token has expired';
+    } else {
+      errorMessage = `Token validation failed: ${error.message}`;
+    }
+    
     res.write(`data: ${JSON.stringify({ 
       type: 'error', 
-      message: `Token validation failed: ${error.message}`,
+      message: errorMessage,
       timestamp: new Date().toISOString()
     })}\n\n`);
     res.end();
