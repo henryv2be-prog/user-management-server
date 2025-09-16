@@ -306,9 +306,9 @@ router.get('/stream', async (req, res) => {
   sseConnections.add(connection);
   
   // Check for duplicate connections
-  const userConnections = Array.from(sseConnections).filter(conn => conn.userId === req.user.id);
-  if (userConnections.length > 1) {
-    console.log(`⚠️ WARNING: User ${req.user.id} has ${userConnections.length} connections!`);
+  const currentUserConnections = Array.from(sseConnections).filter(conn => conn.userId === req.user.id);
+  if (currentUserConnections.length > 1) {
+    console.log(`⚠️ WARNING: User ${req.user.id} has ${currentUserConnections.length} connections!`);
   }
   
   // Debug req.user before logging
