@@ -3422,12 +3422,30 @@ function connectEventStream() {
             // Try to get more info about the connection
             console.log('📡 EventSource URL:', eventSource.url);
             console.log('📡 EventSource withCredentials:', eventSource.withCredentials);
+            
+            // Test if we can fetch the endpoint manually
+            console.log('🧪 Testing SSE endpoint manually...');
+            fetch(eventSource.url)
+                .then(response => {
+                    console.log('🧪 Manual fetch response:', response.status, response.statusText);
+                    console.log('🧪 Response headers:', [...response.headers.entries()]);
+                    return response.text();
+                })
+                .then(text => {
+                    console.log('🧪 Manual fetch text:', text.substring(0, 200));
+                })
+                .catch(error => {
+                    console.log('🧪 Manual fetch error:', error);
+                });
         }
     }, 10000); // 10 second timeout
     
     eventSource.onopen = function(event) {
         clearTimeout(connectionTimeout);
         console.log('✅ Event stream connected successfully');
+        console.log('✅ Event object:', event);
+        console.log('✅ EventSource readyState:', eventSource.readyState);
+        console.log('✅ EventSource URL:', eventSource.url);
         addDebugLog('SSE connection established successfully', 'success');
         isEventStreamConnected = true;
         updateEventStreamStatus(true);
