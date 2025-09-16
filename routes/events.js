@@ -104,7 +104,7 @@ router.get('/test-sse', (req, res) => {
 });
 
 // Server-Sent Events endpoint for live event updates (admin only)
-router.get('/stream', (req, res) => {
+router.get('/stream', async (req, res) => {
   console.log('🌐 SSE /stream endpoint accessed');
   console.log('🌐 Request headers:', req.headers);
   console.log('🌐 Query params:', req.query);
