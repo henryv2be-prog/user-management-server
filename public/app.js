@@ -3443,6 +3443,41 @@ function connectEventStream() {
                 // Add new event to the top of the list
                 addNewEventToList(data.event);
                 addDebugLog(`New event added: ${data.event.type}:${data.event.action}`, 'success');
+                
+                // Handle specific event types to refresh UI
+                if (data.event.type === 'user' && data.event.action === 'deleted') {
+                    console.log('🔄 User deleted event received, refreshing users list...');
+                    if (currentSection === 'users') {
+                        loadUsers(currentPage);
+                    }
+                    // Also refresh dashboard stats
+                    if (currentSection === 'dashboard') {
+                        loadDashboard();
+                    }
+                } else if (data.event.type === 'user' && data.event.action === 'created') {
+                    console.log('🔄 User created event received, refreshing users list...');
+                    if (currentSection === 'users') {
+                        loadUsers(currentPage);
+                    }
+                    // Also refresh dashboard stats
+                    if (currentSection === 'dashboard') {
+                        loadDashboard();
+                    }
+                } else if (data.event.type === 'user' && data.event.action === 'updated') {
+                    console.log('🔄 User updated event received, refreshing users list...');
+                    if (currentSection === 'users') {
+                        loadUsers(currentPage);
+                    }
+                } else if (data.event.type === 'door' && (data.event.action === 'created' || data.event.action === 'updated' || data.event.action === 'deleted')) {
+                    console.log('🔄 Door event received, refreshing doors list...');
+                    if (currentSection === 'doors') {
+                        loadDoors(currentPage);
+                    }
+                    // Also refresh dashboard stats
+                    if (currentSection === 'dashboard') {
+                        loadDashboard();
+                    }
+                }
             } else if (data.type === 'connection') {
                 console.log('Event stream connection established');
                 addDebugLog('Connection confirmation received', 'info');
