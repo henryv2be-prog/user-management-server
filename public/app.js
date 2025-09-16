@@ -3355,6 +3355,9 @@ function connectEventStream() {
         eventSource.close();
     }
     
+    // Reset reconnection attempts counter
+    window.sseReconnectAttempts = 0;
+    
     const token = localStorage.getItem('token');
     if (!token) {
         console.log('❌ No token available for event stream');
@@ -3391,6 +3394,14 @@ function connectEventStream() {
         isEventStreamConnected = true;
         updateEventStreamStatus(true);
         updateDebugStatus();
+        
+        // Clear any existing reconnection attempts
+        if (window.sseReconnectAttempts) {
+            window.sseReconnectAttempts = 0;
+        }
+        
+        // Start periodic health check for Railway sleep/wake detection
+        startSSEHealthCheck();
         
         // Ensure status stays connected
         setTimeout(() => {
@@ -3443,14 +3454,33 @@ function connectEventStream() {
             updateEventStreamStatus(false);
             updateDebugStatus();
             
-            // Attempt to reconnect after 5 seconds
-            setTimeout(() => {
-                if (!isEventStreamConnected) {
-                    console.log('🔄 Attempting to reconnect event stream...');
-                    addDebugLog('Attempting to reconnect SSE', 'info');
-                    connectEventStream();
+            // Attempt to reconnect with exponential backoff for Railway sleep/wake cycles
+            if (!window.sseReconnectAttempts) {
+                window.sseReconnectAttempts = 0;
+            }
+            
+            const maxReconnectAttempts = 10;
+            
+            const attemptReconnect = () => {
+                if (!isEventStreamConnected && window.sseReconnectAttempts < maxReconnectAttempts) {
+                    window.sseReconnectAttempts++;
+                    const delay = Math.min(1000 * Math.pow(2, window.sseReconnectAttempts), 30000); // Max 30 seconds
+                    
+                    console.log(`🔄 Attempting to reconnect event stream (attempt ${window.sseReconnectAttempts}/${maxReconnectAttempts}) in ${delay}ms...`);
+                    addDebugLog(`Attempting to reconnect SSE (attempt ${window.sseReconnectAttempts}/${maxReconnectAttempts})`, 'info');
+                    
+                    setTimeout(() => {
+                        if (!isEventStreamConnected) {
+                            connectEventStream();
+                        }
+                    }, delay);
+                } else if (window.sseReconnectAttempts >= maxReconnectAttempts) {
+                    console.log('❌ Max reconnection attempts reached, giving up');
+                    addDebugLog('Max SSE reconnection attempts reached', 'error');
                 }
-            }, 5000);
+            };
+            
+            attemptReconnect();
         } else {
             console.log('📡 Connection error but still open, keeping status as connected');
             addDebugLog('SSE error but connection still open, keeping status', 'warning');
