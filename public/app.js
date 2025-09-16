@@ -3438,6 +3438,13 @@ function connectEventStream() {
       addDebugLog(`Fetch test error: ${error.message}`, 'error');
     });
     
+    // Close existing EventSource if any
+    if (eventSource) {
+        console.log('🔄 Closing existing EventSource before creating new one');
+        eventSource.close();
+        eventSource = null;
+    }
+    
     eventSource = new EventSource(sseUrl);
     
     // Add immediate logging

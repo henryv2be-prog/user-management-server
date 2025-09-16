@@ -281,32 +281,34 @@ router.get('/stream', async (req, res) => {
     resHeadersSent: connection.res.headersSent
   });
 
-  // Send initial connection message
+  // Send initial connection message to ALL connections for this user
   const connectionMessage = {
     type: 'connection',
     message: 'Connected to event stream',
     timestamp: new Date().toISOString()
   };
   
-  console.log('📤 Sending initial connection message:', connectionMessage);
-  console.log('📤 Response writable:', res.writable);
-  console.log('📤 Response destroyed:', res.destroyed);
-  console.log('📤 Response headers sent:', res.headersSent);
+  console.log('📤 Sending initial connection message to all connections:', connectionMessage);
   
-  try {
-    res.write(`data: ${JSON.stringify(connectionMessage)}\n\n`);
-    console.log('📤 Initial connection message sent successfully');
-  } catch (writeError) {
-    console.error('❌ Error sending initial connection message:', writeError);
-    console.error('❌ Write error details:', {
-      code: writeError.code,
-      message: writeError.message,
-      stack: writeError.stack
-    });
-    sseConnections.delete(connection);
-    res.end();
-    return;
-  }
+  // Send to all connections for this user
+  const userConnections = Array.from(sseConnections).filter(conn => conn.userId === req.user.id);
+  console.log(`📤 Found ${userConnections.length} connections for user ${req.user.id}`);
+  
+  userConnections.forEach((conn, index) => {
+    try {
+      console.log(`📤 Sending to connection ${index + 1}:`, {
+        writable: conn.res.writable,
+        destroyed: conn.res.destroyed,
+        headersSent: conn.res.headersSent
+      });
+      
+      conn.res.write(`data: ${JSON.stringify(connectionMessage)}\n\n`);
+      console.log(`✅ Initial connection message sent to connection ${index + 1}`);
+    } catch (writeError) {
+      console.error(`❌ Error sending initial connection message to connection ${index + 1}:`, writeError);
+      sseConnections.delete(conn);
+    }
+  });
 
   // Set up heartbeat to keep connection alive
   const heartbeatInterval = setInterval(() => {
