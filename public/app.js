@@ -3499,6 +3499,44 @@ function disconnectEventStream() {
         addDebugLog('SSE connection manually disconnected', 'info');
         console.log('Event stream disconnected');
     }
+    
+    // Stop health check
+    if (window.sseHealthCheckInterval) {
+        clearInterval(window.sseHealthCheckInterval);
+        window.sseHealthCheckInterval = null;
+    }
+}
+
+// SSE Health Check for cloud platform sleep/wake cycles
+function startSSEHealthCheck() {
+    // Clear any existing health check
+    if (window.sseHealthCheckInterval) {
+        clearInterval(window.sseHealthCheckInterval);
+    }
+    
+    // Check every 30 seconds if SSE is still working
+    window.sseHealthCheckInterval = setInterval(() => {
+        if (!isEventStreamConnected || !eventSource || eventSource.readyState !== 1) {
+            console.log('🔄 SSE health check failed, attempting reconnection...');
+            addDebugLog('SSE health check failed, reconnecting', 'warning');
+            
+            // Reset reconnection attempts for health check
+            window.sseReconnectAttempts = 0;
+            connectEventStream();
+        } else {
+            console.log('✅ SSE health check passed');
+        }
+    }, 30000); // Check every 30 seconds
+    
+    // Also check when page becomes visible again (user switches back to tab)
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && !isEventStreamConnected) {
+            console.log('🔄 Page became visible and SSE disconnected, reconnecting...');
+            addDebugLog('Page visible, reconnecting SSE', 'info');
+            window.sseReconnectAttempts = 0;
+            connectEventStream();
+        }
+    });
 }
 
 function addNewEventToList(event) {
