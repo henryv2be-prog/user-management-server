@@ -1,7 +1,7 @@
 {
-  "name": "simplifiaccess",
-  "version": "1.0.0",
-  "description": "SimplifiAccess - Smart Access Control System with ESP32 Integration (Railway Ready)",
+  "name": "simplifiaccess-railway",
+  "version": "1.0.1",
+  "description": "SimplifiAccess - Smart Access Control System with ESP32 Integration (Railway Ready v1.0.1)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
