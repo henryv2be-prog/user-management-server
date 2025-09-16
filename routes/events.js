@@ -239,6 +239,12 @@ router.get('/stream', async (req, res) => {
     
     req.user = user;
     console.log(`✅ SSE: Admin user ${req.user.id} authenticated successfully`);
+    console.log(`✅ SSE: req.user object:`, {
+      id: req.user.id,
+      email: req.user.email,
+      role: req.user.role,
+      hasId: !!req.user.id
+    });
   } catch (error) {
     console.log('❌ SSE: Token verification failed:', error.message);
     console.log('❌ SSE: Error type:', error.name);
@@ -274,6 +280,15 @@ router.get('/stream', async (req, res) => {
 
   // Add to connections set
   sseConnections.add(connection);
+  
+  // Debug req.user before logging
+  console.log(`🔍 SSE: About to log connection - req.user:`, {
+    exists: !!req.user,
+    id: req.user?.id,
+    email: req.user?.email,
+    role: req.user?.role
+  });
+  
   console.log(`📡 SSE connection established for user ${req.user.id}. Total connections: ${sseConnections.size}`);
   console.log(`📡 Connection object:`, {
     userId: connection.userId,
