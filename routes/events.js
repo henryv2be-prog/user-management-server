@@ -62,6 +62,26 @@ router.get('/test-connection', (req, res) => {
   });
 });
 
+// Debug endpoint to check SSE connection status
+router.get('/debug-status', (req, res) => {
+  console.log('🔍 Debug status endpoint accessed');
+  
+  const connectionDetails = Array.from(sseConnections).map((connection, index) => ({
+    index: index + 1,
+    userId: connection.userId,
+    connectedAt: connection.connectedAt,
+    isActive: sseConnections.has(connection)
+  }));
+  
+  console.log('🔍 Connection details:', connectionDetails);
+  
+  res.json({
+    totalConnections: sseConnections.size,
+    connections: connectionDetails,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Token validation endpoint for debugging
 router.get('/validate-token', (req, res) => {
   const token = req.query.token;
@@ -255,6 +275,11 @@ router.get('/stream', async (req, res) => {
   // Add to connections set
   sseConnections.add(connection);
   console.log(`📡 SSE connection established for user ${req.user.id}. Total connections: ${sseConnections.size}`);
+  console.log(`📡 Connection object:`, {
+    userId: connection.userId,
+    connectedAt: connection.connectedAt,
+    resHeadersSent: connection.res.headersSent
+  });
 
   // Send initial connection message
   const connectionMessage = {
@@ -264,12 +289,20 @@ router.get('/stream', async (req, res) => {
   };
   
   console.log('📤 Sending initial connection message:', connectionMessage);
+  console.log('📤 Response writable:', res.writable);
+  console.log('📤 Response destroyed:', res.destroyed);
+  console.log('📤 Response headers sent:', res.headersSent);
   
   try {
     res.write(`data: ${JSON.stringify(connectionMessage)}\n\n`);
     console.log('📤 Initial connection message sent successfully');
   } catch (writeError) {
     console.error('❌ Error sending initial connection message:', writeError);
+    console.error('❌ Write error details:', {
+      code: writeError.code,
+      message: writeError.message,
+      stack: writeError.stack
+    });
     sseConnections.delete(connection);
     res.end();
     return;
