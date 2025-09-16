@@ -148,6 +148,18 @@ router.get('/stream', (req, res) => {
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log('🔍 SSE: Token decoded successfully:', { id: decoded.id, role: decoded.role });
+    console.log('🔍 SSE: Full decoded token:', decoded);
+    
+    if (!decoded.id) {
+      console.log('❌ SSE: Token missing user ID');
+      res.write(`data: ${JSON.stringify({ 
+        type: 'error', 
+        message: 'Token missing user ID',
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+      res.end();
+      return;
+    }
     
     if (decoded.role !== 'admin') {
       console.log('❌ SSE: Non-admin user attempted to connect:', decoded.role);
