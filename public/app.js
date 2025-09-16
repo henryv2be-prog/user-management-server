@@ -3694,6 +3694,10 @@ function connectEventStream() {
         if (eventSource.readyState === 0) {
             console.error('❌ EventSource stuck in CONNECTING state - likely network/CORS issue');
             addDebugLog('EventSource stuck in CONNECTING state', 'error');
+            
+            // Try fetch streaming fallback immediately
+            console.log('🔄 Attempting fetch streaming fallback...');
+            startFetchStreaming(eventSource.url);
         } else if (eventSource.readyState === 2) {
             console.error('❌ EventSource CLOSED - connection was established but closed');
             addDebugLog('EventSource connection was closed', 'error');
