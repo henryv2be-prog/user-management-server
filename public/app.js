@@ -315,6 +315,13 @@ async function checkAuthStatus() {
                 currentUser = data.user;
                 showAuthenticatedUI();
                 loadDashboard();
+                // Ensure SSE connection is established after auth check
+                setTimeout(() => {
+                    if (!isEventStreamConnected) {
+                        console.log('🔄 Establishing SSE connection after auth check...');
+                        connectEventStream();
+                    }
+                }, 1000);
             } else {
                 localStorage.removeItem('token');
                 showLogin();
@@ -838,6 +845,13 @@ async function handleLogin(event) {
             currentUser = data.user;
             showAuthenticatedUI();
             loadDashboard();
+            // Ensure SSE connection is established after login
+            setTimeout(() => {
+                if (!isEventStreamConnected) {
+                    console.log('🔄 Establishing SSE connection after login...');
+                    connectEventStream();
+                }
+            }, 1000);
             showToast('Login successful!', 'success');
         } else {
             showToast(data.message || 'Login failed', 'error');
@@ -878,6 +892,13 @@ async function handleRegister(event) {
             currentUser = data.user;
             showAuthenticatedUI();
             loadDashboard();
+            // Ensure SSE connection is established after registration
+            setTimeout(() => {
+                if (!isEventStreamConnected) {
+                    console.log('🔄 Establishing SSE connection after registration...');
+                    connectEventStream();
+                }
+            }, 1000);
             showToast('Registration successful!', 'success');
         } else {
             showToast(data.message || 'Registration failed', 'error');
