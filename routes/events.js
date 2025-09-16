@@ -31,6 +31,43 @@ router.get('/test', (req, res) => {
   });
 });
 
+// Token validation endpoint for debugging
+router.get('/validate-token', (req, res) => {
+  const token = req.query.token;
+  
+  if (!token) {
+    return res.json({ 
+      valid: false, 
+      error: 'No token provided',
+      jwtSecretAvailable: !!process.env.JWT_SECRET,
+      jwtSecretLength: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0
+    });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    res.json({
+      valid: true,
+      decoded: {
+        id: decoded.id,
+        role: decoded.role,
+        exp: decoded.exp,
+        expDate: new Date(decoded.exp * 1000).toISOString()
+      },
+      jwtSecretAvailable: !!process.env.JWT_SECRET,
+      jwtSecretLength: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0
+    });
+  } catch (error) {
+    res.json({
+      valid: false,
+      error: error.message,
+      errorType: error.name,
+      jwtSecretAvailable: !!process.env.JWT_SECRET,
+      jwtSecretLength: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0
+    });
+  }
+});
+
 // Simple SSE test endpoint (no auth required)
 router.get('/test-sse', (req, res) => {
   console.log('🧪 SSE test endpoint accessed');
