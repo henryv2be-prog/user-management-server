@@ -31,6 +31,37 @@ router.get('/test', (req, res) => {
   });
 });
 
+// Test endpoint to manually trigger SSE message
+router.get('/test-connection', (req, res) => {
+  console.log('🧪 Test connection endpoint accessed');
+  console.log('🧪 Active connections:', sseConnections.size);
+  
+  // Send a test message to all connected clients
+  const testMessage = {
+    type: 'test',
+    message: 'Manual test message',
+    timestamp: new Date().toISOString()
+  };
+  
+  const message = `data: ${JSON.stringify(testMessage)}\n\n`;
+  
+  sseConnections.forEach((connection, index) => {
+    try {
+      connection.res.write(message);
+      console.log(`✅ Test message sent to client ${index + 1}`);
+    } catch (error) {
+      console.error(`❌ Error sending test message to client ${index + 1}:`, error);
+      sseConnections.delete(connection);
+    }
+  });
+  
+  res.json({
+    message: 'Test message sent to all connected clients',
+    connections: sseConnections.size,
+    testMessage
+  });
+});
+
 // Token validation endpoint for debugging
 router.get('/validate-token', (req, res) => {
   const token = req.query.token;
@@ -226,11 +257,23 @@ router.get('/stream', async (req, res) => {
   console.log(`📡 SSE connection established for user ${req.user.id}. Total connections: ${sseConnections.size}`);
 
   // Send initial connection message
-  res.write(`data: ${JSON.stringify({
+  const connectionMessage = {
     type: 'connection',
     message: 'Connected to event stream',
     timestamp: new Date().toISOString()
-  })}\n\n`);
+  };
+  
+  console.log('📤 Sending initial connection message:', connectionMessage);
+  
+  try {
+    res.write(`data: ${JSON.stringify(connectionMessage)}\n\n`);
+    console.log('📤 Initial connection message sent successfully');
+  } catch (writeError) {
+    console.error('❌ Error sending initial connection message:', writeError);
+    sseConnections.delete(connection);
+    res.end();
+    return;
+  }
 
   // Set up heartbeat to keep connection alive
   const heartbeatInterval = setInterval(() => {
