@@ -22,6 +22,50 @@ router.use((req, res, next) => {
   next();
 });
 
+// Test endpoint to verify SSE route is accessible
+router.get('/test', (req, res) => {
+  res.json({ 
+    message: 'SSE route is accessible',
+    timestamp: new Date().toISOString(),
+    sseConnections: sseConnections.size
+  });
+});
+
+// Simple SSE test endpoint (no auth required)
+router.get('/test-sse', (req, res) => {
+  console.log('🧪 SSE test endpoint accessed');
+  
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Cache-Control'
+  });
+  
+  res.write(`data: ${JSON.stringify({
+    type: 'test',
+    message: 'SSE test connection successful',
+    timestamp: new Date().toISOString()
+  })}\n\n`);
+  
+  // Send a few test messages
+  let count = 0;
+  const testInterval = setInterval(() => {
+    count++;
+    res.write(`data: ${JSON.stringify({
+      type: 'test',
+      message: `Test message ${count}`,
+      timestamp: new Date().toISOString()
+    })}\n\n`);
+    
+    if (count >= 3) {
+      clearInterval(testInterval);
+      res.end();
+    }
+  }, 1000);
+});
+
 // Server-Sent Events endpoint for live event updates (admin only)
 router.get('/stream', (req, res) => {
   // Extract token from query parameter
