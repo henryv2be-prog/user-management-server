@@ -3441,6 +3441,16 @@ function connectEventStream() {
     console.log('🔄 connectEventStream() called');
     addDebugLog('Starting SSE connection attempt', 'info');
     
+    // Clear any cached connections
+    console.log('🧹 Clearing any cached connections...');
+    if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+    }
+    if (fetchStream) {
+        fetchStream = null;
+    }
+    
     if (eventSource) {
         console.log('📡 Closing existing event source');
         addDebugLog('Closing existing EventSource', 'warning');
@@ -3476,7 +3486,7 @@ function connectEventStream() {
     console.log('🔑 Token length:', token.length);
     console.log('🔑 Token preview:', token.substring(0, 20) + '...');
     
-    const sseUrl = `/api/events/stream?token=${encodeURIComponent(token)}`;
+    const sseUrl = `/api/events/stream?token=${encodeURIComponent(token)}&_cb=${Date.now()}&_r=${Math.random().toString(36).substr(2, 9)}`;
     console.log('📡 EventSource URL:', sseUrl);
     console.log('📡 Full URL would be:', window.location.origin + sseUrl);
     addDebugLog(`Token found (${token.length} chars), creating EventSource`, 'info');
@@ -3516,6 +3526,8 @@ function connectEventStream() {
         eventSource = null;
     }
     
+    // Create EventSource with cache-busting
+    console.log('🔄 Creating EventSource with cache-busting...');
     eventSource = new EventSource(sseUrl);
     
     // Add immediate logging
