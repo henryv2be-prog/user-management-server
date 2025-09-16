@@ -3526,6 +3526,10 @@ function connectEventStream() {
     
     // Add timeout to detect connection issues
     const connectionTimeout = setTimeout(() => {
+        console.log('⏰ SSE timeout reached - checking connection state...');
+        console.log('⏰ EventSource readyState:', eventSource.readyState);
+        console.log('⏰ EventSource URL:', eventSource.url);
+        
         if (eventSource.readyState !== 1) {
             console.log('⏰ SSE connection timeout - readyState still:', eventSource.readyState);
             addDebugLog(`SSE connection timeout - readyState: ${eventSource.readyState}`, 'warning');
@@ -3536,16 +3540,22 @@ function connectEventStream() {
             
             // Test if we can fetch the endpoint manually
             console.log('🧪 Testing SSE endpoint manually...');
+            console.log('🧪 EventSource URL for fetch test:', eventSource.url);
+            
             fetch(eventSource.url)
                 .then(response => {
                     console.log('🧪 Manual fetch response:', response.status, response.statusText);
                     console.log('🧪 Response headers:', [...response.headers.entries()]);
+                    console.log('🧪 Response ok:', response.ok);
                     
                     // If fetch works but EventSource doesn't, try fetch streaming
                     if (response.ok) {
                         console.log('🔄 Fetch works but EventSource doesn\'t - trying fetch streaming...');
                         addDebugLog('Trying fetch streaming as fallback', 'info');
                         startFetchStreaming(eventSource.url);
+                    } else {
+                        console.log('❌ Fetch response not OK, cannot use fetch streaming fallback');
+                        addDebugLog(`Fetch response not OK: ${response.status} ${response.statusText}`, 'error');
                     }
                     
                     return response.text();
@@ -3555,7 +3565,11 @@ function connectEventStream() {
                 })
                 .catch(error => {
                     console.log('🧪 Manual fetch error:', error);
+                    addDebugLog(`Manual fetch error: ${error.message}`, 'error');
                 });
+        } else {
+            console.log('✅ EventSource connected successfully before timeout');
+            addDebugLog('EventSource connected successfully', 'success');
         }
     }, 10000); // 10 second timeout
     
