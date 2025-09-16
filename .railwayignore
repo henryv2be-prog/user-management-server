@@ -1,0 +1,12 @@
+node_modules
+.git
+.env
+.env.local
+.env.development
+.env.test
+*.log
+logs
+database.db
+database.sqlite
+*.db
+*.sqlite
