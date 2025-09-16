@@ -3132,6 +3132,7 @@ let currentEventPage = 1;
 let currentEventType = '';
 let eventRefreshInterval = null;
 let eventSource = null;
+let fetchStream = null;
 let isEventStreamConnected = false;
 
 // Debug panel variables
@@ -3366,6 +3367,76 @@ function stopEventRefresh() {
 }
 
 // Server-Sent Events (SSE) functions for live updates
+// Fetch streaming fallback function
+function startFetchStreaming(url) {
+    console.log('🔄 Starting fetch streaming fallback...');
+    addDebugLog('Starting fetch streaming fallback', 'info');
+    
+    // Close existing EventSource
+    if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+    }
+    
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/event-stream',
+            'Cache-Control': 'no-cache'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        console.log('✅ Fetch streaming connected');
+        addDebugLog('Fetch streaming connected', 'success');
+        updateConnectionStatus(true);
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        
+        function readStream() {
+            reader.read().then(({ done, value }) => {
+                if (done) {
+                    console.log('📡 Fetch stream ended');
+                    addDebugLog('Fetch stream ended', 'warning');
+                    updateConnectionStatus(false);
+                    return;
+                }
+                
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.substring(6));
+                            handleEventStreamMessage(data);
+                        } catch (error) {
+                            console.error('Error parsing fetch stream data:', error);
+                        }
+                    }
+                }
+                
+                readStream();
+            }).catch(error => {
+                console.error('❌ Fetch stream error:', error);
+                addDebugLog(`Fetch stream error: ${error.message}`, 'error');
+                updateConnectionStatus(false);
+            });
+        }
+        
+        readStream();
+    })
+    .catch(error => {
+        console.error('❌ Fetch streaming failed:', error);
+        addDebugLog(`Fetch streaming failed: ${error.message}`, 'error');
+        updateConnectionStatus(false);
+    });
+}
+
 function connectEventStream() {
     console.log('🔄 connectEventStream() called');
     addDebugLog('Starting SSE connection attempt', 'info');
@@ -3469,6 +3540,14 @@ function connectEventStream() {
                 .then(response => {
                     console.log('🧪 Manual fetch response:', response.status, response.statusText);
                     console.log('🧪 Response headers:', [...response.headers.entries()]);
+                    
+                    // If fetch works but EventSource doesn't, try fetch streaming
+                    if (response.ok) {
+                        console.log('🔄 Fetch works but EventSource doesn\'t - trying fetch streaming...');
+                        addDebugLog('Trying fetch streaming as fallback', 'info');
+                        startFetchStreaming(eventSource.url);
+                    }
+                    
                     return response.text();
                 })
                 .then(text => {
