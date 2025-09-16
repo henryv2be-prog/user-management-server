@@ -3171,30 +3171,17 @@ function startKeepAlive() {
             console.log(`❌ Frontend keep-alive ping error: ${endpoint} - ${error.message}`);
             addDebugLog(`Keep-alive ping error: ${endpoint} - ${error.message}`, 'error');
         }
-    }, 2 * 60 * 1000); // 2 minutes - more aggressive
+    }, 5 * 60 * 1000); // 5 minutes - reduced frequency to fix SSE timeout
     
-    // Additional aggressive ping (every 30 seconds)
-    const aggressiveInterval = setInterval(async () => {
-        try {
-            const response = await fetch(addCacheBusting('/ping'), {
-                method: 'GET'
-            });
-            
-            if (response.ok) {
-                console.log('🔄 Aggressive ping successful');
-                addDebugLog('Aggressive ping successful', 'info');
-            }
-        } catch (error) {
-            console.log('❌ Aggressive ping error:', error.message);
-            addDebugLog(`Aggressive ping error: ${error.message}`, 'error');
-        }
-    }, 30 * 1000); // Every 30 seconds
+    // Disabled aggressive ping to reduce server load and fix SSE timeout
+    console.log('🔄 Aggressive ping disabled to reduce server load');
+    addDebugLog('Aggressive ping disabled to reduce server load', 'info');
     
-    // Store interval for cleanup
-    window.aggressiveKeepAliveInterval = aggressiveInterval;
+    // Store null interval for cleanup
+    window.aggressiveKeepAliveInterval = null;
     
-    console.log('🔄 Frontend keep-alive mechanism started (2min + 30s aggressive)');
-    addDebugLog('Frontend keep-alive started (2min + 30s aggressive)', 'info');
+    console.log('🔄 Frontend keep-alive mechanism started (5min only)');
+    addDebugLog('Frontend keep-alive started (5min only)', 'info');
 }
 
 function stopKeepAlive() {
