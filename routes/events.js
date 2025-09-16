@@ -105,6 +105,10 @@ router.get('/test-sse', (req, res) => {
 
 // Server-Sent Events endpoint for live event updates (admin only)
 router.get('/stream', (req, res) => {
+  console.log('🌐 SSE /stream endpoint accessed');
+  console.log('🌐 Request headers:', req.headers);
+  console.log('🌐 Query params:', req.query);
+  
   // Extract token from query parameter
   const token = req.query.token;
   
@@ -116,6 +120,8 @@ router.get('/stream', (req, res) => {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Cache-Control'
   });
+  
+  console.log('📡 SSE headers set, connection should be established');
   
   if (!token) {
     console.log('❌ SSE: No token provided');
