@@ -3404,13 +3404,46 @@ function connectEventStream() {
     console.log('🔑 Token found, connecting to event stream...');
     console.log('🔑 Token length:', token.length);
     console.log('🔑 Token preview:', token.substring(0, 20) + '...');
-    console.log('📡 EventSource URL:', `/api/events/stream?token=${encodeURIComponent(token)}`);
+    
+    const sseUrl = `/api/events/stream?token=${encodeURIComponent(token)}`;
+    console.log('📡 EventSource URL:', sseUrl);
+    console.log('📡 Full URL would be:', window.location.origin + sseUrl);
     addDebugLog(`Token found (${token.length} chars), creating EventSource`, 'info');
     
-    eventSource = new EventSource(`/api/events/stream?token=${encodeURIComponent(token)}`);
+    // Test the endpoint first with fetch
+    console.log('🧪 Testing SSE endpoint with fetch first...');
+    fetch(sseUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'text/event-stream',
+        'Cache-Control': 'no-cache'
+      }
+    })
+    .then(response => {
+      console.log('🧪 Fetch response status:', response.status);
+      console.log('🧪 Fetch response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('🧪 Fetch response ok:', response.ok);
+      
+      if (!response.ok) {
+        console.error('❌ Fetch failed:', response.status, response.statusText);
+        addDebugLog(`Fetch test failed: ${response.status} ${response.statusText}`, 'error');
+        return;
+      }
+      
+      console.log('✅ Fetch test successful, creating EventSource...');
+      addDebugLog('Fetch test successful, creating EventSource', 'success');
+    })
+    .catch(error => {
+      console.error('❌ Fetch test error:', error);
+      addDebugLog(`Fetch test error: ${error.message}`, 'error');
+    });
+    
+    eventSource = new EventSource(sseUrl);
     
     // Add immediate logging
     console.log('📡 EventSource created, readyState:', eventSource.readyState);
+    console.log('📡 EventSource URL property:', eventSource.url);
+    console.log('📡 EventSource withCredentials:', eventSource.withCredentials);
     addDebugLog(`EventSource created, readyState: ${eventSource.readyState}`, 'info');
     
     // Add timeout to detect connection issues
@@ -3547,10 +3580,25 @@ function connectEventStream() {
     
     eventSource.onerror = function(event) {
         console.error('❌ Event stream error:', event);
+        console.error('❌ Error details:');
+        console.error('  - EventSource readyState:', eventSource.readyState);
+        console.error('  - EventSource URL:', eventSource.url);
+        console.error('  - EventSource withCredentials:', eventSource.withCredentials);
+        console.error('  - Error event type:', event.type);
+        console.error('  - Error event target:', event.target);
+        console.error('  - Current page URL:', window.location.href);
+        console.error('  - User agent:', navigator.userAgent);
+        
         addDebugLog(`SSE error occurred: readyState=${eventSource.readyState}`, 'error');
-        console.log('EventSource readyState:', eventSource.readyState);
-        console.log('EventSource URL:', eventSource.url);
-        console.log('Error event:', event);
+        
+        // Try to get more info about the error
+        if (eventSource.readyState === 0) {
+            console.error('❌ EventSource stuck in CONNECTING state - likely network/CORS issue');
+            addDebugLog('EventSource stuck in CONNECTING state', 'error');
+        } else if (eventSource.readyState === 2) {
+            console.error('❌ EventSource CLOSED - connection was established but closed');
+            addDebugLog('EventSource connection was closed', 'error');
+        }
         
         // Clear the timeout since we got an error
         clearTimeout(connectionTimeout);
