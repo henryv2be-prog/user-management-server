@@ -198,8 +198,13 @@ router.get('/stream', async (req, res) => {
     }
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('🔍 SSE: Token decoded successfully:', { userId: decoded.userId, role: decoded.role });
-    console.log('🔍 SSE: Full decoded token:', decoded);
+    console.log('🔍 SSE: Token decoded successfully');
+    console.log('🔍 SSE: Decoded token keys:', Object.keys(decoded));
+    console.log('🔍 SSE: Decoded token values:', decoded);
+    console.log('🔍 SSE: Looking for userId:', decoded.userId);
+    console.log('🔍 SSE: Looking for id:', decoded.id);
+    console.log('🔍 SSE: Looking for role:', decoded.role);
+    console.log('🔍 SSE: All token properties:', JSON.stringify(decoded, null, 2));
     
     if (!decoded.userId) {
       console.log('❌ SSE: Token missing user ID');
