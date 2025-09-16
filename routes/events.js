@@ -171,8 +171,23 @@ router.get('/stream', (req, res) => {
       res.end();
       return;
     }
-    req.user = decoded;
-    console.log(`✅ SSE: Admin user ${req.user.userId} authenticated successfully`);
+    // Get the full user object from database (consistent with auth middleware)
+    const { User } = require('../database/models');
+    const user = await User.findById(decoded.userId);
+    
+    if (!user) {
+      console.log('❌ SSE: User not found in database');
+      res.write(`data: ${JSON.stringify({ 
+        type: 'error', 
+        message: 'User not found',
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+      res.end();
+      return;
+    }
+    
+    req.user = user;
+    console.log(`✅ SSE: Admin user ${req.user.id} authenticated successfully`);
   } catch (error) {
     console.log('❌ SSE: Token verification failed:', error.message);
     console.log('❌ SSE: Error type:', error.name);
@@ -201,14 +216,14 @@ router.get('/stream', (req, res) => {
   // Create connection object
   const connection = {
     res,
-    userId: req.user.userId,
+    userId: req.user.id,
     lastEventId: req.headers['last-event-id'] || 0,
     lastHeartbeat: Date.now()
   };
 
   // Add to connections set
   sseConnections.add(connection);
-  console.log(`📡 SSE connection established for user ${req.user.userId}. Total connections: ${sseConnections.size}`);
+  console.log(`📡 SSE connection established for user ${req.user.id}. Total connections: ${sseConnections.size}`);
 
   // Send initial connection message
   res.write(`data: ${JSON.stringify({
