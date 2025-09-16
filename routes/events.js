@@ -279,6 +279,20 @@ router.get('/stream', async (req, res) => {
     return;
   }
 
+  // Clean up existing connections for this user first
+  const existingConnections = Array.from(sseConnections).filter(conn => conn.userId === req.user.id);
+  if (existingConnections.length > 0) {
+    console.log(`🧹 Cleaning up ${existingConnections.length} existing connections for user ${req.user.id}`);
+    existingConnections.forEach(conn => {
+      try {
+        conn.res.end();
+      } catch (error) {
+        console.log('Error closing existing connection:', error.message);
+      }
+      sseConnections.delete(conn);
+    });
+  }
+
   // Create connection object
   const connection = {
     res,
@@ -290,6 +304,12 @@ router.get('/stream', async (req, res) => {
 
   // Add to connections set
   sseConnections.add(connection);
+  
+  // Check for duplicate connections
+  const userConnections = Array.from(sseConnections).filter(conn => conn.userId === req.user.id);
+  if (userConnections.length > 1) {
+    console.log(`⚠️ WARNING: User ${req.user.id} has ${userConnections.length} connections!`);
+  }
   
   // Debug req.user before logging
   console.log(`🔍 SSE: About to log connection - req.user:`, {
