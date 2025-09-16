@@ -156,9 +156,11 @@ router.get('/test-sse', (req, res) => {
 
 // Server-Sent Events endpoint for live event updates (admin only)
 router.get('/stream', async (req, res) => {
-  console.log('🌐 SSE /stream endpoint accessed');
-  console.log('🌐 Request headers:', req.headers);
-  console.log('🌐 Query params:', req.query);
+  console.log('🔗 SSE /stream endpoint accessed');
+  console.log('🔗 Request headers:', req.headers);
+  console.log('🔗 Query params:', req.query);
+  
+  try {
   
   // Extract token from query parameter
   const token = req.query.token;
@@ -372,6 +374,31 @@ router.get('/stream', async (req, res) => {
     clearInterval(heartbeatInterval);
     sseConnections.delete(connection);
   });
+  
+  } catch (error) {
+    console.error('❌ SSE route error:', error);
+    console.error('❌ SSE route error stack:', error.stack);
+    
+    // Try to send error message if response is still writable
+    try {
+      if (!res.headersSent) {
+        res.writeHead(500, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive'
+        });
+      }
+      
+      res.write(`data: ${JSON.stringify({ 
+        type: 'error', 
+        message: 'Internal server error in SSE route',
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+      res.end();
+    } catch (writeError) {
+      console.error('❌ Error writing error response:', writeError);
+    }
+  }
 });
 
 // Get events with pagination and filtering (admin only)
