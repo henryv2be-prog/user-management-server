@@ -3489,6 +3489,19 @@ function connectEventStream() {
             } else if (data.type === 'error') {
                 console.error('SSE Error:', data.message);
                 addDebugLog(`SSE Error: ${data.message}`, 'error');
+                
+                // Handle specific error types
+                if (data.message.includes('JWT secret')) {
+                    addDebugLog('JWT_SECRET not configured on server', 'error');
+                    showToast('Server configuration error - JWT secret missing', 'error');
+                } else if (data.message.includes('Token validation')) {
+                    addDebugLog('Token validation failed - may need to re-login', 'error');
+                    showToast('Authentication error - please refresh and login again', 'error');
+                } else if (data.message.includes('Admin access required')) {
+                    addDebugLog('Non-admin user attempted SSE connection', 'error');
+                    showToast('Admin access required for live updates', 'error');
+                }
+                
                 // Don't close connection on error, let it retry
             }
         } catch (error) {
