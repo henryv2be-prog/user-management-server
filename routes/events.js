@@ -147,10 +147,10 @@ router.get('/stream', (req, res) => {
     }
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('🔍 SSE: Token decoded successfully:', { id: decoded.id, role: decoded.role });
+    console.log('🔍 SSE: Token decoded successfully:', { userId: decoded.userId, role: decoded.role });
     console.log('🔍 SSE: Full decoded token:', decoded);
     
-    if (!decoded.id) {
+    if (!decoded.userId) {
       console.log('❌ SSE: Token missing user ID');
       res.write(`data: ${JSON.stringify({ 
         type: 'error', 
@@ -172,7 +172,7 @@ router.get('/stream', (req, res) => {
       return;
     }
     req.user = decoded;
-    console.log(`✅ SSE: Admin user ${req.user.id} authenticated successfully`);
+    console.log(`✅ SSE: Admin user ${req.user.userId} authenticated successfully`);
   } catch (error) {
     console.log('❌ SSE: Token verification failed:', error.message);
     console.log('❌ SSE: Error type:', error.name);
@@ -201,14 +201,14 @@ router.get('/stream', (req, res) => {
   // Create connection object
   const connection = {
     res,
-    userId: req.user.id,
+    userId: req.user.userId,
     lastEventId: req.headers['last-event-id'] || 0,
     lastHeartbeat: Date.now()
   };
 
   // Add to connections set
   sseConnections.add(connection);
-  console.log(`📡 SSE connection established for user ${req.user.id}. Total connections: ${sseConnections.size}`);
+  console.log(`📡 SSE connection established for user ${req.user.userId}. Total connections: ${sseConnections.size}`);
 
   // Send initial connection message
   res.write(`data: ${JSON.stringify({
