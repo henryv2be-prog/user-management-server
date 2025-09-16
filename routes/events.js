@@ -217,16 +217,6 @@ router.get('/stream', async (req, res) => {
       return;
     }
     
-    if (decoded.role !== 'admin') {
-      console.log('❌ SSE: Non-admin user attempted to connect:', decoded.role);
-      res.write(`data: ${JSON.stringify({ 
-        type: 'error', 
-        message: 'Admin access required for event stream',
-        timestamp: new Date().toISOString()
-      })}\n\n`);
-      res.end();
-      return;
-    }
     // Get the full user object from database (consistent with auth middleware)
     const { User } = require('../database/models');
     const user = await User.findById(decoded.userId);
@@ -236,6 +226,18 @@ router.get('/stream', async (req, res) => {
       res.write(`data: ${JSON.stringify({ 
         type: 'error', 
         message: 'User not found',
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+      res.end();
+      return;
+    }
+    
+    // Check admin role from database (more reliable than token)
+    if (user.role !== 'admin') {
+      console.log('❌ SSE: Non-admin user attempted to connect:', user.role);
+      res.write(`data: ${JSON.stringify({ 
+        type: 'error', 
+        message: 'Admin access required for event stream',
         timestamp: new Date().toISOString()
       })}\n\n`);
       res.end();
