@@ -281,6 +281,7 @@ router.get('/stream', async (req, res) => {
   const connection = {
     res,
     userId: req.user.id,
+    connectedAt: new Date().toISOString(),
     lastEventId: req.headers['last-event-id'] || 0,
     lastHeartbeat: Date.now()
   };
@@ -321,8 +322,15 @@ router.get('/stream', async (req, res) => {
       console.log(`📤 Sending to connection ${index + 1}:`, {
         writable: conn.res.writable,
         destroyed: conn.res.destroyed,
-        headersSent: conn.res.headersSent
+        headersSent: conn.res.headersSent,
+        finished: conn.res.finished
       });
+      
+      if (!conn.res.writable || conn.res.destroyed || conn.res.finished) {
+        console.log(`⚠️ Connection ${index + 1} is not writable, removing from active connections`);
+        sseConnections.delete(conn);
+        return;
+      }
       
       conn.res.write(`data: ${JSON.stringify(connectionMessage)}\n\n`);
       console.log(`✅ Initial connection message sent to connection ${index + 1}`);
