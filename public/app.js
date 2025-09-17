@@ -3549,6 +3549,24 @@ function connectEventStream() {
                     } else if (data.type === 'heartbeat') {
                         console.log('✅ Heartbeat received from public endpoint');
                         addDebugLog('Heartbeat received from public endpoint', 'info');
+                    } else if (data.type === 'event') {
+                        console.log('✅ Live event received from public endpoint:', data.event);
+                        addDebugLog(`Live event received: ${data.event.type} ${data.event.action} - ${data.event.entityName}`, 'success');
+                        
+                        // Refresh the events list to show the new event
+                        if (typeof loadEvents === 'function') {
+                            console.log('🔄 Refreshing events list due to live event');
+                            loadEvents();
+                        }
+                        
+                        // Update other sections if needed
+                        if (data.event.type === 'user' && typeof loadUsers === 'function') {
+                            console.log('🔄 Refreshing users list due to user event');
+                            loadUsers();
+                        } else if (data.event.type === 'door' && typeof loadDoors === 'function') {
+                            console.log('🔄 Refreshing doors list due to door event');
+                            loadDoors();
+                        }
                     }
                 } catch (error) {
                     console.error('Error parsing event stream data:', error);

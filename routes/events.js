@@ -12,7 +12,16 @@ const sseConnections = new Set();
 
 // Global broadcast function for events
 global.broadcastEvent = function(event) {
-  console.log('📡 Broadcasting event to SSE clients:', event.type, event.action);
+  console.log('📡 Broadcasting event to SSE clients:', event.type, event.action, event.entityName);
+  console.log('📡 Event details:', {
+    id: event.id,
+    type: event.type,
+    action: event.action,
+    entityType: event.entityType,
+    entityId: event.entityId,
+    entityName: event.entityName,
+    message: event.message
+  });
   console.log('📡 Active connections:', sseConnections.size);
   
   if (sseConnections.size === 0) {
