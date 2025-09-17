@@ -164,6 +164,53 @@ router.get('/test-basic', (req, res) => {
   });
 });
 
+// Simple SSE test endpoint - minimal implementation
+router.get('/test-sse-minimal', (req, res) => {
+  console.log('🧪 Minimal SSE test endpoint accessed');
+  
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*'
+  });
+  
+  console.log('📡 Minimal SSE headers set');
+  
+  // Send immediate test message
+  res.write(`data: ${JSON.stringify({
+    type: 'test',
+    message: 'Minimal SSE test successful',
+    timestamp: new Date().toISOString()
+  })}\n\n`);
+  
+  console.log('📤 Minimal SSE test message sent');
+  
+  // Send another message after 2 seconds
+  setTimeout(() => {
+    try {
+      res.write(`data: ${JSON.stringify({
+        type: 'test2',
+        message: 'Second test message',
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+      console.log('📤 Second minimal SSE test message sent');
+    } catch (error) {
+      console.log('❌ Error sending second test message:', error.message);
+    }
+  }, 2000);
+  
+  // Close after 5 seconds
+  setTimeout(() => {
+    try {
+      res.end();
+      console.log('📡 Minimal SSE test connection closed');
+    } catch (error) {
+      console.log('❌ Error closing minimal SSE test:', error.message);
+    }
+  }, 5000);
+});
+
 // Simple public SSE endpoint for live event updates (no auth required)
 router.get('/stream-public', async (req, res) => {
   console.log('🔗 SSE /stream-public endpoint accessed (no auth)');
