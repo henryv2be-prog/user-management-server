@@ -1613,7 +1613,8 @@ textarea:focus-visible {
 }
 
 /* Door Status Monitoring Styles */
-.door-status-section {
+.door-status-section,
+.events-section {
     margin-bottom: 2rem;
     background: var(--background-primary);
     border-radius: 8px;
@@ -1624,7 +1625,8 @@ textarea:focus-visible {
     -moz-border-radius: 8px;
 }
 
-.door-status-section .section-header {
+.door-status-section .section-header,
+.events-section .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1640,14 +1642,16 @@ textarea:focus-visible {
     border-bottom: 1px solid var(--border-light);
 }
 
-.door-status-section .section-header h2 {
+.door-status-section .section-header h2,
+.events-section .section-header h2 {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
     color: white;
 }
 
-.door-controls {
+.door-controls,
+.event-controls {
     display: flex;
     gap: 1rem;
     align-items: center;
@@ -2527,7 +2531,8 @@ textarea:focus-visible {
 
     /* Mobile-specific fixes for dashboard sections */
     .door-status-section,
-    .event-log-section {
+    .event-log-section,
+    .events-section {
         border-radius: 8px;
         overflow: hidden;
     }
