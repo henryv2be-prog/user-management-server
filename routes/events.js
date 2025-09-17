@@ -177,6 +177,12 @@ router.get('/stream', async (req, res) => {
   });
   
   console.log('📡 SSE headers set, connection should be established');
+  console.log('📡 Response state after headers:', {
+    writable: res.writable,
+    destroyed: res.destroyed,
+    headersSent: res.headersSent,
+    finished: res.finished
+  });
   
   // Add response close detection
   res.on('close', () => {
@@ -304,19 +310,25 @@ router.get('/stream', async (req, res) => {
   console.log(`🔍 Checking for existing connections for user ${req.user.id} (${req.user.email})`);
   console.log(`🔍 Found ${existingConnections.length} existing connections`);
   
-  // Close existing connections for this user
-  if (existingConnections.length > 0) {
-    console.log(`🧹 Closing ${existingConnections.length} existing connections for user ${req.user.id}`);
-    existingConnections.forEach((conn, index) => {
+  // Only close connections if there are more than 2 (allow 2 connections max per user)
+  if (existingConnections.length >= 2) {
+    console.log(`🧹 Found ${existingConnections.length} connections (max 2 allowed), closing oldest connections`);
+    // Sort by connection time and close the oldest ones, keeping the 2 most recent
+    const sortedConnections = existingConnections.sort((a, b) => new Date(a.connectedAt) - new Date(b.connectedAt));
+    const connectionsToClose = sortedConnections.slice(0, existingConnections.length - 1); // Keep 1, close the rest
+    
+    connectionsToClose.forEach((conn, index) => {
       try {
         conn.res.end();
         sseConnections.delete(conn);
-        console.log(`✅ Closed existing connection ${index + 1} for user ${req.user.id}`);
+        console.log(`✅ Closed old connection ${index + 1} for user ${req.user.id}`);
       } catch (error) {
-        console.log(`❌ Error closing existing connection ${index + 1}:`, error.message);
+        console.log(`❌ Error closing old connection ${index + 1}:`, error.message);
         sseConnections.delete(conn); // Remove from set even if close failed
       }
     });
+  } else {
+    console.log(`ℹ️ Found ${existingConnections.length} connections (within limit), allowing new connection`);
   }
   
   // Add new connection to set
