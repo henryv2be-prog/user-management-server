@@ -10,6 +10,61 @@ const router = express.Router();
 // Store active SSE connections
 const sseConnections = new Set();
 
+// Global broadcast function for events
+global.broadcastEvent = function(event) {
+  console.log('📡 Broadcasting event to SSE clients:', event.type, event.action);
+  console.log('📡 Active connections:', sseConnections.size);
+  
+  if (sseConnections.size === 0) {
+    console.log('📡 No SSE connections to broadcast to');
+    return;
+  }
+  
+  const eventMessage = {
+    type: 'event',
+    event: {
+      id: event.id,
+      type: event.type,
+      action: event.action,
+      entityType: event.entityType,
+      entityId: event.entityId,
+      userId: event.userId,
+      userName: event.userName,
+      message: event.message,
+      timestamp: event.timestamp,
+      ipAddress: event.ipAddress
+    },
+    timestamp: new Date().toISOString()
+  };
+  
+  const message = `data: ${JSON.stringify(eventMessage)}\n\n`;
+  
+  // Send to all connected clients
+  const connectionsToRemove = [];
+  sseConnections.forEach((connection) => {
+    try {
+      if (connection.res && !connection.res.destroyed && connection.res.writable) {
+        connection.res.write(message);
+        connection.res.flush();
+        console.log('📤 Event broadcasted to connection:', connection.userId || 'public');
+      } else {
+        console.log('📡 Removing dead connection');
+        connectionsToRemove.push(connection);
+      }
+    } catch (error) {
+      console.log('❌ Error broadcasting to connection:', error.message);
+      connectionsToRemove.push(connection);
+    }
+  });
+  
+  // Clean up dead connections
+  connectionsToRemove.forEach(connection => {
+    sseConnections.delete(connection);
+  });
+  
+  console.log('📡 Event broadcast completed. Active connections:', sseConnections.size);
+};
+
 // Cache prevention middleware for all routes
 router.use((req, res, next) => {
   res.set({
@@ -236,6 +291,17 @@ router.get('/stream-public', (req, res) => {
     
     console.log('📡 SSE headers set for public connection - SIMPLIFIED VERSION');
     
+    // Create connection object and add to set for broadcasting
+    const connection = {
+      res,
+      userId: null, // Public connection, no user
+      connectedAt: new Date().toISOString(),
+      lastEventId: req.headers['last-event-id'] || 0
+    };
+    
+    sseConnections.add(connection);
+    console.log('✅ Public SSE connection added to set. Total connections:', sseConnections.size);
+    
     // Send immediate connection message - same as minimal endpoint
     const connectionMessage = {
       type: 'connection',
@@ -290,12 +356,16 @@ router.get('/stream-public', (req, res) => {
     req.on('close', () => {
       console.log('📡 Public SSE connection closed - SIMPLIFIED VERSION');
       clearInterval(heartbeatInterval);
+      sseConnections.delete(connection);
+      console.log('✅ Public SSE connection removed from set. Total connections:', sseConnections.size);
     });
     
     // Handle connection errors - simplified
     req.on('error', (error) => {
       console.log('❌ Public SSE connection error - SIMPLIFIED VERSION:', error.message);
       clearInterval(heartbeatInterval);
+      sseConnections.delete(connection);
+      console.log('✅ Public SSE connection removed from set due to error. Total connections:', sseConnections.size);
     });
     
   } catch (error) {
