@@ -290,18 +290,10 @@ router.get('/stream', async (req, res) => {
     return;
   }
 
-  // Clean up existing connections for this user first
+  // Check for existing connections for this user (but don't close them)
   const existingConnections = Array.from(sseConnections).filter(conn => conn.userId === req.user.id);
   if (existingConnections.length > 0) {
-    console.log(`🧹 Cleaning up ${existingConnections.length} existing connections for user ${req.user.id}`);
-    existingConnections.forEach(conn => {
-      try {
-        conn.res.end();
-      } catch (error) {
-        console.log('Error closing existing connection:', error.message);
-      }
-      sseConnections.delete(conn);
-    });
+    console.log(`ℹ️ User ${req.user.id} already has ${existingConnections.length} existing connection(s) - allowing multiple connections`);
   }
 
   // Create connection object
