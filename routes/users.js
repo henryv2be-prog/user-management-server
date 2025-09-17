@@ -377,10 +377,13 @@ router.put('/:id/access-groups', authenticate, requireAdmin, validateId, async (
     // Update user's access groups
     await user.updateAccessGroups(accessGroupIds);
     
+    // Get the updated user object to ensure we have fresh data
+    const updatedUser = await User.findById(userId);
+    
     // Get new access groups after updating
     let newAccessGroupNames = 'none';
     try {
-      const newAccessGroups = await user.getAccessGroups();
+      const newAccessGroups = await updatedUser.getAccessGroups();
       console.log('New access groups:', newAccessGroups);
       if (newAccessGroups && newAccessGroups.length > 0) {
         newAccessGroupNames = newAccessGroups.map(ag => ag.name || 'Unknown').filter(name => name !== 'Unknown').join(', ') || 'none';
