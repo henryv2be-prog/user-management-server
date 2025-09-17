@@ -242,10 +242,42 @@
                                 </div>
                             </div>
                             
-                            <div class="debug-log">
-                                <h3>Debug Log</h3>
-                                <div class="log-container" id="debugLogContainer">
-                                    <div class="log-entry">Debug panel initialized</div>
+                            <div class="debug-logs-container">
+                                <div class="debug-log">
+                                    <div class="log-header">
+                                        <h3>Client Debug Log</h3>
+                                        <div class="log-actions">
+                                            <button class="btn btn-sm btn-outline" onclick="copyClientLogs()">
+                                                <i class="fas fa-copy"></i> Copy Logs
+                                            </button>
+                                            <button class="btn btn-sm btn-secondary" onclick="clearDebugLog()">
+                                                <i class="fas fa-trash"></i> Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="log-container" id="debugLogContainer">
+                                        <div class="log-entry">Debug panel initialized</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="debug-log">
+                                    <div class="log-header">
+                                        <h3>Server Debug Log</h3>
+                                        <div class="log-actions">
+                                            <button class="btn btn-sm btn-outline" onclick="copyServerLogs()">
+                                                <i class="fas fa-copy"></i> Copy Logs
+                                            </button>
+                                            <button class="btn btn-sm btn-secondary" onclick="clearServerLogs()">
+                                                <i class="fas fa-trash"></i> Clear
+                                            </button>
+                                            <button class="btn btn-sm btn-primary" onclick="fetchServerLogs()">
+                                                <i class="fas fa-sync-alt"></i> Refresh
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="log-container" id="serverLogContainer">
+                                        <div class="log-entry">Server logs will appear here</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

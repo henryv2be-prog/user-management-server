@@ -1911,14 +1911,14 @@ textarea:focus-visible {
 }
 
 .debug-info {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 2rem;
 }
 
 .debug-status {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
 }
 
@@ -1976,13 +1976,43 @@ textarea:focus-visible {
     font-size: 1rem;
 }
 
+.debug-logs-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.debug-log {
+    display: flex;
+    flex-direction: column;
+}
+
+.log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.log-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.log-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
 .log-container {
-    max-height: 200px;
+    max-height: 400px;
     overflow-y: auto;
     background: var(--background-primary);
     border: 1px solid var(--border-light);
     border-radius: 4px;
     padding: 1rem;
+    flex: 1;
 }
 
 .log-entry {
