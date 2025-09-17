@@ -2650,24 +2650,19 @@ function showSection(sectionName) {
         loadDashboard();
         connectEventStream(); // Connect to live event stream
         startDoorStatusRefresh(); // Start door status refresh when on dashboard
-    } else if (sectionName === 'events') {
-        loadEvents(); // Load events
-        connectEventStream(); // Connect to live event stream for events
-        stopDoorStatusRefresh(); // Stop door refresh when leaving dashboard
     } else {
-        disconnectEventStream(); // Disconnect event stream when leaving dashboard/events
+        connectEventStream(); // Keep SSE connection alive on all sections
         stopDoorStatusRefresh(); // Stop door refresh when leaving dashboard
         if (sectionName === 'users') {
             loadUsers();
         } else if (sectionName === 'doors') {
             loadDoors();
+        } else if (sectionName === 'events') {
+            loadEvents();
         } else if (sectionName === 'accessGroups') {
             loadAccessGroups();
         } else if (sectionName === 'doorControllerDiscovery') {
             loadDoorControllerDiscovery();
-        } else if (sectionName === 'events') {
-            loadEvents(); // Load events when viewing events section
-            connectEventStream(); // Connect to live event stream for events section
         } else if (sectionName === 'profile') {
             updateProfileInfo();
         } else if (sectionName === 'settings') {
