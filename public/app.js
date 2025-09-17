@@ -3462,36 +3462,12 @@ function connectEventStream() {
     // Reset reconnection attempts counter
     window.sseReconnectAttempts = 0;
     
-    const token = localStorage.getItem('token');
-    if (!token) {
-        console.log('❌ No token available for event stream');
-        addDebugLog('No authentication token available', 'error');
-        return;
-    }
+    console.log('🔗 Connecting to public event stream (no authentication required)...');
     
-    // Check if token is expired
-    try {
-        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-        const now = Math.floor(Date.now() / 1000);
-        if (tokenPayload.exp && tokenPayload.exp < now) {
-            console.log('❌ Token is expired');
-            addDebugLog('Authentication token is expired', 'error');
-            return;
-        }
-        console.log('🔑 Token is valid, expires at:', new Date(tokenPayload.exp * 1000).toLocaleString());
-    } catch (error) {
-        console.log('❌ Error checking token expiration:', error.message);
-        addDebugLog('Error validating token expiration', 'warning');
-    }
-    
-    console.log('🔑 Token found, connecting to event stream...');
-    console.log('🔑 Token length:', token.length);
-    console.log('🔑 Token preview:', token.substring(0, 20) + '...');
-    
-    const sseUrl = `/api/events/stream?token=${encodeURIComponent(token)}&_cb=${Date.now()}&_r=${Math.random().toString(36).substr(2, 9)}`;
+    const sseUrl = `/api/events/stream-public?_cb=${Date.now()}&_r=${Math.random().toString(36).substr(2, 9)}`;
     console.log('📡 EventSource URL:', sseUrl);
     console.log('📡 Full URL would be:', window.location.origin + sseUrl);
-    addDebugLog(`Token found (${token.length} chars), creating EventSource`, 'info');
+    addDebugLog(`Creating EventSource for public stream (no auth required)`, 'info');
     
     // Test the endpoint first with fetch
     console.log('🧪 Testing SSE endpoint with fetch first...');

@@ -154,18 +154,97 @@ router.get('/test-sse', (req, res) => {
   }, 1000);
 });
 
+// Simple public SSE endpoint for live event updates (no auth required)
+router.get('/stream-public', async (req, res) => {
+  console.log('🔗 SSE /stream-public endpoint accessed (no auth)');
+  
+  try {
+    // Set SSE headers
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control'
+    });
+    
+    console.log('📡 SSE headers set for public connection');
+    
+    // Create simple connection object
+    const connection = {
+      res,
+      connectedAt: new Date().toISOString(),
+      lastHeartbeat: Date.now()
+    };
+    
+    // Add to connections set
+    sseConnections.add(connection);
+    console.log(`✅ Added public SSE connection. Total connections: ${sseConnections.size}`);
+    
+    // Send initial connection message
+    const connectionMessage = {
+      type: 'connection',
+      message: 'Connected to public event stream',
+      timestamp: new Date().toISOString()
+    };
+    
+    res.write(`data: ${JSON.stringify(connectionMessage)}\n\n`);
+    console.log('✅ Initial connection message sent to public connection');
+    
+    // Set up heartbeat
+    const heartbeatInterval = setInterval(() => {
+      try {
+        if (sseConnections.has(connection)) {
+          connection.res.write(`data: ${JSON.stringify({ 
+            type: 'heartbeat', 
+            timestamp: new Date().toISOString()
+          })}\n\n`);
+          connection.lastHeartbeat = Date.now();
+        } else {
+          clearInterval(heartbeatInterval);
+        }
+      } catch (error) {
+        console.log(`❌ SSE heartbeat error:`, error.message);
+        clearInterval(heartbeatInterval);
+        sseConnections.delete(connection);
+      }
+    }, 30000); // Send heartbeat every 30 seconds
+    
+    // Handle client disconnect
+    req.on('close', () => {
+      console.log(`📡 Public SSE connection closed`);
+      clearInterval(heartbeatInterval);
+      sseConnections.delete(connection);
+      console.log(`📡 Public SSE connection closed. Remaining connections: ${sseConnections.size}`);
+    });
+    
+    // Handle connection errors
+    req.on('error', (error) => {
+      console.log(`❌ Public SSE connection error:`, error.message);
+      clearInterval(heartbeatInterval);
+      sseConnections.delete(connection);
+    });
+    
+  } catch (error) {
+    console.error('❌ Public SSE route error:', error);
+    res.write(`data: ${JSON.stringify({ 
+      type: 'error', 
+      message: 'Server error',
+      timestamp: new Date().toISOString()
+    })}\n\n`);
+    res.end();
+  }
+});
+
 // Server-Sent Events endpoint for live event updates (admin only)
 router.get('/stream', async (req, res) => {
-  console.log('🔗 SSE /stream endpoint accessed');
+  console.log('🔗 SSE /stream endpoint accessed (public)');
   console.log('🔗 Request headers:', req.headers);
   console.log('🔗 Query params:', req.query);
   console.log('🔗 User-Agent:', req.headers['user-agent']);
   console.log('🔗 Accept header:', req.headers.accept);
   
   try {
-  
-  // Extract token from query parameter
-  const token = req.query.token;
   
   // Set SSE headers first to establish the connection
   res.writeHead(200, {
