@@ -2650,8 +2650,12 @@ function showSection(sectionName) {
         loadDashboard();
         connectEventStream(); // Connect to live event stream
         startDoorStatusRefresh(); // Start door status refresh when on dashboard
+    } else if (sectionName === 'events') {
+        loadEvents(); // Load events
+        connectEventStream(); // Connect to live event stream for events
+        stopDoorStatusRefresh(); // Stop door refresh when leaving dashboard
     } else {
-        disconnectEventStream(); // Disconnect event stream when leaving dashboard
+        disconnectEventStream(); // Disconnect event stream when leaving dashboard/events
         stopDoorStatusRefresh(); // Stop door refresh when leaving dashboard
         if (sectionName === 'users') {
             loadUsers();
