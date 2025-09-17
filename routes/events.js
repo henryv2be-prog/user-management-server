@@ -56,8 +56,17 @@ global.broadcastEvent = function(event) {
         connection.res.write(message);
         connection.res.flush();
         console.log('📤 Event broadcasted to connection:', connection.userId || 'public');
+        console.log('📤 Connection state after write:', {
+          writable: connection.res.writable,
+          destroyed: connection.res.destroyed,
+          finished: connection.res.finished
+        });
       } else {
-        console.log('📡 Removing dead connection');
+        console.log('📡 Removing dead connection - state:', {
+          hasRes: !!connection.res,
+          destroyed: connection.res?.destroyed,
+          writable: connection.res?.writable
+        });
         connectionsToRemove.push(connection);
       }
     } catch (error) {
