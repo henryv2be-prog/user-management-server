@@ -3457,14 +3457,14 @@ function connectEventStream() {
     // Reset reconnection attempts counter
     window.sseReconnectAttempts = 0;
     
-    console.log('🔗 Testing EventSource directly with minimal endpoint...');
+    console.log('🔗 Testing EventSource directly with public endpoint...');
     
-    // Test EventSource directly with minimal endpoint - bypass all complex logic
-    const testUrl = `/api/events/test-sse-minimal?_cb=${Date.now()}&_r=${Math.random().toString(36).substr(2, 9)}`;
+    // Test EventSource directly with main public endpoint - bypass all complex logic
+    const testUrl = `/api/events/stream-public?_cb=${Date.now()}&_r=${Math.random().toString(36).substr(2, 9)}`;
     console.log('📡 Test EventSource URL:', testUrl);
     
     // Create EventSource directly - no fetch tests, no complex logic
-    console.log('🔄 Creating EventSource directly for minimal endpoint...');
+    console.log('🔄 Creating EventSource directly for public endpoint...');
     eventSource = new EventSource(testUrl);
     
     // Add immediate logging
@@ -3506,13 +3506,13 @@ function connectEventStream() {
         }
     }, 10000); // 10 second timeout
     
-    eventSource.onopen = function(event) {
-        clearTimeout(connectionTimeout);
-        console.log('✅ Event stream connected successfully - MINIMAL ENDPOINT');
-        console.log('✅ Event object:', event);
-        console.log('✅ EventSource readyState:', eventSource.readyState);
-        console.log('✅ EventSource URL:', eventSource.url);
-        addDebugLog('SSE connection established successfully - MINIMAL ENDPOINT', 'success');
+            eventSource.onopen = function(event) {
+                clearTimeout(connectionTimeout);
+                console.log('✅ Event stream connected successfully - PUBLIC ENDPOINT');
+                console.log('✅ Event object:', event);
+                console.log('✅ EventSource readyState:', eventSource.readyState);
+                console.log('✅ EventSource URL:', eventSource.url);
+                addDebugLog('SSE connection established successfully - PUBLIC ENDPOINT', 'success');
         isEventStreamConnected = true;
         updateEventStreamStatus(true);
         updateDebugStatus();
@@ -3534,27 +3534,30 @@ function connectEventStream() {
         }, 1000);
     };
     
-    eventSource.onmessage = function(event) {
-        try {
-            const data = JSON.parse(event.data);
-            console.log('Received event stream data - MINIMAL ENDPOINT:', data);
-            addDebugLog(`Received event from minimal endpoint: ${data.type}`, 'info');
-            
-            if (data.type === 'test') {
-                console.log('✅ Test message received from minimal endpoint');
-                addDebugLog('Test message received from minimal endpoint', 'success');
-            } else if (data.type === 'test2') {
-                console.log('✅ Second test message received from minimal endpoint');
-                addDebugLog('Second test message received from minimal endpoint', 'success');
-            }
-        } catch (error) {
-            console.error('Error parsing event stream data:', error);
-            addDebugLog(`Error parsing event data: ${error.message}`, 'error');
-        }
-    };
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('Received event stream data - PUBLIC ENDPOINT:', data);
+                    addDebugLog(`Received event from public endpoint: ${data.type}`, 'info');
+                    
+                    if (data.type === 'connection') {
+                        console.log('✅ Connection message received from public endpoint');
+                        addDebugLog('Connection message received from public endpoint', 'success');
+                    } else if (data.type === 'test') {
+                        console.log('✅ Test message received from public endpoint');
+                        addDebugLog('Test message received from public endpoint', 'success');
+                    } else if (data.type === 'heartbeat') {
+                        console.log('✅ Heartbeat received from public endpoint');
+                        addDebugLog('Heartbeat received from public endpoint', 'info');
+                    }
+                } catch (error) {
+                    console.error('Error parsing event stream data:', error);
+                    addDebugLog(`Error parsing event data: ${error.message}`, 'error');
+                }
+            };
     
     eventSource.onerror = function(event) {
-        console.error('❌ Event stream error - MINIMAL ENDPOINT:', event);
+        console.error('❌ Event stream error - PUBLIC ENDPOINT:', event);
         console.error('❌ Error details:');
         
         if (!eventSource) {
@@ -3571,12 +3574,12 @@ function connectEventStream() {
         console.error('  - Current page URL:', window.location.href);
         console.error('  - User agent:', navigator.userAgent);
         
-        addDebugLog(`SSE error occurred on minimal endpoint: readyState=${eventSource.readyState}`, 'error');
+                addDebugLog(`SSE error occurred on public endpoint: readyState=${eventSource.readyState}`, 'error');
         
         // Try to get more info about the error
         if (eventSource.readyState === 0) {
             console.error('❌ EventSource stuck in CONNECTING state - likely network/CORS issue');
-            addDebugLog('EventSource stuck in CONNECTING state on minimal endpoint', 'error');
+            addDebugLog('EventSource stuck in CONNECTING state on public endpoint', 'error');
             
             // Try fetch streaming fallback immediately
             console.log('🔄 Attempting fetch streaming fallback...');
@@ -3590,7 +3593,7 @@ function connectEventStream() {
             }
         } else if (eventSource.readyState === 2) {
             console.error('❌ EventSource CLOSED - connection was established but closed');
-            addDebugLog('EventSource connection was closed on minimal endpoint', 'error');
+                    addDebugLog('EventSource connection was closed on public endpoint', 'error');
         }
         
         // Clear the timeout since we got an error
