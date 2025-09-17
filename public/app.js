@@ -3534,6 +3534,13 @@ function connectEventStream() {
     // Add timeout to detect connection issues
     const connectionTimeout = setTimeout(() => {
         console.log('⏰ SSE timeout reached - checking connection state...');
+        
+        if (!eventSource) {
+            console.log('❌ EventSource is null - cannot check connection state');
+            addDebugLog('EventSource is null - connection failed', 'error');
+            return;
+        }
+        
         console.log('⏰ EventSource readyState:', eventSource.readyState);
         console.log('⏰ EventSource URL:', eventSource.url);
         
@@ -3688,6 +3695,13 @@ function connectEventStream() {
     eventSource.onerror = function(event) {
         console.error('❌ Event stream error:', event);
         console.error('❌ Error details:');
+        
+        if (!eventSource) {
+            console.error('❌ EventSource is null in error handler');
+            addDebugLog('EventSource is null in error handler', 'error');
+            return;
+        }
+        
         console.error('  - EventSource readyState:', eventSource.readyState);
         console.error('  - EventSource URL:', eventSource.url);
         console.error('  - EventSource withCredentials:', eventSource.withCredentials);
