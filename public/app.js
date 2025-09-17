@@ -3357,14 +3357,17 @@ function stopEventRefresh() {
 // Fetch streaming fallback function
 function startFetchStreaming(url) {
     console.log('🔄 Starting fetch streaming fallback...');
+    console.log('🔄 Fetch streaming URL:', url);
     addDebugLog('Starting fetch streaming fallback', 'info');
     
     // Close existing EventSource
     if (eventSource) {
+        console.log('🔄 Closing existing EventSource before fetch streaming');
         eventSource.close();
         eventSource = null;
     }
     
+    console.log('🔄 Making fetch request to:', url);
     fetch(url, {
         method: 'GET',
         headers: {
@@ -3373,6 +3376,10 @@ function startFetchStreaming(url) {
         }
     })
     .then(response => {
+        console.log('🔄 Fetch response received:', response.status, response.statusText);
+        console.log('🔄 Response headers:', [...response.headers.entries()]);
+        console.log('🔄 Response ok:', response.ok);
+        
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
@@ -3719,6 +3726,8 @@ function connectEventStream() {
             
             // Try fetch streaming fallback immediately
             console.log('🔄 Attempting fetch streaming fallback...');
+            console.log('🔄 EventSource URL for fetch streaming:', eventSource.url);
+            addDebugLog('Attempting fetch streaming fallback', 'info');
             startFetchStreaming(eventSource.url);
         } else if (eventSource.readyState === 2) {
             console.error('❌ EventSource CLOSED - connection was established but closed');
