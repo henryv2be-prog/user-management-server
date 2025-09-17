@@ -3440,8 +3440,8 @@ function startFetchStreaming(url) {
 }
 
 function connectEventStream() {
-    console.log('🔄 connectEventStream() called - NEW VERSION');
-    addDebugLog('Starting SSE connection attempt - NEW VERSION', 'info');
+    console.log('🔄 connectEventStream() called - EVENTSOURCE TEST VERSION');
+    addDebugLog('Starting SSE connection attempt - EVENTSOURCE TEST VERSION', 'info');
     
     // Clear any cached connections
     console.log('🧹 Clearing any cached connections...');
@@ -3456,285 +3456,185 @@ function connectEventStream() {
     // Reset reconnection attempts counter
     window.sseReconnectAttempts = 0;
     
-    console.log('🔗 Testing minimal SSE endpoint first...');
+    console.log('🔗 Testing EventSource directly with minimal endpoint...');
     
-    // Test minimal SSE endpoint first - much simpler approach
-    fetch('/api/events/test-sse-minimal', {
-      method: 'GET',
-      headers: {
-        'Accept': 'text/event-stream',
-        'Cache-Control': 'no-cache'
-      }
-    })
-    .then(response => {
-      console.log('🧪 Minimal SSE Fetch response status:', response.status);
-      console.log('🧪 Minimal SSE Fetch response headers:', Object.fromEntries(response.headers.entries()));
-      console.log('🧪 Minimal SSE Fetch response ok:', response.ok);
-      
-      if (!response.ok) {
-        console.error('❌ Minimal SSE Fetch failed:', response.status, response.statusText);
-        addDebugLog(`Minimal SSE Fetch test failed: ${response.status} ${response.statusText}`, 'error');
-        return;
-      }
-      
-      console.log('✅ Minimal SSE Fetch test successful!');
-      addDebugLog('Minimal SSE Fetch test successful', 'success');
-      
-      // Now create EventSource for the main endpoint
-      console.log('🔄 Creating EventSource for main endpoint...');
-      createEventSource();
-    })
-    .catch(error => {
-      console.error('❌ Minimal SSE Fetch test error:', error);
-      addDebugLog(`Minimal SSE Fetch test error: ${error.message}`, 'error');
-    });
+    // Test EventSource directly with minimal endpoint - bypass all complex logic
+    const testUrl = `/api/events/test-sse-minimal?_cb=${Date.now()}&_r=${Math.random().toString(36).substr(2, 9)}`;
+    console.log('📡 Test EventSource URL:', testUrl);
     
-    // Function to create EventSource
-    function createEventSource() {
-      console.log('🔄 Creating EventSource after successful minimal SSE test...');
-      
-      // Close existing EventSource if any
-      if (eventSource) {
-          console.log('🔄 Closing existing EventSource before creating new one');
-          eventSource.close();
-          eventSource = null;
-      }
+    // Create EventSource directly - no fetch tests, no complex logic
+    console.log('🔄 Creating EventSource directly for minimal endpoint...');
+    eventSource = new EventSource(testUrl);
     
-      const sseUrl = `/api/events/stream-public?_cb=${Date.now()}&_r=${Math.random().toString(36).substr(2, 9)}`;
-      console.log('📡 EventSource URL:', sseUrl);
-      
-      // Create EventSource with cache-busting
-      console.log('🔄 Creating EventSource with cache-busting...');
-      eventSource = new EventSource(sseUrl);
+    // Add immediate logging
+    console.log('📡 EventSource created, readyState:', eventSource.readyState);
+    console.log('📡 EventSource URL property:', eventSource.url);
+    console.log('📡 EventSource withCredentials:', eventSource.withCredentials);
+    addDebugLog(`EventSource created for minimal endpoint, readyState: ${eventSource.readyState}`, 'info');
     
-      // Add immediate logging
-      console.log('📡 EventSource created, readyState:', eventSource.readyState);
-      console.log('📡 EventSource URL property:', eventSource.url);
-      console.log('📡 EventSource withCredentials:', eventSource.withCredentials);
-      addDebugLog(`EventSource created, readyState: ${eventSource.readyState}`, 'info');
-      
-      // Add timeout to detect connection issues
-      const connectionTimeout = setTimeout(() => {
-          console.log('⏰ SSE timeout reached - checking connection state...');
-          
-          if (!eventSource) {
-              console.log('❌ EventSource is null - cannot check connection state');
-              addDebugLog('EventSource is null - connection failed', 'error');
-              return;
-          }
-          
-          console.log('⏰ EventSource readyState:', eventSource.readyState);
-          console.log('⏰ EventSource URL:', eventSource.url);
-          
-          if (eventSource.readyState !== 1) {
-              console.log('⏰ SSE connection timeout - readyState still:', eventSource.readyState);
-              addDebugLog(`SSE connection timeout - readyState: ${eventSource.readyState}`, 'warning');
-              
-              // Try fetch streaming fallback
-              console.log('🔄 Attempting fetch streaming fallback...');
-              if (eventSource && eventSource.url) {
-                  console.log('🔄 EventSource URL for fetch streaming:', eventSource.url);
-                  addDebugLog('Attempting fetch streaming fallback', 'info');
-                  startFetchStreaming(eventSource.url);
-              } else {
-                  console.log('❌ Cannot start fetch streaming - EventSource URL not available');
-                  addDebugLog('Cannot start fetch streaming - EventSource URL not available', 'error');
-              }
-          } else {
-              console.log('✅ EventSource connected successfully before timeout');
-              addDebugLog('EventSource connected successfully', 'success');
-          }
-      }, 10000); // 10 second timeout
-      
-      eventSource.onopen = function(event) {
-          clearTimeout(connectionTimeout);
-          console.log('✅ Event stream connected successfully');
-          console.log('✅ Event object:', event);
-          console.log('✅ EventSource readyState:', eventSource.readyState);
-          console.log('✅ EventSource URL:', eventSource.url);
-          addDebugLog('SSE connection established successfully', 'success');
-          isEventStreamConnected = true;
-          updateEventStreamStatus(true);
-          updateDebugStatus();
-          
-          // Clear any existing reconnection attempts
-          if (window.sseReconnectAttempts) {
-              window.sseReconnectAttempts = 0;
-          }
-          
-          // Start periodic health check for Railway sleep/wake detection
-          startSSEHealthCheck();
-          
-          // Ensure status stays connected
-          setTimeout(() => {
-              if (isEventStreamConnected) {
-                  updateEventStreamStatus(true);
-                  updateDebugStatus();
-              }
-          }, 1000);
-      };
-      
-      eventSource.onmessage = function(event) {
-          try {
-              const data = JSON.parse(event.data);
-              console.log('Received event stream data:', data);
-              addDebugLog(`Received event: ${data.type}`, 'info');
-              
-              if (data.type === 'new_event') {
-                  // Add new event to the top of the list
-                  addNewEventToList(data.event);
-                  addDebugLog(`New event added: ${data.event.type}:${data.event.action}`, 'success');
-                  
-                  // Handle specific event types to refresh UI
-                  if (data.event.type === 'user' && data.event.action === 'deleted') {
-                      console.log('🔄 User deleted event received, refreshing users list...');
-                      if (currentSection === 'users') {
-                          loadUsers(currentPage);
-                      }
-                      // Also refresh dashboard stats
-                      if (currentSection === 'dashboard') {
-                          loadDashboard();
-                      }
-                  } else if (data.event.type === 'user' && data.event.action === 'created') {
-                      console.log('🔄 User created event received, refreshing users list...');
-                      if (currentSection === 'users') {
-                          loadUsers(currentPage);
-                      }
-                      // Also refresh dashboard stats
-                      if (currentSection === 'dashboard') {
-                          loadDashboard();
-                      }
-                  } else if (data.event.type === 'user' && data.event.action === 'updated') {
-                      console.log('🔄 User updated event received, refreshing users list...');
-                      if (currentSection === 'users') {
-                          loadUsers(currentPage);
-                      }
-                  } else if (data.event.type === 'door' && (data.event.action === 'created' || data.event.action === 'updated' || data.event.action === 'deleted')) {
-                      console.log('🔄 Door event received, refreshing doors list...');
-                      if (currentSection === 'doors') {
-                          loadDoors(currentPage);
-                      }
-                      // Also refresh dashboard stats
-                      if (currentSection === 'dashboard') {
-                          loadDashboard();
-                      }
-                  }
-              } else if (data.type === 'connection') {
-                  console.log('Event stream connection established');
-                  addDebugLog('Connection confirmation received', 'info');
-              } else if (data.type === 'heartbeat') {
-                  console.log('SSE heartbeat received');
-                  addDebugLog('Heartbeat received', 'info');
-                  // Update last event timestamp
-                  document.getElementById('debugLastEvent').textContent = `Heartbeat - ${new Date(data.timestamp).toLocaleTimeString()}`;
-              } else if (data.type === 'error') {
-                  console.error('SSE Error:', data.message);
-                  addDebugLog(`SSE Error: ${data.message}`, 'error');
-                  
-                  // Handle specific error types
-                  if (data.message.includes('JWT secret')) {
-                      addDebugLog('JWT_SECRET not configured on server', 'error');
-                      showToast('Server configuration error - JWT secret missing', 'error');
-                  } else if (data.message.includes('Token validation')) {
-                      addDebugLog('Token validation failed - may need to re-login', 'error');
-                      showToast('Authentication error - please refresh and login again', 'error');
-                  } else if (data.message.includes('Admin access required')) {
-                      addDebugLog('Non-admin user attempted SSE connection', 'error');
-                      showToast('Admin access required for live updates', 'error');
-                  }
-                  
-                  // Don't close connection on error, let it retry
-              }
-          } catch (error) {
-              console.error('Error parsing event stream data:', error);
-              addDebugLog(`Error parsing event data: ${error.message}`, 'error');
-          }
-      };
-      
-      eventSource.onerror = function(event) {
-          console.error('❌ Event stream error:', event);
-          console.error('❌ Error details:');
-          
-          if (!eventSource) {
-              console.error('❌ EventSource is null in error handler');
-              addDebugLog('EventSource is null in error handler', 'error');
-              return;
-          }
-          
-          console.error('  - EventSource readyState:', eventSource.readyState);
-          console.error('  - EventSource URL:', eventSource.url);
-          console.error('  - EventSource withCredentials:', eventSource.withCredentials);
-          console.error('  - Error event type:', event.type);
-          console.error('  - Error event target:', event.target);
-          console.error('  - Current page URL:', window.location.href);
-          console.error('  - User agent:', navigator.userAgent);
-          
-          addDebugLog(`SSE error occurred: readyState=${eventSource.readyState}`, 'error');
-          
-          // Try to get more info about the error
-          if (eventSource.readyState === 0) {
-              console.error('❌ EventSource stuck in CONNECTING state - likely network/CORS issue');
-              addDebugLog('EventSource stuck in CONNECTING state', 'error');
-              
-              // Try fetch streaming fallback immediately
-              console.log('🔄 Attempting fetch streaming fallback...');
-              if (eventSource && eventSource.url) {
-                  console.log('🔄 EventSource URL for fetch streaming:', eventSource.url);
-                  addDebugLog('Attempting fetch streaming fallback', 'info');
-                  startFetchStreaming(eventSource.url);
-              } else {
-                  console.log('❌ Cannot start fetch streaming - EventSource URL not available');
-                  addDebugLog('Cannot start fetch streaming - EventSource URL not available', 'error');
-              }
-          } else if (eventSource.readyState === 2) {
-              console.error('❌ EventSource CLOSED - connection was established but closed');
-              addDebugLog('EventSource connection was closed', 'error');
-          }
-          
-          // Clear the timeout since we got an error
-          clearTimeout(connectionTimeout);
-          
-          // Only mark as disconnected if readyState is CLOSED (2)
-          if (eventSource.readyState === 2) {
-              console.log('📡 Connection closed, marking as disconnected');
-              addDebugLog('SSE connection closed, marking as disconnected', 'warning');
-              isEventStreamConnected = false;
-              updateEventStreamStatus(false);
-              updateDebugStatus();
-              
-              // Attempt to reconnect with exponential backoff for Railway sleep/wake cycles
-              if (!window.sseReconnectAttempts) {
-                  window.sseReconnectAttempts = 0;
-              }
-              
-              const maxReconnectAttempts = 10;
-              
-              const attemptReconnect = () => {
-                  if (!isEventStreamConnected && window.sseReconnectAttempts < maxReconnectAttempts) {
-                      window.sseReconnectAttempts++;
-                      const delay = Math.min(1000 * Math.pow(2, window.sseReconnectAttempts), 30000); // Max 30 seconds
-                      
-                      console.log(`🔄 Attempting to reconnect event stream (attempt ${window.sseReconnectAttempts}/${maxReconnectAttempts}) in ${delay}ms...`);
-                      addDebugLog(`Attempting to reconnect SSE (attempt ${window.sseReconnectAttempts}/${maxReconnectAttempts})`, 'info');
-                      
-                      setTimeout(() => {
-                          if (!isEventStreamConnected) {
-                              connectEventStream();
-                          }
-                      }, delay);
-                  } else if (window.sseReconnectAttempts >= maxReconnectAttempts) {
-                      console.log('❌ Max reconnection attempts reached, giving up');
-                      addDebugLog('Max SSE reconnection attempts reached', 'error');
-                  }
-              };
-              
-              attemptReconnect();
-          } else {
-              console.log('📡 Connection error but still open, keeping status as connected');
-              addDebugLog('SSE error but connection still open, keeping status', 'warning');
-          }
-      };
-    } // End of createEventSource function
+    // Add timeout to detect connection issues
+    const connectionTimeout = setTimeout(() => {
+        console.log('⏰ SSE timeout reached - checking connection state...');
+        
+        if (!eventSource) {
+            console.log('❌ EventSource is null - cannot check connection state');
+            addDebugLog('EventSource is null - connection failed', 'error');
+            return;
+        }
+        
+        console.log('⏰ EventSource readyState:', eventSource.readyState);
+        console.log('⏰ EventSource URL:', eventSource.url);
+        
+        if (eventSource.readyState !== 1) {
+            console.log('⏰ SSE connection timeout - readyState still:', eventSource.readyState);
+            addDebugLog(`SSE connection timeout - readyState: ${eventSource.readyState}`, 'warning');
+            
+            // Try fetch streaming fallback
+            console.log('🔄 Attempting fetch streaming fallback...');
+            if (eventSource && eventSource.url) {
+                console.log('🔄 EventSource URL for fetch streaming:', eventSource.url);
+                addDebugLog('Attempting fetch streaming fallback', 'info');
+                startFetchStreaming(eventSource.url);
+            } else {
+                console.log('❌ Cannot start fetch streaming - EventSource URL not available');
+                addDebugLog('Cannot start fetch streaming - EventSource URL not available', 'error');
+            }
+        } else {
+            console.log('✅ EventSource connected successfully before timeout');
+            addDebugLog('EventSource connected successfully', 'success');
+        }
+    }, 10000); // 10 second timeout
+    
+    eventSource.onopen = function(event) {
+        clearTimeout(connectionTimeout);
+        console.log('✅ Event stream connected successfully - MINIMAL ENDPOINT');
+        console.log('✅ Event object:', event);
+        console.log('✅ EventSource readyState:', eventSource.readyState);
+        console.log('✅ EventSource URL:', eventSource.url);
+        addDebugLog('SSE connection established successfully - MINIMAL ENDPOINT', 'success');
+        isEventStreamConnected = true;
+        updateEventStreamStatus(true);
+        updateDebugStatus();
+        
+        // Clear any existing reconnection attempts
+        if (window.sseReconnectAttempts) {
+            window.sseReconnectAttempts = 0;
+        }
+        
+        // Start periodic health check for Railway sleep/wake detection
+        startSSEHealthCheck();
+        
+        // Ensure status stays connected
+        setTimeout(() => {
+            if (isEventStreamConnected) {
+                updateEventStreamStatus(true);
+                updateDebugStatus();
+            }
+        }, 1000);
+    };
+    
+    eventSource.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            console.log('Received event stream data - MINIMAL ENDPOINT:', data);
+            addDebugLog(`Received event from minimal endpoint: ${data.type}`, 'info');
+            
+            if (data.type === 'test') {
+                console.log('✅ Test message received from minimal endpoint');
+                addDebugLog('Test message received from minimal endpoint', 'success');
+            } else if (data.type === 'test2') {
+                console.log('✅ Second test message received from minimal endpoint');
+                addDebugLog('Second test message received from minimal endpoint', 'success');
+            }
+        } catch (error) {
+            console.error('Error parsing event stream data:', error);
+            addDebugLog(`Error parsing event data: ${error.message}`, 'error');
+        }
+    };
+    
+    eventSource.onerror = function(event) {
+        console.error('❌ Event stream error - MINIMAL ENDPOINT:', event);
+        console.error('❌ Error details:');
+        
+        if (!eventSource) {
+            console.error('❌ EventSource is null in error handler');
+            addDebugLog('EventSource is null in error handler', 'error');
+            return;
+        }
+        
+        console.error('  - EventSource readyState:', eventSource.readyState);
+        console.error('  - EventSource URL:', eventSource.url);
+        console.error('  - EventSource withCredentials:', eventSource.withCredentials);
+        console.error('  - Error event type:', event.type);
+        console.error('  - Error event target:', event.target);
+        console.error('  - Current page URL:', window.location.href);
+        console.error('  - User agent:', navigator.userAgent);
+        
+        addDebugLog(`SSE error occurred on minimal endpoint: readyState=${eventSource.readyState}`, 'error');
+        
+        // Try to get more info about the error
+        if (eventSource.readyState === 0) {
+            console.error('❌ EventSource stuck in CONNECTING state - likely network/CORS issue');
+            addDebugLog('EventSource stuck in CONNECTING state on minimal endpoint', 'error');
+            
+            // Try fetch streaming fallback immediately
+            console.log('🔄 Attempting fetch streaming fallback...');
+            if (eventSource && eventSource.url) {
+                console.log('🔄 EventSource URL for fetch streaming:', eventSource.url);
+                addDebugLog('Attempting fetch streaming fallback', 'info');
+                startFetchStreaming(eventSource.url);
+            } else {
+                console.log('❌ Cannot start fetch streaming - EventSource URL not available');
+                addDebugLog('Cannot start fetch streaming - EventSource URL not available', 'error');
+            }
+        } else if (eventSource.readyState === 2) {
+            console.error('❌ EventSource CLOSED - connection was established but closed');
+            addDebugLog('EventSource connection was closed on minimal endpoint', 'error');
+        }
+        
+        // Clear the timeout since we got an error
+        clearTimeout(connectionTimeout);
+        
+        // Only mark as disconnected if readyState is CLOSED (2)
+        if (eventSource.readyState === 2) {
+            console.log('📡 Connection closed, marking as disconnected');
+            addDebugLog('SSE connection closed, marking as disconnected', 'warning');
+            isEventStreamConnected = false;
+            updateEventStreamStatus(false);
+            updateDebugStatus();
+            
+            // Attempt to reconnect with exponential backoff for Railway sleep/wake cycles
+            if (!window.sseReconnectAttempts) {
+                window.sseReconnectAttempts = 0;
+            }
+            
+            const maxReconnectAttempts = 10;
+            
+            const attemptReconnect = () => {
+                if (!isEventStreamConnected && window.sseReconnectAttempts < maxReconnectAttempts) {
+                    window.sseReconnectAttempts++;
+                    const delay = Math.min(1000 * Math.pow(2, window.sseReconnectAttempts), 30000); // Max 30 seconds
+                    
+                    console.log(`🔄 Attempting to reconnect event stream (attempt ${window.sseReconnectAttempts}/${maxReconnectAttempts}) in ${delay}ms...`);
+                    addDebugLog(`Attempting to reconnect SSE (attempt ${window.sseReconnectAttempts}/${maxReconnectAttempts})`, 'info');
+                    
+                    setTimeout(() => {
+                        if (!isEventStreamConnected) {
+                            connectEventStream();
+                        }
+                    }, delay);
+                } else if (window.sseReconnectAttempts >= maxReconnectAttempts) {
+                    console.log('❌ Max reconnection attempts reached, giving up');
+                    addDebugLog('Max SSE reconnection attempts reached', 'error');
+                }
+            };
+            
+            attemptReconnect();
+        } else {
+            console.log('📡 Connection error but still open, keeping status as connected');
+            addDebugLog('SSE error but connection still open, keeping status', 'warning');
+        }
+    };
 }
 
 
