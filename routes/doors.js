@@ -358,7 +358,15 @@ router.post('/:id/access-groups/:accessGroupId', authenticate, requireAdmin, val
     // Log door added to access group event
     const accessGroup = await AccessGroup.findById(accessGroupId);
     if (accessGroup) {
-      await EventLogger.logDoorAddedToAccessGroup(req, door, accessGroup);
+      await EventLogger.logEvent(req, {
+        type: 'door',
+        action: 'updated',
+        entityType: 'door',
+        entityId: door.id,
+        entityName: door.name,
+        message: `Door added to access group "${accessGroup.name}"`,
+        timestamp: new Date().toISOString()
+      });
     }
     
     res.json({
@@ -401,7 +409,15 @@ router.delete('/:id/access-groups/:accessGroupId', authenticate, requireAdmin, v
     // Log door removed from access group event
     const accessGroup = await AccessGroup.findById(accessGroupId);
     if (accessGroup) {
-      await EventLogger.logDoorRemovedFromAccessGroup(req, door, accessGroup);
+      await EventLogger.logEvent(req, {
+        type: 'door',
+        action: 'updated',
+        entityType: 'door',
+        entityId: door.id,
+        entityName: door.name,
+        message: `Door removed from access group "${accessGroup.name}"`,
+        timestamp: new Date().toISOString()
+      });
     }
     
     res.json({
