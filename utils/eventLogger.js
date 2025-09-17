@@ -27,13 +27,14 @@ class EventLogger {
       // Broadcast the event to connected SSE clients
       if (global.broadcastEvent) {
         try {
-          console.log('Broadcasting event:', createdEvent.id, createdEvent.type, createdEvent.action);
+          console.log('📡 EventLogger: Broadcasting event:', createdEvent.id, createdEvent.type, createdEvent.action, createdEvent.entityName);
           global.broadcastEvent(createdEvent);
+          console.log('📡 EventLogger: Broadcast completed');
         } catch (broadcastError) {
-          console.error('Error broadcasting event:', broadcastError);
+          console.error('❌ EventLogger: Error broadcasting event:', broadcastError);
         }
       } else {
-        console.log('broadcastEvent function not available globally');
+        console.log('❌ EventLogger: broadcastEvent function not available globally');
       }
     } catch (error) {
       console.error('Error logging event:', error);
