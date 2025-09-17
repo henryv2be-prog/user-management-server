@@ -3500,22 +3500,27 @@ function connectEventStream() {
         
         console.log('✅ SSE Fetch test successful, creating EventSource...');
         addDebugLog('SSE Fetch test successful, creating EventSource', 'success');
+        
+        // Now create EventSource after successful fetch test
+        createEventSource();
       })
     .catch(error => {
       console.error('❌ Fetch test error:', error);
       addDebugLog(`Fetch test error: ${error.message}`, 'error');
     });
     
-    // Close existing EventSource if any
-    if (eventSource) {
-        console.log('🔄 Closing existing EventSource before creating new one');
-        eventSource.close();
-        eventSource = null;
-    }
+    // Function to create EventSource
+    function createEventSource() {
+      // Close existing EventSource if any
+      if (eventSource) {
+          console.log('🔄 Closing existing EventSource before creating new one');
+          eventSource.close();
+          eventSource = null;
+      }
     
-    // Create EventSource with cache-busting
-    console.log('🔄 Creating EventSource with cache-busting...');
-    eventSource = new EventSource(sseUrl);
+      // Create EventSource with cache-busting
+      console.log('🔄 Creating EventSource with cache-busting...');
+      eventSource = new EventSource(sseUrl);
     
     // Add immediate logging
     console.log('📡 EventSource created, readyState:', eventSource.readyState);
@@ -3772,6 +3777,7 @@ function connectEventStream() {
             addDebugLog('SSE error but connection still open, keeping status', 'warning');
         }
     };
+    } // End of createEventSource function
 }
 
 
