@@ -159,6 +159,8 @@ router.get('/stream', async (req, res) => {
   console.log('🔗 SSE /stream endpoint accessed');
   console.log('🔗 Request headers:', req.headers);
   console.log('🔗 Query params:', req.query);
+  console.log('🔗 User-Agent:', req.headers['user-agent']);
+  console.log('🔗 Accept header:', req.headers.accept);
   
   try {
   
@@ -175,6 +177,15 @@ router.get('/stream', async (req, res) => {
   });
   
   console.log('📡 SSE headers set, connection should be established');
+  
+  // Add response close detection
+  res.on('close', () => {
+    console.log('📡 Response closed by server/client');
+  });
+  
+  res.on('finish', () => {
+    console.log('📡 Response finished');
+  });
   
   if (!token) {
     console.log('❌ SSE: No token provided');
@@ -383,6 +394,7 @@ router.get('/stream', async (req, res) => {
 
   // Handle client disconnect
   req.on('close', () => {
+    console.log(`📡 SSE connection closed by client for user ${req.user.id}`);
     clearInterval(heartbeatInterval);
     sseConnections.delete(connection);
     console.log(`📡 SSE connection closed for user ${req.user.id}. Remaining connections: ${sseConnections.size}`);
