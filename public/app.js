@@ -3469,29 +3469,38 @@ function connectEventStream() {
     console.log('📡 Full URL would be:', window.location.origin + sseUrl);
     addDebugLog(`Creating EventSource for public stream (no auth required)`, 'info');
     
-    // Test the endpoint first with fetch
-    console.log('🧪 Testing SSE endpoint with fetch first...');
-    fetch(sseUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'text/event-stream',
-        'Cache-Control': 'no-cache'
-      }
-    })
-    .then(response => {
-      console.log('🧪 Fetch response status:', response.status);
-      console.log('🧪 Fetch response headers:', Object.fromEntries(response.headers.entries()));
-      console.log('🧪 Fetch response ok:', response.ok);
-      
-      if (!response.ok) {
-        console.error('❌ Fetch failed:', response.status, response.statusText);
-        addDebugLog(`Fetch test failed: ${response.status} ${response.statusText}`, 'error');
-        return;
-      }
-      
-      console.log('✅ Fetch test successful, creating EventSource...');
-      addDebugLog('Fetch test successful, creating EventSource', 'success');
-    })
+    // Test basic connectivity first
+    console.log('🧪 Testing basic connectivity first...');
+    fetch('/api/events/test-basic')
+      .then(response => response.json())
+      .then(data => {
+        console.log('✅ Basic connectivity test successful:', data);
+        addDebugLog('Basic connectivity test successful', 'success');
+        
+        // Now test the SSE endpoint
+        console.log('🧪 Testing SSE endpoint with fetch...');
+        return fetch(sseUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'text/event-stream',
+            'Cache-Control': 'no-cache'
+          }
+        });
+      })
+      .then(response => {
+        console.log('🧪 SSE Fetch response status:', response.status);
+        console.log('🧪 SSE Fetch response headers:', Object.fromEntries(response.headers.entries()));
+        console.log('🧪 SSE Fetch response ok:', response.ok);
+        
+        if (!response.ok) {
+          console.error('❌ SSE Fetch failed:', response.status, response.statusText);
+          addDebugLog(`SSE Fetch test failed: ${response.status} ${response.statusText}`, 'error');
+          return;
+        }
+        
+        console.log('✅ SSE Fetch test successful, creating EventSource...');
+        addDebugLog('SSE Fetch test successful, creating EventSource', 'success');
+      })
     .catch(error => {
       console.error('❌ Fetch test error:', error);
       addDebugLog(`Fetch test error: ${error.message}`, 'error');
