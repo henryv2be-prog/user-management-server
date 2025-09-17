@@ -364,49 +364,17 @@ router.put('/:id/access-groups', authenticate, requireAdmin, validateId, async (
       });
     }
     
-    // Get current access groups before updating
-    let currentAccessGroupNames = 'none';
-    try {
-      const currentAccessGroups = await user.getAccessGroups();
-      console.log('Current access groups:', currentAccessGroups);
-      if (currentAccessGroups && currentAccessGroups.length > 0) {
-        currentAccessGroupNames = currentAccessGroups.map(ag => ag.name || 'Unknown').filter(name => name !== 'Unknown').join(', ') || 'none';
-      }
-    } catch (error) {
-      console.log('Error getting current access groups:', error);
-    }
-    
     // Update user's access groups
     await user.updateAccessGroups(accessGroupIds);
     
-    // Wait a moment for database transaction to complete
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Get the updated user object to ensure we have fresh data
-    const updatedUser = await User.findById(userId);
-    
-    // Get new access groups after updating
-    let newAccessGroupNames = 'none';
-    try {
-      const newAccessGroups = await updatedUser.getAccessGroups();
-      console.log('New access groups:', newAccessGroups);
-      console.log('Access group IDs that were set:', accessGroupIds);
-      if (newAccessGroups && newAccessGroups.length > 0) {
-        newAccessGroupNames = newAccessGroups.map(ag => ag.name || 'Unknown').filter(name => name !== 'Unknown').join(', ') || 'none';
-      }
-    } catch (error) {
-      console.log('Error getting new access groups:', error);
-    }
-    
-    // Log user access groups update event with detailed message
-    const updateMessage = `Access groups changed from "${currentAccessGroupNames}" to "${newAccessGroupNames}"`;
+    // Log user access groups update event with simple message
     await EventLogger.logEvent(req, {
       type: 'user',
       action: 'updated',
       entityType: 'user',
       entityId: user.id,
       entityName: `${user.firstName} ${user.lastName}`,
-      message: updateMessage,
+      message: 'User access groups updated',
       timestamp: new Date().toISOString()
     });
     
