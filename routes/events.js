@@ -200,15 +200,16 @@ router.get('/test-sse-minimal', (req, res) => {
     }
   }, 2000);
   
-  // Close after 5 seconds
-  setTimeout(() => {
-    try {
-      res.end();
-      console.log('📡 Minimal SSE test connection closed');
-    } catch (error) {
-      console.log('❌ Error closing minimal SSE test:', error.message);
-    }
-  }, 5000);
+  // Keep connection open - no auto-close
+  // Handle client disconnect
+  req.on('close', () => {
+    console.log('📡 Minimal SSE test connection closed by client');
+  });
+  
+  // Handle connection errors
+  req.on('error', (error) => {
+    console.log('❌ Minimal SSE test connection error:', error.message);
+  });
 });
 
 // Simple public SSE endpoint for live event updates (no auth required) - SIMPLIFIED VERSION
