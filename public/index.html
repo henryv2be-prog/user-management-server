@@ -59,6 +59,10 @@
                         <i class="fas fa-tachometer-alt" aria-hidden="true"></i> 
                         <span>Dashboard</span>
                     </a>
+                    <a href="#" class="nav-link" onclick="showSection('events')" role="menuitem" aria-label="Go to Events Log">
+                        <i class="fas fa-history" aria-hidden="true"></i> 
+                        <span>Events</span>
+                    </a>
                     <a href="#" class="nav-link" onclick="showSection('users')" role="menuitem" aria-label="Go to Users Management">
                         <i class="fas fa-users" aria-hidden="true"></i> 
                         <span>Users</span>
@@ -195,6 +199,45 @@
                         </div>
                     </header>
                     
+                </section>
+                
+            </div>
+        </main>
+
+        <!-- Events Log -->
+        <main id="eventsSection" class="section" role="main" aria-label="Events Log">
+            <div class="container">
+                <header class="page-header">
+                    <h1><i class="fas fa-history" aria-hidden="true"></i> Events Log</h1>
+                    <p class="page-description">Real-time system events and activity log</p>
+                </header>
+                
+                <section class="events-section" aria-label="Events">
+                    <header class="section-header">
+                        <h2><i class="fas fa-list" aria-hidden="true"></i> Recent Events</h2>
+                        <div class="event-controls">
+                            <select id="eventTypeFilter" onchange="filterEvents()">
+                                <option value="">All Events</option>
+                                <option value="user">User Events</option>
+                                <option value="door">Door Events</option>
+                                <option value="access">Access Events</option>
+                                <option value="system">System Events</option>
+                                <option value="error">Error Events</option>
+                            </select>
+                            <select id="eventActionFilter" onchange="filterEvents()">
+                                <option value="">All Actions</option>
+                                <option value="created">Created</option>
+                                <option value="updated">Updated</option>
+                                <option value="deleted">Deleted</option>
+                                <option value="login">Login</option>
+                                <option value="logout">Logout</option>
+                                <option value="access_granted">Access Granted</option>
+                                <option value="access_denied">Access Denied</option>
+                            </select>
+                            <!-- Live events enabled - no manual refresh needed -->
+                        </div>
+                    </header>
+                    
                     <div class="event-log-container">
                         <div class="event-log" id="eventLog" role="log" aria-live="polite" aria-label="Event log">
                             <!-- Events will be loaded here -->
@@ -204,84 +247,6 @@
                     <nav class="event-pagination" id="eventPagination" aria-label="Event pagination">
                         <!-- Pagination will be loaded here -->
                     </nav>
-                </section>
-                
-                <!-- SSE Debug Panel -->
-                <section class="debug-section" aria-label="SSE Connection Debug">
-                    <header class="section-header">
-                        <h2><i class="fas fa-bug" aria-hidden="true"></i> Connection Debug</h2>
-                        <div class="debug-controls">
-                            <button class="btn btn-outline btn-sm" onclick="toggleDebugPanel()">
-                                <i class="fas fa-eye" id="debugToggleIcon"></i>
-                                <span id="debugToggleText">Show Debug</span>
-                            </button>
-                            <button class="btn btn-secondary btn-sm" onclick="clearDebugLog()">
-                                <i class="fas fa-trash"></i> Clear Log
-                            </button>
-                        </div>
-                    </header>
-                    
-                    <div class="debug-panel" id="debugPanel" style="display: none;">
-                        <div class="debug-info">
-                            <div class="debug-status">
-                                <div class="status-item">
-                                    <label>SSE Connection:</label>
-                                    <span id="debugSseStatus" class="status-badge">Unknown</span>
-                                </div>
-                                <div class="status-item">
-                                    <label>EventSource State:</label>
-                                    <span id="debugEventSourceState" class="status-badge">Unknown</span>
-                                </div>
-                                <div class="status-item">
-                                    <label>Last Event:</label>
-                                    <span id="debugLastEvent">None</span>
-                                </div>
-                                <div class="status-item">
-                                    <label>Connection URL:</label>
-                                    <span id="debugConnectionUrl" class="debug-url">Not connected</span>
-                                </div>
-                            </div>
-                            
-                            <div class="debug-logs-container">
-                                <div class="debug-log">
-                                    <div class="log-header">
-                                        <h3>Client Debug Log</h3>
-                                        <div class="log-actions">
-                                            <button class="btn btn-sm btn-outline" onclick="copyClientLogs()">
-                                                <i class="fas fa-copy"></i> Copy Logs
-                                            </button>
-                                            <button class="btn btn-sm btn-secondary" onclick="clearDebugLog()">
-                                                <i class="fas fa-trash"></i> Clear
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="log-container" id="debugLogContainer">
-                                        <div class="log-entry">Debug panel initialized</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="debug-log">
-                                    <div class="log-header">
-                                        <h3>Server Debug Log</h3>
-                                        <div class="log-actions">
-                                            <button class="btn btn-sm btn-outline" onclick="copyServerLogs()">
-                                                <i class="fas fa-copy"></i> Copy Logs
-                                            </button>
-                                            <button class="btn btn-sm btn-secondary" onclick="clearServerLogs()">
-                                                <i class="fas fa-trash"></i> Clear
-                                            </button>
-                                            <button class="btn btn-sm btn-primary" onclick="fetchServerLogs()">
-                                                <i class="fas fa-sync-alt"></i> Refresh
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="log-container" id="serverLogContainer">
-                                        <div class="log-entry">Server logs will appear here</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </section>
             </div>
         </main>
@@ -695,6 +660,86 @@
                                 <button class="btn btn-outline" onclick="refreshVersionInfo()">
                                     <i class="fas fa-sync-alt"></i> Refresh
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Debug Panel -->
+                <div class="settings-panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-bug" aria-hidden="true"></i> Connection Debug</h2>
+                        <p>Monitor SSE connection status and debug information</p>
+                    </div>
+                    
+                    <div class="debug-controls">
+                        <button class="btn btn-outline btn-sm" onclick="toggleDebugPanel()">
+                            <i class="fas fa-eye" id="debugToggleIcon"></i>
+                            <span id="debugToggleText">Show Debug</span>
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="clearDebugLog()">
+                            <i class="fas fa-trash"></i> Clear Log
+                        </button>
+                    </div>
+                    
+                    <div class="debug-panel" id="debugPanel" style="display: none;">
+                        <div class="debug-info">
+                            <div class="debug-status">
+                                <div class="status-item">
+                                    <label>SSE Connection:</label>
+                                    <span id="debugSseStatus" class="status-badge">Unknown</span>
+                                </div>
+                                <div class="status-item">
+                                    <label>EventSource State:</label>
+                                    <span id="debugEventSourceState" class="status-badge">Unknown</span>
+                                </div>
+                                <div class="status-item">
+                                    <label>Last Event:</label>
+                                    <span id="debugLastEvent">None</span>
+                                </div>
+                                <div class="status-item">
+                                    <label>Connection URL:</label>
+                                    <span id="debugConnectionUrl" class="debug-url">Not connected</span>
+                                </div>
+                            </div>
+                            
+                            <div class="debug-logs-container">
+                                <div class="debug-log">
+                                    <div class="log-header">
+                                        <h3>Client Debug Log</h3>
+                                        <div class="log-actions">
+                                            <button class="btn btn-sm btn-outline" onclick="copyClientLogs()">
+                                                <i class="fas fa-copy"></i> Copy Logs
+                                            </button>
+                                            <button class="btn btn-sm btn-secondary" onclick="clearDebugLog()">
+                                                <i class="fas fa-trash"></i> Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="log-container" id="debugLogContainer">
+                                        <div class="log-entry">Debug panel initialized</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="debug-log">
+                                    <div class="log-header">
+                                        <h3>Server Debug Log</h3>
+                                        <div class="log-actions">
+                                            <button class="btn btn-sm btn-outline" onclick="copyServerLogs()">
+                                                <i class="fas fa-copy"></i> Copy Logs
+                                            </button>
+                                            <button class="btn btn-sm btn-secondary" onclick="clearServerLogs()">
+                                                <i class="fas fa-trash"></i> Clear
+                                            </button>
+                                            <button class="btn btn-sm btn-primary" onclick="fetchServerLogs()">
+                                                <i class="fas fa-sync-alt"></i> Refresh
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="log-container" id="serverLogContainer">
+                                        <div class="log-entry">Server logs will appear here</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
