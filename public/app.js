@@ -2648,11 +2648,9 @@ function showSection(sectionName) {
     
     if (sectionName === 'dashboard') {
         loadDashboard();
-        startEventRefresh(); // Start event refresh when on dashboard
         connectEventStream(); // Connect to live event stream
         startDoorStatusRefresh(); // Start door status refresh when on dashboard
     } else {
-        stopEventRefresh(); // Stop event refresh when leaving dashboard
         disconnectEventStream(); // Disconnect event stream when leaving dashboard
         stopDoorStatusRefresh(); // Stop door refresh when leaving dashboard
         if (sectionName === 'users') {
@@ -2663,6 +2661,9 @@ function showSection(sectionName) {
             loadAccessGroups();
         } else if (sectionName === 'doorControllerDiscovery') {
             loadDoorControllerDiscovery();
+        } else if (sectionName === 'events') {
+            loadEvents(); // Load events when viewing events section
+            connectEventStream(); // Connect to live event stream for events section
         } else if (sectionName === 'profile') {
             updateProfileInfo();
         } else if (sectionName === 'settings') {
