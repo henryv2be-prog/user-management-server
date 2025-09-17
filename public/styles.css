@@ -1812,7 +1812,8 @@ textarea:focus-visible {
     -moz-border-radius: 8px;
 }
 
-.event-log-section .section-header {
+.event-log-section .section-header,
+.events-section .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1828,7 +1829,8 @@ textarea:focus-visible {
     border-bottom: 1px solid var(--border-light);
 }
 
-.event-log-section .section-header h2 {
+.event-log-section .section-header h2,
+.events-section .section-header h2 {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
@@ -2531,13 +2533,15 @@ textarea:focus-visible {
     }
 
     .door-status-section .section-header,
-    .event-log-section .section-header {
+    .event-log-section .section-header,
+    .events-section .section-header {
         border-radius: 8px 8px 0 0;
         margin: 0;
     }
 
     .door-status-section .section-header:first-child,
-    .event-log-section .section-header:first-child {
+    .event-log-section .section-header:first-child,
+    .events-section .section-header:first-child {
         border-top-left-radius: 8px;
         border-top-right-radius: 8px;
     }
