@@ -154,9 +154,25 @@ router.get('/test-sse', (req, res) => {
   }, 1000);
 });
 
+// Simple test endpoint to verify basic connectivity
+router.get('/test-basic', (req, res) => {
+  console.log('🧪 Basic test endpoint accessed');
+  res.json({ 
+    message: 'Basic connectivity test successful',
+    timestamp: new Date().toISOString(),
+    headers: req.headers
+  });
+});
+
 // Simple public SSE endpoint for live event updates (no auth required)
 router.get('/stream-public', async (req, res) => {
   console.log('🔗 SSE /stream-public endpoint accessed (no auth)');
+  console.log('🔗 Request details:', {
+    method: req.method,
+    url: req.url,
+    headers: req.headers,
+    userAgent: req.headers['user-agent']
+  });
   
   try {
     // Set SSE headers
@@ -165,7 +181,8 @@ router.get('/stream-public', async (req, res) => {
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Cache-Control'
+      'Access-Control-Allow-Headers': 'Cache-Control',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS'
     });
     
     console.log('📡 SSE headers set for public connection');
