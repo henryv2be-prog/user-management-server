@@ -3577,6 +3577,25 @@ function connectEventStream() {
                             console.log('🔄 Refreshing doors list due to door event');
                             loadDoors();
                         }
+                    } else if (data.type === 'new_event') {
+                        console.log('✅ New event received from public endpoint:', data);
+                        addDebugLog(`New event received: ${data.type}`, 'success');
+                        
+                        // Show a visual indicator that a new event was received
+                        const eventLog = document.getElementById('eventLog');
+                        if (eventLog) {
+                            eventLog.style.borderLeft = '4px solid #28a745';
+                            setTimeout(() => {
+                                eventLog.style.borderLeft = '';
+                            }, 2000);
+                        }
+                        
+                        // Refresh the events list to show the new event
+                        if (typeof loadEvents === 'function') {
+                            console.log('🔄 Refreshing events list due to new event');
+                            const currentType = document.getElementById('eventTypeFilter')?.value || '';
+                            loadEvents(1, currentType);
+                        }
                     }
                 } catch (error) {
                     console.error('Error parsing event stream data:', error);
