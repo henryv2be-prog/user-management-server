@@ -290,12 +290,6 @@ router.get('/stream', async (req, res) => {
     return;
   }
 
-  // Check for existing connections for this user (but don't close them)
-  const existingConnections = Array.from(sseConnections).filter(conn => conn.userId === req.user.id);
-  if (existingConnections.length > 0) {
-    console.log(`ℹ️ User ${req.user.id} already has ${existingConnections.length} existing connection(s) - allowing multiple connections`);
-  }
-
   // Create connection object
   const connection = {
     res,
