@@ -378,7 +378,7 @@ router.get('/stream', async (req, res) => {
   const heartbeatInterval = setInterval(() => {
     try {
       if (sseConnections.has(connection)) {
-        res.write(`data: ${JSON.stringify({ 
+        connection.res.write(`data: ${JSON.stringify({ 
           type: 'heartbeat', 
           timestamp: new Date().toISOString()
         })}\n\n`);
