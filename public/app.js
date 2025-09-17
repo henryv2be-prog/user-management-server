@@ -3379,7 +3379,9 @@ function startFetchStreaming(url) {
         
         console.log('✅ Fetch streaming connected');
         addDebugLog('Fetch streaming connected', 'success');
-        updateConnectionStatus(true);
+        isEventStreamConnected = true;
+        updateEventStreamStatus(true);
+        updateDebugStatus();
         
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -3389,7 +3391,9 @@ function startFetchStreaming(url) {
                 if (done) {
                     console.log('📡 Fetch stream ended');
                     addDebugLog('Fetch stream ended', 'warning');
-                    updateConnectionStatus(false);
+                    isEventStreamConnected = false;
+                    updateEventStreamStatus(false);
+                    updateDebugStatus();
                     return;
                 }
                 
@@ -3411,7 +3415,9 @@ function startFetchStreaming(url) {
             }).catch(error => {
                 console.error('❌ Fetch stream error:', error);
                 addDebugLog(`Fetch stream error: ${error.message}`, 'error');
-                updateConnectionStatus(false);
+                isEventStreamConnected = false;
+                updateEventStreamStatus(false);
+                updateDebugStatus();
             });
         }
         
@@ -3420,7 +3426,9 @@ function startFetchStreaming(url) {
     .catch(error => {
         console.error('❌ Fetch streaming failed:', error);
         addDebugLog(`Fetch streaming failed: ${error.message}`, 'error');
-        updateConnectionStatus(false);
+        isEventStreamConnected = false;
+        updateEventStreamStatus(false);
+        updateDebugStatus();
     });
 }
 
