@@ -3553,10 +3553,21 @@ function connectEventStream() {
                         console.log('✅ Live event received from public endpoint:', data.event);
                         addDebugLog(`Live event received: ${data.event.type} ${data.event.action} - ${data.event.entityName}`, 'success');
                         
+                        // Show a visual indicator that a new event was received
+                        const eventLog = document.getElementById('eventLog');
+                        if (eventLog) {
+                            eventLog.style.borderLeft = '4px solid #28a745';
+                            setTimeout(() => {
+                                eventLog.style.borderLeft = '';
+                            }, 2000);
+                        }
+                        
                         // Refresh the events list to show the new event
                         if (typeof loadEvents === 'function') {
                             console.log('🔄 Refreshing events list due to live event');
-                            loadEvents();
+                            // Preserve current page and filter, but go to page 1 to show the new event
+                            const currentType = document.getElementById('eventTypeFilter')?.value || '';
+                            loadEvents(1, currentType);
                         }
                         
                         // Update other sections if needed

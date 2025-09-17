@@ -74,6 +74,34 @@ global.broadcastEvent = function(event) {
   console.log('📡 Event broadcast completed. Active connections:', sseConnections.size);
 };
 
+// Test endpoint to manually trigger an event broadcast
+router.post('/test-broadcast', (req, res) => {
+  console.log('🧪 Test broadcast endpoint accessed');
+  
+  const testEvent = {
+    id: Date.now(),
+    type: 'test',
+    action: 'broadcast_test',
+    entityType: 'system',
+    entityId: null,
+    entityName: 'Test System',
+    message: 'This is a test broadcast event',
+    timestamp: new Date().toISOString(),
+    userId: null,
+    userName: 'Test System',
+    ipAddress: req.ip
+  };
+  
+  console.log('🧪 Broadcasting test event:', testEvent);
+  global.broadcastEvent(testEvent);
+  
+  res.json({
+    message: 'Test event broadcasted',
+    event: testEvent,
+    connections: sseConnections.size
+  });
+});
+
 // Cache prevention middleware for all routes
 router.use((req, res, next) => {
   res.set({
