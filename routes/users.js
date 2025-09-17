@@ -363,18 +363,34 @@ router.put('/:id/access-groups', authenticate, requireAdmin, validateId, async (
     }
     
     // Get current access groups before updating
-    const currentAccessGroups = await user.getAccessGroups();
-    const currentAccessGroupNames = currentAccessGroups.map(ag => ag.name).join(', ');
+    let currentAccessGroupNames = 'none';
+    try {
+      const currentAccessGroups = await user.getAccessGroups();
+      console.log('Current access groups:', currentAccessGroups);
+      if (currentAccessGroups && currentAccessGroups.length > 0) {
+        currentAccessGroupNames = currentAccessGroups.map(ag => ag.name || 'Unknown').filter(name => name !== 'Unknown').join(', ') || 'none';
+      }
+    } catch (error) {
+      console.log('Error getting current access groups:', error);
+    }
     
     // Update user's access groups
     await user.updateAccessGroups(accessGroupIds);
     
     // Get new access groups after updating
-    const newAccessGroups = await user.getAccessGroups();
-    const newAccessGroupNames = newAccessGroups.map(ag => ag.name).join(', ');
+    let newAccessGroupNames = 'none';
+    try {
+      const newAccessGroups = await user.getAccessGroups();
+      console.log('New access groups:', newAccessGroups);
+      if (newAccessGroups && newAccessGroups.length > 0) {
+        newAccessGroupNames = newAccessGroups.map(ag => ag.name || 'Unknown').filter(name => name !== 'Unknown').join(', ') || 'none';
+      }
+    } catch (error) {
+      console.log('Error getting new access groups:', error);
+    }
     
     // Log user access groups update event with detailed message
-    const updateMessage = `Access groups changed from "${currentAccessGroupNames || 'none'}" to "${newAccessGroupNames || 'none'}"`;
+    const updateMessage = `Access groups changed from "${currentAccessGroupNames}" to "${newAccessGroupNames}"`;
     await EventLogger.logEvent(req, {
       type: 'user',
       action: 'updated',
