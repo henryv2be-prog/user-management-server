@@ -354,6 +354,8 @@ router.put('/:id/access-groups', authenticate, requireAdmin, validateId, async (
     const userId = parseInt(req.params.id);
     const { accessGroupIds } = req.body;
     
+    console.log('Updating user access groups:', { userId, accessGroupIds });
+    
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
@@ -377,6 +379,9 @@ router.put('/:id/access-groups', authenticate, requireAdmin, validateId, async (
     // Update user's access groups
     await user.updateAccessGroups(accessGroupIds);
     
+    // Wait a moment for database transaction to complete
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     // Get the updated user object to ensure we have fresh data
     const updatedUser = await User.findById(userId);
     
@@ -385,6 +390,7 @@ router.put('/:id/access-groups', authenticate, requireAdmin, validateId, async (
     try {
       const newAccessGroups = await updatedUser.getAccessGroups();
       console.log('New access groups:', newAccessGroups);
+      console.log('Access group IDs that were set:', accessGroupIds);
       if (newAccessGroups && newAccessGroups.length > 0) {
         newAccessGroupNames = newAccessGroups.map(ag => ag.name || 'Unknown').filter(name => name !== 'Unknown').join(', ') || 'none';
       }
