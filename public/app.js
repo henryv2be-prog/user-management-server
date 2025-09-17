@@ -3471,7 +3471,7 @@ function connectEventStream() {
     console.log('📡 EventSource created, readyState:', eventSource.readyState);
     console.log('📡 EventSource URL property:', eventSource.url);
     console.log('📡 EventSource withCredentials:', eventSource.withCredentials);
-    addDebugLog(`EventSource created for minimal endpoint, readyState: ${eventSource.readyState}`, 'info');
+    addDebugLog(`EventSource created for public endpoint, readyState: ${eventSource.readyState}`, 'info');
     
     // Add timeout to detect connection issues
     const connectionTimeout = setTimeout(() => {
