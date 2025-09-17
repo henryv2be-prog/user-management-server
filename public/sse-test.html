@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSE Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 SSE Test Page</h1>
+        <p>This page tests Server-Sent Events (SSE) directly without any complex logic.</p>
+        
+        <div class="status info" id="status">Ready to test SSE</div>
+        
+        <button onclick="testMinimalSSE()">Test Minimal SSE Endpoint</button>
+        <button onclick="testMainSSE()">Test Main SSE Endpoint</button>
+        <button onclick="clearLogs()">Clear Logs</button>
+        
+        <div class="log" id="logs"></div>
+    </div>
+
+    <script>
+        let eventSource = null;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('logs');
+            const statusElement = document.getElementById('status');
+            
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logEntry.className = type;
+            logElement.appendChild(logEntry);
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+            
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            document.getElementById('status').textContent = 'Ready to test SSE';
+            document.getElementById('status').className = 'status info';
+        }
+        
+        function closeEventSource() {
+            if (eventSource) {
+                log('Closing existing EventSource', 'warning');
+                eventSource.close();
+                eventSource = null;
+            }
+        }
+        
+        function testMinimalSSE() {
+            log('🧪 Testing Minimal SSE Endpoint...', 'info');
+            closeEventSource();
+            
+            const url = `/api/events/test-sse-minimal?_cb=${Date.now()}&_r=${Math.random().toString(36).substr(2, 9)}`;
+            log(`📡 EventSource URL: ${url}`, 'info');
+            
+            try {
+                eventSource = new EventSource(url);
+                log(`📡 EventSource created, readyState: ${eventSource.readyState}`, 'info');
+                
+                // Add timeout
+                const timeout = setTimeout(() => {
+                    if (eventSource && eventSource.readyState !== 1) {
+                        log(`⏰ SSE timeout - readyState: ${eventSource.readyState}`, 'error');
+                        log('❌ EventSource failed to connect to minimal endpoint', 'error');
+                    }
+                }, 10000);
+                
+                eventSource.onopen = function(event) {
+                    clearTimeout(timeout);
+                    log('✅ EventSource connected successfully to minimal endpoint!', 'success');
+                    log(`✅ EventSource readyState: ${eventSource.readyState}`, 'success');
+                    log(`✅ EventSource URL: ${eventSource.url}`, 'success');
+                };
+                
+                eventSource.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        log(`📨 Received message: ${data.type} - ${data.message}`, 'success');
+                    } catch (error) {
+                        log(`📨 Received raw message: ${event.data}`, 'info');
+                    }
+                };
+                
+                eventSource.onerror = function(event) {
+                    clearTimeout(timeout);
+                    log(`❌ EventSource error - readyState: ${eventSource.readyState}`, 'error');
+                    log(`❌ Error event: ${JSON.stringify(event)}`, 'error');
+                    
+                    if (eventSource.readyState === 0) {
+                        log('❌ EventSource stuck in CONNECTING state', 'error');
+                    } else if (eventSource.readyState === 2) {
+                        log('❌ EventSource CLOSED', 'error');
+                    }
+                };
+                
+            } catch (error) {
+                log(`❌ Error creating EventSource: ${error.message}`, 'error');
+            }
+        }
+        
+        function testMainSSE() {
+            log('🧪 Testing Main SSE Endpoint...', 'info');
+            closeEventSource();
+            
+            const url = `/api/events/stream-public?_cb=${Date.now()}&_r=${Math.random().toString(36).substr(2, 9)}`;
+            log(`📡 EventSource URL: ${url}`, 'info');
+            
+            try {
+                eventSource = new EventSource(url);
+                log(`📡 EventSource created, readyState: ${eventSource.readyState}`, 'info');
+                
+                // Add timeout
+                const timeout = setTimeout(() => {
+                    if (eventSource && eventSource.readyState !== 1) {
+                        log(`⏰ SSE timeout - readyState: ${eventSource.readyState}`, 'error');
+                        log('❌ EventSource failed to connect to main endpoint', 'error');
+                    }
+                }, 10000);
+                
+                eventSource.onopen = function(event) {
+                    clearTimeout(timeout);
+                    log('✅ EventSource connected successfully to main endpoint!', 'success');
+                    log(`✅ EventSource readyState: ${eventSource.readyState}`, 'success');
+                    log(`✅ EventSource URL: ${eventSource.url}`, 'success');
+                };
+                
+                eventSource.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        log(`📨 Received message: ${data.type} - ${data.message}`, 'success');
+                    } catch (error) {
+                        log(`📨 Received raw message: ${event.data}`, 'info');
+                    }
+                };
+                
+                eventSource.onerror = function(event) {
+                    clearTimeout(timeout);
+                    log(`❌ EventSource error - readyState: ${eventSource.readyState}`, 'error');
+                    log(`❌ Error event: ${JSON.stringify(event)}`, 'error');
+                    
+                    if (eventSource.readyState === 0) {
+                        log('❌ EventSource stuck in CONNECTING state', 'error');
+                    } else if (eventSource.readyState === 2) {
+                        log('❌ EventSource CLOSED', 'error');
+                    }
+                };
+                
+            } catch (error) {
+                log(`❌ Error creating EventSource: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test basic connectivity on page load
+        window.addEventListener('load', function() {
+            log('🚀 SSE Test Page loaded', 'info');
+            log('🌐 Current URL: ' + window.location.href, 'info');
+            log('🌐 Origin: ' + window.location.origin, 'info');
+            log('🌐 User Agent: ' + navigator.userAgent, 'info');
+        });
+    </script>
+</body>
+</html>
