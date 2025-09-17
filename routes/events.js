@@ -305,14 +305,29 @@ router.get('/stream', async (req, res) => {
     lastHeartbeat: Date.now()
   };
 
-  // Add to connections set
-  sseConnections.add(connection);
+  // Check for existing connections for this user BEFORE adding new connection
+  const existingConnections = Array.from(sseConnections).filter(conn => conn.userId === req.user.id);
+  console.log(`🔍 Checking for existing connections for user ${req.user.id} (${req.user.email})`);
+  console.log(`🔍 Found ${existingConnections.length} existing connections`);
   
-  // Check for duplicate connections
-  const currentUserConnections = Array.from(sseConnections).filter(conn => conn.userId === req.user.id);
-  if (currentUserConnections.length > 1) {
-    console.log(`⚠️ WARNING: User ${req.user.id} has ${currentUserConnections.length} connections!`);
+  // Close existing connections for this user
+  if (existingConnections.length > 0) {
+    console.log(`🧹 Closing ${existingConnections.length} existing connections for user ${req.user.id}`);
+    existingConnections.forEach((conn, index) => {
+      try {
+        conn.res.end();
+        sseConnections.delete(conn);
+        console.log(`✅ Closed existing connection ${index + 1} for user ${req.user.id}`);
+      } catch (error) {
+        console.log(`❌ Error closing existing connection ${index + 1}:`, error.message);
+        sseConnections.delete(conn); // Remove from set even if close failed
+      }
+    });
   }
+  
+  // Add new connection to set
+  sseConnections.add(connection);
+  console.log(`✅ Added new connection for user ${req.user.id}. Total connections: ${sseConnections.size}`);
   
   // Debug req.user before logging
   console.log(`🔍 SSE: About to log connection - req.user:`, {
