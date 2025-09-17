@@ -3477,8 +3477,32 @@ function connectEventStream() {
         console.log('✅ Basic connectivity test successful:', data);
         addDebugLog('Basic connectivity test successful', 'success');
         
-        // Now test the SSE endpoint
-        console.log('🧪 Testing SSE endpoint with fetch...');
+        // Test minimal SSE endpoint first
+        console.log('🧪 Testing minimal SSE endpoint...');
+        return fetch('/api/events/test-sse-minimal', {
+          method: 'GET',
+          headers: {
+            'Accept': 'text/event-stream',
+            'Cache-Control': 'no-cache'
+          }
+        });
+      })
+      .then(response => {
+        console.log('🧪 Minimal SSE Fetch response status:', response.status);
+        console.log('🧪 Minimal SSE Fetch response headers:', Object.fromEntries(response.headers.entries()));
+        console.log('🧪 Minimal SSE Fetch response ok:', response.ok);
+        
+        if (!response.ok) {
+          console.error('❌ Minimal SSE Fetch failed:', response.status, response.statusText);
+          addDebugLog(`Minimal SSE Fetch test failed: ${response.status} ${response.statusText}`, 'error');
+          return;
+        }
+        
+        console.log('✅ Minimal SSE Fetch test successful, now testing main SSE endpoint...');
+        addDebugLog('Minimal SSE Fetch test successful', 'success');
+        
+        // Now test the main SSE endpoint
+        console.log('🧪 Testing main SSE endpoint with fetch...');
         return fetch(sseUrl, {
           method: 'GET',
           headers: {
