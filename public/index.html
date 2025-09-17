@@ -195,6 +195,12 @@
                     <header class="section-header">
                         <h2><i class="fas fa-list" aria-hidden="true"></i> Events</h2>
                         <div class="event-controls">
+                            <div class="stream-status">
+                                <span class="status-indicator" id="eventStreamStatus">
+                                    <i class="fas fa-circle"></i>
+                                    <span id="eventStreamStatusText">Live</span>
+                                </span>
+                            </div>
                             <select id="eventTypeFilter" onchange="filterEvents()">
                                 <option value="">All Events</option>
                                 <option value="user">User Events</option>
@@ -213,7 +219,6 @@
                                 <option value="access_granted">Access Granted</option>
                                 <option value="access_denied">Access Denied</option>
                             </select>
-                            <!-- Live events enabled - no manual refresh needed -->
                         </div>
                     </header>
                     
