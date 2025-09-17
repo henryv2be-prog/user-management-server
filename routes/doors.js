@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const { Door } = require('../database/door');
+const { AccessGroup } = require('../database/accessGroup');
 const { 
   validateDoor, 
   validateDoorUpdate, 
@@ -354,6 +355,12 @@ router.post('/:id/access-groups/:accessGroupId', authenticate, requireAdmin, val
       });
     });
     
+    // Log door added to access group event
+    const accessGroup = await AccessGroup.findById(accessGroupId);
+    if (accessGroup) {
+      await EventLogger.logDoorAddedToAccessGroup(req, door, accessGroup);
+    }
+    
     res.json({
       message: 'Door added to access group successfully'
     });
@@ -390,6 +397,12 @@ router.delete('/:id/access-groups/:accessGroupId', authenticate, requireAdmin, v
         else resolve();
       });
     });
+    
+    // Log door removed from access group event
+    const accessGroup = await AccessGroup.findById(accessGroupId);
+    if (accessGroup) {
+      await EventLogger.logDoorRemovedFromAccessGroup(req, door, accessGroup);
+    }
     
     res.json({
       message: 'Door removed from access group successfully'
