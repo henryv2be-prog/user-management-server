@@ -4061,6 +4061,8 @@ function toggleDebugPanel() {
         toggleText.textContent = 'Hide Debug';
         updateDebugStatus();
         addDebugLog('Debug panel opened', 'info');
+        // Fetch server logs when panel opens
+        fetchServerLogs();
     } else {
         panel.style.display = 'none';
         toggleIcon.className = 'fas fa-eye';
@@ -4073,6 +4075,87 @@ function clearDebugLog() {
     debugLogs = [];
     updateDebugLogDisplay();
     addDebugLog('Debug log cleared', 'info');
+}
+
+// Server logs functionality
+let serverLogs = [];
+
+function copyClientLogs() {
+    const logText = debugLogs.map(log => `[${log.timestamp}] ${log.message}`).join('\n');
+    navigator.clipboard.writeText(logText).then(() => {
+        addDebugLog('Client logs copied to clipboard', 'success');
+        showToast('Client logs copied to clipboard!', 'success');
+    }).catch(err => {
+        addDebugLog('Failed to copy client logs: ' + err.message, 'error');
+        showToast('Failed to copy logs', 'error');
+    });
+}
+
+function copyServerLogs() {
+    const logText = serverLogs.map(log => `[${log.timestamp}] ${log.message}`).join('\n');
+    navigator.clipboard.writeText(logText).then(() => {
+        addDebugLog('Server logs copied to clipboard', 'success');
+        showToast('Server logs copied to clipboard!', 'success');
+    }).catch(err => {
+        addDebugLog('Failed to copy server logs: ' + err.message, 'error');
+        showToast('Failed to copy logs', 'error');
+    });
+}
+
+function clearServerLogs() {
+    serverLogs = [];
+    updateServerLogDisplay();
+    addDebugLog('Server logs cleared', 'info');
+}
+
+function updateServerLogDisplay() {
+    const container = document.getElementById('serverLogContainer');
+    if (!container) return;
+    
+    container.innerHTML = serverLogs.map(log => 
+        `<div class="log-entry ${log.type}">[${log.timestamp}] ${log.message}</div>`
+    ).join('');
+    
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+}
+
+function addServerLog(message, type = 'info') {
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = {
+        timestamp,
+        message,
+        type
+    };
+    
+    serverLogs.push(logEntry);
+    
+    // Keep only last 100 logs
+    if (serverLogs.length > 100) {
+        serverLogs.shift();
+    }
+    
+    updateServerLogDisplay();
+}
+
+function fetchServerLogs() {
+    addDebugLog('Fetching server logs...', 'info');
+    
+    fetch('/api/events/debug-status')
+        .then(response => response.json())
+        .then(data => {
+            addServerLog('Server debug status fetched successfully', 'success');
+            addServerLog(`Total connections: ${data.totalConnections}`, 'info');
+            addServerLog(`Active connections: ${data.connections.length}`, 'info');
+            
+            data.connections.forEach((conn, index) => {
+                addServerLog(`Connection ${index + 1}: User ${conn.userId}, Active: ${conn.isActive}`, 'info');
+            });
+        })
+        .catch(error => {
+            addServerLog(`Failed to fetch server logs: ${error.message}`, 'error');
+            addDebugLog(`Server log fetch failed: ${error.message}`, 'error');
+        });
 }
 
 // Initialize the application
