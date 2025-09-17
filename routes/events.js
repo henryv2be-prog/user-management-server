@@ -350,41 +350,33 @@ router.get('/stream', async (req, res) => {
     resHeadersSent: connection.res.headersSent
   });
 
-  // Send initial connection message to ALL connections for this user
+  // Send initial connection message to THIS specific connection
   const connectionMessage = {
     type: 'connection',
     message: 'Connected to event stream',
     timestamp: new Date().toISOString()
   };
   
-  console.log('📤 Sending initial connection message to all connections:', connectionMessage);
-  
-  // Send to all connections for this user
-  const userConnections = Array.from(sseConnections).filter(conn => conn.userId === req.user.id);
-  console.log(`📤 Found ${userConnections.length} connections for user ${req.user.id}`);
-  
-  userConnections.forEach((conn, index) => {
-    try {
-      console.log(`📤 Sending to connection ${index + 1}:`, {
-        writable: conn.res.writable,
-        destroyed: conn.res.destroyed,
-        headersSent: conn.res.headersSent,
-        finished: conn.res.finished
-      });
-      
-      if (!conn.res.writable || conn.res.destroyed || conn.res.finished) {
-        console.log(`⚠️ Connection ${index + 1} is not writable, removing from active connections`);
-        sseConnections.delete(conn);
-        return;
-      }
-      
-      conn.res.write(`data: ${JSON.stringify(connectionMessage)}\n\n`);
-      console.log(`✅ Initial connection message sent to connection ${index + 1}`);
-    } catch (writeError) {
-      console.error(`❌ Error sending initial connection message to connection ${index + 1}:`, writeError);
-      sseConnections.delete(conn);
-    }
+  console.log('📤 Sending initial connection message to new connection:', connectionMessage);
+  console.log('📤 New connection state:', {
+    writable: connection.res.writable,
+    destroyed: connection.res.destroyed,
+    headersSent: connection.res.headersSent,
+    finished: connection.res.finished
   });
+  
+  try {
+    if (!connection.res.writable || connection.res.destroyed || connection.res.finished) {
+      console.log(`⚠️ New connection is not writable, cannot send initial message`);
+      return;
+    }
+    
+    connection.res.write(`data: ${JSON.stringify(connectionMessage)}\n\n`);
+    console.log(`✅ Initial connection message sent to new connection`);
+  } catch (writeError) {
+    console.error(`❌ Error sending initial connection message:`, writeError);
+    sseConnections.delete(connection);
+  }
 
   // Set up heartbeat to keep connection alive
   const heartbeatInterval = setInterval(() => {
@@ -408,6 +400,12 @@ router.get('/stream', async (req, res) => {
   // Handle client disconnect
   req.on('close', () => {
     console.log(`📡 SSE connection closed by client for user ${req.user.id}`);
+    console.log(`📡 Connection state at close:`, {
+      writable: connection.res.writable,
+      destroyed: connection.res.destroyed,
+      headersSent: connection.res.headersSent,
+      finished: connection.res.finished
+    });
     clearInterval(heartbeatInterval);
     sseConnections.delete(connection);
     console.log(`📡 SSE connection closed for user ${req.user.id}. Remaining connections: ${sseConnections.size}`);
@@ -416,6 +414,12 @@ router.get('/stream', async (req, res) => {
   // Handle connection errors
   req.on('error', (error) => {
     console.log(`❌ SSE connection error for user ${req.user.id}:`, error.message);
+    console.log(`❌ Connection state at error:`, {
+      writable: connection.res.writable,
+      destroyed: connection.res.destroyed,
+      headersSent: connection.res.headersSent,
+      finished: connection.res.finished
+    });
     clearInterval(heartbeatInterval);
     sseConnections.delete(connection);
   });
