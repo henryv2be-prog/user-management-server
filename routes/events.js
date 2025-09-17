@@ -211,9 +211,9 @@ router.get('/test-sse-minimal', (req, res) => {
   }, 5000);
 });
 
-// Simple public SSE endpoint for live event updates (no auth required)
-router.get('/stream-public', async (req, res) => {
-  console.log('🔗 SSE /stream-public endpoint accessed (no auth)');
+// Simple public SSE endpoint for live event updates (no auth required) - SIMPLIFIED VERSION
+router.get('/stream-public', (req, res) => {
+  console.log('🔗 SSE /stream-public endpoint accessed (no auth) - SIMPLIFIED VERSION');
   console.log('🔗 Request details:', {
     method: req.method,
     url: req.url,
@@ -222,38 +222,25 @@ router.get('/stream-public', async (req, res) => {
   });
   
   try {
-    // Set SSE headers
+    // Set SSE headers - same as minimal endpoint
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Cache-Control',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS'
+      'Access-Control-Allow-Origin': '*'
     });
     
-    console.log('📡 SSE headers set for public connection');
+    console.log('📡 SSE headers set for public connection - SIMPLIFIED VERSION');
     
-    // Create simple connection object
-    const connection = {
-      res,
-      connectedAt: new Date().toISOString(),
-      lastHeartbeat: Date.now()
-    };
-    
-    // Add to connections set
-    sseConnections.add(connection);
-    console.log(`✅ Added public SSE connection. Total connections: ${sseConnections.size}`);
-    
-    // Send initial connection message
+    // Send immediate connection message - same as minimal endpoint
     const connectionMessage = {
       type: 'connection',
-      message: 'Connected to public event stream',
+      message: 'Connected to public event stream - SIMPLIFIED VERSION',
       timestamp: new Date().toISOString()
     };
     
     res.write(`data: ${JSON.stringify(connectionMessage)}\n\n`);
-    console.log('✅ Initial connection message sent to public connection');
+    console.log('✅ Initial connection message sent to public connection - SIMPLIFIED VERSION');
     console.log('📤 Message sent:', connectionMessage);
     console.log('📤 Response state after write:', {
       writable: res.writable,
@@ -262,60 +249,53 @@ router.get('/stream-public', async (req, res) => {
       finished: res.finished
     });
     
-    // Send a test message immediately to verify connection
+    // Send a test message after 1 second - same as minimal endpoint
     setTimeout(() => {
       try {
         const testMessage = {
           type: 'test',
-          message: 'Test message from server',
+          message: 'Test message from server - SIMPLIFIED VERSION',
           timestamp: new Date().toISOString()
         };
         res.write(`data: ${JSON.stringify(testMessage)}\n\n`);
-        console.log('📤 Test message sent:', testMessage);
+        console.log('📤 Test message sent - SIMPLIFIED VERSION:', testMessage);
       } catch (error) {
-        console.log('❌ Error sending test message:', error.message);
+        console.log('❌ Error sending test message - SIMPLIFIED VERSION:', error.message);
       }
     }, 1000);
     
-    // Set up heartbeat
+    // Send heartbeat every 10 seconds - simplified
     const heartbeatInterval = setInterval(() => {
       try {
-        if (sseConnections.has(connection)) {
-          connection.res.write(`data: ${JSON.stringify({ 
-            type: 'heartbeat', 
-            timestamp: new Date().toISOString()
-          })}\n\n`);
-          connection.lastHeartbeat = Date.now();
-        } else {
-          clearInterval(heartbeatInterval);
-        }
+        const heartbeatMessage = {
+          type: 'heartbeat',
+          timestamp: new Date().toISOString()
+        };
+        res.write(`data: ${JSON.stringify(heartbeatMessage)}\n\n`);
+        console.log('📤 Heartbeat sent - SIMPLIFIED VERSION');
       } catch (error) {
-        console.log(`❌ SSE heartbeat error:`, error.message);
+        console.log('❌ SSE heartbeat error - SIMPLIFIED VERSION:', error.message);
         clearInterval(heartbeatInterval);
-        sseConnections.delete(connection);
       }
-    }, 30000); // Send heartbeat every 30 seconds
+    }, 10000); // Send heartbeat every 10 seconds
     
-    // Handle client disconnect
+    // Handle client disconnect - simplified
     req.on('close', () => {
-      console.log(`📡 Public SSE connection closed`);
+      console.log('📡 Public SSE connection closed - SIMPLIFIED VERSION');
       clearInterval(heartbeatInterval);
-      sseConnections.delete(connection);
-      console.log(`📡 Public SSE connection closed. Remaining connections: ${sseConnections.size}`);
     });
     
-    // Handle connection errors
+    // Handle connection errors - simplified
     req.on('error', (error) => {
-      console.log(`❌ Public SSE connection error:`, error.message);
+      console.log('❌ Public SSE connection error - SIMPLIFIED VERSION:', error.message);
       clearInterval(heartbeatInterval);
-      sseConnections.delete(connection);
     });
     
   } catch (error) {
-    console.error('❌ Public SSE route error:', error);
+    console.error('❌ Public SSE route error - SIMPLIFIED VERSION:', error);
     res.write(`data: ${JSON.stringify({ 
       type: 'error', 
-      message: 'Server error',
+      message: 'Server error - SIMPLIFIED VERSION',
       timestamp: new Date().toISOString()
     })}\n\n`);
     res.end();
