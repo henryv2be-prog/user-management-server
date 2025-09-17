@@ -223,12 +223,15 @@ router.get('/stream-public', (req, res) => {
   });
   
   try {
-    // Set SSE headers - same as minimal endpoint
+    // Set SSE headers with additional Railway-compatible headers
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*'
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control',
+      'X-Accel-Buffering': 'no',
+      'Transfer-Encoding': 'chunked'
     });
     
     console.log('📡 SSE headers set for public connection - SIMPLIFIED VERSION');
@@ -241,6 +244,7 @@ router.get('/stream-public', (req, res) => {
     };
     
     res.write(`data: ${JSON.stringify(connectionMessage)}\n\n`);
+    res.flush(); // Force immediate send
     console.log('✅ Initial connection message sent to public connection - SIMPLIFIED VERSION');
     console.log('📤 Message sent:', connectionMessage);
     console.log('📤 Response state after write:', {
@@ -259,6 +263,7 @@ router.get('/stream-public', (req, res) => {
           timestamp: new Date().toISOString()
         };
         res.write(`data: ${JSON.stringify(testMessage)}\n\n`);
+        res.flush(); // Force immediate send
         console.log('📤 Test message sent - SIMPLIFIED VERSION:', testMessage);
       } catch (error) {
         console.log('❌ Error sending test message - SIMPLIFIED VERSION:', error.message);
@@ -273,6 +278,7 @@ router.get('/stream-public', (req, res) => {
           timestamp: new Date().toISOString()
         };
         res.write(`data: ${JSON.stringify(heartbeatMessage)}\n\n`);
+        res.flush(); // Force immediate send
         console.log('📤 Heartbeat sent - SIMPLIFIED VERSION');
       } catch (error) {
         console.log('❌ SSE heartbeat error - SIMPLIFIED VERSION:', error.message);
