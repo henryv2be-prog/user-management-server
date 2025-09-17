@@ -362,11 +362,28 @@ router.put('/:id/access-groups', authenticate, requireAdmin, validateId, async (
       });
     }
     
+    // Get current access groups before updating
+    const currentAccessGroups = await user.getAccessGroups();
+    const currentAccessGroupNames = currentAccessGroups.map(ag => ag.name).join(', ');
+    
     // Update user's access groups
     await user.updateAccessGroups(accessGroupIds);
     
-    // Log user access groups update event
-    await EventLogger.logUserUpdated(req, user, ['accessGroups']);
+    // Get new access groups after updating
+    const newAccessGroups = await user.getAccessGroups();
+    const newAccessGroupNames = newAccessGroups.map(ag => ag.name).join(', ');
+    
+    // Log user access groups update event with detailed message
+    const updateMessage = `Access groups changed from "${currentAccessGroupNames || 'none'}" to "${newAccessGroupNames || 'none'}"`;
+    await EventLogger.logEvent(req, {
+      type: 'user',
+      action: 'updated',
+      entityType: 'user',
+      entityId: user.id,
+      entityName: `${user.firstName} ${user.lastName}`,
+      message: updateMessage,
+      timestamp: new Date().toISOString()
+    });
     
     res.json({
       message: 'User access groups updated successfully'
