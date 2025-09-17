@@ -190,6 +190,28 @@ router.get('/stream-public', async (req, res) => {
     
     res.write(`data: ${JSON.stringify(connectionMessage)}\n\n`);
     console.log('✅ Initial connection message sent to public connection');
+    console.log('📤 Message sent:', connectionMessage);
+    console.log('📤 Response state after write:', {
+      writable: res.writable,
+      destroyed: res.destroyed,
+      headersSent: res.headersSent,
+      finished: res.finished
+    });
+    
+    // Send a test message immediately to verify connection
+    setTimeout(() => {
+      try {
+        const testMessage = {
+          type: 'test',
+          message: 'Test message from server',
+          timestamp: new Date().toISOString()
+        };
+        res.write(`data: ${JSON.stringify(testMessage)}\n\n`);
+        console.log('📤 Test message sent:', testMessage);
+      } catch (error) {
+        console.log('❌ Error sending test message:', error.message);
+      }
+    }, 1000);
     
     // Set up heartbeat
     const heartbeatInterval = setInterval(() => {
