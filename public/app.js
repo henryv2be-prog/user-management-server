@@ -3573,7 +3573,12 @@ function connectEventStream() {
                     if (response.ok) {
                         console.log('🔄 Fetch works but EventSource doesn\'t - trying fetch streaming...');
                         addDebugLog('Trying fetch streaming as fallback', 'info');
-                        startFetchStreaming(eventSource.url);
+                        if (eventSource && eventSource.url) {
+                            startFetchStreaming(eventSource.url);
+                        } else {
+                            console.log('❌ Cannot start fetch streaming - EventSource URL not available');
+                            addDebugLog('Cannot start fetch streaming - EventSource URL not available', 'error');
+                        }
                     } else {
                         console.log('❌ Fetch response not OK, cannot use fetch streaming fallback');
                         addDebugLog(`Fetch response not OK: ${response.status} ${response.statusText}`, 'error');
@@ -3726,9 +3731,14 @@ function connectEventStream() {
             
             // Try fetch streaming fallback immediately
             console.log('🔄 Attempting fetch streaming fallback...');
-            console.log('🔄 EventSource URL for fetch streaming:', eventSource.url);
-            addDebugLog('Attempting fetch streaming fallback', 'info');
-            startFetchStreaming(eventSource.url);
+            if (eventSource && eventSource.url) {
+                console.log('🔄 EventSource URL for fetch streaming:', eventSource.url);
+                addDebugLog('Attempting fetch streaming fallback', 'info');
+                startFetchStreaming(eventSource.url);
+            } else {
+                console.log('❌ Cannot start fetch streaming - EventSource URL not available');
+                addDebugLog('Cannot start fetch streaming - EventSource URL not available', 'error');
+            }
         } else if (eventSource.readyState === 2) {
             console.error('❌ EventSource CLOSED - connection was established but closed');
             addDebugLog('EventSource connection was closed', 'error');
