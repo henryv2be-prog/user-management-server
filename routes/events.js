@@ -77,6 +77,13 @@ global.broadcastEvent = function(event) {
 // Test endpoint to manually trigger an event broadcast
 router.post('/test-broadcast', (req, res) => {
   console.log('🧪 Test broadcast endpoint accessed');
+  console.log('🧪 Current SSE connections:', sseConnections.size);
+  console.log('🧪 Connection details:', Array.from(sseConnections).map(conn => ({
+    userId: conn.userId,
+    connectedAt: conn.connectedAt,
+    writable: conn.res?.writable,
+    destroyed: conn.res?.destroyed
+  })));
   
   const testEvent = {
     id: Date.now(),
@@ -99,6 +106,23 @@ router.post('/test-broadcast', (req, res) => {
     message: 'Test event broadcasted',
     event: testEvent,
     connections: sseConnections.size
+  });
+});
+
+// Debug endpoint to check SSE connections
+router.get('/debug-connections', (req, res) => {
+  const connections = Array.from(sseConnections).map(conn => ({
+    userId: conn.userId,
+    connectedAt: conn.connectedAt,
+    writable: conn.res?.writable,
+    destroyed: conn.res?.destroyed,
+    finished: conn.res?.finished,
+    headersSent: conn.res?.headersSent
+  }));
+  
+  res.json({
+    totalConnections: sseConnections.size,
+    connections: connections
   });
 });
 
