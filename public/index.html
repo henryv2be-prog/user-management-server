@@ -192,35 +192,32 @@
                 </header>
                 
                 <section class="events-section" aria-label="Events">
-                    <header class="section-header">
-                        <h2><i class="fas fa-list" aria-hidden="true"></i> Events</h2>
-                        <div class="event-controls">
-                            <div class="stream-status">
-                                <span class="status-indicator" id="eventStreamStatus">
-                                    <i class="fas fa-circle"></i>
-                                    <span id="eventStreamStatusText">Live</span>
-                                </span>
-                            </div>
-                            <select id="eventTypeFilter" onchange="filterEvents()">
-                                <option value="">All Events</option>
-                                <option value="user">User Events</option>
-                                <option value="door">Door Events</option>
-                                <option value="access">Access Events</option>
-                                <option value="system">System Events</option>
-                                <option value="error">Error Events</option>
-                            </select>
-                            <select id="eventActionFilter" onchange="filterEvents()">
-                                <option value="">All Actions</option>
-                                <option value="created">Created</option>
-                                <option value="updated">Updated</option>
-                                <option value="deleted">Deleted</option>
-                                <option value="login">Login</option>
-                                <option value="logout">Logout</option>
-                                <option value="access_granted">Access Granted</option>
-                                <option value="access_denied">Access Denied</option>
-                            </select>
+                    <div class="event-controls">
+                        <div class="stream-status">
+                            <span class="status-indicator" id="eventStreamStatus">
+                                <i class="fas fa-circle"></i>
+                                <span id="eventStreamStatusText">Live</span>
+                            </span>
                         </div>
-                    </header>
+                        <select id="eventTypeFilter" onchange="filterEvents()">
+                            <option value="">All Events</option>
+                            <option value="user">User Events</option>
+                            <option value="door">Door Events</option>
+                            <option value="access">Access Events</option>
+                            <option value="system">System Events</option>
+                            <option value="error">Error Events</option>
+                        </select>
+                        <select id="eventActionFilter" onchange="filterEvents()">
+                            <option value="">All Actions</option>
+                            <option value="created">Created</option>
+                            <option value="updated">Updated</option>
+                            <option value="deleted">Deleted</option>
+                            <option value="login">Login</option>
+                            <option value="logout">Logout</option>
+                            <option value="access_granted">Access Granted</option>
+                            <option value="access_denied">Access Denied</option>
+                        </select>
+                    </div>
                     
                     <div class="event-log-container">
                         <div class="event-log" id="eventLog" role="log" aria-live="polite" aria-label="Event log">
