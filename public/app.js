@@ -3794,7 +3794,7 @@ function updateEventStreamStatus(connected) {
     console.log(`📡 Updating event stream status: ${connected ? 'Live' : 'Offline'}`);
     addDebugLog(`Updating status indicator: ${connected ? 'Live' : 'Offline'}`, 'info');
     
-    const eventControls = document.querySelector('.event-controls');
+    const eventControls = document.querySelector('#eventsSection .header-actions');
     if (!eventControls) {
         console.log('❌ Event controls not found');
         addDebugLog('Event controls element not found', 'error');
