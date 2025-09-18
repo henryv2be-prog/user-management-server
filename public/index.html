@@ -183,42 +183,50 @@
             </div>
         </main>
 
-        <!-- Events Log -->
-        <main id="eventsSection" class="section" role="main" aria-label="Events Log">
+        <!-- Events Management -->
+        <div id="eventsSection" class="section">
             <div class="container">
-                <section class="events-section" aria-label="Events">
-                    <header class="section-header">
-                        <h1><i class="fas fa-history" aria-hidden="true"></i> Events</h1>
-                        <div class="event-controls">
-                            <div class="stream-status">
-                                <span class="status-indicator" id="eventStreamStatus">
-                                    <i class="fas fa-circle"></i>
-                                    <span id="eventStreamStatusText">Live</span>
-                                </span>
-                            </div>
-                            <select id="eventTypeFilter" onchange="filterEvents()">
-                                <option value="">All Events</option>
-                                <option value="user">User Events</option>
-                                <option value="door">Door Events</option>
-                                <option value="access">Access Events</option>
-                                <option value="system">System Events</option>
-                                <option value="error">Error Events</option>
-                            </select>
+                <div class="section-header">
+                    <h1><i class="fas fa-history" aria-hidden="true"></i> Events</h1>
+                    <div class="header-actions">
+                        <div class="stream-status">
+                            <span class="status-indicator" id="eventStreamStatus">
+                                <i class="fas fa-circle"></i>
+                                <span id="eventStreamStatusText">Live</span>
+                            </span>
                         </div>
-                    </header>
-                    
-                    <div class="event-log-container">
-                        <div class="event-log" id="eventLog" role="log" aria-live="polite" aria-label="Event log">
-                            <!-- Events will be loaded here -->
-                        </div>
+                        <select id="eventTypeFilter" onchange="filterEvents()">
+                            <option value="">All Events</option>
+                            <option value="user">User Events</option>
+                            <option value="door">Door Events</option>
+                            <option value="access">Access Events</option>
+                            <option value="system">System Events</option>
+                            <option value="error">Error Events</option>
+                        </select>
                     </div>
-                    
-                    <nav class="event-pagination" id="eventPagination" aria-label="Event pagination">
-                        <!-- Pagination will be loaded here -->
-                    </nav>
-                </section>
+                </div>
+                
+                <div class="filters">
+                    <input type="text" id="eventSearchInput" placeholder="Search events..." onkeyup="searchEvents()">
+                    <select id="eventStatusFilter" onchange="filterEvents()">
+                        <option value="">All Status</option>
+                        <option value="success">Success</option>
+                        <option value="error">Error</option>
+                        <option value="warning">Warning</option>
+                    </select>
+                </div>
+
+                <div class="events-table-container">
+                    <div class="event-log" id="eventLog" role="log" aria-live="polite" aria-label="Event log">
+                        <!-- Events will be loaded here -->
+                    </div>
+                </div>
+
+                <div class="pagination" id="eventPagination">
+                    <!-- Pagination will be loaded here -->
+                </div>
             </div>
-        </main>
+        </div>
 
         <!-- Users Management -->
         <div id="usersSection" class="section">
