@@ -3130,6 +3130,11 @@ async function refreshDoorStatus() {
 // Event Log Functions
 let currentEventPage = 1;
 let currentEventType = '';
+let currentEventFilters = {
+    search: undefined,
+    type: undefined,
+    status: undefined
+};
 let eventRefreshInterval = null;
 let eventSource = null;
 let fetchStream = null;
@@ -3210,6 +3215,16 @@ async function loadEvents(page = 1, type = '') {
         
         if (type) {
             params.append('type', type);
+        }
+        
+        // Add search parameter if available
+        if (currentEventFilters.search) {
+            params.append('search', currentEventFilters.search);
+        }
+        
+        // Add status filter if available
+        if (currentEventFilters.status) {
+            params.append('status', currentEventFilters.status);
         }
         
         const response = await fetch(addCacheBusting(`/api/events?${params}`), {
@@ -3294,7 +3309,7 @@ function displayEventPagination(pagination) {
     // Previous button
     paginationHTML += `
         <button ${pagination.currentPage === 1 ? 'disabled' : ''} 
-                onclick="loadEvents(${pagination.currentPage - 1}, '${currentEventType}')">
+                onclick="loadEvents(${pagination.currentPage - 1}, '${currentEventFilters.type || ''}')">
             <i class="fas fa-chevron-left"></i>
         </button>
     `;
@@ -3306,7 +3321,7 @@ function displayEventPagination(pagination) {
     for (let i = startPage; i <= endPage; i++) {
         paginationHTML += `
             <button class="${i === pagination.currentPage ? 'active' : ''}" 
-                    onclick="loadEvents(${i}, '${currentEventType}')">
+                    onclick="loadEvents(${i}, '${currentEventFilters.type || ''}')">
                 ${i}
             </button>
         `;
@@ -3315,7 +3330,7 @@ function displayEventPagination(pagination) {
     // Next button
     paginationHTML += `
         <button ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''} 
-                onclick="loadEvents(${pagination.currentPage + 1}, '${currentEventType}')">
+                onclick="loadEvents(${pagination.currentPage + 1}, '${currentEventFilters.type || ''}')">
             <i class="fas fa-chevron-right"></i>
         </button>
     `;
@@ -3324,10 +3339,20 @@ function displayEventPagination(pagination) {
     paginationDiv.innerHTML = paginationHTML;
 }
 
+function searchEvents() {
+    const searchTerm = document.getElementById('eventSearchInput').value;
+    currentEventFilters.search = searchTerm || undefined;
+    loadEvents(1, currentEventFilters.type);
+}
+
 function filterEvents() {
     const typeFilter = document.getElementById('eventTypeFilter');
-    const selectedType = typeFilter.value;
-    loadEvents(1, selectedType);
+    const statusFilter = document.getElementById('eventStatusFilter');
+    
+    currentEventFilters.type = typeFilter.value || undefined;
+    currentEventFilters.status = statusFilter.value || undefined;
+    
+    loadEvents(1, currentEventFilters.type);
 }
 
 function startEventRefresh() {
@@ -3341,7 +3366,7 @@ function startEventRefresh() {
         // Only refresh if we're on the dashboard and events are visible
         const dashboardSection = document.getElementById('dashboardSection');
         if (dashboardSection && dashboardSection.classList.contains('active')) {
-            loadEvents(currentEventPage, currentEventType);
+            loadEvents(currentEventPage, currentEventFilters.type || '');
         }
     }, 10000);
 }
