@@ -986,6 +986,17 @@ textarea:focus-visible {
     color: var(--text-inverse);
 }
 
+/* Events Section Header */
+#eventsSection .section-header {
+    background: var(--primary-gradient);
+    color: var(--text-inverse);
+    border-radius: 12px;
+}
+
+#eventsSection .section-header h1 {
+    color: var(--text-inverse);
+}
+
 /* Door Controller Discovery Section Header */
 #doorControllerDiscoverySection .section-header {
     background: var(--primary-gradient);
