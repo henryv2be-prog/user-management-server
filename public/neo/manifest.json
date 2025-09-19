@@ -1,0 +1,64 @@
+{
+  "name": "SimplifiAccess Neo",
+  "short_name": "SimplifiAccess",
+  "description": "Next-generation access control system",
+  "start_url": "/neo/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "scope": "/neo/",
+  "lang": "en",
+  "categories": ["productivity", "business", "utilities"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiMwYTBhMGEiLz4KPGNpcmNsZSBjeD0iOTYiIGN5PSI5NiIgcj0iNDgiIGZpbGw9IiM2MzY2RjEiLz4KPHBhdGggZD0iTTk2IDQ4QzEwOC4xNTQgNDggMTE4IDE1Ny44NDYgMTE4IDE3MEMxMTggMTgyLjE1NCAxMDguMTU0IDE5MiA5NiAxOTJDODMuODQ2IDE5MiA3NCAxODIuMTU0IDc0IDE3MEM3NCAxNTcuODQ2IDgzLjg0NiA0OCA5NiA0OFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik05NiA2NEM5NiA2NCA5NiA2NCA5NiA2NEM5NiA2NCA5NiA2NCA5NiA2NFoiIGZpbGw9IiM2MzY2RjEiLz4KPC9zdmc+",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iNjQiIGZpbGw9IiMwYTBhMGEiLz4KPGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIxMjgiIGZpbGw9IiM2MzY2RjEiLz4KPHBhdGggZD0iTTI1NiAxMjhDMjg4LjQxMSAxMjggMzE2IDE1NS41ODkgMzE2IDE4OEMzMTYgMjIwLjQxMSAyODguNDExIDI0OCAyNTYgMjQ4QzIyMy41ODkgMjQ4IDE5NiAyMjAuNDExIDE5NiAxODhDMTk2IDE1NS41ODkgMjIzLjU4OSAxMjggMjU2IDEyOFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0yNTYgMTcwQzI1NiAxNzAgMjU2IDE3MCAyNTYgMTcwQzI1NiAxNzAgMjU2IDE3MCAyNTYgMTcwWiIgZmlsbD0iIzYzNjZGMiIvPgo8L3N2Zz4=",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4MCIgaGVpZ2h0PSI3MjAiIHZpZXdCb3g9IjAgMCAxMjgwIDcyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjEyODAiIGhlaWdodD0iNzIwIiBmaWxsPSIjMGEwYTBhIi8+CjxyZWN0IHg9IjQwIiB5PSI0MCIgd2lkdGg9IjEyMDAiIGhlaWdodD0iNjQwIiByeD0iMTYiIGZpbGw9IiMxYTFhMWEiLz4KPHJlY3QgeD0iNjAiIHk9IjYwIiB3aWR0aD0iMTE2MCIgaGVpZ2h0PSI2MDAiIHJ4PSI4IiBmaWxsPSIjMWEyYTFhIi8+CjxyZWN0IHg9IjgwIiB5PSI4MCIgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0MCIgcng9IjQiIGZpbGw9IiM2MzY2RjEiLz4KPHJlY3QgeD0iNDAwIiB5PSI4MCIgd2lkdGg9IjgwMCIgaGVpZ2h0PSI0MCIgcng9IjQiIGZpbGw9IiMzMzMzMzMiLz4KPHJlY3QgeD0iODAiIHk9IjE0MCIgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0MCIgcng9IjQiIGZpbGw9IiM2MzY2RjEiLz4KPHJlY3QgeD0iNDAwIiB5PSIxNDAiIHdpZHRoPSI4MDAiIGhlaWdodD0iNDAiIHJ4PSI0IiBmaWxsPSIjMzMzMzMzIi8+CjxyZWN0IHg9IjgwIiB5PSIyMDAiIHdpZHRoPSIzMDAiIGhlaWdodD0iNDAiIHJ4PSI0IiBmaWxsPSIjNjM2NkYxIi8+CjxyZWN0IHg9IjQwMCIgeT0iMjAwIiB3aWR0aD0iODAwIiBoZWlnaHQ9IjQwIiByeD0iNCIgZmlsbD0iIzMzMzMzMyIvPgo8L3N2Zz4=",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "SimplifiAccess Neo Dashboard"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Open the main dashboard",
+      "url": "/neo/?section=dashboard",
+      "icons": [
+        {
+          "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iNDgiIGN5PSI0OCIgcj0iNDgiIGZpbGw9IiM2MzY2RjEiLz4KPHBhdGggZD0iTTQ4IDI0QzU0LjYyNyAyNCA2MCAyOS4zNzMgNjAgMzZDNjAgNDIuNjI3IDU0LjYyNyA0OCA0OCA0OEM0MS4zNzMgNDggMzYgNDIuNjI3IDM2IDM2QzM2IDI5LjM3MyA0MS4zNzMgMjQgNDggMjRaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4=",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Doors",
+      "short_name": "Doors",
+      "description": "Manage doors and access control",
+      "url": "/neo/?section=doors",
+      "icons": [
+        {
+          "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iNDgiIGN5PSI0OCIgcj0iNDgiIGZpbGw9IiM2MzY2RjEiLz4KPHBhdGggZD0iTTQ4IDI0QzU0LjYyNyAyNCA2MCAyOS4zNzMgNjAgMzZDNjAgNDIuNjI3IDU0LjYyNyA0OCA0OCA0OEM0MS4zNzMgNDggMzYgNDIuNjI3IDM2IDM2QzM2IDI5LjM3MyA0MS4zNzMgMjQgNDggMjRaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4=",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

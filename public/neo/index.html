@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SimplifiAccess Neo - Next-Gen Access Control System">
+    <title>SimplifiAccess Neo</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" as="style">
+    
+    <!-- Stylesheets -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="css/neo.css?v=1" rel="stylesheet">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    
+    <!-- Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(error => console.log('SW registration failed'));
+            });
+        }
+    </script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <div class="logo-icon">🔐</div>
+                <h1>SimplifiAccess Neo</h1>
+            </div>
+            <div class="loading-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                <p class="loading-text">Initializing system...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app" class="app" style="display: none;">
+        <!-- Top Navigation Bar -->
+        <nav class="top-nav">
+            <div class="nav-left">
+                <button class="nav-toggle" id="navToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="logo">
+                    <span class="logo-icon">🔐</span>
+                    <span class="logo-text">SimplifiAccess Neo</span>
+                </div>
+            </div>
+            
+            <div class="nav-center">
+                <!-- Command Palette -->
+                <div class="command-palette">
+                    <button class="command-trigger" id="commandTrigger">
+                        <i class="fas fa-search"></i>
+                        <span>Search or type a command...</span>
+                        <kbd>⌘K</kbd>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="nav-right">
+                <!-- Notifications -->
+                <button class="nav-btn notification-btn" id="notificationBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationBadge">0</span>
+                </button>
+                
+                <!-- Theme Toggle -->
+                <button class="nav-btn theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                
+                <!-- User Menu -->
+                <div class="user-menu">
+                    <button class="user-avatar" id="userAvatar">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM2MzY2RjEiLz4KPHBhdGggZD0iTTE2IDE2QzE4LjIwOTEgMTYgMjAgMTQuMjA5MSAyMCAxMkMyMCA5Ljc5MDg2IDE4LjIwOTEgOCAxNiA4QzEzLjc5MDkgOCAxMiA5Ljc5MDg2IDEyIDEyQzEyIDE0LjIwOTEgMTMuNzkwOSAxNiAxNiAxNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAxOEMxMi42ODYzIDE4IDEwIDIwLjY4NjMgMTAgMjRIMjJDMjIgMjAuNjg2MyAxOS4zMTM3IDE4IDE2IDE4WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+" alt="User">
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-content">
+                <!-- Navigation Items -->
+                <nav class="sidebar-nav">
+                    <a href="#" class="nav-item active" data-section="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="doors">
+                        <i class="fas fa-door-open"></i>
+                        <span>Doors</span>
+                        <span class="nav-badge" id="doorsBadge">0</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="users">
+                        <i class="fas fa-users"></i>
+                        <span>Users</span>
+                        <span class="nav-badge" id="usersBadge">0</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="events">
+                        <i class="fas fa-history"></i>
+                        <span>Events</span>
+                        <span class="nav-badge" id="eventsBadge">0</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="analytics">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Analytics</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="settings">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+                
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h3>Quick Actions</h3>
+                    <button class="quick-action-btn" id="quickUnlock">
+                        <i class="fas fa-unlock"></i>
+                        <span>Unlock All</span>
+                    </button>
+                    <button class="quick-action-btn" id="quickLock">
+                        <i class="fas fa-lock"></i>
+                        <span>Lock All</span>
+                    </button>
+                    <button class="quick-action-btn" id="quickScan">
+                        <i class="fas fa-qrcode"></i>
+                        <span>Scan QR</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboardSection" class="content-section active">
+                <div class="section-header">
+                    <h1>Dashboard</h1>
+                    <div class="section-actions">
+                        <button class="btn btn-primary" id="refreshDashboard">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-door-open"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalDoors">0</h3>
+                            <p>Total Doors</p>
+                            <span class="stat-change positive" id="doorsChange">+0%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalUsers">0</h3>
+                            <p>Active Users</p>
+                            <span class="stat-change positive" id="usersChange">+0%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalAccessGroups">0</h3>
+                            <p>Access Groups</p>
+                            <span class="stat-change neutral" id="groupsChange">0%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="systemUptime">0h</h3>
+                            <p>System Uptime</p>
+                            <span class="stat-change positive" id="uptimeChange">100%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Main Dashboard Grid -->
+                <div class="dashboard-grid">
+                    <!-- Door Status Cards -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h2>Door Status</h2>
+                            <div class="card-actions">
+                                <button class="btn-icon" id="doorViewToggle">
+                                    <i class="fas fa-th"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            <div class="door-grid" id="doorGrid">
+                                <!-- Door cards will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Events -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h2>Recent Events</h2>
+                            <div class="card-actions">
+                                <button class="btn-icon" id="eventsRefresh">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            <div class="events-list" id="eventsList">
+                                <!-- Events will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- System Health -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h2>System Health</h2>
+                        </div>
+                        <div class="card-content">
+                            <div class="health-metrics" id="healthMetrics">
+                                <!-- Health metrics will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h2>Quick Actions</h2>
+                        </div>
+                        <div class="card-content">
+                            <div class="quick-actions-grid">
+                                <button class="quick-action-card" id="addUser">
+                                    <i class="fas fa-user-plus"></i>
+                                    <span>Add User</span>
+                                </button>
+                                <button class="quick-action-card" id="addDoor">
+                                    <i class="fas fa-door-open"></i>
+                                    <span>Add Door</span>
+                                </button>
+                                <button class="quick-action-card" id="scanQR">
+                                    <i class="fas fa-qrcode"></i>
+                                    <span>Scan QR</span>
+                                </button>
+                                <button class="quick-action-card" id="viewLogs">
+                                    <i class="fas fa-file-alt"></i>
+                                    <span>View Logs</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Other sections will be dynamically loaded -->
+            <div id="dynamicContent"></div>
+        </main>
+
+        <!-- Command Palette Modal -->
+        <div class="command-palette-modal" id="commandPalette">
+            <div class="command-palette-content">
+                <div class="command-input">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search or type a command..." id="commandInput">
+                </div>
+                <div class="command-results" id="commandResults">
+                    <!-- Command results will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications Panel -->
+        <div class="notifications-panel" id="notificationsPanel">
+            <div class="notifications-header">
+                <h3>Notifications</h3>
+                <button class="btn-icon" id="clearNotifications">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="notifications-list" id="notificationsList">
+                <!-- Notifications will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Toast Container -->
+        <div class="toast-container" id="toastContainer"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/neo/core.js"></script>
+    <script src="js/neo/components.js"></script>
+    <script src="js/neo/api.js"></script>
+    <script src="js/neo/app.js"></script>
+</body>
+</html>
