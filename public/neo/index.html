@@ -1,29 +1,42 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SimplifiAccess Neo - Next-Gen Access Control System">
-    <title>SimplifiAccess Neo</title>
+    <meta name="description" content="SimplifiAccess Neo - Simple Smart Secure Access with real-time monitoring and management">
+    <meta name="keywords" content="access control, smart doors, security, management, dashboard">
+    <meta name="author" content="SimplifiAccess">
+    <meta name="theme-color" content="#374151">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="SimplifiAccess Neo - Smart Access Control">
+    <meta property="og:description" content="Simple Smart Secure Access with real-time monitoring">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="SimplifiAccess Neo - Smart Access Control">
+    <meta property="twitter:description" content="Simple Smart Secure Access with real-time monitoring">
+    
+    <title>SimplifiAccess Neo - Smart Access Control</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="apple-touch-icon" href="../favicon.svg">
+    <link rel="manifest" href="../manifest.json">
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" as="style">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" as="style">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style">
     
     <!-- Stylesheets -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="css/neo.css?v=1" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="../css/styles.css?v=2" rel="stylesheet">
     
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1a1a1a">
-    
-    <!-- Service Worker -->
+    <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
+                navigator.serviceWorker.register('../sw.js')
                     .then(registration => console.log('SW registered'))
                     .catch(error => console.log('SW registration failed'));
             });
@@ -31,410 +44,406 @@
     </script>
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loadingScreen" class="loading-screen">
-        <div class="loading-content">
-            <div class="loading-logo">
-                <div class="logo-icon">🔐</div>
-                <h1>SimplifiAccess Neo</h1>
-            </div>
-            <div class="loading-progress">
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="navbar" id="mainNavbar" style="display: none;" role="navigation" aria-label="Main navigation">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <span class="brand-text">SimplifiAccess Neo</span>
                 </div>
-                <p class="loading-text">Initializing system...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Application -->
-    <div id="app" class="app" style="display: none;">
-        <!-- Top Navigation Bar -->
-        <nav class="top-nav">
-            <div class="nav-left">
-                <button class="nav-toggle" id="navToggle">
-                    <i class="fas fa-bars"></i>
+                <button class="nav-toggle" onclick="toggleNav()" aria-label="Toggle navigation menu" aria-expanded="false">
+                    <i class="fas fa-bars" aria-hidden="true"></i>
                 </button>
-                <div class="logo">
-                    <span class="logo-icon">🔐</span>
-                    <span class="logo-text">SimplifiAccess Neo</span>
-                </div>
-            </div>
-            
-            <div class="nav-center">
-                <!-- Command Palette -->
-                <div class="command-palette">
-                    <button class="command-trigger" id="commandTrigger">
-                        <i class="fas fa-search"></i>
-                        <span>Search or type a command...</span>
-                        <kbd>⌘K</kbd>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="nav-right">
-                <!-- Notifications -->
-                <button class="nav-btn notification-btn" id="notificationBtn">
-                    <i class="fas fa-bell"></i>
-                    <span class="notification-badge" id="notificationBadge">0</span>
-                </button>
-                
-                <!-- Theme Toggle -->
-                <button class="nav-btn theme-toggle" id="themeToggle">
-                    <i class="fas fa-moon"></i>
-                </button>
-                
-                <!-- User Menu -->
-                <div class="user-menu">
-                    <button class="user-avatar" id="userAvatar">
-                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM2MzY2RjEiLz4KPHBhdGggZD0iTTE2IDE2QzE4LjIwOTEgMTYgMjAgMTQuMjA5MSAyMCAxMkMyMCA5Ljc5MDg2IDE4LjIwOTEgOCAxNiA4QzEzLjc5MDkgOCAxMiA5Ljc5MDg2IDEyIDEyQzEyIDE0LjIwOTEgMTMuNzkwOSAxNiAxNiAxNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAxOEMxMi42ODYzIDE4IDEwIDIwLjY4NjMgMTAgMjRIMjJDMjIgMjAuNjg2MyAxOS4zMTM3IDE4IDE2IDE4WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+" alt="User">
-                    </button>
+                <div class="nav-menu" id="navMenu" role="menubar">
+                    <a href="#" class="nav-link" onclick="showSection('dashboard')" role="menuitem" aria-label="Go to Dashboard">
+                        <i class="fas fa-tachometer-alt" aria-hidden="true"></i> 
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-link" onclick="showSection('events')" role="menuitem" aria-label="Go to Events Log">
+                        <i class="fas fa-history" aria-hidden="true"></i> 
+                        <span>Events</span>
+                    </a>
+                    <a href="#" class="nav-link" onclick="showSection('users')" role="menuitem" aria-label="Go to Users Management">
+                        <i class="fas fa-users" aria-hidden="true"></i> 
+                        <span>Users</span>
+                    </a>
+                    <a href="#" class="nav-link" onclick="showSection('doors')" role="menuitem" aria-label="Go to Doors Management">
+                        <i class="fas fa-door-open" aria-hidden="true"></i> 
+                        <span>Doors</span>
+                    </a>
+                    <a href="#" class="nav-link" onclick="showSection('accessGroups')" role="menuitem" aria-label="Go to Access Groups">
+                        <i class="fas fa-shield-alt" aria-hidden="true"></i> 
+                        <span>Access Groups</span>
+                    </a>
+                    <a href="#" class="nav-link" onclick="showSection('doorControllerDiscovery')" role="menuitem" aria-label="Go to Door Controller Discovery">
+                        <i class="fas fa-wifi" aria-hidden="true"></i> 
+                        <span>Controller Discovery</span>
+                    </a>
+                    <a href="#" class="nav-link" onclick="showSection('settings')" role="menuitem" aria-label="Go to Settings">
+                        <i class="fas fa-cog" aria-hidden="true"></i> 
+                        <span>Settings</span>
+                    </a>
+                    <a href="#" class="nav-link" onclick="showSection('profile')" role="menuitem" aria-label="Go to Profile">
+                        <i class="fas fa-user" aria-hidden="true"></i> 
+                        <span>Profile</span>
+                    </a>
+                    <a href="#" class="nav-link" onclick="logout()" role="menuitem" aria-label="Logout from system">
+                        <i class="fas fa-sign-out-alt" aria-hidden="true"></i> 
+                        <span>Logout</span>
+                    </a>
                 </div>
             </div>
         </nav>
 
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-content">
-                <!-- Navigation Items -->
-                <nav class="sidebar-nav">
-                    <a href="#" class="nav-item active" data-section="dashboard">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <span>Dashboard</span>
-                    </a>
-                    <a href="#" class="nav-item" data-section="doors">
-                        <i class="fas fa-door-open"></i>
-                        <span>Doors</span>
-                        <span class="nav-badge" id="doorsBadge">0</span>
-                    </a>
-                    <a href="#" class="nav-item" data-section="users">
-                        <i class="fas fa-users"></i>
-                        <span>Users</span>
-                        <span class="nav-badge" id="usersBadge">0</span>
-                    </a>
-                    <a href="#" class="nav-item" data-section="events">
-                        <i class="fas fa-history"></i>
-                        <span>Events</span>
-                        <span class="nav-badge" id="eventsBadge">0</span>
-                    </a>
-                    <a href="#" class="nav-item" data-section="analytics">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Analytics</span>
-                    </a>
-                    <a href="#" class="nav-item" data-section="settings">
-                        <i class="fas fa-cog"></i>
-                        <span>Settings</span>
-                    </a>
-                </nav>
-                
-                <!-- Quick Actions -->
-                <div class="quick-actions">
-                    <h3>Quick Actions</h3>
-                    <button class="quick-action-btn" id="quickUnlock">
-                        <i class="fas fa-unlock"></i>
-                        <span>Unlock All</span>
-                    </button>
-                    <button class="quick-action-btn" id="quickLock">
-                        <i class="fas fa-lock"></i>
-                        <span>Lock All</span>
-                    </button>
-                    <button class="quick-action-btn" id="quickScan">
-                        <i class="fas fa-qrcode"></i>
-                        <span>Scan QR</span>
-                    </button>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Dashboard Section -->
-            <section id="dashboardSection" class="content-section active">
-                <div class="section-header">
-                    <h1>Dashboard</h1>
-                    <div class="section-actions">
-                        <button class="btn btn-primary" id="refreshDashboard">
-                            <i class="fas fa-sync-alt"></i>
-                            Refresh
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Stats Cards -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-door-open"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="totalDoors">0</h3>
-                            <p>Total Doors</p>
-                            <span class="stat-change positive" id="doorsChange">+0%</span>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="totalUsers">0</h3>
-                            <p>Active Users</p>
-                            <span class="stat-change positive" id="usersChange">+0%</span>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon">
+        <!-- Login Form -->
+        <div id="loginSection" class="section active">
+            <div class="login-container">
+                <div class="login-card">
+                    <div class="login-header">
+                        <div class="logo">
                             <i class="fas fa-shield-alt"></i>
+                            <h1>SimplifiAccess Neo</h1>
                         </div>
-                        <div class="stat-content">
-                            <h3 id="totalAccessGroups">0</h3>
-                            <p>Access Groups</p>
-                            <span class="stat-change neutral" id="groupsChange">0%</span>
-                        </div>
+                        <p class="login-subtitle">Simple Smart Secure Access</p>
                     </div>
                     
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="systemUptime">0h</h3>
-                            <p>System Uptime</p>
-                            <span class="stat-change positive" id="uptimeChange">100%</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Main Dashboard Content -->
-                <div class="dashboard-content">
-                    <div class="welcome-section">
-                        <h1>Welcome to SimplifiAccess Neo</h1>
-                        <p>Your comprehensive access control management system</p>
-                    </div>
-                    
-                    <!-- Quick Stats -->
-                    <div class="quick-stats">
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-door-open"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-number" id="totalDoors">0</div>
-                                <div class="stat-label">Total Doors</div>
-                            </div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-number" id="totalUsers">0</div>
-                                <div class="stat-label">Total Users</div>
-                            </div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-history"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-number" id="totalEvents">0</div>
-                                <div class="stat-label">Recent Events</div>
-                            </div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-shield-alt"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-number" id="systemStatus">Online</div>
-                                <div class="stat-label">System Status</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Users Section -->
-            <section id="usersSection" class="content-section">
-                <div id="usersContainer">
-                    <!-- Users content will be loaded here -->
-                </div>
-            </section>
-
-            <!-- Doors Section -->
-            <section id="doorsSection" class="content-section">
-                <div id="doorsContainer">
-                    <!-- Doors content will be loaded here -->
-                </div>
-            </section>
-
-            <!-- Events Section -->
-            <section id="eventsSection" class="content-section">
-                <div id="eventsContainer">
-                    <!-- Events content will be loaded here -->
-                </div>
-            </section>
-
-            <!-- Access Groups Section -->
-            <section id="accessGroupsSection" class="content-section">
-                <div id="accessGroupsContainer">
-                    <!-- Access Groups content will be loaded here -->
-                </div>
-            </section>
-
-            <!-- Door Controller Discovery Section -->
-            <section id="doorControllerDiscoverySection" class="content-section">
-                <div class="section-header">
-                    <h1>Door Controller Discovery</h1>
-                </div>
-                <div class="discovery-content">
-                    <p>Door Controller Discovery functionality will be implemented here.</p>
-                </div>
-            </section>
-
-            <!-- Profile Section -->
-            <section id="profileSection" class="content-section">
-                <div class="section-header">
-                    <h1>Profile</h1>
-                </div>
-                <div class="profile-content">
-                    <p>Profile management functionality will be implemented here.</p>
-                </div>
-            </section>
-
-            <!-- Settings Section -->
-            <section id="settingsSection" class="content-section">
-                <div class="section-header">
-                    <h1>Settings</h1>
-                </div>
-                <div class="settings-content">
-                    <p>Settings functionality will be implemented here.</p>
-                </div>
-            </section>
-
-            <!-- Login Section -->
-            <section id="loginSection" class="content-section">
-                <div class="login-container">
-                    <div class="login-form">
-                        <h2>Login</h2>
-                        <form id="loginForm" data-async>
-                            <div class="form-group">
-                                <label for="email">Email</label>
+                    <form id="loginForm" class="login-form">
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <div class="input-group">
+                                <i class="fas fa-envelope"></i>
                                 <input type="email" id="email" name="email" value="admin@example.com" required>
                             </div>
-                            <div class="form-group">
-                                <label for="password">Password</label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <div class="input-group">
+                                <i class="fas fa-lock"></i>
                                 <input type="password" id="password" name="password" value="admin123" required>
                             </div>
-                            <button type="submit" class="btn btn-primary">Login</button>
-                        </form>
-                        <div style="margin-top: 1rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 0.5rem; font-size: 0.875rem; color: #6366f1;">
-                            <strong>Default Credentials:</strong><br>
-                            Email: admin@example.com<br>
-                            Password: admin123
                         </div>
-                        <p>Don't have an account? <a href="#" onclick="app.showRegister()">Register here</a></p>
-                    </div>
+                        
+                        <div class="form-options">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="rememberMe">
+                                <span class="checkmark"></span>
+                                Remember me
+                            </label>
+                            <a href="#" class="forgot-password">Forgot password?</a>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-full">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Sign In
+                        </button>
+                        
+                        <div class="login-footer">
+                            <p>Don't have an account? <a href="#" onclick="showRegister()">Sign up</a></p>
+                        </div>
+                    </form>
                 </div>
-            </section>
+            </div>
+        </div>
 
-            <!-- Register Section -->
-            <section id="registerSection" class="content-section">
-                <div class="register-container">
-                    <div class="register-form">
-                        <h2>Register</h2>
-                        <form id="registerForm" data-async>
+        <!-- Register Form -->
+        <div id="registerSection" class="section">
+            <div class="login-container">
+                <div class="login-card">
+                    <div class="login-header">
+                        <div class="logo">
+                            <i class="fas fa-shield-alt"></i>
+                            <h1>Create Account</h1>
+                        </div>
+                        <p class="login-subtitle">Join SimplifiAccess Neo</p>
+                    </div>
+                    
+                    <form id="registerForm" class="login-form">
+                        <div class="form-row">
                             <div class="form-group">
                                 <label for="firstName">First Name</label>
-                                <input type="text" id="firstName" name="firstName" required>
+                                <div class="input-group">
+                                    <i class="fas fa-user"></i>
+                                    <input type="text" id="firstName" name="firstName" required>
+                                </div>
                             </div>
+                            
                             <div class="form-group">
                                 <label for="lastName">Last Name</label>
-                                <input type="text" id="lastName" name="lastName" required>
+                                <div class="input-group">
+                                    <i class="fas fa-user"></i>
+                                    <input type="text" id="lastName" name="lastName" required>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="email">Email</label>
-                                <input type="email" id="email" name="email" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="regEmail">Email Address</label>
+                            <div class="input-group">
+                                <i class="fas fa-envelope"></i>
+                                <input type="email" id="regEmail" name="email" required>
                             </div>
-                            <div class="form-group">
-                                <label for="password">Password</label>
-                                <input type="password" id="password" name="password" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="regPassword">Password</label>
+                            <div class="input-group">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="regPassword" name="password" required>
                             </div>
-                            <button type="submit" class="btn btn-primary">Register</button>
-                        </form>
-                        <p>Already have an account? <a href="#" onclick="app.showLogin()">Login here</a></p>
-                    </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <div class="input-group">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="confirmPassword" name="confirmPassword" required>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-full">
+                            <i class="fas fa-user-plus"></i>
+                            Create Account
+                        </button>
+                        
+                        <div class="login-footer">
+                            <p>Already have an account? <a href="#" onclick="showLogin()">Sign in</a></p>
+                        </div>
+                    </form>
                 </div>
-            </section>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <main id="dashboardSection" class="section" role="main" aria-label="Dashboard">
+            <div class="container">
+                <header class="page-header">
+                    <h1><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Dashboard</h1>
+                    <p class="page-description">Real-time monitoring and system overview</p>
+                </header>
+                
+                <!-- Door Status Monitoring -->
+                <section class="door-status-section" aria-label="Door Status Monitoring">
+                    <header class="section-header">
+                        <h2><i class="fas fa-door-open" aria-hidden="true"></i> Door Status Monitoring</h2>
+                        <div class="door-controls">
+                            <!-- Auto-refresh enabled - no manual refresh needed -->
+                        </div>
+                    </header>
+                    <div class="door-grid" id="doorGrid" role="grid" aria-label="Door status grid">
+                        <!-- Door status cards will be loaded here -->
+                    </div>
+                </section>
+            </div>
         </main>
 
-        <!-- Command Palette Modal -->
-        <div class="command-palette-modal" id="commandPalette">
-            <div class="command-palette-content">
-                <div class="command-input">
-                    <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search or type a command..." id="commandInput">
+        <!-- Events Management -->
+        <div id="eventsSection" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h1><i class="fas fa-history" aria-hidden="true"></i> Events</h1>
+                    <div class="header-actions">
+                        <div class="stream-status">
+                            <span class="status-indicator" id="eventStreamStatus">
+                                <i class="fas fa-circle"></i>
+                                <span id="eventStreamStatusText">Live</span>
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <div class="command-results" id="commandResults">
-                    <!-- Command results will be loaded here -->
+                
+                <div class="filters">
+                    <input type="text" id="eventSearchInput" placeholder="Search events..." onkeyup="searchEvents()">
+                    <select id="eventTypeFilter" onchange="filterEvents()">
+                        <option value="">All Events</option>
+                        <option value="user">User Events</option>
+                        <option value="door">Door Events</option>
+                        <option value="access">Access Events</option>
+                        <option value="system">System Events</option>
+                        <option value="error">Error Events</option>
+                    </select>
+                    <select id="eventStatusFilter" onchange="filterEvents()">
+                        <option value="">All Status</option>
+                        <option value="success">Success</option>
+                        <option value="error">Error</option>
+                        <option value="warning">Warning</option>
+                    </select>
+                </div>
+
+                <div class="events-table-container">
+                    <div class="event-log" id="eventLog" role="log" aria-live="polite" aria-label="Event log">
+                        <!-- Events will be loaded here -->
+                    </div>
+                </div>
+
+                <div class="pagination" id="eventPagination">
+                    <!-- Pagination will be loaded here -->
                 </div>
             </div>
         </div>
 
-        <!-- Notifications Panel -->
-        <div class="notifications-panel" id="notificationsPanel">
-            <div class="notifications-header">
-                <h3>Notifications</h3>
-                <button class="btn-icon" id="clearNotifications">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-            <div class="notifications-list" id="notificationsList">
-                <!-- Notifications will be loaded here -->
+        <!-- Users Management -->
+        <div id="usersSection" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h1><i class="fas fa-users"></i> User Management</h1>
+                    <button class="btn btn-primary" onclick="showCreateUserModal()">
+                        <i class="fas fa-plus"></i> Add User
+                    </button>
+                </div>
+                
+                <div class="filters">
+                    <input type="text" id="searchInput" placeholder="Search users..." onkeyup="searchUsers()">
+                    <select id="roleFilter" onchange="filterUsers()">
+                        <option value="">All Roles</option>
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                    <select id="statusFilter" onchange="filterUsers()">
+                        <option value="">All Status</option>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+
+                <div class="users-table-container">
+                    <table class="users-table" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination" id="userPagination">
+                    <!-- Pagination will be loaded here -->
+                </div>
             </div>
         </div>
 
-        <!-- Toast Container -->
-        <div class="toast-container" id="toastContainer"></div>
+        <!-- Doors Management -->
+        <div id="doorsSection" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h1><i class="fas fa-door-open"></i> Door Management</h1>
+                    <button class="btn btn-primary" onclick="showCreateDoorModal()">
+                        <i class="fas fa-plus"></i> Add Door
+                    </button>
+                </div>
+                
+                <div class="filters">
+                    <input type="text" id="doorSearchInput" placeholder="Search doors..." onkeyup="searchDoors()">
+                    <select id="doorStatusFilter" onchange="filterDoors()">
+                        <option value="">All Status</option>
+                        <option value="locked">Locked</option>
+                        <option value="unlocked">Unlocked</option>
+                        <option value="offline">Offline</option>
+                    </select>
+                </div>
+
+                <div class="doors-table-container">
+                    <table class="doors-table" id="doorsTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Last Activity</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="doorsTableBody">
+                            <!-- Doors will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination" id="doorPagination">
+                    <!-- Pagination will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Access Groups Management -->
+        <div id="accessGroupsSection" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h1><i class="fas fa-shield-alt"></i> Access Groups</h1>
+                    <button class="btn btn-primary" onclick="showCreateAccessGroupModal()">
+                        <i class="fas fa-plus"></i> Add Access Group
+                    </button>
+                </div>
+                
+                <div class="access-groups-container" id="accessGroupsContainer">
+                    <!-- Access groups will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Door Controller Discovery -->
+        <div id="doorControllerDiscoverySection" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h1><i class="fas fa-wifi"></i> Door Controller Discovery</h1>
+                    <button class="btn btn-primary" onclick="startControllerDiscovery()">
+                        <i class="fas fa-search"></i> Start Discovery
+                    </button>
+                </div>
+                
+                <div class="discovery-container" id="discoveryContainer">
+                    <!-- Discovery results will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Section -->
+        <div id="profileSection" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h1><i class="fas fa-user"></i> Profile</h1>
+                </div>
+                
+                <div class="profile-container" id="profileContainer">
+                    <!-- Profile information will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settingsSection" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h1><i class="fas fa-cog"></i> Settings</h1>
+                </div>
+                
+                <div class="settings-container" id="settingsContainer">
+                    <!-- Settings will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading...</p>
+        </div>
     </div>
 
     <!-- Scripts -->
-    <script>
-        // Error handling
-        window.addEventListener('error', (e) => {
-            console.error('🚨 JavaScript Error:', e.error);
-            document.body.innerHTML = `
-                <div style="
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    height: 100vh;
-                    background: #0a0a0a;
-                    color: white;
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                    text-align: center;
-                ">
-                    <div>
-                        <h1>🚨 Error Loading App</h1>
-                        <p>Check console for details</p>
-                        <button onclick="location.reload()" style="
-                            background: #6366f1;
-                            color: white;
-                            border: none;
-                            padding: 10px 20px;
-                            border-radius: 5px;
-                            cursor: pointer;
-                        ">Reload</button>
-                    </div>
-                </div>
-            `;
-        });
-    </script>
-    <script src="js/neo/comprehensive-app.js"></script>
+    <script src="../js/app.js"></script>
 </body>
 </html>
