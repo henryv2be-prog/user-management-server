@@ -1380,6 +1380,207 @@ body {
   border-color: #dc2626;
 }
 
+/* Additional Sections */
+.users-grid,
+.access-groups-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-6);
+  margin-top: var(--space-6);
+}
+
+.user-card,
+.access-group-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  transition: all var(--transition-normal);
+}
+
+.user-card:hover,
+.access-group-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-accent);
+}
+
+.user-info,
+.access-group-info {
+  margin-bottom: var(--space-4);
+}
+
+.user-info h3,
+.access-group-info h3 {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.user-info p,
+.access-group-info p {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.role-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.role-badge.admin {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--accent-error);
+}
+
+.role-badge.user {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent-info);
+}
+
+.user-actions,
+.access-group-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Forms */
+.login-container,
+.register-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.login-form,
+.register-form {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+}
+
+.login-form h2,
+.register-form h2 {
+  text-align: center;
+  margin-bottom: var(--space-6);
+  color: var(--text-primary);
+}
+
+.form-group {
+  margin-bottom: var(--space-4);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.form-group input {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  transition: all var(--transition-fast);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.login-form p,
+.register-form p {
+  text-align: center;
+  margin-top: var(--space-4);
+  color: var(--text-secondary);
+}
+
+.login-form a,
+.register-form a {
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+
+.login-form a:hover,
+.register-form a:hover {
+  text-decoration: underline;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-8);
+}
+
+.pagination-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.pagination button {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.pagination button:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-accent);
+}
+
+.pagination button.active {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Toast Content */
+.toast-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.toast-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* Screen Reader Only */
 .sr-only {
   position: absolute;

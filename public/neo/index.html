@@ -284,8 +284,113 @@
                 </div>
             </section>
 
-            <!-- Other sections will be dynamically loaded -->
-            <div id="dynamicContent"></div>
+            <!-- Users Section -->
+            <section id="usersSection" class="content-section">
+                <div id="usersContainer">
+                    <!-- Users content will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Doors Section -->
+            <section id="doorsSection" class="content-section">
+                <div id="doorsContainer">
+                    <!-- Doors content will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Events Section -->
+            <section id="eventsSection" class="content-section">
+                <div id="eventsContainer">
+                    <!-- Events content will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Access Groups Section -->
+            <section id="accessGroupsSection" class="content-section">
+                <div id="accessGroupsContainer">
+                    <!-- Access Groups content will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Door Controller Discovery Section -->
+            <section id="doorControllerDiscoverySection" class="content-section">
+                <div class="section-header">
+                    <h1>Door Controller Discovery</h1>
+                </div>
+                <div class="discovery-content">
+                    <p>Door Controller Discovery functionality will be implemented here.</p>
+                </div>
+            </section>
+
+            <!-- Profile Section -->
+            <section id="profileSection" class="content-section">
+                <div class="section-header">
+                    <h1>Profile</h1>
+                </div>
+                <div class="profile-content">
+                    <p>Profile management functionality will be implemented here.</p>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settingsSection" class="content-section">
+                <div class="section-header">
+                    <h1>Settings</h1>
+                </div>
+                <div class="settings-content">
+                    <p>Settings functionality will be implemented here.</p>
+                </div>
+            </section>
+
+            <!-- Login Section -->
+            <section id="loginSection" class="content-section">
+                <div class="login-container">
+                    <div class="login-form">
+                        <h2>Login</h2>
+                        <form id="loginForm" data-async>
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input type="password" id="password" name="password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </form>
+                        <p>Don't have an account? <a href="#" onclick="app.showRegister()">Register here</a></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Register Section -->
+            <section id="registerSection" class="content-section">
+                <div class="register-container">
+                    <div class="register-form">
+                        <h2>Register</h2>
+                        <form id="registerForm" data-async>
+                            <div class="form-group">
+                                <label for="firstName">First Name</label>
+                                <input type="text" id="firstName" name="firstName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name</label>
+                                <input type="text" id="lastName" name="lastName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input type="password" id="password" name="password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Register</button>
+                        </form>
+                        <p>Already have an account? <a href="#" onclick="app.showLogin()">Login here</a></p>
+                    </div>
+                </div>
+            </section>
         </main>
 
         <!-- Command Palette Modal -->
@@ -350,6 +455,6 @@
             `;
         });
     </script>
-    <script src="js/neo/full-app.js"></script>
+    <script src="js/neo/comprehensive-app.js"></script>
 </body>
 </html>
