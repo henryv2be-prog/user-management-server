@@ -11,10 +11,30 @@ SimplifiAccess is a comprehensive, IoT-based access control system that simplifi
 - **🚪 Door Management**: Real-time door status monitoring, lock control, and position sensing
 - **🛡️ Access Groups**: Flexible permission management for different areas and time schedules
 - **📱 Modern Web Interface**: Responsive, intuitive dashboard for all management tasks
+- **📱 Mobile App**: React Native mobile app for QR code scanning and access requests
 - **🔍 ESP32 Discovery**: Automatic network scanning and device configuration
 - **📊 Real-time Monitoring**: Live door status, access events, and system health
 - **🔒 Enterprise Security**: JWT authentication, password hashing, rate limiting, and audit logs
 - **⚡ Production Ready**: PM2 process management, Nginx configuration, and scalable architecture
+
+## 🏗️ Architecture
+
+```
+SimplifiAccess/
+├── server/                 # Node.js backend
+│   ├── routes/            # API routes
+│   ├── middleware/        # Authentication & validation
+│   ├── database/          # SQLite database models
+│   └── utils/             # Utilities (error handling, security, cache)
+├── public/                # Web frontend
+│   ├── css/              # Optimized CSS
+│   ├── js/               # Modular JavaScript
+│   └── index.html        # Main dashboard
+├── mobile-app/            # React Native mobile app
+│   ├── src/              # Source code
+│   └── android/          # Android build files
+└── ESP32_Door_Controller/ # Arduino firmware
+```
 
 ## 🚀 Quick Start
 
@@ -27,66 +47,71 @@ SimplifiAccess is a comprehensive, IoT-based access control system that simplifi
 
 ### Installation
 
-1. **Clone the SimplifiAccess repository:**
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/simplifiaccess/simplifiaccess.git
    cd simplifiaccess
    ```
 
-2. **Run the automated installer:**
+2. **Install dependencies:**
    ```bash
-   chmod +x install.sh
-   ./install.sh
+   npm install
    ```
 
-3. **Access the SimplifiAccess Dashboard:**
+3. **Set up environment:**
+   ```bash
+   cp env.example .env
+   # Edit .env with your configuration
+   ```
+
+4. **Initialize database:**
+   ```bash
+   node database/init.js
+   ```
+
+5. **Start the server:**
+   ```bash
+   npm start
+   ```
+
+6. **Access the dashboard:**
    - Open your browser to `http://localhost:3000`
    - Login with default admin credentials:
      - Email: `admin@example.com`
      - Password: `admin123456`
 
-### Manual Installation
+## 📱 Mobile App
 
-If you prefer manual installation:
+### Setup Mobile App
+
+1. **Navigate to mobile app directory:**
+   ```bash
+   cd mobile-app
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Configure server URL:**
+   ```bash
+   echo "EXPO_PUBLIC_SERVER_URL=http://your-server-ip:3000" > .env
+   ```
+
+4. **Start development server:**
+   ```bash
+   npm start
+   ```
+
+### Building Mobile App
 
 ```bash
-# Install dependencies
-npm install
+# Android APK
+expo build:android
 
-# Set up environment
-cp env.example .env
-
-# Initialize database
-node database/init.js
-
-# Start the server
-npm start
-```
-
-## 📁 Project Structure
-
-```
-simplifiaccess/
-├── database/
-│   ├── init.js          # Database initialization
-│   └── models.js        # User model and database operations
-├── middleware/
-│   ├── auth.js          # Authentication middleware
-│   └── validation.js    # Input validation middleware
-├── routes/
-│   ├── auth.js          # Authentication routes
-│   └── users.js         # User management routes
-├── public/
-│   ├── index.html       # SimplifiAccess Dashboard
-│   ├── app.js           # Frontend JavaScript
-│   └── styles.css       # Modern UI styling
-├── ESP32_Door_Controller/
-│   └── ESP32_Door_Controller.ino  # ESP32 firmware
-├── server.js            # Main server file
-├── package.json         # Dependencies and scripts
-├── ecosystem.config.js  # PM2 configuration
-├── install.sh           # Automated installer
-└── env.example          # Environment variables template
+# iOS App
+expo build:ios
 ```
 
 ## 🔌 API Endpoints
@@ -122,7 +147,9 @@ simplifiaccess/
 ### Health Check
 - `GET /api/health` - Server health status
 
-## Environment Variables
+## 🔧 Configuration
+
+### Environment Variables
 
 Create a `.env` file based on `env.example`:
 
@@ -139,7 +166,35 @@ ADMIN_FIRST_NAME=Admin
 ADMIN_LAST_NAME=User
 ```
 
-## Production Deployment
+### ESP32 Configuration
+
+1. Upload the firmware from `ESP32_Door_Controller/` to your ESP32 device
+2. Connect to the ESP32's WiFi network
+3. Configure the server URL and device settings
+4. Use the web interface to discover and add the device
+
+## 🛡️ Security Features
+
+- **Password Hashing**: bcrypt with configurable rounds
+- **JWT Authentication**: Secure token-based authentication
+- **Rate Limiting**: Prevents brute force attacks
+- **Input Validation**: Sanitizes and validates all inputs
+- **CORS Protection**: Configurable cross-origin resource sharing
+- **Role-Based Access**: Hierarchical permission system
+- **SQL Injection Protection**: Parameterized queries
+- **XSS Protection**: Input sanitization
+- **CSRF Protection**: Token-based protection
+
+## 📊 Performance Features
+
+- **In-Memory Caching**: Redis-like caching with TTL
+- **Database Optimization**: Indexed queries and connection pooling
+- **Compression**: Gzip compression for responses
+- **CDN Ready**: Static asset optimization
+- **Lazy Loading**: On-demand resource loading
+- **Connection Pooling**: Efficient database connections
+
+## 🚀 Production Deployment
 
 ### Using PM2
 
@@ -155,6 +210,16 @@ pm2 save
 
 # Setup PM2 to start on boot
 pm2 startup
+```
+
+### Using Docker
+
+```bash
+# Build Docker image
+docker build -t simplifiaccess .
+
+# Run container
+docker run -p 3000:3000 -e NODE_ENV=production simplifiaccess
 ```
 
 ### Using Nginx (Optional)
@@ -180,66 +245,27 @@ server {
 }
 ```
 
-### SSL with Let's Encrypt
+## 🧪 Testing
 
 ```bash
-# Install Certbot
-sudo apt install certbot python3-certbot-nginx
+# Run tests
+npm test
 
-# Get SSL certificate
-sudo certbot --nginx -d your-domain.com
+# Run with coverage
+npm run test:coverage
+
+# Run specific test
+npm test -- --grep "auth"
 ```
 
-## Security Features
+## 📈 Monitoring
 
-- **Password Hashing**: bcrypt with configurable rounds
-- **JWT Authentication**: Secure token-based authentication
-- **Rate Limiting**: Prevents brute force attacks
-- **Input Validation**: Sanitizes and validates all inputs
-- **CORS Protection**: Configurable cross-origin resource sharing
-- **Role-Based Access**: Hierarchical permission system
-
-## Default Admin Account
-
-After first installation, you can login with:
-- **Email**: `admin@example.com`
-- **Password**: `admin123456`
-
-**⚠️ Important**: Change the default password immediately after first login!
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Database not found**: Run `node database/init.js` to initialize
-2. **Permission denied**: Make sure `install.sh` is executable (`chmod +x install.sh`)
-3. **Port already in use**: Change the PORT in `.env` file
-4. **Login not working**: Check if database was initialized with default admin user
-
-### Logs
-
-- **Development**: Logs are displayed in the console
-- **Production**: Use `pm2 logs` to view application logs
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 🏢 Use Cases
-
-- **Office Buildings**: Secure access to different floors and departments
-- **Educational Institutions**: Campus-wide access control for students and staff
-- **Healthcare Facilities**: Restricted access to sensitive areas
-- **Manufacturing Plants**: Zone-based access control for safety and security
-- **Residential Complexes**: Smart building access management
+- **Health Checks**: Built-in health monitoring
+- **Logging**: Comprehensive logging system
+- **Metrics**: Performance and usage metrics
+- **Alerts**: Automated alerting system
 
 ## 🤝 Contributing
-
-We welcome contributions to SimplifiAccess! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)

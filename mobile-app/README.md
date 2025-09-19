@@ -1,149 +1,134 @@
 # SimplifiAccess Mobile App
 
-A React Native mobile app for door access control using QR code scanning.
+A React Native mobile application for SimplifiAccess door control system, built with Expo.
 
 ## Features
 
-- **User Authentication**: Secure login with JWT tokens
 - **QR Code Scanning**: Scan QR codes to request door access
-- **Door Status**: View available doors and their online/offline status
-- **Access History**: View your access history
-- **Profile Management**: View and manage your profile
+- **Access History**: View your access history and logs
+- **User Authentication**: Secure login with JWT tokens
+- **Cross-Platform**: Works on iOS, Android, and Web
+- **Real-time Updates**: Live access request status updates
 
-## Setup
+## Prerequisites
 
-### Prerequisites
-
-- Node.js (v18 or higher)
+- Node.js (v16 or higher)
+- npm or yarn
 - Expo CLI (`npm install -g @expo/cli`)
-- iOS Simulator (for iOS development) or Android Studio (for Android development)
+- For iOS development: Xcode
+- For Android development: Android Studio
 
-### Installation
+## Installation
 
-1. Navigate to the mobile app directory:
+1. **Navigate to the mobile app directory:**
    ```bash
    cd mobile-app
    ```
 
-2. Install dependencies:
+2. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. Start the development server:
-   ```bash
-   npm start
-   ```
+3. **Configure the server URL:**
+   - Create a `.env` file in the mobile-app directory
+   - Add your server URL:
+     ```
+     EXPO_PUBLIC_SERVER_URL=http://your-server-ip:3000
+     ```
 
-4. Run on your preferred platform:
-   ```bash
-   npm run ios     # For iOS
-   npm run android # For Android
-   npm run web     # For web (testing)
-   ```
+## Development
+
+### Start the development server:
+```bash
+npm start
+```
+
+### Run on specific platforms:
+```bash
+# iOS
+npm run ios
+
+# Android
+npm run android
+
+# Web
+npm run web
+```
+
+## Building for Production
+
+### Android APK
+```bash
+# Build APK
+expo build:android
+
+# Or build locally
+expo run:android --variant release
+```
+
+### iOS App
+```bash
+# Build for iOS
+expo build:ios
+
+# Or build locally
+expo run:ios --configuration Release
+```
 
 ## Configuration
 
-### Server URL
+### Server Configuration
+Update the server URL in `src/services/api.js` or set the `EXPO_PUBLIC_SERVER_URL` environment variable.
 
-Update the server URL in `src/services/api.js`:
-
-```javascript
-const SERVER_URL = 'http://YOUR_SERVER_IP:3000';
-```
-
-Replace `YOUR_SERVER_IP` with your actual server IP address.
-
-### QR Code Formats
-
-The app supports two QR code formats:
-
-1. **JSON Format (Static)**: Contains door information directly
-   ```json
-   {
-     "doorId": 1,
-     "doorName": "Main Entrance",
-     "location": "Building A",
-     "esp32Ip": "192.168.1.100",
-     "serverUrl": "http://192.168.1.20:3000",
-     "type": "door_access"
-   }
-   ```
-
-2. **URL Format (Dynamic)**: Contains server URL with parameters
-   ```
-   http://192.168.1.20:3000/access?door=1&type=request&t=1234567890&e=1234567890
-   ```
-
-## Usage
-
-### For Users
-
-1. **Login**: Enter your email and password
-2. **Scan QR Code**: Use the "Scan QR Code" button to scan door QR codes
-3. **View Doors**: See available doors and their status
-4. **Access History**: Check your access history
-
-### For Administrators
-
-1. **Generate QR Codes**: Use the web-based QR generator (`QR_Code_Generator.html`)
-2. **Choose Format**: Select JSON format for static QR codes or URL format for dynamic ones
-3. **Print QR Codes**: Download and print QR codes for doors
-
-## API Endpoints
-
-The app communicates with these server endpoints:
-
-- `POST /api/auth/login` - User authentication
-- `GET /api/auth/verify` - Token verification
-- `GET /api/doors/accessible/me` - Get accessible doors for user
-- `POST /api/doors/access/request` - Request door access
+### Camera Permissions
+The app requires camera permissions for QR code scanning. These are automatically requested when needed.
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Camera Permission Denied**: Enable camera permissions in device settings
-2. **Network Connection**: Ensure the mobile device can reach the server
-3. **QR Code Not Recognized**: Try generating QR codes in JSON format
-4. **Authentication Failed**: Check server URL and user credentials
+1. **Camera not working on web:**
+   - Use HTTPS or localhost
+   - Check browser permissions
+
+2. **QR Code scanning issues:**
+   - Ensure good lighting
+   - Hold device steady
+   - Check QR code quality
+
+3. **Connection issues:**
+   - Verify server URL is correct
+   - Check network connectivity
+   - Ensure server is running
 
 ### Debug Mode
+Enable debug mode by setting `__DEV__` to true in your environment.
 
-Enable debug logging by setting `console.log` statements in the code or using React Native Debugger.
+## API Integration
 
-## Development
+The mobile app communicates with the SimplifiAccess server through REST APIs:
 
-### Project Structure
+- **Authentication**: `/api/auth/login`
+- **Door Access**: `/api/doors/accessible/me`
+- **Access Requests**: `/api/access-requests/request`
+- **Access History**: `/api/access/history`
 
-```
-src/
-├── context/
-│   └── AuthContext.js      # Authentication context
-├── screens/
-│   ├── LoginScreen.js      # Login screen
-│   ├── HomeScreen.js       # Main dashboard
-│   ├── QRScannerScreen.js  # QR code scanner
-│   ├── AccessHistoryScreen.js # Access history
-│   └── ProfileScreen.js    # User profile
-└── services/
-    └── api.js              # API service layer
-```
+## Security
 
-### Adding New Features
+- JWT tokens are stored securely using AsyncStorage
+- All API requests include authentication headers
+- Automatic token refresh and logout on expiration
+- Secure QR code validation
 
-1. Create new screens in `src/screens/`
-2. Add API endpoints in `src/services/api.js`
-3. Update navigation in `App.js`
-4. Test on both iOS and Android platforms
+## Contributing
 
-## Security Notes
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test on multiple platforms
+5. Submit a pull request
 
-- Tokens are stored securely using Expo SecureStore
-- All API communication uses HTTPS in production
-- QR codes contain minimal sensitive information
-- Access permissions are verified server-side
+## License
 
-## Support
-
-For issues or questions, check the server logs and ensure all components are properly configured.
+MIT License - see LICENSE file for details

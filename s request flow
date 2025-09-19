@@ -1,284 +1,0 @@
-[1mdiff --git a/ESP32_Door_Controller.ino b/ESP32_Door_Controller.ino[m
-[1mnew file mode 100644[m
-[1mindex 0000000..90f2df9[m
-[1m--- /dev/null[m
-[1m+++ b/ESP32_Door_Controller.ino[m
-[36m@@ -0,0 +1,478 @@[m
-[32m+[m[32m#include <WiFi.h>[m[41m[m
-[32m+[m[32m#include <WebServer.h>[m[41m[m
-[32m+[m[32m#include <ArduinoJson.h>[m[41m[m
-[32m+[m[32m#include <HTTPClient.h>[m[41m[m
-[32m+[m[32m#include <Preferences.h>[m[41m[m
-[32m+[m[41m[m
-[32m+[m[32m// Pin definitions[m[41m[m
-[32m+[m[32mconst int BOOT_BUTTON_PIN = 0;  // GPIO0 (Boot button)[m[41m[m
-[32m+[m[32mconst int RELAY_PIN = 5;        // GPIO5 for relay control[m[41m[m
-[32m+[m[32mconst int LED_PIN = LED_BUILTIN; // Built-in LED[m[41m[m
-[32m+[m[32mconst int STATUS_LED_PIN = 2;   // GPIO2 for status indication[m[41m[m
-[32m+[m[41m[m
-[32m+[m[32m// WiFi AP Configuration[m[41m[m
-[32m+[m[32mconst char* AP_SSID = "ESP32-Door-Config";[m[41m[m
-[32m+[m[32mconst char* AP_PASSWORD = "";  // No password for easy access[m[41m[m
-[32m+[m[41m[m
-[32m+[m[32m// Server configuration (will be set via web interface)[m[41m[m
-[32m+[m[32mString serverURL = "";[m[41m[m
-[32m+[m[32mString deviceID = "";[m[41m[m
-[32m+[m[32mString deviceName = "";[m[41m[m
-[32m+[m[41m[m
-[32m+[m[32m// WiFi credentials storage[m[41m[m
-[32m+[m[32mPreferences preferences;[m[41m[m
-[32m+[m[32mWebServer server(80);[m[41m[m
-[32m+[m[32mHTTPClient http;[m[41m[m
-[32m+[m[41m[m
-[32m+[m[32m// Device state[m[41m[m
-[32m+[m[32mbool isConfigured = false;[m[41m[m
-[32m+[m[32mbool doorOpen = false;[m[41m[m
-[32m+[m[32mbool apMode = false;[m[41m[m
-[32m+[m[32munsigned long lastHeartbeat = 0;[m[41m[m
-[32m+[m[32mconst unsigned long HEARTBEAT_INTERVAL = 10000; // 10 seconds[m[41m[m
-[32m+[m[41m[m
-[32m+[m[32m// Button state for AP activation[m[41m[m
-[32m+[m[32mbool lastButtonState = HIGH;[m[41m[m
-[32m+[m[32mbool buttonPressed = false;[m[41m[m
-[32m+[m[32munsigned long buttonPressTime = 0;[m[41m[m
-[32m+[m[32mconst unsigned long AP_ACTIVATION_TIME = 3000; // Hold for 3 seconds[m[41m[m
-[32m+[m[41m[m
-[32m+[m[32mvoid setup() {[m[41m[m
-[32m+[m[32m  Serial.begin(115200);[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  // Initialize pins[m[41m[m
-[32m+[m[32m  pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);[m[41m[m
-[32m+[m[32m  pinMode(RELAY_PIN, OUTPUT);[m[41m[m
-[32m+[m[32m  pinMode(LED_PIN, OUTPUT);[m[41m[m
-[32m+[m[32m  pinMode(STATUS_LED_PIN, OUTPUT);[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  // Initialize relay (door closed)[m[41m[m
-[32m+[m[32m  digitalWrite(RELAY_PIN, LOW);[m[41m[m
-[32m+[m[32m  digitalWrite(LED_PIN, LOW);[m[41m[m
-[32m+[m[32m  digitalWrite(STATUS_LED_PIN, LOW);[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  // Initialize preferences[m[41m[m
-[32m+[m[32m  preferences.begin("door_config", false);[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  // Load saved configuration[m[41m[m
-[32m+[m[32m  loadConfiguration();[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  // Check if we should start in AP mode[m[41m[m
-[32m+[m[32m  checkBootButton();[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  if (apMode) {[m[41m[m
-[32m+[m[32m    startAPMode();[m[41m[m
-[32m+[m[32m  } else if (isConfigured) {[m[41m[m
-[32m+[m[32m    connectToWiFi();[m[41m[m
-[32m+[m[32m  } else {[m[41m[m
-[32m+[m[32m    // No configuration, start AP mode[m[41m[m
-[32m+[m[32m    startAPMode();[m[41m[m
-[32m+[m[32m  }[m[41m[m
-[32m+[m[32m}[m[41m[m
-[32m+[m[41m[m
-[32m+[m[32mvoid loop() {[m[41m[m
-[32m+[m[32m  // Handle button press for AP activation[m[41m[m
-[32m+[m[32m  handleBootButton();[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  if (apMode) {[m[41m[m
-[32m+[m[32m    // In AP mode, handle web server[m[41m[m
-[32m+[m[32m    server.handleClient();[m[41m[m
-[32m+[m[32m  } else if (isConfigured && WiFi.status() == WL_CONNECTED) {[m[41m[m
-[32m+[m[32m    // Connected to WiFi, handle normal operation[m[41m[m
-[32m+[m[32m    server.handleClient();[m[41m[m
-[32m+[m[41m    [m
-[32m+[m[32m    // Send heartbeat to server[m[41m[m
-[32m+[m[32m    if (millis() - lastHeartbeat >= HEARTBEAT_INTERVAL) {[m[41m[m
-[32m+[m[32m      sendHeartbeat();[m[41m[m
-[32m+[m[32m      lastHeartbeat = millis();[m[41m[m
-[32m+[m[32m    }[m[41m[m
-[32m+[m[32m  } else if (isConfigured) {[m[41m[m
-[32m+[m[32m    // Try to reconnect to WiFi[m[41m[m
-[32m+[m[32m    connectToWiFi();[m[41m[m
-[32m+[m[32m  }[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  // Update status LED[m[41m[m
-[32m+[m[32m  updateStatusLED();[m[41m[m
-[32m+[m[32m}[m[41m[m
-[32m+[m[41m[m
-[32m+[m[32mvoid checkBootButton() {[m[41m[m
-[32m+[m[32m  // Check if boot button is pressed during startup[m[41m[m
-[32m+[m[32m  if (digitalRead(BOOT_BUTTON_PIN) == LOW) {[m[41m[m
-[32m+[m[32m    Serial.println("Boot button pressed during startup - entering AP mode");[m[41m[m
-[32m+[m[32m    apMode = true;[m[41m[m
-[32m+[m[32m  }[m[41m[m
-[32m+[m[32m}[m[41m[m
-[32m+[m[41m[m
-[32m+[m[32mvoid handleBootButton() {[m[41m[m
-[32m+[m[32m  bool currentButtonState = digitalRead(BOOT_BUTTON_PIN);[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  if (currentButtonState == LOW && lastButtonState == HIGH) {[m[41m[m
-[32m+[m[32m    // Button just pressed[m[41m[m
-[32m+[m[32m    buttonPressTime = millis();[m[41m[m
-[32m+[m[32m    buttonPressed = true;[m[41m[m
-[32m+[m[32m    Serial.println("Boot button pressed");[m[41m[m
-[32m+[m[32m  }[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  if (buttonPressed && currentButtonState == HIGH) {[m[41m[m
-[32m+[m[32m    // Button released[m[41m[m
-[32m+[m[32m    buttonPressed = false;[m[41m[m
-[32m+[m[32m    unsigned long pressDuration = millis() - buttonPressTime;[m[41m[m
-[32m+[m[41m    [m
-[32m+[m[32m    if (pressDuration >= AP_ACTIVATION_TIME) {[m[41m[m
-[32m+[m[32m      // Long press - activate AP mode[m[41m[m
-[32m+[m[32m      Serial.println("Long press detected - activating AP mode");[m[41m[m
-[32m+[m[32m      startAPMode();[m[41m[m
-[32m+[m[32m    }[m[41m[m
-[32m+[m[32m  }[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  lastButtonState = currentButtonState;[m[41m[m
-[32m+[m[32m}[m[41m[m
-[32m+[m[41m[m
-[32m+[m[32mvoid startAPMode() {[m[41m[m
-[32m+[m[32m  Serial.println("Starting AP mode for configuration");[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  // Stop any existing WiFi connections[m[41m[m
-[32m+[m[32m  WiFi.disconnect();[m[41m[m
-[32m+[m[32m  WiFi.mode(WIFI_OFF);[m[41m[m
-[32m+[m[32m  delay(100);[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  // Start AP[m[41m[m
-[32m+[m[32m  WiFi.mode(WIFI_AP);[m[41m[m
-[32m+[m[32m  WiFi.softAP(AP_SSID, AP_PASSWORD);[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  IPAddress apIP = WiFi.softAPIP();[m[41m[m
-[32m+[m[32m  Serial.print("AP started with IP: ");[m[41m[m
-[32m+[m[32m  Serial.println(apIP);[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  // Setup web server for configuration[m[41m[m
-[32m+[m[32m  setupConfigWebServer();[m[41m[m
-[32m+[m[32m  server.begin();[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  apMode = true;[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  // Blink LED to indicate AP mode[m[41m[m
-[32m+[m[32m  for (int i = 0; i < 5; i++) {[m[41m[m
-[32m+[m[32m    digitalWrite(STATUS_LED_PIN, HIGH);[m[41m[m
-[32m+[m[32m    delay(200);[m[41m[m
-[32m+[m[32m    digitalWrite(STATUS_LED_PIN, LOW);[m[41m[m
-[32m+[m[32m    delay(200);[m[41m[m
-[32m+[m[32m  }[m[41m[m
-[32m+[m[32m}[m[41m[m
-[32m+[m[41m[m
-[32m+[m[32mvoid setupConfigWebServer() {[m[41m[m
-[32m+[m[32m  // Root page - WiFi configuration[m[41m[m
-[32m+[m[32m  server.on("/", []() {[m[41m[m
-[32m+[m[32m    String html = "<!DOCTYPE html><html><head><title>ESP32 Door Configuration</title>";[m[41m[m
-[32m+[m[32m    html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";[m[41m[m
-[32m+[m[32m    html += "<style>";[m[41m[m
-[32m+[m[32m    html += "body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }";[m[41m[m
-[32m+[m[32m    html += ".container { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }";[m[41m[m
-[32m+[m[32m    html += "h1 { color: #333; text-align: center; }";[m[41m[m
-[32m+[m[32m    html += "input, button { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; }";[m[41m[m
-[32m+[m[32m    html += "button { background: #007bff; color: white; border: none; cursor: pointer; }";[m[41m[m
-[32m+[m[32m    html += "button:hover { background: #0056b3; }";[m[41m[m
-[32m+[m[32m    html += ".status { margin: 10px 0; padding: 10px; border-radius: 5px; }";[m[41m[m
-[32m+[m[32m    html += ".success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }";[m[41m[m
-[32m+[m[32m    html += ".error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }";[m[41m[m
-[32m+[m[32m    html += "</style></head><body>";[m[41m[m
-[32m+[m[32m    html += "<div class='container'>";[m[41m[m
-[32m+[m[32m    html += "<h1>🔐 ESP32 Door Configuration</h1>";[m[41m[m
-[32m+[m[32m    html += "<p>Configure your ESP32 door controller</p>";[m[41m[m
-[32m+[m[32m    html += "<form id='configForm'>";[m[41m[m
-[32m+[m[32m    html += "<input type='text' id='ssid' placeholder='WiFi Network Name (SSID)' required>";[m[41m[m
-[32m+[m[32m    html += "<input type='password' id='password' placeholder='WiFi Password'>";[m[41m[m
-[32m+[m[32m    html += "<input type='text' id='serverUrl' placeholder='Server URL (e.g., http://192.168.1.100:3000)' required>";[m[41m[m
-[32m+[m[32m    html += "<input type='text' id='deviceName' placeholder='Device Name (e.g., Main Entrance)' required>";[m[41m[m
-[32m+[m[32m    html += "<button type='submit'>Configure & Connect</button>";[m[41m[m
-[32m+[m[32m    html += "</form>";[m[41m[m
-[32m+[m[32m    html += "<div id='status'></div>";[m[41m[m
-[32m+[m[32m    html += "<script>";[m[41m[m
-[32m+[m[32m    html += "document.getElementById('configForm').addEventListener('submit', function(e) {";[m[41m[m
-[32m+[m[32m    html += "  e.preventDefault();";[m[41m[m
-[32m+[m[32m    html += "  const formData = {";[m[41m[m
-[32m+[m[32m    html += "    ssid: document.getElementById('ssid').value,";[m[41m[m
-[32m+[m[32m    html += "    password: document.getElementById('password').value,";[m[41m[m
-[32m+[m[32m    html += "    serverUrl: document.getElementById('serverUrl').value,";[m[41m[m
-[32m+[m[32m    html += "    deviceName: document.getElementById('deviceName').value";[m[41m[m
-[32m+[m[32m    html += "  };";[m[41m[m
-[32m+[m[32m    html += "  fetch('/configure', {";[m[41m[m
-[32m+[m[32m    html += "    method: 'POST',";[m[41m[m
-[32m+[m[32m    html += "    headers: {'Content-Type': 'application/json'},";[m[41m[m
-[32m+[m[32m    html += "    body: JSON.stringify(formData)";[m[41m[m
-[32m+[m[32m    html += "  }).then(response => response.json())";[m[41m[m
-[32m+[m[32m    html += "    .then(data => {";[m[41m[m
-[32m+[m[32m    html += "      const status = document.getElementById('status');";[m[41m[m
-[32m+[m[32m    html += "      if (data.success) {";[m[41m[m
-[32m+[m[32m    html += "        status.innerHTML = '<div class=\"status success\">' + data.message + '</div>';";[m[41m[m
-[32m+[m[32m    html += "        setTimeout(() => { window.location.reload(); }, 3000);";[m[41m[m
-[32m+[m[32m    html += "      } else {";[m[41m[m
-[32m+[m[32m    html += "        status.innerHTML = '<div class=\"status error\">' + data.message + '</div>';";[m[41m[m
-[32m+[m[32m    html += "      }";[m[41m[m
-[32m+[m[32m    html += "    });";[m[41m[m
-[32m+[m[32m    html += "});";[m[41m[m
-[32m+[m[32m    html += "</script>";[m[41m[m
-[32m+[m[32m    html += "</div></body></html>";[m[41m[m
-[32m+[m[41m    [m
-[32m+[m[32m    server.send(200, "text/html", html);[m[41m[m
-[32m+[m[32m  });[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  // Configuration endpoint[m[41m[m
-[32m+[m[32m  server.on("/configure", HTTP_POST, []() {[m[41m[m
-[32m+[m[32m    if (server.hasArg("plain")) {[m[41m[m
-[32m+[m[32m      StaticJsonDocument<300> doc;[m[41m[m
-[32m+[m[32m      deserializeJson(doc, server.arg("plain"));[m[41m[m
-[32m+[m[41m      [m
-[32m+[m[32m      String ssid = doc["ssid"];[m[41m[m
-[32m+[m[32m      String password = doc["password"];[m[41m[m
-[32m+[m[32m      String serverUrl = doc["serverUrl"];[m[41m[m
-[32m+[m[32m      String deviceName = doc["deviceName"];[m[41m[m
-[32m+[m[41m      [m
-[32m+[m[32m      if (ssid.length() > 0 && serverUrl.length() > 0 && deviceName.length() > 0) {[m[41m[m
-[32m+[m[32m        // Save configuration[m[41m[m
-[32m+[m[32m        preferences.putString("wifi_ssid", ssid);[m[41m[m
-[32m+[m[32m        preferences.putString("wifi_password", password);[m[41m[m
-[32m+[m[32m        preferences.putString("server_url", serverUrl);[m[41m[m
-[32m+[m[32m        preferences.putString("device_name", deviceName);[m[41m[m
-[32m+[m[32m        preferences.putBool("configured", true);[m[41m[m
-[32m+[m[41m        [m
-[32m+[m[32m        // Generate device ID[m[41m[m
-[32m+[m[32m        String deviceID = "ESP32-" + WiFi.macAddress();[m[41m[m
-[32m+[m[32m        deviceID.replace(":", "");[m[41m[m
-[32m+[m[32m        preferences.putString("device_id", deviceID);[m[41m[m
-[32m+[m[41m        [m
-[32m+[m[32m        StaticJsonDocument<200> response;[m[41m[m
-[32m+[m[32m        response["success"] = true;[m[41m[m
-[32m+[m[32m        response["message"] = "Configuration saved! Connecting to WiFi...";[m[41m[m
-[32m+[m[41m        [m
-[32m+[m[32m        String responseStr;[m[41m[m
-[32m+[m[32m        serializeJson(response, responseStr);[m[41m[m
-[32m+[m[32m        server.send(200, "application/json", responseStr);[m[41m[m
-[32m+[m[41m        [m
-[32m+[m[32m        // Start connection process[m[41m[m
-[32m+[m[32m        delay(1000);[m[41m[m
-[32m+[m[32m        connectToWiFi();[m[41m[m
-[32m+[m[32m      } else {[m[41m[m
-[32m+[m[32m        StaticJsonDocument<200> response;[m[41m[m
-[32m+[m[32m        response["success"] = false;[m[41m[m
-[32m+[m[32m        response["message"] = "Please fill in all required fields";[m[41m[m
-[32m+[m[41m        [m
-[32m+[m[32m        String responseStr;[m[41m[m
-[32m+[m[32m        serializeJson(response, responseStr);[m[41m[m
-[32m+[m[32m        server.send(400, "application/json", responseStr);[m[41m[m
-[32m+[m[32m      }[m[41m[m
-[32m+[m[32m    } else {[m[41m[m
-[32m+[m[32m      server.send(400, "application/json", "{\"success\": false, \"message\": \"No data received\"}");[m[41m[m
-[32m+[m[32m    }[m[41m[m
-[32m+[m[32m  });[m[41m[m
-[32m+[m[41m  [m
-[32m+[m[32m  // Status endpoint[m[41m[m
-[32m+[m[32m  server.on("/status", HTTP_GET, []() {[m[41m[m
-[32m+[m[32m    StaticJsonDocument<200> doc;[m[41m[m
-[32m+[m[32m    doc["apMode"] = apMode;[m[41m[m
-[32m+[m[32m    doc["configured"] = isConfigured;[m[41m[m
-[32m+[m[32m    doc["wifiConnected"] = WiFi.status() == WL_CONNECTED;[m[41m[m
-[32m+[m[32m    doc["deviceID"] = deviceID;[m[41m[m
-[32m+[m[32m    doc["deviceName"] = deviceName;[m[41m[m
-[32m+[m[32m    doc["serverURL"] = serverURL;[m[41m[m
-[32m+[m[41m    [m
-[32m+[m[32m
