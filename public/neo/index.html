@@ -319,9 +319,37 @@
     </div>
 
     <!-- Scripts -->
-    <script src="js/neo/core.js"></script>
-    <script src="js/neo/components.js"></script>
-    <script src="js/neo/api.js"></script>
-    <script src="js/neo/app.js"></script>
+    <script>
+        // Error handling
+        window.addEventListener('error', (e) => {
+            console.error('🚨 JavaScript Error:', e.error);
+            document.body.innerHTML = `
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    background: #0a0a0a;
+                    color: white;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                    text-align: center;
+                ">
+                    <div>
+                        <h1>🚨 Error Loading App</h1>
+                        <p>Check console for details</p>
+                        <button onclick="location.reload()" style="
+                            background: #6366f1;
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 5px;
+                            cursor: pointer;
+                        ">Reload</button>
+                    </div>
+                </div>
+            `;
+        });
+    </script>
+    <script src="js/neo/debug.js"></script>
 </body>
 </html>
