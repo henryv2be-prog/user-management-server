@@ -249,41 +249,63 @@ class SimplifiAccessNeoComprehensive {
 
     // UI Navigation functions
     showLogin() {
+        console.log('🔐 Showing login UI');
         this.hideAllSections();
+        
         const loginSection = document.getElementById('loginSection');
-        const navbar = document.getElementById('mainNavbar');
+        const app = document.getElementById('app');
+        
+        console.log('🔐 Login section:', loginSection);
+        console.log('📱 App element:', app);
         
         if (loginSection) {
             loginSection.classList.add('active');
+            console.log('✅ Login section activated');
         }
-        if (navbar) {
-            navbar.style.display = 'none';
+        if (app) {
+            app.style.display = 'block';
+            console.log('✅ App shown');
         }
     }
 
     showRegister() {
+        console.log('📝 Showing register UI');
         this.hideAllSections();
+        
         const registerSection = document.getElementById('registerSection');
-        const navbar = document.getElementById('mainNavbar');
+        const app = document.getElementById('app');
         
         if (registerSection) {
             registerSection.classList.add('active');
         }
-        if (navbar) {
-            navbar.style.display = 'none';
+        if (app) {
+            app.style.display = 'block';
         }
     }
 
     showAuthenticatedUI() {
+        console.log('🎯 Showing authenticated UI');
         this.hideAllSections();
+        
         const dashboardSection = document.getElementById('dashboardSection');
-        const navbar = document.getElementById('mainNavbar');
+        const app = document.getElementById('app');
+        const loginSection = document.getElementById('loginSection');
+        
+        console.log('📊 Dashboard section:', dashboardSection);
+        console.log('📱 App element:', app);
+        console.log('🔐 Login section:', loginSection);
         
         if (dashboardSection) {
             dashboardSection.classList.add('active');
+            console.log('✅ Dashboard section activated');
         }
-        if (navbar) {
-            navbar.style.display = 'block';
+        if (app) {
+            app.style.display = 'block';
+            console.log('✅ App shown');
+        }
+        if (loginSection) {
+            loginSection.classList.remove('active');
+            console.log('✅ Login section hidden');
         }
         
         this.updateProfileInfo();
@@ -843,6 +865,7 @@ class SimplifiAccessNeoComprehensive {
             password: formData.get('password')
         };
         
+        console.log('🔐 Attempting login with:', loginData.email);
         this.showLoading();
         
         try {
@@ -851,17 +874,23 @@ class SimplifiAccessNeoComprehensive {
                 body: JSON.stringify(loginData)
             });
             
+            console.log('🔐 Login response:', response);
+            
             if (response.token) {
+                console.log('✅ Login successful, storing token');
                 localStorage.setItem('token', response.token);
                 currentUser = response.user;
+                console.log('👤 Current user set to:', currentUser);
+                
                 this.showAuthenticatedUI();
                 await this.loadDashboard();
                 this.showNotification('Login successful!', 'success');
             } else {
+                console.log('❌ Login failed - no token in response');
                 this.showNotification(response.message || 'Login failed', 'error');
             }
         } catch (error) {
-            console.error('Login error:', error);
+            console.error('❌ Login error:', error);
             this.showNotification('Login failed. Please try again.', 'error');
         } finally {
             this.hideLoading();
