@@ -3268,7 +3268,11 @@ function displayEvents(events) {
         return;
     }
     
-    eventLog.innerHTML = events.map(event => `
+    eventLog.innerHTML = events.map((event, index) => {
+        const isLongDescription = event.details && event.details.length > 100;
+        const truncatedDetails = isLongDescription ? event.details.substring(0, 100) + '...' : event.details;
+        
+        return `
         <div class="event-item">
             <div class="event-icon ${event.type}">
                 <i class="fas ${getEventIcon(event.type)}"></i>
@@ -3279,7 +3283,16 @@ function displayEvents(events) {
                         <span class="event-action">${formatEventAction(event.action)}</span>
                         <span class="event-entity">${event.entityName || 'System'}</span>
                     </div>
-                    <div class="event-details">${event.details}</div>
+                    <div class="event-details-container">
+                        <div class="event-details ${isLongDescription ? 'truncated' : ''}" data-full-text="${event.details || ''}">
+                            ${isLongDescription ? truncatedDetails : event.details}
+                        </div>
+                        ${isLongDescription ? `
+                            <button class="event-details-toggle" onclick="toggleEventDetails(${index})" aria-label="Toggle full description">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        ` : ''}
+                    </div>
                 </div>
                 <div class="event-meta">
                     <div class="event-user">
@@ -3293,7 +3306,8 @@ function displayEvents(events) {
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function displayEventPagination(pagination) {
@@ -3768,6 +3782,10 @@ function addNewEventToList(event) {
     const eventLog = document.getElementById('eventLog');
     if (!eventLog) return;
     
+    // Check if description is long
+    const isLongDescription = event.details && event.details.length > 100;
+    const truncatedDetails = isLongDescription ? event.details.substring(0, 100) + '...' : event.details;
+    
     // Create new event element
     const newEventElement = document.createElement('div');
     newEventElement.className = 'event-item new-event';
@@ -3781,7 +3799,16 @@ function addNewEventToList(event) {
                     <span class="event-action">${formatEventAction(event.action)}</span>
                     <span class="event-entity">${event.entityName || 'System'}</span>
                 </div>
-                <div class="event-details">${event.details}</div>
+                <div class="event-details-container">
+                    <div class="event-details ${isLongDescription ? 'truncated' : ''}" data-full-text="${event.details || ''}">
+                        ${isLongDescription ? truncatedDetails : event.details}
+                    </div>
+                    ${isLongDescription ? `
+                        <button class="event-details-toggle" onclick="toggleEventDetails(0)" aria-label="Toggle full description">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    ` : ''}
+                </div>
             </div>
             <div class="event-meta">
                 <div class="event-user">
@@ -3920,6 +3947,34 @@ function formatEventTime(timestamp) {
             hour: '2-digit', 
             minute: '2-digit' 
         });
+    }
+}
+
+// Toggle event details expansion
+function toggleEventDetails(index) {
+    const eventItems = document.querySelectorAll('.event-item');
+    const eventItem = eventItems[index];
+    if (!eventItem) return;
+    
+    const detailsContainer = eventItem.querySelector('.event-details-container');
+    const detailsElement = eventItem.querySelector('.event-details');
+    const toggleButton = eventItem.querySelector('.event-details-toggle');
+    const icon = toggleButton.querySelector('i');
+    
+    if (detailsElement.classList.contains('truncated')) {
+        // Expand
+        detailsElement.classList.remove('truncated');
+        detailsElement.textContent = detailsElement.getAttribute('data-full-text');
+        icon.className = 'fas fa-chevron-up';
+        toggleButton.setAttribute('aria-label', 'Collapse description');
+    } else {
+        // Collapse
+        const fullText = detailsElement.getAttribute('data-full-text');
+        const truncatedText = fullText.substring(0, 100) + '...';
+        detailsElement.classList.add('truncated');
+        detailsElement.textContent = truncatedText;
+        icon.className = 'fas fa-chevron-down';
+        toggleButton.setAttribute('aria-label', 'Expand description');
     }
 }
 
