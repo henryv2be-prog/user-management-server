@@ -207,77 +207,52 @@
                     </div>
                 </div>
                 
-                <!-- Main Dashboard Grid -->
-                <div class="dashboard-grid">
-                    <!-- Door Status Cards -->
-                    <div class="dashboard-card">
-                        <div class="card-header">
-                            <h2>Door Status</h2>
-                            <div class="card-actions">
-                                <button class="btn-icon" id="doorViewToggle">
-                                    <i class="fas fa-th"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-content">
-                            <div class="door-grid" id="doorGrid">
-                                <!-- Door cards will be loaded here -->
-                            </div>
-                        </div>
+                <!-- Main Dashboard Content -->
+                <div class="dashboard-content">
+                    <div class="welcome-section">
+                        <h1>Welcome to SimplifiAccess Neo</h1>
+                        <p>Your comprehensive access control management system</p>
                     </div>
                     
-                    <!-- Recent Events -->
-                    <div class="dashboard-card">
-                        <div class="card-header">
-                            <h2>Recent Events</h2>
-                            <div class="card-actions">
-                                <button class="btn-icon" id="eventsRefresh">
-                                    <i class="fas fa-sync-alt"></i>
-                                </button>
+                    <!-- Quick Stats -->
+                    <div class="quick-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-door-open"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number" id="totalDoors">0</div>
+                                <div class="stat-label">Total Doors</div>
                             </div>
                         </div>
-                        <div class="card-content">
-                            <div class="events-list" id="eventsList">
-                                <!-- Events will be loaded here -->
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number" id="totalUsers">0</div>
+                                <div class="stat-label">Total Users</div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- System Health -->
-                    <div class="dashboard-card">
-                        <div class="card-header">
-                            <h2>System Health</h2>
-                        </div>
-                        <div class="card-content">
-                            <div class="health-metrics" id="healthMetrics">
-                                <!-- Health metrics will be loaded here -->
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-history"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number" id="totalEvents">0</div>
+                                <div class="stat-label">Recent Events</div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Quick Actions -->
-                    <div class="dashboard-card">
-                        <div class="card-header">
-                            <h2>Quick Actions</h2>
-                        </div>
-                        <div class="card-content">
-                            <div class="quick-actions-grid">
-                                <button class="quick-action-card" id="addUser">
-                                    <i class="fas fa-user-plus"></i>
-                                    <span>Add User</span>
-                                </button>
-                                <button class="quick-action-card" id="addDoor">
-                                    <i class="fas fa-door-open"></i>
-                                    <span>Add Door</span>
-                                </button>
-                                <button class="quick-action-card" id="scanQR">
-                                    <i class="fas fa-qrcode"></i>
-                                    <span>Scan QR</span>
-                                </button>
-                                <button class="quick-action-card" id="viewLogs">
-                                    <i class="fas fa-file-alt"></i>
-                                    <span>View Logs</span>
-                                </button>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number" id="systemStatus">Online</div>
+                                <div class="stat-label">System Status</div>
                             </div>
                         </div>
                     </div>
