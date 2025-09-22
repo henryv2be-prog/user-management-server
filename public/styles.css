@@ -4244,11 +4244,39 @@ textarea:focus-visible {
 /* Door and Access Group Tables */
 .doors-table-container,
 .access-groups-table-container {
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: var(--background-card);
+    border-radius: 20px;
+    box-shadow: var(--glow-primary);
+    border: 1px solid rgba(0, 212, 255, 0.3);
     overflow: hidden;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
+    backdrop-filter: blur(20px);
+    position: relative;
+}
+
+.doors-table-container::before,
+.access-groups-table-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-light) 50%, var(--primary-color) 100%);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.doors-table-container::after,
+.access-groups-table-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.05) 0%, rgba(0, 255, 204, 0.05) 100%);
+    pointer-events: none;
+    opacity: 0.3;
 }
 
 .doors-table,
@@ -4263,19 +4291,41 @@ textarea:focus-visible {
 .access-groups-table td {
     padding: 15px;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.1);
 }
 
 .doors-table th,
 .access-groups-table th {
-    background: #f8f9fa;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 255, 204, 0.1) 100%);
     font-weight: 600;
-    color: #495057;
+    color: var(--text-accent);
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+    position: relative;
+}
+
+.doors-table th::before,
+.access-groups-table th::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-light) 50%, var(--primary-color) 100%);
+    box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+}
+
+.doors-table td,
+.access-groups-table td {
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--text-primary);
 }
 
 .doors-table tr:hover,
 .access-groups-table tr:hover {
-    background: #f8f9fa;
+    background: rgba(0, 212, 255, 0.05);
+    transform: translateX(2px);
+    transition: all var(--transition-fast);
 }
 
 /* Action buttons for doors and access groups */
