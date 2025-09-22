@@ -366,28 +366,54 @@ router.put('/:id/access-groups', authenticate, requireAdmin, validateId, async (
     
     // Get current access groups before update for comparison
     const currentAccessGroups = await user.getAccessGroups();
+    const currentGroupIds = currentAccessGroups.map(ag => ag.id);
     
     // Update user's access groups
-    await user.updateAccessGroups(accessGroupIds);
+    await user.updateAccessGroups(accessGroupIds || []);
     
     // Get updated access groups for logging
     const updatedAccessGroups = await user.getAccessGroups();
+    const updatedGroupIds = updatedAccessGroups.map(ag => ag.id);
     
-    // Create detailed message about access group changes
-    const currentGroupNames = currentAccessGroups.map(ag => ag.name).join(', ');
-    const updatedGroupNames = updatedAccessGroups.map(ag => ag.name).join(', ');
-    const details = `Access groups updated. Previous: [${currentGroupNames || 'none'}]. Current: [${updatedGroupNames || 'none'}]`;
+    // Find added and removed access groups
+    const addedGroupIds = (accessGroupIds || []).filter(id => !currentGroupIds.includes(id));
+    const removedGroupIds = currentGroupIds.filter(id => !(accessGroupIds || []).includes(id));
     
-    // Log user access groups update event with proper details
-    await EventLogger.logEvent(req, {
-      type: 'user',
-      action: 'updated',
-      entityType: 'user',
-      entityId: user.id,
-      entityName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || `User ${user.id}`,
-      details: details,
-      timestamp: new Date().toISOString()
-    });
+    // Get access group names for logging
+    const AccessGroup = require('../database/accessGroup');
+    const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || `User ${user.id}`;
+    
+    // Log individual "added to" events
+    for (const groupId of addedGroupIds) {
+      const accessGroup = await AccessGroup.findById(groupId);
+      if (accessGroup) {
+        await EventLogger.logEvent(req, {
+          type: 'access_group',
+          action: 'user_added',
+          entityType: 'access_group',
+          entityId: accessGroup.id,
+          entityName: accessGroup.name,
+          details: `${userName} added to access group "${accessGroup.name}"`,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+    
+    // Log individual "removed from" events
+    for (const groupId of removedGroupIds) {
+      const accessGroup = await AccessGroup.findById(groupId);
+      if (accessGroup) {
+        await EventLogger.logEvent(req, {
+          type: 'access_group',
+          action: 'user_removed',
+          entityType: 'access_group',
+          entityId: accessGroup.id,
+          entityName: accessGroup.name,
+          details: `${userName} removed from access group "${accessGroup.name}"`,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
     
     res.json({
       message: 'User access groups updated successfully'
