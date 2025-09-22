@@ -2412,11 +2412,8 @@ async function manageAccessGroupDetails(accessGroupId) {
                 console.log('Loaded doors for checkboxes:', allDoors);
                 console.log('Current doors in access group:', currentDoors);
                 
-                // Display available doors as checkboxes
-                displayAvailableDoors(allDoors, currentDoors);
-                
-                // Display current doors
-                displayAccessGroupDoors(currentDoors);
+                // Display doors as checkboxes with current selection
+                displayAccessGroupDoors(allDoors, currentDoors);
                 
                 document.getElementById('accessGroupDetailsModal').classList.add('active');
             } else {
@@ -2430,22 +2427,19 @@ async function manageAccessGroupDetails(accessGroupId) {
     }
 }
 
-function displayAvailableDoors(allDoors, currentDoors) {
+function displayAccessGroupDoors(allDoors, currentDoors) {
     const container = document.getElementById('availableDoorsList');
     const currentDoorIds = currentDoors.map(door => door.id);
     
     container.innerHTML = allDoors.map(door => {
-        const isAlreadyAdded = currentDoorIds.includes(door.id);
-        const statusClass = isAlreadyAdded ? 'already-added' : 'available';
-        const statusText = isAlreadyAdded ? 'Already Added' : 'Available';
+        const isCurrentlyAssigned = currentDoorIds.includes(door.id);
         
         return `
             <div class="door-checkbox-item">
-                <input type="checkbox" 
-                       id="door_${door.id}" 
-                       value="${door.id}" 
-                       ${isAlreadyAdded ? 'disabled' : ''}>
-                <label for="door_${door.id}">
+                <label>
+                    <input type="checkbox" 
+                           value="${door.id}" 
+                           ${isCurrentlyAssigned ? 'checked' : ''}>
                     <div class="door-info">
                         <div class="door-name">${door.name}</div>
                         <div class="door-details">
@@ -2455,87 +2449,100 @@ function displayAvailableDoors(allDoors, currentDoors) {
                             ${door.controllerIp}
                         </div>
                     </div>
+                    <div class="door-status ${isCurrentlyAssigned ? 'currently-assigned' : 'available'}">
+                        ${isCurrentlyAssigned ? 'Currently Assigned' : 'Available'}
+                    </div>
                 </label>
-                <span class="door-status ${statusClass}">${statusText}</span>
             </div>
         `;
     }).join('');
 }
 
-function displayAccessGroupDoors(doors) {
-    const container = document.getElementById('accessGroupDoorsList');
-    if (doors.length === 0) {
-        container.innerHTML = `
-            <div class="text-muted">
-                <i class="fas fa-door-open" style="font-size: 24px; margin-bottom: 8px; display: block; opacity: 0.5;"></i>
-                No doors assigned to this access group.
-            </div>
-        `;
+
+
+async function updateAccessGroupDoors() {
+    const allCheckboxes = document.querySelectorAll('#availableDoorsList input[type="checkbox"]');
+    const checkedDoorIds = Array.from(allCheckboxes)
+        .filter(cb => cb.checked)
+        .map(cb => parseInt(cb.value));
+    
+    // Get current doors to determine what needs to be added/removed
+    const accessGroupResponse = await fetch(`/api/access-groups/${currentAccessGroupId}`, {
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+    });
+    
+    if (!accessGroupResponse.ok) {
+        showToast('Failed to load current access group details', 'error');
         return;
     }
     
-    container.innerHTML = doors.map(door => `
-        <div class="door-item">
-            <div class="door-info">
-                <div class="door-name">${door.name}</div>
-                <div class="door-details">
-                    <i class="fas fa-map-marker-alt"></i>
-                    ${door.location} 
-                    <i class="fas fa-wifi"></i>
-                    ${door.controllerIp || 'N/A'}
-                </div>
-            </div>
-            <button class="remove-btn" onclick="removeDoorFromAccessGroup(${door.id})">
-                <i class="fas fa-times"></i> Remove
-            </button>
-        </div>
-    `).join('');
-}
-
-
-
-async function addSelectedDoorsToAccessGroup() {
-    const checkboxes = document.querySelectorAll('#availableDoorsList input[type="checkbox"]:checked:not(:disabled)');
+    const accessGroupData = await accessGroupResponse.json();
+    const currentDoors = accessGroupData.doors;
+    const currentDoorIds = currentDoors.map(door => door.id);
     
-    if (checkboxes.length === 0) {
-        showToast('Please select at least one door to add', 'error');
+    // Find doors to add and remove
+    const doorsToAdd = checkedDoorIds.filter(id => !currentDoorIds.includes(id));
+    const doorsToRemove = currentDoorIds.filter(id => !checkedDoorIds.includes(id));
+    
+    if (doorsToAdd.length === 0 && doorsToRemove.length === 0) {
+        showToast('No changes to save', 'info');
         return;
     }
-    
-    const doorIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
-    
-    console.log('Adding doors to access group:', { doorIds, currentAccessGroupId });
     
     showLoading();
     
     try {
-        // Add doors one by one (since the API doesn't support bulk operations yet)
-        const promises = doorIds.map(doorId => 
-            fetch(`/api/access-groups/${currentAccessGroupId}/doors`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({ doorId })
-            })
-        );
+        const promises = [];
+        
+        // Add new doors
+        for (const doorId of doorsToAdd) {
+            promises.push(
+                fetch(`/api/access-groups/${currentAccessGroupId}/doors`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ doorId })
+                })
+            );
+        }
+        
+        // Remove doors
+        for (const doorId of doorsToRemove) {
+            promises.push(
+                fetch(`/api/access-groups/${currentAccessGroupId}/doors/${doorId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                })
+            );
+        }
         
         const responses = await Promise.all(promises);
         const failedResponses = responses.filter(response => !response.ok);
         
         if (failedResponses.length === 0) {
-            console.log('All doors added to access group successfully');
-            showToast(`${doorIds.length} door(s) added to access group successfully!`, 'success');
+            let message = '';
+            if (doorsToAdd.length > 0 && doorsToRemove.length > 0) {
+                message = `${doorsToAdd.length} door(s) added, ${doorsToRemove.length} door(s) removed successfully!`;
+            } else if (doorsToAdd.length > 0) {
+                message = `${doorsToAdd.length} door(s) added successfully!`;
+            } else {
+                message = `${doorsToRemove.length} door(s) removed successfully!`;
+            }
+            showToast(message, 'success');
             manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
         } else {
-            console.error('Some doors failed to add:', failedResponses.length);
-            showToast(`${doorIds.length - failedResponses.length} door(s) added, ${failedResponses.length} failed`, 'warning');
+            showToast(`Some operations failed. ${failedResponses.length} out of ${promises.length} operations failed.`, 'warning');
             manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
         }
     } catch (error) {
-        console.error('Error adding doors to access group:', error);
-        showToast('Failed to add doors to access group', 'error');
+        console.error('Error updating access group doors:', error);
+        showToast('Failed to update access group doors', 'error');
     } finally {
         hideLoading();
     }
@@ -2551,35 +2558,6 @@ function deselectAllAvailableDoors() {
     checkboxes.forEach(cb => cb.checked = false);
 }
 
-async function removeDoorFromAccessGroup(doorId) {
-    if (!confirm('Are you sure you want to remove this door from the access group?')) {
-        return;
-    }
-    
-    showLoading();
-    
-    try {
-        const response = await fetch(`/api/access-groups/${currentAccessGroupId}/doors/${doorId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        
-        if (response.ok) {
-            showToast('Door removed from access group successfully!', 'success');
-            manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
-        } else {
-            const data = await response.json();
-            showToast(data.message || 'Failed to remove door from access group', 'error');
-        }
-    } catch (error) {
-        console.error('Error removing door from access group:', error);
-        showToast('Failed to remove door from access group', 'error');
-    } finally {
-        hideLoading();
-    }
-}
 
 
 
