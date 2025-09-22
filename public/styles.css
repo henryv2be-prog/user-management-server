@@ -1436,6 +1436,12 @@ textarea:focus-visible {
     color: #27ae60;
 }
 
+.door-checkbox-item .door-status.currently-assigned {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
 .door-checkbox-item .door-status.available {
     background-color: #e3f2fd;
     color: #36454F;

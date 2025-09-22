@@ -2292,11 +2292,8 @@ async function manageUserAccessGroups(userId) {
             }
             
             
-            // Display available access groups as checkboxes
-            displayAvailableUserAccessGroups(allAccessGroups, currentAccessGroups);
-            
-            // Display current access groups
-            displayUserCurrentAccessGroups(currentAccessGroups);
+            // Display access groups as checkboxes with current selection
+            displayUserAccessGroups(allAccessGroups, currentAccessGroups);
             
             document.getElementById('userAccessGroupsModal').classList.add('active');
         }
@@ -2306,52 +2303,30 @@ async function manageUserAccessGroups(userId) {
     }
 }
 
-function displayAvailableUserAccessGroups(allAccessGroups, currentAccessGroups) {
+function displayUserAccessGroups(allAccessGroups, currentAccessGroups) {
     const container = document.getElementById('userAccessGroupsCheckboxList');
     const currentGroupIds = currentAccessGroups.map(group => group.id);
     
     container.innerHTML = allAccessGroups.map(group => {
-        const isAlreadyAssigned = currentGroupIds.includes(group.id);
-        const isChecked = isAlreadyAssigned;
+        const isCurrentlyAssigned = currentGroupIds.includes(group.id);
         
         return `
             <div class="door-checkbox-item">
                 <label>
                     <input type="checkbox" 
                            value="${group.id}" 
-                           ${isChecked ? 'checked' : ''}>
+                           ${isCurrentlyAssigned ? 'checked' : ''}>
                     <div class="door-info">
                         <div class="door-name">${group.name}</div>
                         <div class="door-details">${group.description || 'No description'}</div>
                     </div>
-                    <div class="door-status ${isAlreadyAssigned ? 'already-added' : 'available'}">
-                        ${isAlreadyAssigned ? 'Currently Assigned' : 'Available'}
+                    <div class="door-status ${isCurrentlyAssigned ? 'currently-assigned' : 'available'}">
+                        ${isCurrentlyAssigned ? 'Currently Assigned' : 'Available'}
                     </div>
                 </label>
             </div>
         `;
     }).join('');
-}
-
-function displayUserCurrentAccessGroups(accessGroups) {
-    const container = document.getElementById('userCurrentAccessGroupsList');
-    
-    if (accessGroups.length === 0) {
-        container.innerHTML = '<div class="text-muted">No access groups assigned to this user</div>';
-        return;
-    }
-    
-    container.innerHTML = accessGroups.map(group => `
-        <div class="door-item">
-            <div class="door-info">
-                <div class="door-name">${group.name}</div>
-                <div class="door-details">${group.description || 'No description'}</div>
-            </div>
-            <button class="remove-btn" onclick="removeAccessGroupFromUser(${group.id})">
-                <i class="fas fa-times"></i> Remove
-            </button>
-        </div>
-    `).join('');
 }
 
 
@@ -2401,35 +2376,6 @@ function deselectAllUserAccessGroups() {
     });
 }
 
-async function removeAccessGroupFromUser(accessGroupId) {
-    if (!confirm('Are you sure you want to remove this access group from the user?')) {
-        return;
-    }
-    
-    showLoading();
-    
-    try {
-        const response = await fetch(`/api/access-groups/${accessGroupId}/users/${currentUserId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        
-        if (response.ok) {
-            showToast('Access group removed from user successfully!', 'success');
-            manageUserAccessGroups(currentUserId); // Reload the modal
-        } else {
-            const data = await response.json();
-            showToast(data.message || 'Failed to remove access group from user', 'error');
-        }
-    } catch (error) {
-        console.error('Error removing access group from user:', error);
-        showToast('Failed to remove access group from user', 'error');
-    } finally {
-        hideLoading();
-    }
-}
 
 
 
