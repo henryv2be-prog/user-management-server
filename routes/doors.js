@@ -316,6 +316,27 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
     // Log door deletion event before deleting
     await EventLogger.logDoorDeleted(req, door);
     
+    // Remove door from all access groups before deleting
+    const db = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+    try {
+      await new Promise((resolve, reject) => {
+        db.run('DELETE FROM door_access_groups WHERE door_id = ?', [doorId], (err) => {
+          if (err) {
+            console.error('Error removing door from access groups:', err);
+            reject(err);
+          } else {
+            console.log(`Removed door ${doorId} from all access groups`);
+            resolve();
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Error cleaning up door access groups:', error);
+      // Continue with door deletion even if access group cleanup fails
+    } finally {
+      db.close();
+    }
+    
     await door.delete();
     
     res.json({
