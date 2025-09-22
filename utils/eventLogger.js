@@ -17,7 +17,7 @@ class EventLogger {
       const event = {
         ...eventData,
         userId: user ? user.id : null,
-        userName: user ? `${user.firstName} ${user.lastName}` : 'System',
+        userName: user ? (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || `User ${user.id}`) : 'System',
         ipAddress,
         userAgent
       };
@@ -49,7 +49,7 @@ class EventLogger {
       action: 'created',
       entityType: 'user',
       entityId: user.id,
-      entityName: `${user.firstName} ${user.lastName}`,
+      entityName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || `User ${user.id}`,
       details: `User account created with role: ${user.role}`
     });
   }
@@ -60,7 +60,7 @@ class EventLogger {
       action: 'updated',
       entityType: 'user',
       entityId: user.id,
-      entityName: `${user.firstName} ${user.lastName}`,
+      entityName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || `User ${user.id}`,
       details: `User updated: ${Object.keys(changes).join(', ')}`
     });
   }
@@ -71,7 +71,7 @@ class EventLogger {
       action: 'deleted',
       entityType: 'user',
       entityId: user.id,
-      entityName: `${user.firstName} ${user.lastName}`,
+      entityName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || `User ${user.id}`,
       details: 'User account deleted'
     });
   }
@@ -82,7 +82,7 @@ class EventLogger {
       action: 'login',
       entityType: 'user',
       entityId: user.id,
-      entityName: `${user.firstName} ${user.lastName}`,
+      entityName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || `User ${user.id}`,
       details: 'User logged in successfully'
     });
   }
@@ -93,7 +93,7 @@ class EventLogger {
       action: 'logout',
       entityType: 'user',
       entityId: user.id,
-      entityName: `${user.firstName} ${user.lastName}`,
+      entityName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || `User ${user.id}`,
       details: 'User logged out'
     });
   }
@@ -104,7 +104,7 @@ class EventLogger {
       action: 'registered',
       entityType: 'user',
       entityId: user.id,
-      entityName: `${user.firstName} ${user.lastName}`,
+      entityName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || `User ${user.id}`,
       details: `User registered with email: ${user.email}`
     });
   }
@@ -126,7 +126,7 @@ class EventLogger {
       action: 'password_changed',
       entityType: 'user',
       entityId: user.id,
-      entityName: `${user.firstName} ${user.lastName}`,
+      entityName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || `User ${user.id}`,
       details: 'User changed password'
     });
   }
@@ -172,7 +172,7 @@ class EventLogger {
       entityType: 'door',
       entityId: door.id,
       entityName: door.name,
-      details: `Door access ${granted ? 'granted' : 'denied'} for ${user.firstName} ${user.lastName}${reason ? ` - ${reason}` : ''}`
+      details: `Door access ${granted ? 'granted' : 'denied'} for ${user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || `User ${user.id}`}${reason ? ` - ${reason}` : ''}`
     });
   }
 
@@ -233,24 +233,26 @@ class EventLogger {
   }
 
   static async logUserAddedToAccessGroup(req, user, accessGroup) {
+    const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || `User ${user.id}`;
     await this.logEvent(req, {
       type: 'access_group',
       action: 'user_added',
       entityType: 'access_group',
       entityId: accessGroup.id,
       entityName: accessGroup.name,
-      details: `User "${user.firstName} ${user.lastName}" added to access group "${accessGroup.name}"`
+      details: `User "${userName}" added to access group "${accessGroup.name}"`
     });
   }
 
   static async logUserRemovedFromAccessGroup(req, user, accessGroup) {
+    const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || `User ${user.id}`;
     await this.logEvent(req, {
       type: 'access_group',
       action: 'user_removed',
       entityType: 'access_group',
       entityId: accessGroup.id,
       entityName: accessGroup.name,
-      details: `User "${user.firstName} ${user.lastName}" removed from access group "${accessGroup.name}"`
+      details: `User "${userName}" removed from access group "${accessGroup.name}"`
     });
   }
 
