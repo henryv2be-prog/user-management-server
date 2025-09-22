@@ -635,22 +635,25 @@ body::after {
     background: var(--background-tertiary);
 }
 
-/* Responsive Design */
+/* Enhanced Mobile Responsive Design */
 @media (max-width: 768px) {
+    /* Mobile Navigation */
     .nav-menu {
         position: fixed;
         top: 64px;
         left: 0;
         right: 0;
-        background: var(--background-primary);
-        border-top: 1px solid var(--border-light);
+        background: var(--background-card);
+        border-top: 1px solid rgba(0, 212, 255, 0.3);
         flex-direction: column;
         padding: var(--space-4);
         transform: translateY(-100%);
         opacity: 0;
         visibility: hidden;
         transition: all var(--transition-normal);
-        box-shadow: var(--shadow-lg);
+        box-shadow: var(--glow-primary);
+        backdrop-filter: blur(20px);
+        z-index: 1000;
     }
     
     .nav-menu.active {
@@ -661,16 +664,227 @@ body::after {
     
     .nav-toggle {
         display: block;
+        color: var(--text-primary);
+        font-size: 1.5rem;
+        padding: var(--space-2);
+        border-radius: var(--radius-md);
+        transition: all var(--transition-fast);
     }
     
+    .nav-toggle:hover {
+        background: rgba(0, 212, 255, 0.1);
+        color: var(--text-accent);
+    }
+    
+    /* Mobile Stats Grid */
     .stats-grid {
         grid-template-columns: 1fr;
         gap: var(--space-4);
+        padding: 0 var(--space-2);
     }
     
+    .stat-card {
+        padding: var(--space-4);
+        margin: 0 var(--space-2);
+    }
+    
+    /* Mobile Section Headers */
     .section-header {
         flex-direction: column;
         align-items: flex-start;
+        padding: var(--space-4);
+        margin: var(--space-2);
+        border-radius: var(--radius-lg);
+    }
+    
+    .section-header h1 {
+        font-size: var(--text-xl);
+        margin-bottom: var(--space-2);
+    }
+    
+    /* Mobile Page Headers */
+    .page-header {
+        padding: var(--space-4);
+        margin: var(--space-2);
+    }
+    
+    .page-header h1 {
+        font-size: var(--text-3xl);
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+    
+    .page-description {
+        font-size: var(--text-base);
+        padding: 0 var(--space-2);
+    }
+    
+    /* Mobile Tables */
+    .users-table-container,
+    .doors-table-container,
+    .access-groups-table-container {
+        margin: var(--space-2);
+        border-radius: var(--radius-lg);
+        overflow-x: auto;
+    }
+    
+    .users-table,
+    .doors-table,
+    .access-groups-table {
+        min-width: 600px;
+        font-size: var(--text-sm);
+    }
+    
+    .users-table th,
+    .users-table td,
+    .doors-table th,
+    .doors-table td,
+    .access-groups-table th,
+    .access-groups-table td {
+        padding: var(--space-3);
+        font-size: var(--text-sm);
+    }
+    
+    /* Mobile Forms */
+    .filters {
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        margin: var(--space-2);
+    }
+    
+    .filters input,
+    .filters select {
+        width: 100%;
+        padding: var(--space-3);
+        font-size: var(--text-base);
+    }
+    
+    /* Mobile Modals */
+    .modal-content {
+        width: 95%;
+        margin: var(--space-4);
+        max-height: 90vh;
+    }
+    
+    .modal form {
+        padding: var(--space-4);
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+    
+    .modal-actions .btn {
+        width: 100%;
+        padding: var(--space-3);
+    }
+    
+    /* Mobile Login */
+    .login-container {
+        flex-direction: column;
+        gap: var(--space-4);
+        padding: var(--space-4);
+    }
+    
+    .login-card {
+        padding: var(--space-6);
+        margin: 0;
+    }
+    
+    .smart-door-demo {
+        height: 250px;
+        padding: var(--space-4);
+    }
+    
+    /* Mobile Door Monitoring */
+    .door-monitoring-visual {
+        flex-direction: column;
+        gap: var(--space-4);
+        text-align: center;
+        padding: var(--space-4);
+    }
+    
+    .monitoring-demo {
+        gap: var(--space-3);
+    }
+    
+    .demo-door-frame {
+        width: 80px;
+        height: 100px;
+    }
+    
+    .demo-door-plate {
+        width: 60px;
+        height: 40px;
+    }
+    
+    .demo-door-handle {
+        width: 40px;
+        height: 6px;
+    }
+    
+    .demo-phone-screen {
+        width: 60px;
+        height: 100px;
+    }
+    
+    .demo-app-icon {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .demo-app-icon i {
+        font-size: 1rem;
+    }
+    
+    .monitoring-text {
+        max-width: 100%;
+        padding: 0 var(--space-2);
+    }
+    
+    .monitoring-text h3 {
+        font-size: var(--text-lg);
+    }
+    
+    .monitoring-text p {
+        font-size: var(--text-sm);
+    }
+    
+    /* Mobile Door Grid */
+    .door-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+        padding: var(--space-3);
+    }
+    
+    .door-card {
+        padding: var(--space-4);
+    }
+    
+    /* Mobile Action Buttons */
+    .action-buttons {
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+    
+    .action-btn {
+        width: 100%;
+        padding: var(--space-3);
+        font-size: var(--text-sm);
+    }
+    
+    /* Mobile Pagination */
+    .pagination {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        padding: var(--space-3);
+    }
+    
+    .pagination button {
+        padding: var(--space-2) var(--space-3);
+        font-size: var(--text-sm);
     }
 }
 
@@ -1589,78 +1803,85 @@ textarea:focus-visible {
 /* Users Section Header */
 #usersSection .section-header {
     background: var(--primary-gradient);
-    color: var(--text-inverse);
+    color: var(--text-primary);
     border-radius: 12px;
 }
 
 #usersSection .section-header h1 {
-    color: var(--text-inverse);
+    color: var(--text-primary);
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 /* Access Groups Section Header */
 #accessGroupsSection .section-header {
     background: var(--primary-gradient);
-    color: var(--text-inverse);
+    color: var(--text-primary);
     border-radius: 12px;
 }
 
 #accessGroupsSection .section-header h1 {
-    color: var(--text-inverse);
+    color: var(--text-primary);
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 /* Doors Section Header */
 #doorsSection .section-header {
     background: var(--primary-gradient);
-    color: var(--text-inverse);
+    color: var(--text-primary);
     border-radius: 12px;
 }
 
 #doorsSection .section-header h1 {
-    color: var(--text-inverse);
+    color: var(--text-primary);
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 /* Events Section Header */
 #eventsSection .section-header {
     background: var(--primary-gradient);
-    color: var(--text-inverse);
+    color: var(--text-primary);
     border-radius: 12px;
 }
 
 #eventsSection .section-header h1 {
-    color: var(--text-inverse);
+    color: var(--text-primary);
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 /* Door Controller Discovery Section Header */
 #doorControllerDiscoverySection .section-header {
     background: var(--primary-gradient);
-    color: var(--text-inverse);
+    color: var(--text-primary);
     border-radius: 12px;
 }
 
 #doorControllerDiscoverySection .section-header h1 {
-    color: var(--text-inverse);
+    color: var(--text-primary);
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 /* Dashboard Section Header */
 #dashboardSection h1 {
     background: var(--primary-gradient);
-    color: var(--text-inverse);
+    color: var(--text-primary);
     padding: 20px;
     border-radius: 12px;
     margin-bottom: 30px;
-    box-shadow: 0 1px 3px var(--shadow-sm);
-    border: 1px solid var(--border-light);
+    box-shadow: var(--glow-primary);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 /* Profile Section Header */
 #profileSection h1 {
     background: var(--primary-gradient);
-    color: var(--text-inverse);
+    color: var(--text-primary);
     padding: 20px;
     border-radius: 12px;
     margin-bottom: 30px;
-    box-shadow: 0 1px 3px var(--shadow-sm);
-    border: 1px solid var(--border-light);
+    box-shadow: var(--glow-primary);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 .section-header h1 {
@@ -3814,21 +4035,209 @@ textarea:focus-visible {
     }
 }
 
+/* Extra Small Mobile Devices */
 @media (max-width: 480px) {
     .container {
-        padding: 10px;
+        padding: var(--space-2);
     }
 
     .login-card {
-        padding: 20px;
+        padding: var(--space-4);
+        margin: var(--space-2);
     }
 
     .stats-grid {
         grid-template-columns: 1fr;
+        gap: var(--space-3);
+    }
+
+    .stat-card {
+        padding: var(--space-4);
+        margin: 0;
     }
 
     .toast {
         min-width: 250px;
+        font-size: var(--text-sm);
+    }
+
+    /* Extra Small Mobile Navigation */
+    .nav-container {
+        padding: 0 var(--space-2);
+        height: 56px;
+    }
+
+    .nav-menu {
+        top: 56px;
+        padding: var(--space-3);
+    }
+
+    .nav-link {
+        padding: var(--space-3);
+        font-size: var(--text-base);
+    }
+
+    /* Extra Small Mobile Headers */
+    .page-header {
+        padding: var(--space-3);
+        margin: var(--space-1);
+    }
+
+    .page-header h1 {
+        font-size: var(--text-2xl);
+    }
+
+    .section-header {
+        padding: var(--space-3);
+        margin: var(--space-1);
+    }
+
+    .section-header h1 {
+        font-size: var(--text-lg);
+    }
+
+    /* Extra Small Mobile Tables */
+    .users-table,
+    .doors-table,
+    .access-groups-table {
+        min-width: 500px;
+        font-size: var(--text-xs);
+    }
+
+    .users-table th,
+    .users-table td,
+    .doors-table th,
+    .doors-table td,
+    .access-groups-table th,
+    .access-groups-table td {
+        padding: var(--space-2);
+        font-size: var(--text-xs);
+    }
+
+    /* Extra Small Mobile Forms */
+    .filters {
+        padding: var(--space-3);
+        margin: var(--space-1);
+    }
+
+    .filters input,
+    .filters select {
+        padding: var(--space-2);
+        font-size: var(--text-sm);
+    }
+
+    /* Extra Small Mobile Modals */
+    .modal-content {
+        width: 98%;
+        margin: var(--space-2);
+    }
+
+    .modal form {
+        padding: var(--space-3);
+    }
+
+    .modal-header {
+        padding: var(--space-3);
+    }
+
+    .modal-header h3 {
+        font-size: var(--text-lg);
+    }
+
+    /* Extra Small Mobile Buttons */
+    .btn {
+        padding: var(--space-2) var(--space-3);
+        font-size: var(--text-sm);
+    }
+
+    .action-btn {
+        padding: var(--space-2);
+        font-size: var(--text-xs);
+    }
+
+    /* Extra Small Mobile Login */
+    .smart-door-demo {
+        height: 200px;
+        padding: var(--space-3);
+    }
+
+    .demo-door-frame {
+        width: 60px;
+        height: 80px;
+    }
+
+    .demo-door-plate {
+        width: 45px;
+        height: 30px;
+    }
+
+    .demo-door-handle {
+        width: 30px;
+        height: 4px;
+    }
+
+    .demo-phone-screen {
+        width: 50px;
+        height: 80px;
+    }
+
+    .demo-app-icon {
+        width: 25px;
+        height: 25px;
+    }
+
+    .demo-app-icon i {
+        font-size: 0.8rem;
+    }
+
+    .keyhole-icon {
+        width: 60px;
+        height: 60px;
+    }
+
+    .keyhole-icon i {
+        font-size: 1.5rem;
+    }
+
+    .connection-line {
+        width: 120px;
+    }
+
+    /* Extra Small Mobile Door Grid */
+    .door-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-2);
+        padding: var(--space-2);
+    }
+
+    .door-card {
+        padding: var(--space-3);
+    }
+
+    .door-name {
+        font-size: var(--text-sm);
+    }
+
+    .door-location {
+        font-size: var(--text-xs);
+    }
+
+    .door-ip {
+        font-size: var(--text-xs);
+    }
+
+    .door-last-seen {
+        font-size: var(--text-xs);
+    }
+
+    /* Extra Small Mobile Pagination */
+    .pagination {
+        padding: var(--space-2);
+    }
+
+    .pagination button {
+        padding: var(--space-1) var(--space-2);
+        font-size: var(--text-xs);
     }
 }
 
