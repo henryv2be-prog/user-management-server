@@ -76,7 +76,8 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
       const accessRequest = await AccessRequest.create(requestData);
 
       // Log denied access
-      await EventLogger.log(req, 'access', 'denied', 'AccessRequest', accessRequest.id, `Access denied to ${req.user.firstName} ${req.user.lastName} for ${door.name}`, `User: ${req.user.email}`);
+      const userName = req.user.firstName && req.user.lastName ? `${req.user.firstName} ${req.user.lastName}` : req.user.email || `User ${req.user.id}`;
+      await EventLogger.log(req, 'access', 'denied', 'AccessRequest', accessRequest.id, `Access denied to ${userName} for ${door.name}`, `User: ${req.user.email}`);
 
       return res.json({
         success: true,
@@ -108,7 +109,8 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
     const accessRequest = await AccessRequest.create(requestData);
 
     // Log granted access
-    await EventLogger.log(req, 'access', 'granted', 'AccessRequest', accessRequest.id, `Access granted to ${req.user.firstName} ${req.user.lastName} for ${door.name}`, `User: ${req.user.email}`);
+    const userName = req.user.firstName && req.user.lastName ? `${req.user.firstName} ${req.user.lastName}` : req.user.email || `User ${req.user.id}`;
+    await EventLogger.log(req, 'access', 'granted', 'AccessRequest', accessRequest.id, `Access granted to ${userName} for ${door.name}`, `User: ${req.user.email}`);
 
     // Send door open command to ESP32
     let doorControlSuccess = false;
