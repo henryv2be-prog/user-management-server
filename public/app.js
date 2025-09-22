@@ -2383,6 +2383,7 @@ function deselectAllUserAccessGroups() {
 let currentAccessGroupId = null;
 
 async function manageAccessGroupDetails(accessGroupId) {
+    console.log('manageAccessGroupDetails called with ID:', accessGroupId);
     currentAccessGroupId = accessGroupId;
     
     try {
@@ -2398,6 +2399,9 @@ async function manageAccessGroupDetails(accessGroupId) {
             const accessGroup = accessGroupData.accessGroup;
             const currentDoors = accessGroupData.doors;
             
+            console.log('Access group data received:', accessGroupData);
+            console.log('Current doors from API:', currentDoors);
+            
             // Load all doors for the checkboxes
             const doorsResponse = await fetch('/api/doors?limit=100', {
                 headers: {
@@ -2409,7 +2413,7 @@ async function manageAccessGroupDetails(accessGroupId) {
                 const doorsData = await doorsResponse.json();
                 const allDoors = doorsData.doors;
                 
-                console.log('Loaded doors for checkboxes:', allDoors);
+                console.log('All doors loaded:', allDoors);
                 console.log('Current doors in access group:', currentDoors);
                 
                 // Display doors as checkboxes with current selection
@@ -2420,6 +2424,9 @@ async function manageAccessGroupDetails(accessGroupId) {
                 console.error('Failed to load doors:', doorsResponse.status, doorsResponse.statusText);
                 showToast('Failed to load doors for selection', 'error');
             }
+        } else {
+            console.error('Failed to load access group:', accessGroupResponse.status, accessGroupResponse.statusText);
+            showToast('Failed to load access group details', 'error');
         }
     } catch (error) {
         console.error('Error loading access group details:', error);
@@ -2428,11 +2435,16 @@ async function manageAccessGroupDetails(accessGroupId) {
 }
 
 function displayAccessGroupDoors(allDoors, currentDoors) {
+    console.log('displayAccessGroupDoors called with:', { allDoors, currentDoors });
     const container = document.getElementById('availableDoorsList');
     const currentDoorIds = currentDoors.map(door => door.id);
     
-    container.innerHTML = allDoors.map(door => {
+    console.log('Current door IDs:', currentDoorIds);
+    console.log('Container element:', container);
+    
+    const html = allDoors.map(door => {
         const isCurrentlyAssigned = currentDoorIds.includes(door.id);
+        console.log(`Door ${door.id} (${door.name}): isCurrentlyAssigned = ${isCurrentlyAssigned}`);
         
         return `
             <div class="door-checkbox-item">
@@ -2456,15 +2468,23 @@ function displayAccessGroupDoors(allDoors, currentDoors) {
             </div>
         `;
     }).join('');
+    
+    console.log('Generated HTML length:', html.length);
+    container.innerHTML = html;
+    console.log('HTML set in container');
 }
 
 
 
 async function updateAccessGroupDoors() {
+    console.log('updateAccessGroupDoors called');
     const allCheckboxes = document.querySelectorAll('#availableDoorsList input[type="checkbox"]');
     const checkedDoorIds = Array.from(allCheckboxes)
         .filter(cb => cb.checked)
         .map(cb => parseInt(cb.value));
+    
+    console.log('Checked door IDs:', checkedDoorIds);
+    console.log('Current access group ID:', currentAccessGroupId);
     
     // Get current doors to determine what needs to be added/removed
     const accessGroupResponse = await fetch(`/api/access-groups/${currentAccessGroupId}`, {
@@ -2474,6 +2494,7 @@ async function updateAccessGroupDoors() {
     });
     
     if (!accessGroupResponse.ok) {
+        console.error('Failed to load access group details:', accessGroupResponse.status);
         showToast('Failed to load current access group details', 'error');
         return;
     }
@@ -2482,9 +2503,15 @@ async function updateAccessGroupDoors() {
     const currentDoors = accessGroupData.doors;
     const currentDoorIds = currentDoors.map(door => door.id);
     
+    console.log('Current doors in access group:', currentDoors);
+    console.log('Current door IDs:', currentDoorIds);
+    
     // Find doors to add and remove
     const doorsToAdd = checkedDoorIds.filter(id => !currentDoorIds.includes(id));
     const doorsToRemove = currentDoorIds.filter(id => !checkedDoorIds.includes(id));
+    
+    console.log('Doors to add:', doorsToAdd);
+    console.log('Doors to remove:', doorsToRemove);
     
     if (doorsToAdd.length === 0 && doorsToRemove.length === 0) {
         showToast('No changes to save', 'info');
@@ -2534,10 +2561,14 @@ async function updateAccessGroupDoors() {
             } else {
                 message = `${doorsToRemove.length} door(s) removed successfully!`;
             }
+            console.log('Success message:', message);
             showToast(message, 'success');
+            console.log('Reloading modal with access group ID:', currentAccessGroupId);
             manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
         } else {
+            console.error('Some operations failed:', failedResponses.length, 'out of', promises.length);
             showToast(`Some operations failed. ${failedResponses.length} out of ${promises.length} operations failed.`, 'warning');
+            console.log('Reloading modal with access group ID:', currentAccessGroupId);
             manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
         }
     } catch (error) {
