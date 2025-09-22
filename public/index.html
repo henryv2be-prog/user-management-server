@@ -1030,11 +1030,12 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>Manage Doors</label>
+                    <label>Select Doors</label>
+                    <p class="form-help">Check the doors you want to assign to this access group. Currently assigned doors are pre-selected.</p>
                     <div class="door-selection-container">
                         <div class="door-selection-header">
-                            <button type="button" class="btn btn-primary" onclick="addSelectedDoorsToAccessGroup()">
-                                <i class="fas fa-door-open"></i> Assign Selected Doors
+                            <button type="button" class="btn btn-primary" onclick="updateAccessGroupDoors()">
+                                <i class="fas fa-door-open"></i> Update Doors
                             </button>
                             <button type="button" class="btn btn-secondary" onclick="selectAllAvailableDoors()">
                                 <i class="fas fa-check-square"></i> Select All
@@ -1044,14 +1045,8 @@
                             </button>
                         </div>
                         <div id="availableDoorsList" class="door-checkbox-list">
-                            <!-- Available doors will be loaded here as checkboxes -->
+                            <!-- Doors will be loaded here as checkboxes -->
                         </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Current Doors in Access Group</label>
-                    <div id="accessGroupDoorsList">
-                        <!-- Current doors will be loaded here -->
                     </div>
                 </div>
             </div>
