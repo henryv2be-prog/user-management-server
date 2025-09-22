@@ -857,7 +857,8 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>Manage Access Groups</label>
+                    <label>Select Access Groups</label>
+                    <p class="form-help">Check the access groups you want to assign to this user. Currently assigned groups are pre-selected.</p>
                     <div class="door-selection-container">
                         <div class="door-selection-header">
                             <button type="button" class="btn btn-primary" onclick="updateUserAccessGroups()">
@@ -873,12 +874,6 @@
                         <div id="userAccessGroupsCheckboxList" class="door-checkbox-list">
                             <!-- Access groups will be loaded here as checkboxes -->
                         </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Current Access Groups</label>
-                    <div id="userCurrentAccessGroupsList">
-                        <!-- Current access groups will be loaded here -->
                     </div>
                 </div>
             </div>
