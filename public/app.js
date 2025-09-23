@@ -1108,16 +1108,32 @@ function displayDoorStatus(doors) {
     
     console.log('Rendering', doors.length, 'doors');
     
-    // Simplified door display without complex animations
+    // Enhanced door display with animations
     doorGrid.innerHTML = doors.map((door, index) => `
         <div class="door-card" style="animation-delay: ${index * 0.1}s;">
             <div class="door-header">
                 <h3 class="door-name">${door.name}</h3>
                 <div class="door-status-badge ${door.isOnline ? 'online' : 'offline'}">
+                    <i class="fas fa-circle"></i>
                     ${door.isOnline ? 'Online' : 'Offline'}
                 </div>
             </div>
             <div class="door-location">${door.location}</div>
+            
+            <!-- Simple Door Visualization -->
+            <div class="door-visualization">
+                <div class="door-frame">
+                    <div class="door-panel ${door.isOnline ? 'online' : 'offline'}">
+                        <div class="door-handle"></div>
+                        <div class="door-lock"></div>
+                    </div>
+                    <div class="door-status-text">
+                        <div class="status-primary">${door.isOnline ? 'Online' : 'Offline'}</div>
+                        <div class="status-secondary">Ready</div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="door-ip">${door.controllerIp}</div>
             <div class="door-last-seen">
                 ${door.lastSeen ? `Last seen: ${formatDoorTime(door.lastSeen)}` : 'Never seen'}
