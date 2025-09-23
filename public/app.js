@@ -965,8 +965,8 @@ async function loadDashboard() {
     }
     
     try {
-        // Load door status data
-        await loadDoorStatus();
+        // Load door status data using the same API call as Door Management
+        await loadDashboardDoors();
         
         // Load recent events
         await loadEvents();
@@ -975,6 +975,39 @@ async function loadDashboard() {
         // No need for manual refresh intervals
     } catch (error) {
         console.error('Failed to load dashboard data:', error);
+    }
+}
+
+async function loadDashboardDoors() {
+    try {
+        console.log('Loading dashboard doors...');
+        const params = new URLSearchParams({
+            page: 1,
+            limit: 100
+        });
+        
+        const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        console.log('Dashboard doors response:', response.status, response.statusText);
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Dashboard doors data:', data);
+            console.log('Dashboard doors loaded:', data.doors ? data.doors.length : 'no doors property', 'doors');
+            displayDoorStatus(data.doors || []);
+        } else {
+            console.error('Failed to load dashboard doors:', response.status, response.statusText);
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
+            displayDoorStatus([]);
+        }
+    } catch (error) {
+        console.error('Load dashboard doors error:', error);
+        displayDoorStatus([]);
     }
 }
 
