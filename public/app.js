@@ -959,12 +959,34 @@ function closeMobileMenu() {
 
 // Dashboard functions
 
+function showDashboardDoorsLoading() {
+    const doorGrid = document.getElementById('doorGrid');
+    if (doorGrid) {
+        doorGrid.innerHTML = `
+            <div class="door-card loading-card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
+                <h3 style="color: #00ff41; margin: 1rem 0 0.5rem 0;">Loading Doors...</h3>
+                <p style="color: #adb5bd; margin: 0;">Please wait while we fetch your door data</p>
+            </div>
+        `;
+    }
+}
+
+function hideDashboardDoorsLoading() {
+    // Loading will be hidden when displayDoorStatus is called
+}
+
 async function loadDashboard() {
     if (!currentUser || !hasRole('admin')) {
         return;
     }
     
     try {
+        // Show loading animation for doors
+        showDashboardDoorsLoading();
+        
         // Load recent events first
         await loadEvents();
         
@@ -972,15 +994,18 @@ async function loadDashboard() {
         setTimeout(async () => {
             try {
                 await loadDashboardDoors();
+                hideDashboardDoorsLoading();
             } catch (error) {
                 console.error('Failed to load dashboard doors:', error);
+                hideDashboardDoorsLoading();
             }
-        }, 100); // Small delay to ensure initialization
+        }, 500); // Longer delay to ensure initialization
         
         // Note: Door status updates are handled via Server-Sent Events (SSE)
         // No need for manual refresh intervals
     } catch (error) {
         console.error('Failed to load dashboard data:', error);
+        hideDashboardDoorsLoading();
     }
 }
 
