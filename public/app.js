@@ -1013,26 +1013,40 @@ function displayDoorStatus(doors) {
     }
     
     doorGrid.innerHTML = doors.map((door, index) => `
-        <div class="door-card ${door.isOnline ? 'online' : 'offline'}" style="animation-delay: ${index * 0.1}s;">
+        <div class="door-card ${getDoorCardClass(door)}" style="animation-delay: ${index * 0.1}s;">
             <div class="door-header">
                 <h3 class="door-name">${door.name}</h3>
-                <div class="door-status-indicator ${door.isOnline ? 'online' : 'offline'}"></div>
+                <div class="door-status-badge ${getDoorStatusBadgeClass(door)}">
+                    ${getDoorStatusBadgeText(door)}
+                </div>
             </div>
             <div class="door-location">${door.location}</div>
-            <div class="door-status-grid">
-                <div class="door-status-item">
-                    <div class="door-status-icon ${getLockStatusClass(door)}">
-                        <i class="fas ${getLockStatusIcon(door)}"></i>
+            
+            <!-- Unified Status Display -->
+            <div class="door-status-display">
+                <div class="status-indicator ${getDoorStatusClass(door)}">
+                    <div class="status-icon">
+                        <i class="fas ${getDoorStatusIcon(door)}"></i>
                     </div>
-                    <span class="door-status-text">${getLockStatusText(door)}</span>
-                </div>
-                <div class="door-status-item">
-                    <div class="door-status-icon ${getDoorPositionClass(door)}">
-                        <i class="fas ${getDoorPositionIcon(door)}"></i>
+                    <div class="status-details">
+                        <div class="status-primary">${getDoorPrimaryStatus(door)}</div>
+                        <div class="status-secondary">${getDoorSecondaryStatus(door)}</div>
                     </div>
-                    <span class="door-status-text">${getDoorPositionText(door)}</span>
                 </div>
             </div>
+            
+            <!-- Sensor Status -->
+            <div class="sensor-status">
+                <div class="sensor-item ${door.hasLockSensor ? 'available' : 'unavailable'}">
+                    <i class="fas fa-lock"></i>
+                    <span>Lock Sensor</span>
+                </div>
+                <div class="sensor-item ${door.hasDoorPositionSensor ? 'available' : 'unavailable'}">
+                    <i class="fas fa-door-open"></i>
+                    <span>Position Sensor</span>
+                </div>
+            </div>
+            
             <div class="door-ip">${door.controllerIp}</div>
             <div class="door-last-seen">
                 ${door.lastSeen ? `Last seen: ${formatDoorTime(door.lastSeen)}` : 'Never seen'}
@@ -1077,118 +1091,68 @@ function formatDoorTime(timestamp) {
     }
 }
 
-function getLockStatusClass(door) {
-    // If door is offline, show unknown status
-    if (!door.isOnline) {
-        return 'unknown';
-    }
+// Unified Door Status Functions
+function getDoorCardClass(door) {
+    if (!door.isOnline) return 'offline';
     
-    // If door doesn't have a lock sensor, show N/A
-    if (!door.hasLockSensor) {
-        return 'na';
-    }
+    // Determine card class based on door state
+    if (door.isOpen) return 'open';
+    if (door.isLocked === false) return 'unlocked';
+    if (door.isLocked === true) return 'locked';
     
-    // If isLocked is explicitly false, show unlocked
-    if (door.isLocked === false) {
-        return 'unlocked';
-    }
-    
-    // If isLocked is explicitly true, show locked
-    if (door.isLocked === true) {
-        return 'locked';
-    }
-    
-    // If isLocked is null/undefined, show unknown
     return 'unknown';
 }
 
-function getLockStatusIcon(door) {
-    const statusClass = getLockStatusClass(door);
-    
-    switch (statusClass) {
-        case 'locked':
-            return 'fa-lock';
-        case 'unlocked':
-            return 'fa-unlock';
-        case 'na':
-            return 'fa-minus';
-        case 'unknown':
-        default:
-            return 'fa-question';
-    }
-}
-
-function getLockStatusText(door) {
-    const statusClass = getLockStatusClass(door);
-    
-    switch (statusClass) {
-        case 'locked':
-            return 'Locked';
-        case 'unlocked':
-            return 'Unlocked';
-        case 'na':
-            return 'N/A';
-        case 'unknown':
-        default:
-            return 'Unknown';
-    }
-}
-
-function getDoorPositionClass(door) {
-    // If door is offline, show unknown status
-    if (!door.isOnline) {
-        return 'unknown';
-    }
-    
-    // If door doesn't have a door position sensor, show N/A
-    if (!door.hasDoorPositionSensor) {
-        return 'na';
-    }
-    
-    // If isOpen is explicitly false, show closed
-    if (door.isOpen === false) {
-        return 'closed';
-    }
-    
-    // If isOpen is explicitly true, show open
-    if (door.isOpen === true) {
-        return 'open';
-    }
-    
-    // If isOpen is null/undefined, show unknown
+function getDoorStatusBadgeClass(door) {
+    if (!door.isOnline) return 'offline';
+    if (door.isOpen) return 'open';
+    if (door.isLocked === false) return 'unlocked';
+    if (door.isLocked === true) return 'locked';
     return 'unknown';
 }
 
-function getDoorPositionIcon(door) {
-    const statusClass = getDoorPositionClass(door);
-    
-    switch (statusClass) {
-        case 'open':
-            return 'fa-door-open';
-        case 'closed':
-            return 'fa-door-closed';
-        case 'na':
-            return 'fa-minus';
-        case 'unknown':
-        default:
-            return 'fa-question';
-    }
+function getDoorStatusBadgeText(door) {
+    if (!door.isOnline) return 'Offline';
+    if (door.isOpen) return 'Open';
+    if (door.isLocked === false) return 'Unlocked';
+    if (door.isLocked === true) return 'Locked';
+    return 'Unknown';
 }
 
-function getDoorPositionText(door) {
-    const statusClass = getDoorPositionClass(door);
+function getDoorStatusClass(door) {
+    if (!door.isOnline) return 'offline';
+    if (door.isOpen) return 'open';
+    if (door.isLocked === false) return 'unlocked';
+    if (door.isLocked === true) return 'locked';
+    return 'unknown';
+}
+
+function getDoorStatusIcon(door) {
+    if (!door.isOnline) return 'fa-wifi-slash';
+    if (door.isOpen) return 'fa-door-open';
+    if (door.isLocked === false) return 'fa-unlock';
+    if (door.isLocked === true) return 'fa-lock';
+    return 'fa-question-circle';
+}
+
+function getDoorPrimaryStatus(door) {
+    if (!door.isOnline) return 'Offline';
+    if (door.isOpen) return 'Open';
+    if (door.isLocked === false) return 'Unlocked';
+    if (door.isLocked === true) return 'Locked';
+    return 'Unknown';
+}
+
+function getDoorSecondaryStatus(door) {
+    if (!door.isOnline) return 'No connection';
     
-    switch (statusClass) {
-        case 'open':
-            return 'Open';
-        case 'closed':
-            return 'Closed';
-        case 'na':
-            return 'N/A';
-        case 'unknown':
-        default:
-            return 'Unknown';
-    }
+    const states = [];
+    if (door.isOpen) states.push('Open');
+    if (door.isLocked === true) states.push('Locked');
+    if (door.isLocked === false) states.push('Unlocked');
+    if (door.isOpen === false) states.push('Closed');
+    
+    return states.length > 0 ? states.join(' • ') : 'Status unknown';
 }
 
 function displayStats(stats) {
