@@ -33,16 +33,25 @@ db.all("SELECT id, name, esp32_ip, esp32_mac, is_online FROM doors ORDER BY id",
       console.log(`Found door: ID ${row.id}, Name: ${row.name}, IP: ${row.esp32_ip}, MAC: ${row.esp32_mac}`);
       console.log('Deleting door...');
       
-      // Delete the door
-      db.run("DELETE FROM doors WHERE id = ?", [row.id], function(err) {
+      // Delete the door from access groups first, then the door itself
+      db.run("DELETE FROM door_access_groups WHERE door_id = ?", [row.id], function(err) {
         if (err) {
-          console.error('Error deleting door:', err);
+          console.error('Error removing door from access groups:', err);
         } else {
-          console.log(`Successfully deleted door with ID ${row.id}`);
+          console.log(`Successfully removed door ${row.id} from all access groups`);
         }
         
-        // Close database
-        db.close();
+        // Now delete the door itself
+        db.run("DELETE FROM doors WHERE id = ?", [row.id], function(err) {
+          if (err) {
+            console.error('Error deleting door:', err);
+          } else {
+            console.log(`Successfully deleted door with ID ${row.id}`);
+          }
+          
+          // Close database
+          db.close();
+        });
       });
     } else {
       console.log('No door found with IP 192.168.1.28');
