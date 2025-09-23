@@ -1722,6 +1722,7 @@ textarea:focus-visible {
     border-color: rgba(0, 0, 0, 0.1);
 }
 
+/* Door Card Status Classes */
 .door-card.offline {
     border-color: rgba(220, 53, 69, 0.2);
     background: linear-gradient(145deg, #fff5f5 0%, #ffe6e6 100%);
@@ -1731,19 +1732,61 @@ textarea:focus-visible {
     background: linear-gradient(90deg, #dc3545 0%, #e74c3c 100%);
 }
 
-.door-card.online {
+.door-card.open {
+    border-color: rgba(255, 193, 7, 0.3);
+    background: linear-gradient(145deg, #fffbf0 0%, #fff3cd 100%);
+}
+
+.door-card.open::before {
+    background: linear-gradient(90deg, #ffc107 0%, #ffb300 100%);
+}
+
+.door-card.unlocked {
     border-color: rgba(40, 167, 69, 0.2);
     background: linear-gradient(145deg, #f8fff9 0%, #e8f5e8 100%);
 }
 
-.door-card.online::before {
+.door-card.unlocked::before {
     background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
 }
 
-.door-card.online:hover {
+.door-card.locked {
+    border-color: rgba(108, 117, 125, 0.3);
+    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.door-card.locked::before {
+    background: linear-gradient(90deg, #6c757d 0%, #495057 100%);
+}
+
+.door-card.unknown {
+    border-color: rgba(108, 117, 125, 0.2);
+    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.door-card.unknown::before {
+    background: linear-gradient(90deg, #6c757d 0%, #adb5bd 100%);
+}
+
+/* Hover Effects for Different States */
+.door-card.open:hover {
+    box-shadow: 
+        0 20px 25px -5px rgba(255, 193, 7, 0.2),
+        0 10px 10px -5px rgba(255, 193, 7, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.door-card.unlocked:hover {
     box-shadow: 
         0 20px 25px -5px rgba(40, 167, 69, 0.15),
         0 10px 10px -5px rgba(40, 167, 69, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.door-card.locked:hover {
+    box-shadow: 
+        0 20px 25px -5px rgba(108, 117, 125, 0.15),
+        0 10px 10px -5px rgba(108, 117, 125, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
@@ -1771,6 +1814,42 @@ textarea:focus-visible {
     margin: 0;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     letter-spacing: -0.025em;
+}
+
+/* Status Badge */
+.door-status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.door-status-badge.offline {
+    background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+    color: white;
+}
+
+.door-status-badge.open {
+    background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+    color: #000;
+}
+
+.door-status-badge.unlocked {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.door-status-badge.locked {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+}
+
+.door-status-badge.unknown {
+    background: linear-gradient(135deg, #6c757d 0%, #adb5bd 100%);
+    color: white;
 }
 
 .door-status-indicator {
@@ -1808,66 +1887,152 @@ textarea:focus-visible {
     font-size: 0.8rem;
 }
 
-/* Door Status Grid */
-.door-status-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+/* Unified Status Display */
+.door-status-display {
     margin-bottom: 1rem;
 }
 
-.door-status-item {
+.status-indicator {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    background: rgba(255, 255, 255, 0.7);
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.8);
     border-radius: 12px;
     border: 1px solid rgba(0, 0, 0, 0.05);
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
 }
 
-.door-status-item:hover {
-    background: rgba(255, 255, 255, 0.9);
-    transform: translateY(-1px);
+.status-indicator:hover {
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.door-status-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+.status-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
+    font-size: 1.25rem;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
-.door-status-icon.locked {
+.status-icon::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 14px;
+    padding: 2px;
+    background: linear-gradient(45deg, transparent, transparent);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.status-indicator:hover .status-icon::before {
+    opacity: 1;
+}
+
+.status-indicator.offline .status-icon {
     background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
     color: white;
 }
 
-.door-status-icon.unlocked {
+.status-indicator.offline .status-icon::before {
+    background: linear-gradient(45deg, #dc3545, #e74c3c);
+}
+
+.status-indicator.open .status-icon {
+    background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+    color: #000;
+}
+
+.status-indicator.open .status-icon::before {
+    background: linear-gradient(45deg, #ffc107, #ffb300);
+}
+
+.status-indicator.unlocked .status-icon {
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     color: white;
 }
 
-.door-status-icon.open {
-    background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
-    color: white;
+.status-indicator.unlocked .status-icon::before {
+    background: linear-gradient(45deg, #28a745, #20c997);
 }
 
-.door-status-icon.closed {
+.status-indicator.locked .status-icon {
     background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
     color: white;
 }
 
-.door-status-text {
+.status-indicator.locked .status-icon::before {
+    background: linear-gradient(45deg, #6c757d, #495057);
+}
+
+.status-indicator.unknown .status-icon {
+    background: linear-gradient(135deg, #6c757d 0%, #adb5bd 100%);
+    color: white;
+}
+
+.status-indicator.unknown .status-icon::before {
+    background: linear-gradient(45deg, #6c757d, #adb5bd);
+}
+
+.status-details {
+    flex: 1;
+}
+
+.status-primary {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 0.25rem;
+}
+
+.status-secondary {
     font-size: 0.85rem;
-    font-weight: 600;
-    color: #495057;
-    text-transform: capitalize;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Sensor Status */
+.sensor-status {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.sensor-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.sensor-item.available {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
+.sensor-item.unavailable {
+    background: rgba(108, 117, 125, 0.1);
+    color: #6c757d;
+    border: 1px solid rgba(108, 117, 125, 0.2);
+}
+
+.sensor-item i {
+    font-size: 0.8rem;
 }
 
 /* Door Last Seen */
@@ -1973,13 +2138,87 @@ textarea:focus-visible {
 .door-card:nth-child(7) { animation-delay: 0.7s; }
 .door-card:nth-child(8) { animation-delay: 0.8s; }
 
-/* Status indicator animations */
-.door-status-indicator.online {
-    animation: pulse 2s infinite, fadeInScale 0.5s ease-out;
+/* Status-specific animations */
+@keyframes pulseOffline {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(1.05);
+    }
 }
 
-.door-status-indicator.offline {
-    animation: pulse 2s infinite, fadeInScale 0.5s ease-out;
+@keyframes pulseOpen {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.1);
+    }
+}
+
+@keyframes pulseUnlocked {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.9;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes pulseLocked {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.95;
+        transform: scale(1.02);
+    }
+}
+
+/* Apply status-specific animations */
+.door-card.offline .status-icon {
+    animation: pulseOffline 3s infinite;
+}
+
+.door-card.open .status-icon {
+    animation: pulseOpen 2s infinite;
+}
+
+.door-card.unlocked .status-icon {
+    animation: pulseUnlocked 4s infinite;
+}
+
+.door-card.locked .status-icon {
+    animation: pulseLocked 5s infinite;
+}
+
+/* Status badge animations */
+.door-status-badge {
+    animation: fadeInScale 0.5s ease-out;
+}
+
+.door-status-badge.offline {
+    animation: pulseOffline 3s infinite, fadeInScale 0.5s ease-out;
+}
+
+.door-status-badge.open {
+    animation: pulseOpen 2s infinite, fadeInScale 0.5s ease-out;
+}
+
+.door-status-badge.unlocked {
+    animation: pulseUnlocked 4s infinite, fadeInScale 0.5s ease-out;
+}
+
+.door-status-badge.locked {
+    animation: pulseLocked 5s infinite, fadeInScale 0.5s ease-out;
 }
 
 /* Responsive Design */
@@ -1994,9 +2233,28 @@ textarea:focus-visible {
         padding: 1.25rem;
     }
     
-    .door-status-grid {
+    .sensor-status {
         grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .status-indicator {
+        padding: 0.75rem;
         gap: 0.75rem;
+    }
+    
+    .status-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .status-primary {
+        font-size: 1rem;
+    }
+    
+    .status-secondary {
+        font-size: 0.8rem;
     }
     
     .door-card:hover {
