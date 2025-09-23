@@ -979,70 +979,47 @@ async function loadDashboard() {
 }
 
 async function loadDashboardDoors() {
-    // Try the public doors endpoint first to see if it works
+    // Use EXACT same API call as working loadDoors function
     if (!currentUser || !hasRole('admin')) {
         return;
     }
     
     try {
-        console.log('Loading dashboard doors using public endpoint...');
+        console.log('Loading dashboard doors using EXACT same API as loadDoors...');
         
-        // Try the public endpoint first
-        const response = await fetch('/api/doors/public', {
+        // Use EXACT same parameters as working loadDoors function
+        const params = new URLSearchParams({
+            page: 1,  // Same as loadDoors(page = 1)
+            limit: 10, // Same as loadDoors (not 100!)
+            ...currentFilters
+        });
+        
+        const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
         
-        console.log('Public doors response:', response.status, response.statusText);
+        console.log('Dashboard doors response:', response.status, response.statusText);
         
         if (response.ok) {
-            const doors = await response.json();
-            console.log('Public doors data:', doors);
-            console.log('Public doors loaded:', doors ? doors.length : 'no doors', 'doors');
+            const data = await response.json();
+            console.log('Dashboard doors data:', data);
+            console.log('Dashboard doors loaded:', data.doors ? data.doors.length : 'no doors property', 'doors');
             
             // Display in dashboard format
-            if (doors && doors.length > 0) {
-                console.log('Found doors from public endpoint, displaying them:', doors);
-                displayDoorStatus(doors);
+            if (data.doors && data.doors.length > 0) {
+                console.log('Found doors, displaying them:', data.doors);
+                displayDoorStatus(data.doors);
             } else {
-                console.log('No doors found in public endpoint, showing empty state');
+                console.log('No doors found, showing empty state');
                 displayDoorStatus([]);
             }
         } else {
-            console.error('Public endpoint failed, trying paginated endpoint...');
-            
-            // Fallback to paginated endpoint
-            const params = new URLSearchParams({
-                page: 1,
-                limit: 100,
-                ...currentFilters
-            });
-            
-            const paginatedResponse = await fetch(addCacheBusting(`/api/doors?${params}`), {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            
-            console.log('Paginated doors response:', paginatedResponse.status, paginatedResponse.statusText);
-            
-            if (paginatedResponse.ok) {
-                const data = await paginatedResponse.json();
-                console.log('Paginated doors data:', data);
-                console.log('Paginated doors loaded:', data.doors ? data.doors.length : 'no doors property', 'doors');
-                
-                if (data.doors && data.doors.length > 0) {
-                    console.log('Found doors from paginated endpoint, displaying them:', data.doors);
-                    displayDoorStatus(data.doors);
-                } else {
-                    console.log('No doors found in paginated endpoint, showing empty state');
-                    displayDoorStatus([]);
-                }
-            } else {
-                console.error('Both endpoints failed');
-                displayDoorStatus([]);
-            }
+            console.error('Failed to load dashboard doors:', response.status, response.statusText);
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
+            displayDoorStatus([]);
         }
     } catch (error) {
         console.error('Load dashboard doors error:', error);
