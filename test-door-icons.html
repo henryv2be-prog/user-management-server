@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Door Icons Test</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Import the door icon styles from the main CSS */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8f9fa;
+            padding: 20px;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .test-header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .test-header p {
+            color: #666;
+        }
+        
+        .door-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .door-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .door-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #6c757d 0%, #adb5bd 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .door-card.open::before {
+            background: linear-gradient(90deg, #ffc107 0%, #ffb300 100%);
+        }
+        
+        .door-card.locked-closed::before {
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .door-card.unlocked-closed::before {
+            background: linear-gradient(90deg, #dc3545 0%, #c82333 100%);
+        }
+        
+        .door-card.offline::before {
+            background: linear-gradient(90deg, #dc3545 0%, #e74c3c 100%);
+        }
+        
+        .door-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .door-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #2d3748;
+            margin: 0;
+        }
+        
+        .door-status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .door-status-badge.open {
+            background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+            color: #000;
+        }
+        
+        .door-status-badge.locked-closed {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .door-status-badge.unlocked-closed {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+        }
+        
+        .door-status-badge.offline {
+            background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+            color: white;
+        }
+        
+        .door-visualization {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .door-frame {
+            position: relative;
+            width: 120px;
+            height: 160px;
+            background: linear-gradient(145deg, #3a3a3a 0%, #2a2a2a 100%);
+            border-radius: 8px;
+            box-shadow: 
+                inset 0 2px 4px rgba(0, 0, 0, 0.3),
+                0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            perspective: 200px;
+            transform-style: preserve-3d;
+        }
+        
+        .door-panel {
+            width: 100px;
+            height: 140px;
+            background: linear-gradient(145deg, #2c2c2c 0%, #1a1a1a 100%);
+            border-radius: 6px;
+            position: relative;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: left center;
+            transform-style: preserve-3d;
+            box-shadow: 
+                inset 0 1px 3px rgba(255, 255, 255, 0.1),
+                inset 0 -1px 3px rgba(0, 0, 0, 0.3),
+                0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* Door State Icons - SVG Icons */
+        .door-panel::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 80px;
+            z-index: 1;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
+        /* Open Door Icon - Yellow Glow */
+        .door-panel.open::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Cdefs%3E%3Cfilter id='yellowGlow'%3E%3CfeGaussianBlur stdDeviation='3' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect x='10' y='20' width='80' height='100' fill='%23333' rx='4'/%3E%3Crect x='15' y='25' width='70' height='90' fill='%23ffc107' rx='3' filter='url(%23yellowGlow)'/%3E%3Crect x='20' y='30' width='60' height='80' fill='%23fff' rx='2'/%3E%3Ccircle cx='70' cy='70' r='8' fill='%23ffc107'/%3E%3Crect x='65' y='65' width='10' height='10' fill='%23fff' rx='2'/%3E%3C/svg%3E");
+            animation: openGlow 2s ease-in-out infinite alternate;
+        }
+        
+        /* Locked Door Icon - Green Glow */
+        .door-panel.locked-closed::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Cdefs%3E%3Cfilter id='greenGlow'%3E%3CfeGaussianBlur stdDeviation='3' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect x='10' y='20' width='80' height='100' fill='%23333' rx='4'/%3E%3Crect x='15' y='25' width='70' height='90' fill='%2328a745' rx='3' filter='url(%23greenGlow)'/%3E%3Crect x='20' y='30' width='60' height='80' fill='%23fff' rx='2'/%3E%3Ccircle cx='70' cy='70' r='8' fill='%2328a745'/%3E%3Crect x='65' y='65' width='10' height='10' fill='%23fff' rx='2'/%3E%3Cpath d='M65 60 L75 60 L75 70 L65 70 Z' fill='%2328a745'/%3E%3C/svg%3E");
+            animation: lockedGlow 3s ease-in-out infinite alternate;
+        }
+        
+        /* Unlocked Door Icon - Red Glow */
+        .door-panel.unlocked-closed::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Cdefs%3E%3Cfilter id='redGlow'%3E%3CfeGaussianBlur stdDeviation='3' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect x='10' y='20' width='80' height='100' fill='%23333' rx='4'/%3E%3Crect x='15' y='25' width='70' height='90' fill='%23dc3545' rx='3' filter='url(%23redGlow)'/%3E%3Crect x='20' y='30' width='60' height='80' fill='%23fff' rx='2'/%3E%3Ccircle cx='70' cy='70' r='8' fill='%23dc3545'/%3E%3Crect x='65' y='65' width='10' height='10' fill='%23fff' rx='2'/%3E%3Cpath d='M65 60 L75 60 L75 70 L65 70 Z' fill='none' stroke='%23dc3545' stroke-width='2'/%3E%3C/svg%3E");
+            animation: unlockedGlow 2.5s ease-in-out infinite alternate;
+        }
+        
+        /* Offline Door Icon - Gray */
+        .door-panel.offline::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Crect x='10' y='20' width='80' height='100' fill='%23333' rx='4'/%3E%3Crect x='15' y='25' width='70' height='90' fill='%236c757d' rx='3' opacity='0.5'/%3E%3Crect x='20' y='30' width='60' height='80' fill='%23fff' rx='2' opacity='0.3'/%3E%3Ccircle cx='70' cy='70' r='8' fill='%236c757d' opacity='0.5'/%3E%3Crect x='65' y='65' width='10' height='10' fill='%23fff' rx='2' opacity='0.3'/%3E%3C/svg%3E");
+            animation: offlinePulse 3s ease-in-out infinite;
+        }
+        
+        /* Online Door Icon - Default */
+        .door-panel.online::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Crect x='10' y='20' width='80' height='100' fill='%23333' rx='4'/%3E%3Crect x='15' y='25' width='70' height='90' fill='%2336454F' rx='3'/%3E%3Crect x='20' y='30' width='60' height='80' fill='%23fff' rx='2'/%3E%3Ccircle cx='70' cy='70' r='8' fill='%2336454F'/%3E%3Crect x='65' y='65' width='10' height='10' fill='%23fff' rx='2'/%3E%3C/svg%3E");
+        }
+        
+        /* Glow Animations */
+        @keyframes openGlow {
+            0% {
+                filter: drop-shadow(0 0 5px rgba(255, 193, 7, 0.8)) drop-shadow(0 0 10px rgba(255, 193, 7, 0.6));
+            }
+            100% {
+                filter: drop-shadow(0 0 15px rgba(255, 193, 7, 1)) drop-shadow(0 0 25px rgba(255, 193, 7, 0.8));
+            }
+        }
+        
+        @keyframes lockedGlow {
+            0% {
+                filter: drop-shadow(0 0 5px rgba(40, 167, 69, 0.8)) drop-shadow(0 0 10px rgba(40, 167, 69, 0.6));
+            }
+            100% {
+                filter: drop-shadow(0 0 15px rgba(40, 167, 69, 1)) drop-shadow(0 0 25px rgba(40, 167, 69, 0.8));
+            }
+        }
+        
+        @keyframes unlockedGlow {
+            0% {
+                filter: drop-shadow(0 0 5px rgba(220, 53, 69, 0.8)) drop-shadow(0 0 10px rgba(220, 53, 69, 0.6));
+            }
+            100% {
+                filter: drop-shadow(0 0 15px rgba(220, 53, 69, 1)) drop-shadow(0 0 25px rgba(220, 53, 69, 0.8));
+            }
+        }
+        
+        @keyframes offlinePulse {
+            0%, 100% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.3;
+                transform: scale(0.9);
+            }
+        }
+        
+        .door-status-text {
+            margin-top: 8px;
+            text-align: center;
+        }
+        
+        .door-status-text .status-primary {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 0.25rem;
+        }
+        
+        .door-status-text .status-secondary {
+            font-size: 0.75rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .description {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .description h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .description p {
+            margin: 0;
+            color: #666;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>Door Status Icons Test</h1>
+            <p>Demonstration of the new door icons with status-specific glow effects</p>
+        </div>
+        
+        <div class="description">
+            <h3>Icon Status Guide</h3>
+            <p><strong>Open Door (Yellow Glow):</strong> Door is open and unlocked - indicates potential security risk</p>
+            <p><strong>Locked Door (Green Glow):</strong> Door is closed and locked - secure state</p>
+            <p><strong>Unlocked Door (Red Glow):</strong> Door is closed but unlocked - security warning</p>
+            <p><strong>Offline Door (Gray):</strong> Door controller is offline - no status available</p>
+        </div>
+        
+        <div class="door-grid">
+            <!-- Open Door -->
+            <div class="door-card open">
+                <div class="door-header">
+                    <h3 class="door-name">Main Entrance</h3>
+                    <div class="door-status-badge open">Open</div>
+                </div>
+                <div class="door-visualization">
+                    <div class="door-frame">
+                        <div class="door-panel open">
+                        </div>
+                        <div class="door-status-text">
+                            <div class="status-primary">Open</div>
+                            <div class="status-secondary">Unlocked</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Locked Door -->
+            <div class="door-card locked-closed">
+                <div class="door-header">
+                    <h3 class="door-name">Server Room</h3>
+                    <div class="door-status-badge locked-closed">Locked</div>
+                </div>
+                <div class="door-visualization">
+                    <div class="door-frame">
+                        <div class="door-panel locked-closed">
+                        </div>
+                        <div class="door-status-text">
+                            <div class="status-primary">Locked</div>
+                            <div class="status-secondary">Closed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Unlocked Door -->
+            <div class="door-card unlocked-closed">
+                <div class="door-header">
+                    <h3 class="door-name">Conference Room</h3>
+                    <div class="door-status-badge unlocked-closed">Unlocked</div>
+                </div>
+                <div class="door-visualization">
+                    <div class="door-frame">
+                        <div class="door-panel unlocked-closed">
+                        </div>
+                        <div class="door-status-text">
+                            <div class="status-primary">Unlocked</div>
+                            <div class="status-secondary">Closed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Offline Door -->
+            <div class="door-card offline">
+                <div class="door-header">
+                    <h3 class="door-name">Storage Room</h3>
+                    <div class="door-status-badge offline">Offline</div>
+                </div>
+                <div class="door-visualization">
+                    <div class="door-frame">
+                        <div class="door-panel offline">
+                        </div>
+                        <div class="door-status-text">
+                            <div class="status-primary">Offline</div>
+                            <div class="status-secondary">Disconnected</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
