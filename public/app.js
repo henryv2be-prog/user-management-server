@@ -1013,8 +1013,8 @@ function displayDoorStatus(doors) {
         return;
     }
     
-    doorGrid.innerHTML = doors.map(door => `
-        <div class="door-card ${door.isOnline ? 'online' : 'offline'}">
+    doorGrid.innerHTML = doors.map((door, index) => `
+        <div class="door-card ${door.isOnline ? 'online' : 'offline'}" style="animation-delay: ${index * 0.1}s;">
             <div class="door-header">
                 <h3 class="door-name">${door.name}</h3>
                 <div class="door-status-indicator ${door.isOnline ? 'online' : 'offline'}"></div>
@@ -1027,12 +1027,12 @@ function displayDoorStatus(doors) {
                     </div>
                     <span class="door-status-text">${getLockStatusText(door)}</span>
                 </div>
-                       <div class="door-status-item">
-                           <div class="door-status-icon ${getDoorPositionClass(door)}">
-                               <i class="fas ${getDoorPositionIcon(door)}"></i>
-                           </div>
-                           <span class="door-status-text">${getDoorPositionText(door)}</span>
-                       </div>
+                <div class="door-status-item">
+                    <div class="door-status-icon ${getDoorPositionClass(door)}">
+                        <i class="fas ${getDoorPositionIcon(door)}"></i>
+                    </div>
+                    <span class="door-status-text">${getDoorPositionText(door)}</span>
+                </div>
             </div>
             <div class="door-ip">${door.controllerIp}</div>
             <div class="door-last-seen">
