@@ -1022,13 +1022,14 @@ function displayDoorStatus(doors) {
             </div>
             <div class="door-location">${door.location}</div>
             
-            <!-- Unified Status Display -->
-            <div class="door-status-display">
-                <div class="status-indicator ${getDoorStatusClass(door)}">
-                    <div class="status-icon">
-                        <i class="fas ${getDoorStatusIcon(door)}"></i>
+            <!-- Animated Door Visualization -->
+            <div class="door-visualization">
+                <div class="door-frame">
+                    <div class="door-panel ${getDoorVisualClass(door)}">
+                        <div class="door-handle ${getDoorHandleClass(door)}"></div>
+                        <div class="door-lock ${getDoorLockClass(door)}"></div>
                     </div>
-                    <div class="status-details">
+                    <div class="door-status-text">
                         <div class="status-primary">${getDoorPrimaryStatus(door)}</div>
                         <div class="status-secondary">${getDoorSecondaryStatus(door)}</div>
                     </div>
@@ -1091,15 +1092,28 @@ function formatDoorTime(timestamp) {
     }
 }
 
-// Unified Door Status Functions
-function getDoorCardClass(door) {
+// Door Visualization Functions
+function getDoorVisualClass(door) {
     if (!door.isOnline) return 'offline';
-    
-    // Determine card class based on door state
     if (door.isOpen) return 'open';
-    if (door.isLocked === false) return 'unlocked';
+    if (door.isLocked === true) return 'locked-closed';
+    if (door.isLocked === false) return 'unlocked-closed';
+    return 'unknown';
+}
+
+function getDoorHandleClass(door) {
+    if (!door.isOnline) return 'offline';
+    if (door.isOpen) return 'open';
     if (door.isLocked === true) return 'locked';
-    
+    if (door.isLocked === false) return 'unlocked';
+    return 'unknown';
+}
+
+function getDoorLockClass(door) {
+    if (!door.isOnline) return 'offline';
+    if (door.isOpen) return 'open';
+    if (door.isLocked === true) return 'locked';
+    if (door.isLocked === false) return 'unlocked';
     return 'unknown';
 }
 
