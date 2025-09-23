@@ -979,51 +979,36 @@ async function loadDashboard() {
 }
 
 async function loadDashboardDoors() {
-    // Call the working loadDoors function and capture its data
+    // Copy the exact working loadDoors logic but display in dashboard format
     if (!currentUser || !hasRole('admin')) {
         return;
     }
     
     try {
-        // Temporarily store the original displayDoors function
-        const originalDisplayDoors = window.displayDoors;
+        // Copy EXACT same logic as working loadDoors function
+        const params = new URLSearchParams({
+            page: 1,
+            limit: 10,
+            ...currentFilters
+        });
         
-        // Override displayDoors to capture the data instead of displaying in table
-        window.displayDoors = function(doors) {
-            // Display in dashboard format instead of table format
-            displayDoorStatus(doors);
-        };
-        
-        // Call the working loadDoors function
-        await loadDoors(1);
-        
-        // Restore the original function
-        window.displayDoors = originalDisplayDoors;
-        
-    } catch (error) {
-        // If that fails, try direct API call as fallback
-        try {
-            const params = new URLSearchParams({
-                page: 1,
-                limit: 10,
-                ...currentFilters
-            });
-            
-            const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                displayDoorStatus(data.doors || []);
-            } else {
-                displayDoorStatus([]);
+        const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
-        } catch (fallbackError) {
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Display in dashboard format instead of table format
+            displayDoorStatus(data.doors);
+        } else {
+            // Don't show error popup, just show empty state
             displayDoorStatus([]);
         }
+    } catch (error) {
+        // Don't show error popup, just show empty state
+        displayDoorStatus([]);
     }
 }
 
