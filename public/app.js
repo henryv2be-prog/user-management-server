@@ -1010,40 +1010,42 @@ async function loadDashboard() {
 }
 
 async function loadDashboardDoors() {
-    // Test with hardcoded doors to see if display function works
+    // Use the working loadDoors function but intercept the data
     if (!currentUser || !hasRole('admin')) {
         return;
     }
     
     try {
-        // Test with hardcoded doors to see if displayDoorStatus works
-        const testDoors = [
-            {
-                id: 1,
-                name: "Test Door 1",
-                location: "Test Location",
-                controllerIp: "192.168.1.100",
-                isOnline: true,
-                lastSeen: new Date().toISOString(),
-                hasLockSensor: true,
-                hasDoorPositionSensor: true
-            },
-            {
-                id: 2,
-                name: "Test Door 2", 
-                location: "Test Location 2",
-                controllerIp: "192.168.1.101",
-                isOnline: false,
-                lastSeen: null,
-                hasLockSensor: false,
-                hasDoorPositionSensor: true
-            }
-        ];
+        // Store the original displayDoors function
+        const originalDisplayDoors = window.displayDoors;
         
-        // Try to display test doors
-        displayDoorStatus(testDoors);
+        // Create a promise to capture the doors data
+        let capturedDoors = null;
+        let capturePromise = new Promise((resolve) => {
+            window.displayDoors = function(doors) {
+                capturedDoors = doors;
+                resolve(doors);
+            };
+        });
+        
+        // Call the working loadDoors function
+        await loadDoors(1);
+        
+        // Wait for the data to be captured
+        await capturePromise;
+        
+        // Restore the original function
+        window.displayDoors = originalDisplayDoors;
+        
+        // Display the captured doors in dashboard format
+        if (capturedDoors && capturedDoors.length > 0) {
+            displayDoorStatus(capturedDoors);
+        } else {
+            displayDoorStatus([]);
+        }
+        
     } catch (error) {
-        // If there's an error, show empty state
+        // If that fails, show empty state
         displayDoorStatus([]);
     }
 }
