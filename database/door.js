@@ -295,6 +295,10 @@ class Door {
 
   async delete() {
     try {
+      // First, remove the door from all access groups
+      await runQuery('DELETE FROM door_access_groups WHERE door_id = ?', [this.id]);
+      
+      // Then delete the door itself
       await runQuery('DELETE FROM doors WHERE id = ?', [this.id]);
       return true;
     } catch (error) {

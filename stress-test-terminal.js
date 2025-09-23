@@ -249,6 +249,9 @@ async function cleanupTestData(userIds, doorIds, groupIds) {
   // Clean up doors
   for (const doorId of doorIds) {
     try {
+      // First remove door from all access groups
+      await runDelete(`DELETE FROM door_access_groups WHERE door_id = ?`, [doorId]);
+      // Then delete the door itself
       await runDelete(`DELETE FROM doors WHERE id = ?`, [doorId]);
       logSuccess(`Cleaned up door ${doorId}`);
     } catch (error) {

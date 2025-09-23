@@ -711,10 +711,19 @@ async function cleanupTestData(testId, testData) {
         try {
           await new Promise((resolve, reject) => {
             const db = new sqlite3.Database(DB_PATH);
-            db.run("DELETE FROM doors WHERE id = ?", [doorId], function(err) {
-              db.close();
-              if (err) reject(err);
-              else resolve();
+            // First remove door from all access groups
+            db.run("DELETE FROM door_access_groups WHERE door_id = ?", [doorId], function(err) {
+              if (err) {
+                db.close();
+                reject(err);
+                return;
+              }
+              // Then delete the door itself
+              db.run("DELETE FROM doors WHERE id = ?", [doorId], function(err) {
+                db.close();
+                if (err) reject(err);
+                else resolve();
+              });
             });
           });
         } catch (error) {
