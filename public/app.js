@@ -965,11 +965,17 @@ async function loadDashboard() {
     }
     
     try {
-        // Load door status data using the same API call as Door Management
-        await loadDashboardDoors();
-        
-        // Load recent events
+        // Load recent events first
         await loadEvents();
+        
+        // Delay door loading to ensure everything is initialized
+        setTimeout(async () => {
+            try {
+                await loadDashboardDoors();
+            } catch (error) {
+                console.error('Failed to load dashboard doors:', error);
+            }
+        }, 100); // Small delay to ensure initialization
         
         // Note: Door status updates are handled via Server-Sent Events (SSE)
         // No need for manual refresh intervals
