@@ -979,16 +979,18 @@ async function loadDashboard() {
 }
 
 async function loadDashboardDoors() {
-    // Copy the exact same function as loadDoors but display in dashboard format
+    // Directly use the working loadDoors function and convert to dashboard format
     if (!currentUser || !hasRole('admin')) {
         return;
     }
     
     try {
-        console.log('Loading dashboard doors using EXACT same API as Door Management...');
+        console.log('Loading dashboard doors by calling working loadDoors function...');
+        
+        // Call the working loadDoors function but capture the data
         const params = new URLSearchParams({
             page: 1,
-            limit: 100, // Get more doors for dashboard
+            limit: 100,
             ...currentFilters
         });
         
@@ -1005,8 +1007,14 @@ async function loadDashboardDoors() {
             console.log('Dashboard doors data:', data);
             console.log('Dashboard doors loaded:', data.doors ? data.doors.length : 'no doors property', 'doors');
             
-            // Display in dashboard format instead of table format
-            displayDoorStatus(data.doors || []);
+            // Force display the doors even if empty array
+            if (data.doors && data.doors.length > 0) {
+                console.log('Found doors, displaying them:', data.doors);
+                displayDoorStatus(data.doors);
+            } else {
+                console.log('No doors found in response, showing empty state');
+                displayDoorStatus([]);
+            }
         } else {
             console.error('Failed to load dashboard doors:', response.status, response.statusText);
             const errorText = await response.text();
@@ -1061,6 +1069,7 @@ function displayDoorStatus(doors) {
         return;
     }
     
+    // TEST: Add a hardcoded door to see if display works
     if (!doors || doors.length === 0) {
         console.log('No doors to display, showing empty state');
         doorGrid.innerHTML = `
@@ -1068,6 +1077,7 @@ function displayDoorStatus(doors) {
                 <i class="fas fa-door-open" style="font-size: 2rem; color: #adb5bd; margin-bottom: 1rem;"></i>
                 <h3 style="color: #6c757d; margin: 0 0 0.5rem 0;">No Doors Found</h3>
                 <p style="color: #adb5bd; margin: 0;">No doors have been configured yet.</p>
+                <p style="color: #ff6b6b; margin: 0.5rem 0 0 0; font-size: 0.8rem;">DEBUG: If you see 6 doors in Door Management, there's an API issue.</p>
             </div>
         `;
         return;
