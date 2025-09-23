@@ -1887,6 +1887,34 @@ textarea:focus-visible {
     font-size: 0.8rem;
 }
 
+/* Loading Animation */
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(0, 255, 65, 0.2);
+    border-left: 4px solid #00ff41;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-card {
+    background: linear-gradient(145deg, rgba(0, 255, 65, 0.1) 0%, rgba(0, 0, 0, 0.05) 100%);
+    border: 1px solid rgba(0, 255, 65, 0.2);
+    animation: pulse 2s infinite;
+}
+
 /* Animated Door Visualization */
 .door-visualization {
     margin-bottom: 1rem;
