@@ -979,54 +979,51 @@ async function loadDashboard() {
 }
 
 async function loadDashboardDoors() {
-    // Use EXACT same API call as working loadDoors function
+    // Call the working loadDoors function and capture its data
     if (!currentUser || !hasRole('admin')) {
         return;
     }
     
     try {
-        console.log('Loading dashboard doors using EXACT same API as loadDoors...');
-        console.log('Current filters:', currentFilters);
+        // Temporarily store the original displayDoors function
+        const originalDisplayDoors = window.displayDoors;
         
-        // Use EXACT same parameters as working loadDoors function
-        const params = new URLSearchParams({
-            page: 1,  // Same as loadDoors(page = 1)
-            limit: 10, // Same as loadDoors (not 100!)
-            ...currentFilters
-        });
+        // Override displayDoors to capture the data instead of displaying in table
+        window.displayDoors = function(doors) {
+            // Display in dashboard format instead of table format
+            displayDoorStatus(doors);
+        };
         
-        console.log('API URL:', addCacheBusting(`/api/doors?${params}`));
+        // Call the working loadDoors function
+        await loadDoors(1);
         
-        const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        // Restore the original function
+        window.displayDoors = originalDisplayDoors;
         
-        console.log('Dashboard doors response:', response.status, response.statusText);
-        
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Dashboard doors data:', data);
-            console.log('Dashboard doors loaded:', data.doors ? data.doors.length : 'no doors property', 'doors');
+    } catch (error) {
+        // If that fails, try direct API call as fallback
+        try {
+            const params = new URLSearchParams({
+                page: 1,
+                limit: 10,
+                ...currentFilters
+            });
             
-            // Display in dashboard format
-            if (data.doors && data.doors.length > 0) {
-                console.log('Found doors, displaying them:', data.doors);
-                displayDoorStatus(data.doors);
+            const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                displayDoorStatus(data.doors || []);
             } else {
-                console.log('No doors found, showing empty state');
                 displayDoorStatus([]);
             }
-        } else {
-            console.error('Failed to load dashboard doors:', response.status, response.statusText);
-            const errorText = await response.text();
-            console.error('Error response:', errorText);
+        } catch (fallbackError) {
             displayDoorStatus([]);
         }
-    } catch (error) {
-        console.error('Load dashboard doors error:', error);
-        displayDoorStatus([]);
     }
 }
 
