@@ -986,6 +986,7 @@ async function loadDashboardDoors() {
     
     try {
         console.log('Loading dashboard doors using EXACT same API as loadDoors...');
+        console.log('Current filters:', currentFilters);
         
         // Use EXACT same parameters as working loadDoors function
         const params = new URLSearchParams({
@@ -993,6 +994,8 @@ async function loadDashboardDoors() {
             limit: 10, // Same as loadDoors (not 100!)
             ...currentFilters
         });
+        
+        console.log('API URL:', addCacheBusting(`/api/doors?${params}`));
         
         const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
             headers: {
