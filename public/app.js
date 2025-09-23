@@ -1105,42 +1105,17 @@ function displayDoorStatus(doors) {
     }
     
     console.log('Rendering', doors.length, 'doors');
+    
+    // Simplified door display without complex animations
     doorGrid.innerHTML = doors.map((door, index) => `
-        <div class="door-card ${getDoorCardClass(door)}" style="animation-delay: ${index * 0.1}s;">
+        <div class="door-card" style="animation-delay: ${index * 0.1}s;">
             <div class="door-header">
                 <h3 class="door-name">${door.name}</h3>
-                <div class="door-status-badge ${getDoorStatusBadgeClass(door)}">
-                    ${getDoorStatusBadgeText(door)}
+                <div class="door-status-badge ${door.isOnline ? 'online' : 'offline'}">
+                    ${door.isOnline ? 'Online' : 'Offline'}
                 </div>
             </div>
             <div class="door-location">${door.location}</div>
-            
-            <!-- Animated Door Visualization -->
-            <div class="door-visualization">
-                <div class="door-frame">
-                    <div class="door-panel ${getDoorVisualClass(door)}">
-                        <div class="door-handle ${getDoorHandleClass(door)}"></div>
-                        <div class="door-lock ${getDoorLockClass(door)}"></div>
-                    </div>
-                    <div class="door-status-text">
-                        <div class="status-primary">${getDoorPrimaryStatus(door)}</div>
-                        <div class="status-secondary">${getDoorSecondaryStatus(door)}</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Sensor Status -->
-            <div class="sensor-status">
-                <div class="sensor-item ${door.hasLockSensor ? 'available' : 'unavailable'}">
-                    <i class="fas fa-lock"></i>
-                    <span>Lock Sensor</span>
-                </div>
-                <div class="sensor-item ${door.hasDoorPositionSensor ? 'available' : 'unavailable'}">
-                    <i class="fas fa-door-open"></i>
-                    <span>Position Sensor</span>
-                </div>
-            </div>
-            
             <div class="door-ip">${door.controllerIp}</div>
             <div class="door-last-seen">
                 ${door.lastSeen ? `Last seen: ${formatDoorTime(door.lastSeen)}` : 'Never seen'}
