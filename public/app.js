@@ -983,8 +983,7 @@ async function loadDoorStatus() {
         console.log('Loading door status...');
         const params = new URLSearchParams({
             page: 1,
-            limit: 100, // Get more doors for dashboard
-            ...currentFilters
+            limit: 100
         });
         
         const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
@@ -1078,9 +1077,63 @@ function displayDoorStatus(doors) {
     `).join('');
 }
 
-// Manual refresh function for user-triggered updates
-function refreshDoorStatus() {
-    loadDoorStatus();
+// Test function to debug door loading
+async function testDoorLoading() {
+    console.log('=== TESTING DOOR LOADING ===');
+    
+    try {
+        // Test 1: Simple API call like dashboard was doing
+        console.log('Test 1: Simple API call');
+        const simpleResponse = await fetch('/api/doors?limit=100', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        console.log('Simple response:', simpleResponse.status, simpleResponse.statusText);
+        if (simpleResponse.ok) {
+            const simpleData = await simpleResponse.json();
+            console.log('Simple data:', simpleData);
+        }
+        
+        // Test 2: Same API call as Door Management
+        console.log('Test 2: Door Management style API call');
+        const params = new URLSearchParams({
+            page: 1,
+            limit: 10
+        });
+        const mgmtResponse = await fetch(addCacheBusting(`/api/doors?${params}`), {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        console.log('Management response:', mgmtResponse.status, mgmtResponse.statusText);
+        if (mgmtResponse.ok) {
+            const mgmtData = await mgmtResponse.json();
+            console.log('Management data:', mgmtData);
+        }
+        
+        // Test 3: Dashboard style API call
+        console.log('Test 3: Dashboard style API call');
+        const dashboardParams = new URLSearchParams({
+            page: 1,
+            limit: 100
+        });
+        const dashboardResponse = await fetch(addCacheBusting(`/api/doors?${dashboardParams}`), {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        console.log('Dashboard response:', dashboardResponse.status, dashboardResponse.statusText);
+        if (dashboardResponse.ok) {
+            const dashboardData = await dashboardResponse.json();
+            console.log('Dashboard data:', dashboardData);
+        }
+        
+    } catch (error) {
+        console.error('Test error:', error);
+    }
+    
+    console.log('=== END TEST ===');
 }
 
 
