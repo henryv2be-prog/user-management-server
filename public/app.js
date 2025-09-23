@@ -1015,32 +1015,37 @@ async function loadDashboardDoors() {
         return;
     }
     
-    // Test with hardcoded doors to see if displayDoorStatus works
-    const testDoors = [
-        {
-            id: 1,
-            name: "Test Door 1",
-            location: "Test Location",
-            controllerIp: "192.168.1.100",
-            isOnline: true,
-            lastSeen: new Date().toISOString(),
-            hasLockSensor: true,
-            hasDoorPositionSensor: true
-        },
-        {
-            id: 2,
-            name: "Test Door 2", 
-            location: "Test Location 2",
-            controllerIp: "192.168.1.101",
-            isOnline: false,
-            lastSeen: null,
-            hasLockSensor: false,
-            hasDoorPositionSensor: true
-        }
-    ];
-    
-    // Try to display test doors
-    displayDoorStatus(testDoors);
+    try {
+        // Test with hardcoded doors to see if displayDoorStatus works
+        const testDoors = [
+            {
+                id: 1,
+                name: "Test Door 1",
+                location: "Test Location",
+                controllerIp: "192.168.1.100",
+                isOnline: true,
+                lastSeen: new Date().toISOString(),
+                hasLockSensor: true,
+                hasDoorPositionSensor: true
+            },
+            {
+                id: 2,
+                name: "Test Door 2", 
+                location: "Test Location 2",
+                controllerIp: "192.168.1.101",
+                isOnline: false,
+                lastSeen: null,
+                hasLockSensor: false,
+                hasDoorPositionSensor: true
+            }
+        ];
+        
+        // Try to display test doors
+        displayDoorStatus(testDoors);
+    } catch (error) {
+        // If there's an error, show empty state
+        displayDoorStatus([]);
+    }
 }
 
 async function loadDoorStatus() {
