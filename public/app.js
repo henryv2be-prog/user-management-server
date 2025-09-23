@@ -979,11 +979,17 @@ async function loadDashboard() {
 }
 
 async function loadDashboardDoors() {
+    // Copy the exact same function as loadDoors but display in dashboard format
+    if (!currentUser || !hasRole('admin')) {
+        return;
+    }
+    
     try {
-        console.log('Loading dashboard doors...');
+        console.log('Loading dashboard doors using EXACT same API as Door Management...');
         const params = new URLSearchParams({
             page: 1,
-            limit: 100
+            limit: 100, // Get more doors for dashboard
+            ...currentFilters
         });
         
         const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
@@ -998,6 +1004,8 @@ async function loadDashboardDoors() {
             const data = await response.json();
             console.log('Dashboard doors data:', data);
             console.log('Dashboard doors loaded:', data.doors ? data.doors.length : 'no doors property', 'doors');
+            
+            // Display in dashboard format instead of table format
             displayDoorStatus(data.doors || []);
         } else {
             console.error('Failed to load dashboard doors:', response.status, response.statusText);
