@@ -958,7 +958,6 @@ function closeMobileMenu() {
 }
 
 // Dashboard functions
-let doorRefreshInterval = null;
 
 async function loadDashboard() {
     if (!currentUser || !hasRole('admin')) {
@@ -972,8 +971,8 @@ async function loadDashboard() {
         // Load recent events
         await loadEvents();
         
-        // Start door status refresh
-        startDoorStatusRefresh();
+        // Note: Door status updates are handled via Server-Sent Events (SSE)
+        // No need for manual refresh intervals
     } catch (error) {
         console.error('Failed to load dashboard data:', error);
     }
@@ -1042,30 +1041,7 @@ function displayDoorStatus(doors) {
     `).join('');
 }
 
-function startDoorStatusRefresh() {
-    // Clear existing interval
-    if (doorRefreshInterval) {
-        clearInterval(doorRefreshInterval);
-    }
-    
-    // Start new interval - refresh every 5 seconds for more responsive updates
-    doorRefreshInterval = setInterval(() => {
-        // Only refresh if we're on the dashboard
-        const dashboardSection = document.getElementById('dashboardSection');
-        if (dashboardSection && dashboardSection.classList.contains('active')) {
-            console.log('Refreshing door status...');
-            loadDoorStatus();
-        }
-    }, 5000); // Reduced to 5 seconds for more responsive updates
-}
-
-function stopDoorStatusRefresh() {
-    if (doorRefreshInterval) {
-        clearInterval(doorRefreshInterval);
-        doorRefreshInterval = null;
-    }
-}
-
+// Manual refresh function for user-triggered updates
 function refreshDoorStatus() {
     loadDoorStatus();
 }
@@ -2589,10 +2565,9 @@ function showSection(sectionName) {
     if (sectionName === 'dashboard') {
         loadDashboard();
         connectEventStream(); // Connect to live event stream
-        startDoorStatusRefresh(); // Start door status refresh when on dashboard
+        // Door status updates are handled via Server-Sent Events (SSE)
     } else {
         connectEventStream(); // Keep SSE connection alive on all sections
-        stopDoorStatusRefresh(); // Stop door refresh when leaving dashboard
         if (sectionName === 'users') {
             loadUsers();
         } else if (sectionName === 'doors') {
