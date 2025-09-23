@@ -981,7 +981,13 @@ async function loadDashboard() {
 async function loadDoorStatus() {
     try {
         console.log('Loading door status...');
-        const response = await fetch('/api/doors?limit=100', {
+        const params = new URLSearchParams({
+            page: 1,
+            limit: 100, // Get more doors for dashboard
+            ...currentFilters
+        });
+        
+        const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
