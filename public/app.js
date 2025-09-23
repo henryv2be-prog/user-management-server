@@ -1010,24 +1010,38 @@ async function loadDashboard() {
 }
 
 async function loadDashboardDoors() {
-    // Copy the exact working loadDoors logic but display in dashboard format
+    // Try without filters first, then with filters as fallback
     if (!currentUser || !hasRole('admin')) {
         return;
     }
     
     try {
-        // Copy EXACT same logic as working loadDoors function
-        const params = new URLSearchParams({
+        // First try: No filters at all (simplest possible call)
+        let params = new URLSearchParams({
             page: 1,
-            limit: 10,
-            ...currentFilters
+            limit: 10
         });
         
-        const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
+        let response = await fetch(addCacheBusting(`/api/doors?${params}`), {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
+        
+        if (!response.ok) {
+            // Second try: With filters (original approach)
+            params = new URLSearchParams({
+                page: 1,
+                limit: 10,
+                ...currentFilters
+            });
+            
+            response = await fetch(addCacheBusting(`/api/doors?${params}`), {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+        }
         
         if (response.ok) {
             const data = await response.json();
