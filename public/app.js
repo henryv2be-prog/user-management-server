@@ -1037,12 +1037,63 @@ async function loadDashboardDoors() {
         // Restore the original function
         window.displayDoors = originalDisplayDoors;
         
-        // Display the captured doors in dashboard format
-        if (capturedDoors && capturedDoors.length > 0) {
-            displayDoorStatus(capturedDoors);
-        } else {
-            displayDoorStatus([]);
-        }
+        // Add test doors to demonstrate different states
+        const testDoors = [
+            {
+                id: 'test-1',
+                name: 'Test - Online Locked',
+                location: 'Test Lab',
+                controllerIp: '192.168.1.200',
+                isOnline: true,
+                lastSeen: new Date().toISOString(),
+                hasLockSensor: true,
+                hasDoorPositionSensor: true,
+                isLocked: true,
+                isOpen: false
+            },
+            {
+                id: 'test-2',
+                name: 'Test - Online Unlocked',
+                location: 'Test Lab',
+                controllerIp: '192.168.1.201',
+                isOnline: true,
+                lastSeen: new Date().toISOString(),
+                hasLockSensor: true,
+                hasDoorPositionSensor: true,
+                isLocked: false,
+                isOpen: false
+            },
+            {
+                id: 'test-3',
+                name: 'Test - Online Open',
+                location: 'Test Lab',
+                controllerIp: '192.168.1.202',
+                isOnline: true,
+                lastSeen: new Date().toISOString(),
+                hasLockSensor: true,
+                hasDoorPositionSensor: true,
+                isLocked: false,
+                isOpen: true
+            },
+            {
+                id: 'test-4',
+                name: 'Test - Offline',
+                location: 'Test Lab',
+                controllerIp: '192.168.1.203',
+                isOnline: false,
+                lastSeen: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
+                hasLockSensor: false,
+                hasDoorPositionSensor: false,
+                isLocked: null,
+                isOpen: null
+            }
+        ];
+        
+        // Combine real doors with test doors
+        const allDoors = [...(capturedDoors || []), ...testDoors];
+        
+        // Display all doors
+        displayDoorStatus(allDoors);
         
     } catch (error) {
         // If that fails, show empty state
@@ -1108,38 +1159,65 @@ function displayDoorStatus(doors) {
     
     console.log('Rendering', doors.length, 'doors');
     
-    // Enhanced door display with animations
-    doorGrid.innerHTML = doors.map((door, index) => `
-        <div class="door-card" style="animation-delay: ${index * 0.1}s;">
-            <div class="door-header">
-                <h3 class="door-name">${door.name}</h3>
-                <div class="door-status-badge ${door.isOnline ? 'online' : 'offline'}">
-                    <i class="fas fa-circle"></i>
-                    ${door.isOnline ? 'Online' : 'Offline'}
+    // Enhanced door display with different states
+    doorGrid.innerHTML = doors.map((door, index) => {
+        // Determine door state classes
+        let doorStateClass = 'offline';
+        let statusText = 'Offline';
+        let secondaryText = 'Disconnected';
+        
+        if (door.isOnline) {
+            if (door.isOpen) {
+                doorStateClass = 'open';
+                statusText = 'Open';
+                secondaryText = 'Unlocked';
+            } else if (door.isLocked === true) {
+                doorStateClass = 'locked-closed';
+                statusText = 'Locked';
+                secondaryText = 'Closed';
+            } else if (door.isLocked === false) {
+                doorStateClass = 'unlocked-closed';
+                statusText = 'Unlocked';
+                secondaryText = 'Closed';
+            } else {
+                doorStateClass = 'online';
+                statusText = 'Online';
+                secondaryText = 'Ready';
+            }
+        }
+        
+        return `
+            <div class="door-card" style="animation-delay: ${index * 0.1}s;">
+                <div class="door-header">
+                    <h3 class="door-name">${door.name}</h3>
+                    <div class="door-status-badge ${door.isOnline ? 'online' : 'offline'}">
+                        <i class="fas fa-circle"></i>
+                        ${door.isOnline ? 'Online' : 'Offline'}
+                    </div>
+                </div>
+                <div class="door-location">${door.location}</div>
+                
+                <!-- Enhanced Door Visualization -->
+                <div class="door-visualization">
+                    <div class="door-frame">
+                        <div class="door-panel ${doorStateClass}">
+                            <div class="door-handle"></div>
+                            <div class="door-lock"></div>
+                        </div>
+                        <div class="door-status-text">
+                            <div class="status-primary">${statusText}</div>
+                            <div class="status-secondary">${secondaryText}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="door-ip">${door.controllerIp}</div>
+                <div class="door-last-seen">
+                    ${door.lastSeen ? `Last seen: ${formatDoorTime(door.lastSeen)}` : 'Never seen'}
                 </div>
             </div>
-            <div class="door-location">${door.location}</div>
-            
-            <!-- Simple Door Visualization -->
-            <div class="door-visualization">
-                <div class="door-frame">
-                    <div class="door-panel ${door.isOnline ? 'online' : 'offline'}">
-                        <div class="door-handle"></div>
-                        <div class="door-lock"></div>
-                    </div>
-                    <div class="door-status-text">
-                        <div class="status-primary">${door.isOnline ? 'Online' : 'Offline'}</div>
-                        <div class="status-secondary">Ready</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="door-ip">${door.controllerIp}</div>
-            <div class="door-last-seen">
-                ${door.lastSeen ? `Last seen: ${formatDoorTime(door.lastSeen)}` : 'Never seen'}
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Test function to debug door loading
