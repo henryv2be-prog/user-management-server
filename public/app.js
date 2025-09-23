@@ -980,28 +980,43 @@ async function loadDashboard() {
 
 async function loadDoorStatus() {
     try {
+        console.log('Loading door status...');
         const response = await fetch('/api/doors?limit=100', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
         
+        console.log('Door status response:', response.status, response.statusText);
+        
         if (response.ok) {
             const data = await response.json();
-            console.log('Door status loaded:', data.doors.length, 'doors');
-            displayDoorStatus(data.doors);
+            console.log('Door status data:', data);
+            console.log('Door status loaded:', data.doors ? data.doors.length : 'no doors property', 'doors');
+            displayDoorStatus(data.doors || []);
         } else {
-            console.error('Failed to load door status');
+            console.error('Failed to load door status:', response.status, response.statusText);
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
+            displayDoorStatus([]);
         }
     } catch (error) {
         console.error('Load door status error:', error);
+        displayDoorStatus([]);
     }
 }
 
 function displayDoorStatus(doors) {
+    console.log('Displaying door status:', doors);
     const doorGrid = document.getElementById('doorGrid');
     
+    if (!doorGrid) {
+        console.error('doorGrid element not found!');
+        return;
+    }
+    
     if (!doors || doors.length === 0) {
+        console.log('No doors to display, showing empty state');
         doorGrid.innerHTML = `
             <div class="door-card" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
                 <i class="fas fa-door-open" style="font-size: 2rem; color: #adb5bd; margin-bottom: 1rem;"></i>
@@ -1012,6 +1027,7 @@ function displayDoorStatus(doors) {
         return;
     }
     
+    console.log('Rendering', doors.length, 'doors');
     doorGrid.innerHTML = doors.map((door, index) => `
         <div class="door-card ${getDoorCardClass(door)}" style="animation-delay: ${index * 0.1}s;">
             <div class="door-header">
