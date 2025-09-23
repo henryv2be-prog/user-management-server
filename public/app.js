@@ -1010,49 +1010,42 @@ async function loadDashboard() {
 }
 
 async function loadDashboardDoors() {
-    // Try without filters first, then with filters as fallback
+    // Use the working loadDoors function but intercept the data
     if (!currentUser || !hasRole('admin')) {
         return;
     }
     
     try {
-        // First try: No filters at all (simplest possible call)
-        let params = new URLSearchParams({
-            page: 1,
-            limit: 10
+        // Store the original displayDoors function
+        const originalDisplayDoors = window.displayDoors;
+        
+        // Create a promise to capture the doors data
+        let capturedDoors = null;
+        let capturePromise = new Promise((resolve) => {
+            window.displayDoors = function(doors) {
+                capturedDoors = doors;
+                resolve(doors);
+            };
         });
         
-        let response = await fetch(addCacheBusting(`/api/doors?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        // Call the working loadDoors function
+        await loadDoors(1);
         
-        if (!response.ok) {
-            // Second try: With filters (original approach)
-            params = new URLSearchParams({
-                page: 1,
-                limit: 10,
-                ...currentFilters
-            });
-            
-            response = await fetch(addCacheBusting(`/api/doors?${params}`), {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-        }
+        // Wait for the data to be captured
+        await capturePromise;
         
-        if (response.ok) {
-            const data = await response.json();
-            // Display in dashboard format instead of table format
-            displayDoorStatus(data.doors);
+        // Restore the original function
+        window.displayDoors = originalDisplayDoors;
+        
+        // Display the captured doors in dashboard format
+        if (capturedDoors && capturedDoors.length > 0) {
+            displayDoorStatus(capturedDoors);
         } else {
-            // Don't show error popup, just show empty state
             displayDoorStatus([]);
         }
+        
     } catch (error) {
-        // Don't show error popup, just show empty state
+        // If that fails, show empty state
         displayDoorStatus([]);
     }
 }
