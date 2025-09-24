@@ -4265,6 +4265,14 @@ class SitePlanManager {
         this.ctx = null;
         this.doors = [];
         this.editMode = false;
+        this.zoom = 1;
+        this.panX = 0;
+        this.panY = 0;
+        this.isPanning = false;
+        this.lastPanPoint = { x: 0, y: 0 };
+        this.isPinching = false;
+        this.lastPinchDistance = 0;
+        this.lastPinchCenter = { x: 0, y: 0 };
         this.isDragging = false;
         this.dragStart = { x: 0, y: 0 };
         this.draggedDoor = null;
@@ -4447,6 +4455,10 @@ class SitePlanManager {
         let x = e.clientX - rect.left;
         let y = e.clientY - rect.top;
         
+        // Convert to canvas coordinates accounting for zoom and pan
+        const canvasX = (x - this.panX) / this.zoom;
+        const canvasY = (y - this.panY) / this.zoom;
+        
         // Adjust coordinates for centered image
         if (this.sitePlanImage) {
             const imageAspect = this.sitePlanImage.width / this.sitePlanImage.height;
@@ -4461,8 +4473,11 @@ class SitePlanManager {
                 offsetY = 0;
             }
             
-            x -= offsetX;
-            y -= offsetY;
+            x = canvasX - offsetX;
+            y = canvasY - offsetY;
+        } else {
+            x = canvasX;
+            y = canvasY;
         }
         
         if (this.editMode) {
@@ -4476,6 +4491,11 @@ class SitePlanManager {
             const door = this.getDoorAtPosition(x, y);
             if (door) {
                 this.showDoorDetails(door);
+            } else {
+                // Start panning
+                this.isPanning = true;
+                this.lastPanPoint = { x: e.clientX, y: e.clientY };
+                this.canvas.style.cursor = 'grabbing';
             }
         }
     }
@@ -4486,6 +4506,10 @@ class SitePlanManager {
             let x = e.clientX - rect.left;
             let y = e.clientY - rect.top;
             
+            // Convert to canvas coordinates accounting for zoom and pan
+            const canvasX = (x - this.panX) / this.zoom;
+            const canvasY = (y - this.panY) / this.zoom;
+            
             // Adjust coordinates for centered image
             if (this.sitePlanImage) {
                 const imageAspect = this.sitePlanImage.width / this.sitePlanImage.height;
@@ -4500,12 +4524,25 @@ class SitePlanManager {
                     offsetY = 0;
                 }
                 
-                x -= offsetX;
-                y -= offsetY;
+                x = canvasX - offsetX;
+                y = canvasY - offsetY;
+            } else {
+                x = canvasX;
+                y = canvasY;
             }
             
             this.draggedDoor.x = x;
             this.draggedDoor.y = y;
+            this.drawSitePlan();
+        } else if (this.isPanning) {
+            // Handle panning
+            const deltaX = e.clientX - this.lastPanPoint.x;
+            const deltaY = e.clientY - this.lastPanPoint.y;
+            
+            this.panX += deltaX;
+            this.panY += deltaY;
+            
+            this.lastPanPoint = { x: e.clientX, y: e.clientY };
             this.drawSitePlan();
         }
     }
@@ -4514,20 +4551,30 @@ class SitePlanManager {
         if (this.isDragging && this.draggedDoor) {
             this.isDragging = false;
             this.draggedDoor = null;
+        } else if (this.isPanning) {
+            this.isPanning = false;
+            this.canvas.style.cursor = 'grab';
         }
     }
 
     handleWheel(e) {
         e.preventDefault();
+        
         const rect = this.canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
         
+        // Calculate zoom factor
         const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-        const newZoom = Math.max(0.1, Math.min(3, this.zoom * zoomFactor));
+        const newZoom = Math.max(0.1, Math.min(5, this.zoom * zoomFactor));
         
-        this.panX = mouseX - (mouseX - this.panX) * (newZoom / this.zoom);
-        this.panY = mouseY - (mouseY - this.panY) * (newZoom / this.zoom);
+        // Calculate zoom point relative to canvas
+        const zoomPointX = (mouseX - this.panX) / this.zoom;
+        const zoomPointY = (mouseY - this.panY) / this.zoom;
+        
+        // Adjust pan to keep zoom point under mouse
+        this.panX = mouseX - zoomPointX * newZoom;
+        this.panY = mouseY - zoomPointY * newZoom;
         this.zoom = newZoom;
         
         this.drawSitePlan();
@@ -4535,63 +4582,17 @@ class SitePlanManager {
 
     handleTouchStart(e) {
         e.preventDefault();
-        const touch = e.touches[0];
-        const rect = this.canvas.getBoundingClientRect();
-        let x = touch.clientX - rect.left;
-        let y = touch.clientY - rect.top;
         
-        // Adjust coordinates for centered image
-        if (this.sitePlanImage) {
-            const imageAspect = this.sitePlanImage.width / this.sitePlanImage.height;
-            const canvasAspect = this.canvas.width / this.canvas.height;
-            
-            let offsetX, offsetY;
-            if (imageAspect > canvasAspect) {
-                offsetX = 0;
-                offsetY = (this.canvas.height - (this.canvas.width / imageAspect)) / 2;
-            } else {
-                offsetX = (this.canvas.width - (this.canvas.height * imageAspect)) / 2;
-                offsetY = 0;
-            }
-            
-            x -= offsetX;
-            y -= offsetY;
-        }
-        
-        console.log('Touch start at:', x, y);
-        
-        if (this.editMode) {
-            const door = this.getDoorAtPosition(x, y);
-            if (door) {
-                console.log('Dragging door:', door.name);
-                this.draggedDoor = door;
-                this.isDragging = true;
-                this.dragStart = { x, y };
-                // Add haptic feedback on mobile
-                if (navigator.vibrate) {
-                    navigator.vibrate(50);
-                }
-            }
-        } else {
-            const door = this.getDoorAtPosition(x, y);
-            if (door) {
-                console.log('Touched door:', door.name);
-                this.showDoorDetails(door);
-                // Add haptic feedback on mobile
-                if (navigator.vibrate) {
-                    navigator.vibrate(25);
-                }
-            }
-        }
-    }
-
-    handleTouchMove(e) {
-        e.preventDefault();
-        if (this.isDragging && this.draggedDoor) {
+        if (e.touches.length === 1) {
+            // Single touch - handle door interaction or panning
             const touch = e.touches[0];
             const rect = this.canvas.getBoundingClientRect();
             let x = touch.clientX - rect.left;
             let y = touch.clientY - rect.top;
+            
+            // Convert to canvas coordinates accounting for zoom and pan
+            const canvasX = (x - this.panX) / this.zoom;
+            const canvasY = (y - this.panY) / this.zoom;
             
             // Adjust coordinates for centered image
             if (this.sitePlanImage) {
@@ -4607,13 +4608,122 @@ class SitePlanManager {
                     offsetY = 0;
                 }
                 
-                x -= offsetX;
-                y -= offsetY;
+                x = canvasX - offsetX;
+                y = canvasY - offsetY;
+            } else {
+                x = canvasX;
+                y = canvasY;
             }
             
-            this.draggedDoor.x = x;
-            this.draggedDoor.y = y;
-            this.drawSitePlan();
+            if (this.editMode) {
+                const door = this.getDoorAtPosition(x, y);
+                if (door) {
+                    this.draggedDoor = door;
+                    this.isDragging = true;
+                    this.dragStart = { x, y };
+                    
+                    // Haptic feedback
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                }
+            } else {
+                const door = this.getDoorAtPosition(x, y);
+                if (door) {
+                    this.showDoorDetails(door);
+                    
+                    // Haptic feedback
+                    if (navigator.vibrate) {
+                        navigator.vibrate(25);
+                    }
+                } else {
+                    // Start panning
+                    this.isPanning = true;
+                    this.lastPanPoint = { x: touch.clientX, y: touch.clientY };
+                }
+            }
+        } else if (e.touches.length === 2) {
+            // Two touches - prepare for pinch zoom
+            this.isPinching = true;
+            this.lastPinchDistance = this.getPinchDistance(e.touches);
+            this.lastPinchCenter = this.getPinchCenter(e.touches);
+        }
+    }
+
+    handleTouchMove(e) {
+        e.preventDefault();
+        
+        if (e.touches.length === 1) {
+            if (this.isDragging && this.draggedDoor) {
+                const touch = e.touches[0];
+                const rect = this.canvas.getBoundingClientRect();
+                let x = touch.clientX - rect.left;
+                let y = touch.clientY - rect.top;
+                
+                // Convert to canvas coordinates accounting for zoom and pan
+                const canvasX = (x - this.panX) / this.zoom;
+                const canvasY = (y - this.panY) / this.zoom;
+                
+                // Adjust coordinates for centered image
+                if (this.sitePlanImage) {
+                    const imageAspect = this.sitePlanImage.width / this.sitePlanImage.height;
+                    const canvasAspect = this.canvas.width / this.canvas.height;
+                    
+                    let offsetX, offsetY;
+                    if (imageAspect > canvasAspect) {
+                        offsetX = 0;
+                        offsetY = (this.canvas.height - (this.canvas.width / imageAspect)) / 2;
+                    } else {
+                        offsetX = (this.canvas.width - (this.canvas.height * imageAspect)) / 2;
+                        offsetY = 0;
+                    }
+                    
+                    x = canvasX - offsetX;
+                    y = canvasY - offsetY;
+                } else {
+                    x = canvasX;
+                    y = canvasY;
+                }
+                
+                this.draggedDoor.x = x;
+                this.draggedDoor.y = y;
+                this.drawSitePlan();
+            } else if (this.isPanning) {
+                // Handle panning
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - this.lastPanPoint.x;
+                const deltaY = touch.clientY - this.lastPanPoint.y;
+                
+                this.panX += deltaX;
+                this.panY += deltaY;
+                
+                this.lastPanPoint = { x: touch.clientX, y: touch.clientY };
+                this.drawSitePlan();
+            }
+        } else if (e.touches.length === 2 && this.isPinching) {
+            // Handle pinch zoom
+            const currentDistance = this.getPinchDistance(e.touches);
+            const currentCenter = this.getPinchCenter(e.touches);
+            
+            if (this.lastPinchDistance > 0) {
+                const scale = currentDistance / this.lastPinchDistance;
+                const newZoom = Math.max(0.1, Math.min(5, this.zoom * scale));
+                
+                // Calculate zoom point relative to canvas
+                const rect = this.canvas.getBoundingClientRect();
+                const zoomPointX = (currentCenter.x - rect.left - this.panX) / this.zoom;
+                const zoomPointY = (currentCenter.y - rect.top - this.panY) / this.zoom;
+                
+                // Adjust pan to keep zoom point under fingers
+                this.panX = currentCenter.x - rect.left - zoomPointX * newZoom;
+                this.panY = currentCenter.y - rect.top - zoomPointY * newZoom;
+                this.zoom = newZoom;
+                
+                this.drawSitePlan();
+            }
+            
+            this.lastPinchDistance = currentDistance;
+            this.lastPinchCenter = currentCenter;
         }
     }
 
@@ -4622,6 +4732,11 @@ class SitePlanManager {
         if (this.isDragging && this.draggedDoor) {
             this.isDragging = false;
             this.draggedDoor = null;
+        } else if (this.isPanning) {
+            this.isPanning = false;
+        } else if (this.isPinching) {
+            this.isPinching = false;
+            this.lastPinchDistance = 0;
         }
     }
 
@@ -4632,12 +4747,28 @@ class SitePlanManager {
         });
     }
 
+    getPinchDistance(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+    
+    getPinchCenter(touches) {
+        return {
+            x: (touches[0].clientX + touches[1].clientX) / 2,
+            y: (touches[0].clientY + touches[1].clientY) / 2
+        };
+    }
+
     drawSitePlan() {
         if (!this.ctx) return;
         
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // No zoom/pan needed with centered image
+        // Apply zoom and pan transformations
+        this.ctx.save();
+        this.ctx.translate(this.panX, this.panY);
+        this.ctx.scale(this.zoom, this.zoom);
         
         // Draw site plan background
         if (this.sitePlanImage) {
@@ -5140,7 +5271,22 @@ function saveDoorPositions() {
     sitePlanManager.saveDoorPositions();
 }
 
-// Zoom functions removed - no longer needed with centered image
+function zoomIn() {
+    sitePlanManager.zoom = Math.min(5, sitePlanManager.zoom * 1.2);
+    sitePlanManager.drawSitePlan();
+}
+
+function zoomOut() {
+    sitePlanManager.zoom = Math.max(0.1, sitePlanManager.zoom * 0.8);
+    sitePlanManager.drawSitePlan();
+}
+
+function resetZoom() {
+    sitePlanManager.zoom = 1;
+    sitePlanManager.panX = 0;
+    sitePlanManager.panY = 0;
+    sitePlanManager.drawSitePlan();
+}
 
 function closeDoorDetails() {
     document.getElementById('doorDetailsPanel').style.display = 'none';
