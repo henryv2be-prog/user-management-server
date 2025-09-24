@@ -1739,12 +1739,12 @@ textarea:focus-visible {
 }
 
 .door-card.unlocked {
-    border-color: rgba(40, 167, 69, 0.2);
-    background: linear-gradient(145deg, #f8fff9 0%, #e8f5e8 100%);
+    border-color: rgba(108, 117, 125, 0.2);
+    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
 .door-card.unlocked::before {
-    background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+    background: linear-gradient(90deg, #6c757d 0%, #495057 100%);
 }
 
 .door-card.locked {
@@ -1775,8 +1775,8 @@ textarea:focus-visible {
 
 .door-card.unlocked:hover {
     box-shadow: 
-        0 20px 25px -5px rgba(40, 167, 69, 0.15),
-        0 10px 10px -5px rgba(40, 167, 69, 0.1),
+        0 20px 25px -5px rgba(108, 117, 125, 0.15),
+        0 10px 10px -5px rgba(108, 117, 125, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
