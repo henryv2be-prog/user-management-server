@@ -4552,9 +4552,17 @@ class SitePlanManager {
     }
 
     loadDoorPositions() {
-        console.log('Loading doors from API...');
+        console.log('AUTO Loading doors from API...');
+        showToast('Auto loading doors...', 'info');
+        
         const token = localStorage.getItem('token');
         console.log('Auth token available:', !!token);
+        
+        if (!token) {
+            console.log('No token - showing no doors message');
+            this.showNoDoorsMessage();
+            return;
+        }
         
         // Load doors from API with authentication - match existing system exactly
         const params = new URLSearchParams({
@@ -4567,27 +4575,30 @@ class SitePlanManager {
             }
         })
             .then(response => {
-                console.log('API Response status:', response.status, response.statusText);
+                console.log('AUTO API Response status:', response.status, response.statusText);
+                showToast(`AUTO API Status: ${response.status}`, response.ok ? 'success' : 'error');
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('Raw API data:', data);
-                console.log('Data type:', typeof data, 'Array?', Array.isArray(data));
+                console.log('AUTO Raw API data:', data);
+                console.log('AUTO Data type:', typeof data, 'Array?', Array.isArray(data));
                 
                 // Use exact same format as existing system - data.doors
                 const doorsArray = data.doors || [];
-                console.log('Processed doors array:', doorsArray);
-                console.log('Number of doors found:', doorsArray.length);
+                console.log('AUTO Processed doors array:', doorsArray);
+                console.log('AUTO Number of doors found:', doorsArray.length);
+                showToast(`AUTO Found ${doorsArray.length} doors`, 'info');
                 
                 // Clear any existing doors first
                 this.doors = [];
+                showToast('AUTO Cleared existing doors', 'info');
                 
                 // Process each door using the same logic that works in forceLoadRealDoors
                 doorsArray.forEach(door => {
-                    console.log('Processing door:', door);
+                    console.log('AUTO Processing door:', door);
                     const processedDoor = {
                         id: door.id,
                         name: door.name || `Door ${door.id}`,
@@ -4601,20 +4612,23 @@ class SitePlanManager {
                         location: door.location,
                         ipAddress: door.ipAddress || door.ip_address || door.controllerIp
                     };
-                    console.log('Processed door:', processedDoor);
+                    console.log('AUTO Processed door:', processedDoor);
                     this.doors.push(processedDoor);
                 });
                 
-                console.log('Final doors array:', this.doors);
+                console.log('AUTO Final doors array:', this.doors);
                 
-                console.log(`Successfully loaded ${this.doors.length} doors`);
-                console.log('Door details:', this.doors.map(d => ({ id: d.id, name: d.name, status: d.status, x: d.x, y: d.y })));
+                console.log(`AUTO Successfully loaded ${this.doors.length} doors`);
+                console.log('AUTO Door details:', this.doors.map(d => ({ id: d.id, name: d.name, status: d.status, x: d.x, y: d.y })));
+                showToast(`AUTO Processed ${this.doors.length} doors`, 'success');
                 
                 this.drawSitePlan();
+                showToast('AUTO Redrawing site plan...', 'info');
             })
             .catch(error => {
-                console.error('Error loading doors:', error);
-                console.error('Error details:', error.message);
+                console.error('AUTO Error loading doors:', error);
+                console.error('AUTO Error details:', error.message);
+                showToast(`AUTO Error: ${error.message}`, 'error');
                 this.showNoDoorsMessage();
             });
     }
