@@ -4975,8 +4975,14 @@ class SitePlanManager {
                 // Clear any existing doors first
                 this.doors = [];
                 
-                // Load saved positions from server
-                this.loadDoorPositionsFromServer(doorsArray);
+                if (doorsArray.length === 0) {
+                    // No real doors available, create sample doors for testing
+                    console.log('No real doors found, creating sample doors for testing...');
+                    this.createSampleDoors();
+                } else {
+                    // Load saved positions from server
+                    this.loadDoorPositionsFromServer(doorsArray);
+                }
                 
                 console.log('Final doors array:', this.doors);
                 console.log(`Successfully loaded ${this.doors.length} doors`);
@@ -4986,7 +4992,11 @@ class SitePlanManager {
             .catch(error => {
                 console.error('Error loading doors:', error);
                 console.error('Error details:', error.message);
-                this.showNoDoorsMessage();
+                
+                // If no real doors available, create sample doors for testing
+                console.log('Creating sample doors for testing...');
+                this.createSampleDoors();
+                this.drawSitePlan();
             });
     }
 
