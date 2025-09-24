@@ -4856,30 +4856,52 @@ class SitePlanManager {
             doorY += offsetY;
         }
         
-        // Door circle with shadow
-        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-        this.ctx.shadowBlur = 4;
-        this.ctx.shadowOffsetX = 2;
-        this.ctx.shadowOffsetY = 2;
+        // Set color and glow based on status
+        let fillColor, glowColor, glowBlur;
+        switch (door.status) {
+            case 'locked':
+                fillColor = '#00ff41';
+                glowColor = 'rgba(0, 255, 65, 0.6)';
+                glowBlur = 15;
+                break;
+            case 'unlocked':
+                fillColor = '#ff0040';
+                glowColor = 'rgba(255, 0, 64, 0.6)';
+                glowBlur = 15;
+                break;
+            case 'open':
+                fillColor = '#ffea00';
+                glowColor = 'rgba(255, 234, 0, 0.6)';
+                glowBlur = 15;
+                break;
+            case 'offline':
+                fillColor = '#666';
+                glowColor = 'rgba(0, 0, 0, 0)'; // No glow
+                glowBlur = 0;
+                break;
+            default:
+                fillColor = '#6c757d';
+                glowColor = 'rgba(0, 0, 0, 0)'; // No glow
+                glowBlur = 0;
+        }
+        
+        // Draw glow effect (if any)
+        if (glowBlur > 0) {
+            this.ctx.shadowColor = glowColor;
+            this.ctx.shadowBlur = glowBlur;
+            this.ctx.shadowOffsetX = 0;
+            this.ctx.shadowOffsetY = 0;
+        } else {
+            // Regular shadow for offline doors
+            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.shadowBlur = 4;
+            this.ctx.shadowOffsetX = 2;
+            this.ctx.shadowOffsetY = 2;
+        }
         
         this.ctx.beginPath();
         this.ctx.arc(doorX, doorY, radius, 0, 2 * Math.PI);
-        
-        // Set color based on status
-        switch (door.status) {
-            case 'locked':
-                this.ctx.fillStyle = '#00ff41';
-                break;
-            case 'unlocked':
-                this.ctx.fillStyle = '#ff0040';
-                break;
-            case 'open':
-                this.ctx.fillStyle = '#ffc107';
-                break;
-            default:
-                this.ctx.fillStyle = '#6c757d';
-        }
-        
+        this.ctx.fillStyle = fillColor;
         this.ctx.fill();
         
         // Reset shadow
@@ -4987,58 +5009,58 @@ class SitePlanManager {
     }
 
     createSampleDoors() {
-        console.log('Creating sample doors for testing...');
+        console.log('Creating sample doors for testing glow effects...');
         this.doors = [
             {
                 id: 1,
-                name: 'Main Entrance',
+                name: 'Online Locked',
                 number: '001',
                 status: 'locked',
-                x: 200,
+                x: 150,
                 y: 150,
                 isOnline: true,
                 isOpen: false,
                 isLocked: true,
-                location: 'Main Building',
+                location: 'Test Area',
                 ipAddress: '192.168.1.10'
             },
             {
                 id: 2,
-                name: 'Side Door',
+                name: 'Online Unlocked',
                 number: '002',
                 status: 'unlocked',
-                x: 400,
-                y: 200,
+                x: 300,
+                y: 150,
                 isOnline: true,
                 isOpen: false,
                 isLocked: false,
-                location: 'Side Building',
+                location: 'Test Area',
                 ipAddress: '192.168.1.11'
             },
             {
                 id: 3,
-                name: 'Emergency Exit',
+                name: 'Online Open',
                 number: '003',
                 status: 'open',
-                x: 300,
-                y: 300,
+                x: 450,
+                y: 150,
                 isOnline: true,
                 isOpen: true,
                 isLocked: false,
-                location: 'Emergency Wing',
+                location: 'Test Area',
                 ipAddress: '192.168.1.12'
             },
             {
                 id: 4,
-                name: 'Storage Room',
+                name: 'Offline',
                 number: '004',
                 status: 'offline',
-                x: 500,
-                y: 100,
+                x: 600,
+                y: 150,
                 isOnline: false,
                 isOpen: false,
                 isLocked: true,
-                location: 'Storage Area',
+                location: 'Test Area',
                 ipAddress: '192.168.1.13'
             },
             {
