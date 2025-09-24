@@ -1148,8 +1148,6 @@ textarea:focus-visible {
 }
 
 .status-indicator.online {
-    background: var(--success-light);
-    color: var(--text-inverse);
 }
 
 .status-indicator.offline {
@@ -1158,7 +1156,6 @@ textarea:focus-visible {
 }
 
 .status-indicator.online::before {
-    background: #28a745;
 }
 
 .status-indicator.offline::before {
