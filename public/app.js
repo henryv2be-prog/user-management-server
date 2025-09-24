@@ -4911,7 +4911,7 @@ class SitePlanManager {
         this.ctx.font = '10px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'top';
-        this.ctx.fillText(door.name || `Door ${door.number}`, doorX, doorY + radius + 5);
+        this.ctx.fillText(door.name || 'Door', doorX, doorY + radius + 5);
     }
 
     loadDoorPositions() {
