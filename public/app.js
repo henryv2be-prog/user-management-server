@@ -4389,9 +4389,6 @@ class SitePlanManager {
                 this.doors.push(processedDoor);
             });
             
-            // Add test door after real doors are loaded
-            this.addTestDoor();
-            
             this.drawSitePlan();
         })
         .catch(error => {
@@ -4421,68 +4418,10 @@ class SitePlanManager {
                 this.doors.push(processedDoor);
             });
             
-            // Add test door after real doors are loaded
-            this.addTestDoor();
-            
             this.drawSitePlan();
         });
     }
 
-    addTestDoor() {
-        // Add a test door that cycles through different statuses
-        const testDoor = {
-            id: 999,
-            name: 'Test Door',
-            number: 'TEST',
-            status: 'locked',
-            x: 100,
-            y: 100,
-            isOnline: true,
-            isOpen: false,
-            isLocked: true,
-            location: 'Test Area',
-            ipAddress: '192.168.1.999'
-        };
-        
-        this.doors.push(testDoor);
-        this.drawSitePlan();
-        
-        // Start cycling through statuses every 3 seconds
-        this.testDoorInterval = setInterval(() => {
-            const testDoor = this.doors.find(door => door.id === 999);
-            if (testDoor) {
-                // Cycle through: locked -> open -> unlocked -> locked
-                if (testDoor.status === 'locked') {
-                    testDoor.status = 'open';
-                    testDoor.isOpen = true;
-                    testDoor.isLocked = false;
-                } else if (testDoor.status === 'open') {
-                    testDoor.status = 'unlocked';
-                    testDoor.isOpen = false;
-                    testDoor.isLocked = false;
-                } else if (testDoor.status === 'unlocked') {
-                    testDoor.status = 'locked';
-                    testDoor.isOpen = false;
-                    testDoor.isLocked = true;
-                }
-                
-                this.drawSitePlan();
-            }
-        }, 3000); // Change every 3 seconds
-        
-        console.log('Test door added - cycling through statuses every 3 seconds');
-    }
-
-    removeTestDoor() {
-        // Remove test door and stop cycling
-        this.doors = this.doors.filter(door => door.id !== 999);
-        if (this.testDoorInterval) {
-            clearInterval(this.testDoorInterval);
-            this.testDoorInterval = null;
-        }
-        this.drawSitePlan();
-        console.log('Test door removed');
-    }
 
     setupEventListeners() {
         // Canvas mouse events
