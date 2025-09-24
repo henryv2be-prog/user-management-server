@@ -4379,10 +4379,27 @@ textarea:focus-visible {
     height: auto;
     background: white;
     cursor: grab;
+    touch-action: none; /* Prevent default touch behaviors */
+    -webkit-touch-callout: none; /* Prevent callout on iOS */
+    -webkit-user-select: none; /* Prevent text selection */
+    user-select: none;
 }
 
 #sitePlanCanvas:active {
     cursor: grabbing;
+}
+
+/* Mobile-specific canvas improvements */
+@media (max-width: 768px) {
+    #sitePlanCanvas {
+        min-height: 400px;
+        cursor: pointer; /* Better for touch */
+    }
+    
+    .site-plan-canvas-wrapper {
+        min-height: 400px;
+        border: 3px solid var(--border-light); /* Thicker border for mobile */
+    }
 }
 
 .site-plan-overlay {
