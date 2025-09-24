@@ -4277,6 +4277,7 @@ class SitePlanManager {
         this.dragStart = { x: 0, y: 0 };
         this.draggedDoor = null;
         this.sitePlanImage = null;
+        this.doorIconSize = 20;
     }
 
     init() {
@@ -4831,7 +4832,7 @@ class SitePlanManager {
     }
 
     drawDoor(door) {
-        const radius = 20; // Increased size for better visibility
+        const radius = this.doorIconSize; // Use configurable door size
         const isDragging = this.draggedDoor === door;
         
         // Adjust door position for centered image
@@ -5272,6 +5273,12 @@ function toggleEditMode() {
 
 function saveDoorPositions() {
     sitePlanManager.saveDoorPositions();
+}
+
+function changeDoorSize(size) {
+    sitePlanManager.doorIconSize = parseInt(size);
+    document.getElementById('doorSizeValue').textContent = size + 'px';
+    sitePlanManager.drawSitePlan();
 }
 
 // Zoom functions removed - using mouse wheel and pinch gestures only
