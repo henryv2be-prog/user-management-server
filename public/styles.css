@@ -1862,8 +1862,6 @@ textarea:focus-visible {
 }
 
 .door-status-indicator.online {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.2);
 }
 
 .door-status-indicator.offline {
