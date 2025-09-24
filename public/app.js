@@ -995,6 +995,12 @@ async function loadDashboard() {
             try {
                 await loadDashboardDoors();
                 hideDashboardDoorsLoading();
+                
+                // Load doors for site plan when dashboard is shown
+                if (sitePlanManager) {
+                    console.log('Loading doors for site plan...');
+                    sitePlanManager.loadDoorPositions();
+                }
             } catch (error) {
                 console.error('Failed to load dashboard doors:', error);
                 hideDashboardDoorsLoading();
@@ -4280,8 +4286,8 @@ class SitePlanManager {
         // Ensure canvas is properly sized
         this.resizeCanvas();
         
-        this.loadDoorPositions();
-        this.drawSitePlan();
+        // Don't load doors automatically - wait for dashboard section to be shown
+        this.drawSitePlan(); // Just draw empty canvas initially
         
         console.log('Site plan initialized with canvas:', this.canvas.width, 'x', this.canvas.height);
     }
