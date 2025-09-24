@@ -1197,18 +1197,10 @@ function displayDoorStatus(doors) {
                 </div>
                 <div class="door-location">${door.location}</div>
                 
-                <!-- Enhanced Door Visualization -->
-                <div class="door-visualization">
-                    <div class="door-frame">
-                        <div class="door-panel ${doorStateClass}">
-                            <div class="door-handle"></div>
-                            <div class="door-lock"></div>
-                        </div>
-                        <div class="door-status-text">
-                            <div class="status-primary">${statusText}</div>
-                            <div class="status-secondary">${secondaryText}</div>
-                        </div>
-                    </div>
+                <!-- Door Status Text Only -->
+                <div class="door-status-text">
+                    <div class="status-primary">${statusText}</div>
+                    <div class="status-secondary">${secondaryText}</div>
                 </div>
                 
                 <div class="door-ip">${door.controllerIp}</div>
