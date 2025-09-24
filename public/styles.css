@@ -1835,8 +1835,6 @@ textarea:focus-visible {
 }
 
 .door-status-badge.unlocked {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    color: white;
 }
 
 .door-status-badge.locked {
@@ -2132,16 +2130,12 @@ textarea:focus-visible {
 }
 
 .door-panel.unlocked-closed {
-    background: linear-gradient(145deg, #dc3545 0%, #c82333 100%);
-    animation: pulseUnlocked 4s infinite;
 }
 
 .door-panel.unlocked-closed .door-handle {
-    background: linear-gradient(145deg, #dc3545 0%, #c82333 100%);
 }
 
 .door-panel.unlocked-closed .door-lock {
-    background: linear-gradient(145deg, #dc3545 0%, #c82333 100%);
 }
 
 .door-panel.unlocked-closed .door-lock::before {
@@ -2579,8 +2573,6 @@ textarea:focus-visible {
 }
 
 .door-status-icon.unlocked {
-    background: #dc3545;
-    color: white;
 }
 
 .door-status-icon.unknown {
