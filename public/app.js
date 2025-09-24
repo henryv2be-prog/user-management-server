@@ -4376,6 +4376,8 @@ class SitePlanManager {
         .then(data => {
             const savedPositions = data.positions || {};
             console.log('Loaded door positions from server:', savedPositions);
+            console.log('Available door IDs from API:', doorsArray.map(d => d.id));
+            console.log('Saved position door IDs:', Object.keys(savedPositions));
             
             // Process each door with server positions
             doorsArray.forEach(door => {
@@ -4383,8 +4385,12 @@ class SitePlanManager {
                 
                 // Use saved position if available, otherwise use API position or default
                 const savedPos = savedPositions[door.id];
+                console.log(`Door ${door.id} - Saved pos:`, savedPos);
+                
                 const x = savedPos ? savedPos.x : (door.position_x || door.x || 100 + (door.id * 50) % (this.canvas.width - 200));
                 const y = savedPos ? savedPos.y : (door.position_y || door.y || 100 + (door.id * 30) % (this.canvas.height - 200));
+                
+                console.log(`Door ${door.id} - Final position: x=${x}, y=${y}`);
                 
                 const processedDoor = {
                     id: door.id,
@@ -5082,6 +5088,48 @@ function refreshDoorData() {
     console.log('Manual refresh triggered');
     sitePlanManager.loadDoorPositions();
     showToast('Door data refreshed', 'success');
+}
+
+function syncDoorPositions() {
+    console.log('Manual position sync triggered');
+    showToast('Syncing door positions from server...', 'info');
+    
+    const token = localStorage.getItem('token');
+    
+    fetch('/api/site-plan/positions', {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new Error('Failed to load door positions from server');
+        }
+    })
+    .then(data => {
+        const savedPositions = data.positions || {};
+        console.log('Synced door positions from server:', savedPositions);
+        
+        // Update existing door positions
+        sitePlanManager.doors.forEach(door => {
+            const savedPos = savedPositions[door.id];
+            if (savedPos) {
+                console.log(`Updating door ${door.id} position from ${door.x},${door.y} to ${savedPos.x},${savedPos.y}`);
+                door.x = savedPos.x;
+                door.y = savedPos.y;
+            }
+        });
+        
+        console.log('Updated doors:', sitePlanManager.doors);
+        sitePlanManager.drawSitePlan();
+        showToast('Door positions synced from server!', 'success');
+    })
+    .catch(error => {
+        console.error('Error syncing door positions:', error);
+        showToast('Error syncing door positions', 'error');
+    });
 }
 
 
