@@ -138,7 +138,10 @@ router.get('/positions', authenticate, requireAdmin, (req, res) => {
 router.post('/positions', authenticate, requireAdmin, (req, res) => {
   const { positions } = req.body;
   
+  console.log('Received positions to save:', positions);
+  
   if (!positions || !Array.isArray(positions)) {
+    console.error('Invalid positions data:', positions);
     res.status(400).json({ error: 'Positions array is required' });
     return;
   }
@@ -165,6 +168,7 @@ router.post('/positions', authenticate, requireAdmin, (req, res) => {
       let hasError = false;
       
       positions.forEach(position => {
+        console.log('Inserting position:', position);
         stmt.run([position.id, position.x, position.y], (err) => {
           if (err && !hasError) {
             hasError = true;
