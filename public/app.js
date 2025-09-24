@@ -5271,22 +5271,7 @@ function saveDoorPositions() {
     sitePlanManager.saveDoorPositions();
 }
 
-function zoomIn() {
-    sitePlanManager.zoom = Math.min(5, sitePlanManager.zoom * 1.2);
-    sitePlanManager.drawSitePlan();
-}
-
-function zoomOut() {
-    sitePlanManager.zoom = Math.max(0.1, sitePlanManager.zoom * 0.8);
-    sitePlanManager.drawSitePlan();
-}
-
-function resetZoom() {
-    sitePlanManager.zoom = 1;
-    sitePlanManager.panX = 0;
-    sitePlanManager.panY = 0;
-    sitePlanManager.drawSitePlan();
-}
+// Zoom functions removed - using mouse wheel and pinch gestures only
 
 function closeDoorDetails() {
     document.getElementById('doorDetailsPanel').style.display = 'none';
