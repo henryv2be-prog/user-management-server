@@ -4923,6 +4923,7 @@ function forceLoadRealDoors() {
     })
     .then(response => {
         console.log('Force load - Status:', response.status);
+        showToast(`API Status: ${response.status}`, response.ok ? 'success' : 'error');
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
@@ -4932,9 +4933,11 @@ function forceLoadRealDoors() {
         console.log('Force load - Raw data:', data);
         const doorsArray = data.doors || [];
         console.log('Force load - Doors array:', doorsArray);
+        showToast(`Found ${doorsArray.length} doors in API`, 'info');
         
         // Clear any existing doors
         sitePlanManager.doors = [];
+        showToast('Cleared existing doors', 'info');
         
         // Process each door
         doorsArray.forEach(door => {
@@ -4957,15 +4960,46 @@ function forceLoadRealDoors() {
         });
         
         console.log('Force load - Final doors:', sitePlanManager.doors);
-        showToast(`Loaded ${sitePlanManager.doors.length} real doors`, 'success');
+        showToast(`Processed ${sitePlanManager.doors.length} doors`, 'success');
         
         // Force redraw
         sitePlanManager.drawSitePlan();
+        showToast('Redrawing site plan...', 'info');
     })
     .catch(error => {
         console.error('Force load error:', error);
         showToast(`Error: ${error.message}`, 'error');
     });
+}
+
+function testDrawDoor() {
+    console.log('Testing door drawing...');
+    showToast('Testing door drawing...', 'info');
+    
+    // Clear all doors
+    sitePlanManager.doors = [];
+    
+    // Add a simple test door
+    sitePlanManager.doors.push({
+        id: 999,
+        name: 'Test Door',
+        number: '999',
+        status: 'locked',
+        x: 300,
+        y: 200,
+        isOnline: true,
+        isOpen: false,
+        isLocked: true,
+        location: 'Test Location',
+        ipAddress: '192.168.1.999'
+    });
+    
+    console.log('Test door added:', sitePlanManager.doors);
+    showToast('Test door added to canvas', 'success');
+    
+    // Force redraw
+    sitePlanManager.drawSitePlan();
+    showToast('Canvas redrawn', 'info');
 }
 
 // Test function to check API directly
