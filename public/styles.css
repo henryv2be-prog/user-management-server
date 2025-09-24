@@ -1924,34 +1924,18 @@ textarea:focus-visible {
 
 .door-frame {
     position: relative;
-    width: 120px;
-    height: 160px;
-    background: linear-gradient(145deg, #3a3a3a 0%, #2a2a2a 100%);
-    border-radius: 8px;
-    box-shadow: 
-        inset 0 2px 4px rgba(0, 0, 0, 0.3),
-        0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 80px;
+    height: 100px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 8px;
-    perspective: 200px;
-    transform-style: preserve-3d;
+    justify-content: center;
 }
 
 .door-panel {
-    width: 100px;
-    height: 140px;
-    background: linear-gradient(145deg, #2c2c2c 0%, #1a1a1a 100%);
-    border-radius: 6px;
+    width: 80px;
+    height: 100px;
     position: relative;
-    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    transform-origin: left center;
-    transform-style: preserve-3d;
-    box-shadow: 
-        inset 0 1px 3px rgba(255, 255, 255, 0.1),
-        inset 0 -1px 3px rgba(0, 0, 0, 0.3),
-        0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* Door State Icons - Minimalist Door Design */
