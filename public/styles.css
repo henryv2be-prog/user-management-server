@@ -1752,11 +1752,9 @@ textarea:focus-visible {
 
 .door-card.locked {
     border-color: rgba(108, 117, 125, 0.3);
-    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
 .door-card.locked::before {
-    background: linear-gradient(90deg, #6c757d 0%, #495057 100%);
 }
 
 .door-card.unknown {
