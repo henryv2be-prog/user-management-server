@@ -4315,6 +4315,8 @@ class SitePlanManager {
 
     loadSitePlanFromServer() {
         const token = localStorage.getItem('token');
+        console.log('Attempting to load site plan from server...');
+        console.log('Token available:', !!token);
         
         fetch('/api/site-plan', {
             headers: {
@@ -4322,27 +4324,32 @@ class SitePlanManager {
             }
         })
         .then(response => {
+            console.log('Site plan server response:', response.status, response.statusText);
             if (response.ok) {
                 return response.json();
             } else {
-                throw new Error('Failed to load site plan from server');
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
             }
         })
         .then(data => {
+            console.log('Site plan server data:', data);
             if (data.backgroundImage) {
                 console.log('Loading site plan background from server');
                 const img = new Image();
                 img.onload = () => {
                     this.sitePlanImage = img;
                     console.log('Site plan background loaded from server');
+                    showToast('Site plan loaded from server', 'success');
                 };
                 img.src = data.backgroundImage;
             } else {
                 console.log('No site plan background found on server');
+                showToast('No site plan found on server', 'info');
             }
         })
         .catch(error => {
             console.error('Error loading site plan from server:', error);
+            showToast(`Site plan server error: ${error.message}`, 'error');
             
             // Fallback to localStorage
             const savedBackground = localStorage.getItem('sitePlanBackground');
@@ -4352,14 +4359,20 @@ class SitePlanManager {
                 img.onload = () => {
                     this.sitePlanImage = img;
                     console.log('Site plan background restored from localStorage');
+                    showToast('Site plan loaded from local storage', 'warning');
                 };
                 img.src = savedBackground;
+            } else {
+                console.log('No site plan background found locally either');
+                showToast('No site plan background available', 'info');
             }
         });
     }
 
     loadDoorPositionsFromServer(doorsArray) {
         const token = localStorage.getItem('token');
+        console.log('Attempting to load door positions from server...');
+        console.log('Token available:', !!token);
         
         fetch('/api/site-plan/positions', {
             headers: {
@@ -4367,10 +4380,11 @@ class SitePlanManager {
             }
         })
         .then(response => {
+            console.log('Door positions server response:', response.status, response.statusText);
             if (response.ok) {
                 return response.json();
             } else {
-                throw new Error('Failed to load door positions from server');
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
             }
         })
         .then(data => {
@@ -4416,10 +4430,12 @@ class SitePlanManager {
         })
         .catch(error => {
             console.error('Error loading door positions from server:', error);
+            showToast(`Door positions server error: ${error.message}`, 'error');
             
             // Fallback to localStorage
             const savedPositions = JSON.parse(localStorage.getItem('doorPositions') || '{}');
             console.log('Falling back to localStorage for door positions:', savedPositions);
+            showToast('Using local door positions (server sync failed)', 'warning');
             
             // Process each door with localStorage positions
             doorsArray.forEach(door => {
