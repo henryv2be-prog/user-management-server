@@ -4552,41 +4552,82 @@ class SitePlanManager {
     }
 
     loadDoorPositions() {
-        // Load doors from API
-        fetch('/api/doors')
-            .then(response => response.json())
+        console.log('Loading doors from API...');
+        const token = localStorage.getItem('token');
+        
+        // Load doors from API with authentication
+        const params = new URLSearchParams({
+            limit: 100  // Get all doors for site plan
+        });
+        
+        fetch(`/api/doors?${params}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => {
+                console.log('API Response status:', response.status, response.statusText);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                this.doors = data.map(door => ({
+                console.log('Raw API data:', data);
+                
+                // Handle both array and object responses - prioritize data.doors like existing system
+                const doorsArray = Array.isArray(data) ? data : (data.doors || data.data || []);
+                console.log('Processed doors array:', doorsArray);
+                
+                this.doors = doorsArray.map(door => ({
                     id: door.id,
-                    name: door.name,
-                    number: door.doorNumber || door.id,
+                    name: door.name || `Door ${door.id}`,
+                    number: door.doorNumber || door.door_number || door.id,
                     status: this.getDoorStatus(door),
-                    x: door.x || Math.random() * (this.canvas.width - 100) + 50,
-                    y: door.y || Math.random() * (this.canvas.height - 100) + 50,
-                    isOnline: door.isOnline,
-                    isOpen: door.isOpen,
-                    isLocked: door.isLocked
+                    x: door.position_x || door.x || 100 + (door.id * 50) % (this.canvas.width - 200),
+                    y: door.position_y || door.y || 100 + (door.id * 30) % (this.canvas.height - 200),
+                    isOnline: door.isOnline !== undefined ? door.isOnline : door.is_online,
+                    isOpen: door.isOpen !== undefined ? door.isOpen : door.is_open,
+                    isLocked: door.isLocked !== undefined ? door.isLocked : door.is_locked,
+                    location: door.location || door.door_location,
+                    ipAddress: door.ipAddress || door.ip_address
                 }));
+                
+                console.log('Final doors array:', this.doors);
+                
+                if (this.doors.length === 0) {
+                    console.log('No doors found in system');
+                    this.showNoDoorsMessage();
+                } else {
+                    console.log(`Successfully loaded ${this.doors.length} doors`);
+                }
+                
                 this.drawSitePlan();
             })
             .catch(error => {
                 console.error('Error loading doors:', error);
-                // Create sample doors for demo
-                this.createSampleDoors();
+                console.error('Error details:', error.message);
+                this.showNoDoorsMessage();
             });
     }
 
-    createSampleDoors() {
-        this.doors = [
-            { id: 1, name: 'Main Entrance', number: 'D01', status: 'locked', x: 200, y: 150, isOnline: true, isOpen: false, isLocked: true },
-            { id: 2, name: 'Office Door', number: 'D02', status: 'unlocked', x: 400, y: 200, isOnline: true, isOpen: false, isLocked: false },
-            { id: 3, name: 'Storage Room', number: 'D03', status: 'open', x: 300, y: 350, isOnline: true, isOpen: true, isLocked: false },
-            { id: 4, name: 'Emergency Exit', number: 'D04', status: 'offline', x: 500, y: 100, isOnline: false, isOpen: false, isLocked: true },
-            { id: 5, name: 'Conference Room', number: 'D05', status: 'locked', x: 150, y: 300, isOnline: true, isOpen: false, isLocked: true },
-            { id: 6, name: 'Kitchen', number: 'D06', status: 'unlocked', x: 600, y: 250, isOnline: true, isOpen: false, isLocked: false }
-        ];
-        console.log('Created sample doors:', this.doors);
+    showNoDoorsMessage() {
+        this.doors = [];
         this.drawSitePlan();
+        
+        // Show message on canvas
+        this.ctx.fillStyle = '#6c757d';
+        this.ctx.font = 'bold 24px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('No doors configured in system', this.canvas.width / 2, this.canvas.height / 2 - 30);
+        
+        this.ctx.font = '16px Arial';
+        this.ctx.fillText('Configure doors in the Doors section first', this.canvas.width / 2, this.canvas.height / 2 + 10);
+        
+        this.ctx.font = '14px Arial';
+        this.ctx.fillText('Then return here to position them on your site plan', this.canvas.width / 2, this.canvas.height / 2 + 40);
     }
 
     getDoorStatus(door) {
@@ -4637,22 +4678,45 @@ class SitePlanManager {
     }
 
     saveDoorPositions() {
+        console.log('Saving door positions...');
         const positions = this.doors.map(door => ({
             id: door.id,
             x: door.x,
             y: door.y
         }));
         
-        fetch('/api/doors/positions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(positions)
-        })
-        .then(response => response.json())
-        .then(data => {
-            showToast('Door positions saved successfully!', 'success');
+        console.log('Positions to save:', positions);
+        
+        const token = localStorage.getItem('token');
+        
+        // Try to save positions via individual door updates (more reliable)
+        const savePromises = positions.map(position => {
+            return fetch(`/api/doors/${position.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    x: position.x,
+                    y: position.y,
+                    position_x: position.x,
+                    position_y: position.y
+                })
+            });
+        });
+        
+        Promise.all(savePromises)
+        .then(responses => {
+            console.log('Save responses:', responses);
+            const allSuccessful = responses.every(response => response.ok);
+            
+            if (allSuccessful) {
+                showToast('Door positions saved successfully!', 'success');
+                console.log('All door positions saved successfully');
+            } else {
+                throw new Error('Some door positions failed to save');
+            }
         })
         .catch(error => {
             console.error('Error saving positions:', error);
@@ -4728,6 +4792,11 @@ function resetZoom() {
 
 function closeDoorDetails() {
     document.getElementById('doorDetailsPanel').style.display = 'none';
+}
+
+function refreshDoorData() {
+    sitePlanManager.loadDoorPositions();
+    showToast('Door data refreshed', 'success');
 }
 
 // Initialize the application
