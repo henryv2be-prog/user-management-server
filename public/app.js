@@ -4278,6 +4278,7 @@ class SitePlanManager {
         this.draggedDoor = null;
         this.sitePlanImage = null;
         this.doorIconSize = 20;
+        this.doorsLoaded = false;
     }
 
     init() {
@@ -4938,6 +4939,12 @@ class SitePlanManager {
     }
 
     loadDoorPositions() {
+        // Prevent reloading if doors are already loaded
+        if (this.doorsLoaded && this.doors.length > 0) {
+            console.log('Doors already loaded, skipping reload');
+            return;
+        }
+        
         console.log('Loading doors from API...');
         const token = localStorage.getItem('token');
         
@@ -4981,6 +4988,7 @@ class SitePlanManager {
                 console.log('Final doors array:', this.doors);
                 console.log(`Successfully loaded ${this.doors.length} doors`);
                 
+                this.doorsLoaded = true;
                 this.drawSitePlan();
             })
             .catch(error => {
@@ -5304,6 +5312,7 @@ function changeDoorSize(size) {
 }
 
 function showSampleDoors() {
+    sitePlanManager.doorsLoaded = false; // Reset flag to allow reloading
     sitePlanManager.createSampleDoors();
     sitePlanManager.drawSitePlan();
     showToast('Sample doors loaded for testing glow effects', 'info');
