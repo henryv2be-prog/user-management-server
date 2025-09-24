@@ -184,6 +184,12 @@
                                 <i class="fas fa-save"></i> Save Positions
                             </button>
                         </div>
+                        <div class="toolbar-group" id="doorSizeGroup" style="display: none;">
+                            <label for="doorSizeSlider" style="color: white; margin-right: 8px; font-size: 14px;">Size:</label>
+                            <input type="range" id="doorSizeSlider" min="15" max="35" value="20" 
+                                   onchange="changeDoorSize(this.value)" style="width: 100px; height: 6px;">
+                            <span id="doorSizeValue" style="color: white; margin-left: 5px; font-size: 12px;">20px</span>
+                        </div>
                         <div class="toolbar-group">
                             <div class="status-indicator online" id="sitePlanStatus">
                                 <i class="fas fa-circle"></i>
