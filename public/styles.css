@@ -2158,16 +2158,13 @@ textarea:focus-visible {
 }
 
 .door-panel.locked-closed {
-    background: linear-gradient(145deg, #28a745 0%, #20c997 100%);
     animation: pulseLocked 5s infinite;
 }
 
 .door-panel.locked-closed .door-handle {
-    background: linear-gradient(145deg, #28a745 0%, #20c997 100%);
 }
 
 .door-panel.locked-closed .door-lock {
-    background: linear-gradient(145deg, #28a745 0%, #20c997 100%);
 }
 
 .door-panel.locked-closed .door-lock::before {
