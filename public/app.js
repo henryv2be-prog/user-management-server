@@ -4584,6 +4584,16 @@ class SitePlanManager {
                 
                 this.doors = doorsArray.map(door => {
                     console.log('Processing door:', door);
+                    console.log('Door fields:', {
+                        id: door.id,
+                        name: door.name,
+                        isOnline: door.isOnline,
+                        isOpen: door.isOpen,
+                        isLocked: door.isLocked,
+                        location: door.location,
+                        controllerIp: door.controllerIp
+                    });
+                    
                     return {
                         id: door.id,
                         name: door.name || `Door ${door.id}`,
@@ -4591,11 +4601,11 @@ class SitePlanManager {
                         status: this.getDoorStatus(door),
                         x: door.position_x || door.x || 100 + (door.id * 50) % (this.canvas.width - 200),
                         y: door.position_y || door.y || 100 + (door.id * 30) % (this.canvas.height - 200),
-                        isOnline: door.isOnline !== undefined ? door.isOnline : door.is_online,
-                        isOpen: door.isOpen !== undefined ? door.isOpen : door.is_open,
-                        isLocked: door.isLocked !== undefined ? door.isLocked : door.is_locked,
-                        location: door.location || door.door_location,
-                        ipAddress: door.ipAddress || door.ip_address
+                        isOnline: door.isOnline,
+                        isOpen: door.isOpen,
+                        isLocked: door.isLocked,
+                        location: door.location,
+                        ipAddress: door.ipAddress || door.ip_address || door.controllerIp
                     };
                 });
                 
