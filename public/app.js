@@ -4554,6 +4554,7 @@ class SitePlanManager {
     loadDoorPositions() {
         console.log('Loading doors from API...');
         const token = localStorage.getItem('token');
+        console.log('Auth token available:', !!token);
         
         // Load doors from API with authentication
         const params = new URLSearchParams({
@@ -4568,6 +4569,7 @@ class SitePlanManager {
         })
             .then(response => {
                 console.log('API Response status:', response.status, response.statusText);
+                console.log('Response headers:', response.headers);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
@@ -4575,24 +4577,29 @@ class SitePlanManager {
             })
             .then(data => {
                 console.log('Raw API data:', data);
+                console.log('Data type:', typeof data, 'Array?', Array.isArray(data));
                 
                 // Handle both array and object responses - prioritize data.doors like existing system
                 const doorsArray = Array.isArray(data) ? data : (data.doors || data.data || []);
                 console.log('Processed doors array:', doorsArray);
+                console.log('Number of doors found:', doorsArray.length);
                 
-                this.doors = doorsArray.map(door => ({
-                    id: door.id,
-                    name: door.name || `Door ${door.id}`,
-                    number: door.doorNumber || door.door_number || door.id,
-                    status: this.getDoorStatus(door),
-                    x: door.position_x || door.x || 100 + (door.id * 50) % (this.canvas.width - 200),
-                    y: door.position_y || door.y || 100 + (door.id * 30) % (this.canvas.height - 200),
-                    isOnline: door.isOnline !== undefined ? door.isOnline : door.is_online,
-                    isOpen: door.isOpen !== undefined ? door.isOpen : door.is_open,
-                    isLocked: door.isLocked !== undefined ? door.isLocked : door.is_locked,
-                    location: door.location || door.door_location,
-                    ipAddress: door.ipAddress || door.ip_address
-                }));
+                this.doors = doorsArray.map(door => {
+                    console.log('Processing door:', door);
+                    return {
+                        id: door.id,
+                        name: door.name || `Door ${door.id}`,
+                        number: door.doorNumber || door.door_number || door.id,
+                        status: this.getDoorStatus(door),
+                        x: door.position_x || door.x || 100 + (door.id * 50) % (this.canvas.width - 200),
+                        y: door.position_y || door.y || 100 + (door.id * 30) % (this.canvas.height - 200),
+                        isOnline: door.isOnline !== undefined ? door.isOnline : door.is_online,
+                        isOpen: door.isOpen !== undefined ? door.isOpen : door.is_open,
+                        isLocked: door.isLocked !== undefined ? door.isLocked : door.is_locked,
+                        location: door.location || door.door_location,
+                        ipAddress: door.ipAddress || door.ip_address
+                    };
+                });
                 
                 console.log('Final doors array:', this.doors);
                 
@@ -4795,8 +4802,33 @@ function closeDoorDetails() {
 }
 
 function refreshDoorData() {
+    console.log('Manual refresh triggered');
     sitePlanManager.loadDoorPositions();
     showToast('Door data refreshed', 'success');
+}
+
+// Test function to check API directly
+function testDoorAPI() {
+    console.log('Testing door API directly...');
+    const token = localStorage.getItem('token');
+    console.log('Token available:', !!token);
+    
+    fetch('/api/doors?limit=10', {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        console.log('Direct API test - Status:', response.status, response.statusText);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Direct API test - Data:', data);
+    })
+    .catch(error => {
+        console.error('Direct API test - Error:', error);
+    });
 }
 
 // Initialize the application
