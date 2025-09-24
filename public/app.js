@@ -4447,8 +4447,26 @@ class SitePlanManager {
 
     handleMouseDown(e) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = (e.clientX - rect.left - this.panX) / this.zoom;
-        const y = (e.clientY - rect.top - this.panY) / this.zoom;
+        let x = (e.clientX - rect.left - this.panX) / this.zoom;
+        let y = (e.clientY - rect.top - this.panY) / this.zoom;
+        
+        // Adjust coordinates for centered image
+        if (this.sitePlanImage) {
+            const imageAspect = this.sitePlanImage.width / this.sitePlanImage.height;
+            const canvasAspect = this.canvas.width / this.canvas.height;
+            
+            let offsetX, offsetY;
+            if (imageAspect > canvasAspect) {
+                offsetX = 0;
+                offsetY = (this.canvas.height - (this.canvas.width / imageAspect)) / 2;
+            } else {
+                offsetX = (this.canvas.width - (this.canvas.height * imageAspect)) / 2;
+                offsetY = 0;
+            }
+            
+            x -= offsetX;
+            y -= offsetY;
+        }
         
         if (this.editMode) {
             const door = this.getDoorAtPosition(x, y);
@@ -4468,8 +4486,26 @@ class SitePlanManager {
     handleMouseMove(e) {
         if (this.isDragging && this.draggedDoor) {
             const rect = this.canvas.getBoundingClientRect();
-            const x = (e.clientX - rect.left - this.panX) / this.zoom;
-            const y = (e.clientY - rect.top - this.panY) / this.zoom;
+            let x = (e.clientX - rect.left - this.panX) / this.zoom;
+            let y = (e.clientY - rect.top - this.panY) / this.zoom;
+            
+            // Adjust coordinates for centered image
+            if (this.sitePlanImage) {
+                const imageAspect = this.sitePlanImage.width / this.sitePlanImage.height;
+                const canvasAspect = this.canvas.width / this.canvas.height;
+                
+                let offsetX, offsetY;
+                if (imageAspect > canvasAspect) {
+                    offsetX = 0;
+                    offsetY = (this.canvas.height - (this.canvas.width / imageAspect)) / 2;
+                } else {
+                    offsetX = (this.canvas.width - (this.canvas.height * imageAspect)) / 2;
+                    offsetY = 0;
+                }
+                
+                x -= offsetX;
+                y -= offsetY;
+            }
             
             this.draggedDoor.x = x;
             this.draggedDoor.y = y;
@@ -4504,8 +4540,26 @@ class SitePlanManager {
         e.preventDefault();
         const touch = e.touches[0];
         const rect = this.canvas.getBoundingClientRect();
-        const x = (touch.clientX - rect.left - this.panX) / this.zoom;
-        const y = (touch.clientY - rect.top - this.panY) / this.zoom;
+        let x = (touch.clientX - rect.left - this.panX) / this.zoom;
+        let y = (touch.clientY - rect.top - this.panY) / this.zoom;
+        
+        // Adjust coordinates for centered image
+        if (this.sitePlanImage) {
+            const imageAspect = this.sitePlanImage.width / this.sitePlanImage.height;
+            const canvasAspect = this.canvas.width / this.canvas.height;
+            
+            let offsetX, offsetY;
+            if (imageAspect > canvasAspect) {
+                offsetX = 0;
+                offsetY = (this.canvas.height - (this.canvas.width / imageAspect)) / 2;
+            } else {
+                offsetX = (this.canvas.width - (this.canvas.height * imageAspect)) / 2;
+                offsetY = 0;
+            }
+            
+            x -= offsetX;
+            y -= offsetY;
+        }
         
         console.log('Touch start at:', x, y);
         
@@ -4539,8 +4593,26 @@ class SitePlanManager {
         if (this.isDragging && this.draggedDoor) {
             const touch = e.touches[0];
             const rect = this.canvas.getBoundingClientRect();
-            const x = (touch.clientX - rect.left - this.panX) / this.zoom;
-            const y = (touch.clientY - rect.top - this.panY) / this.zoom;
+            let x = (touch.clientX - rect.left - this.panX) / this.zoom;
+            let y = (touch.clientY - rect.top - this.panY) / this.zoom;
+            
+            // Adjust coordinates for centered image
+            if (this.sitePlanImage) {
+                const imageAspect = this.sitePlanImage.width / this.sitePlanImage.height;
+                const canvasAspect = this.canvas.width / this.canvas.height;
+                
+                let offsetX, offsetY;
+                if (imageAspect > canvasAspect) {
+                    offsetX = 0;
+                    offsetY = (this.canvas.height - (this.canvas.width / imageAspect)) / 2;
+                } else {
+                    offsetX = (this.canvas.width - (this.canvas.height * imageAspect)) / 2;
+                    offsetY = 0;
+                }
+                
+                x -= offsetX;
+                y -= offsetY;
+            }
             
             this.draggedDoor.x = x;
             this.draggedDoor.y = y;
@@ -4575,7 +4647,28 @@ class SitePlanManager {
         
         // Draw site plan background
         if (this.sitePlanImage) {
-            this.ctx.drawImage(this.sitePlanImage, 0, 0, this.canvas.width, this.canvas.height);
+            // Calculate center position for the image
+            const imageAspect = this.sitePlanImage.width / this.sitePlanImage.height;
+            const canvasAspect = this.canvas.width / this.canvas.height;
+            
+            let drawWidth, drawHeight, offsetX, offsetY;
+            
+            if (imageAspect > canvasAspect) {
+                // Image is wider - fit to canvas width
+                drawWidth = this.canvas.width;
+                drawHeight = this.canvas.width / imageAspect;
+                offsetX = 0;
+                offsetY = (this.canvas.height - drawHeight) / 2;
+            } else {
+                // Image is taller - fit to canvas height
+                drawHeight = this.canvas.height;
+                drawWidth = this.canvas.height * imageAspect;
+                offsetX = (this.canvas.width - drawWidth) / 2;
+                offsetY = 0;
+            }
+            
+            // Draw image centered in canvas
+            this.ctx.drawImage(this.sitePlanImage, offsetX, offsetY, drawWidth, drawHeight);
         } else {
             // Default grid background
             this.drawGridBackground();
@@ -4616,6 +4709,27 @@ class SitePlanManager {
         const radius = 20; // Increased size for better visibility
         const isDragging = this.draggedDoor === door;
         
+        // Adjust door position for centered image
+        let doorX = door.x;
+        let doorY = door.y;
+        
+        if (this.sitePlanImage) {
+            const imageAspect = this.sitePlanImage.width / this.sitePlanImage.height;
+            const canvasAspect = this.canvas.width / this.canvas.height;
+            
+            let offsetX, offsetY;
+            if (imageAspect > canvasAspect) {
+                offsetX = 0;
+                offsetY = (this.canvas.height - (this.canvas.width / imageAspect)) / 2;
+            } else {
+                offsetX = (this.canvas.width - (this.canvas.height * imageAspect)) / 2;
+                offsetY = 0;
+            }
+            
+            doorX += offsetX;
+            doorY += offsetY;
+        }
+        
         // Door circle with shadow
         this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
         this.ctx.shadowBlur = 4;
@@ -4623,7 +4737,7 @@ class SitePlanManager {
         this.ctx.shadowOffsetY = 2;
         
         this.ctx.beginPath();
-        this.ctx.arc(door.x, door.y, radius, 0, 2 * Math.PI);
+        this.ctx.arc(doorX, doorY, radius, 0, 2 * Math.PI);
         
         // Set color based on status
         switch (door.status) {
@@ -4672,7 +4786,7 @@ class SitePlanManager {
         this.ctx.font = '10px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'top';
-        this.ctx.fillText(door.name || `Door ${door.number}`, door.x, door.y + radius + 5);
+        this.ctx.fillText(door.name || `Door ${door.number}`, doorX, doorY + radius + 5);
     }
 
     loadDoorPositions() {
