@@ -4313,8 +4313,6 @@ class SitePlanManager {
 
     loadSitePlanFromServer() {
         const token = localStorage.getItem('token');
-        console.log('Attempting to load site plan from server...');
-        console.log('Token available:', !!token);
         
         fetch('/api/site-plan', {
             headers: {
@@ -4322,7 +4320,6 @@ class SitePlanManager {
             }
         })
         .then(response => {
-            console.log('Site plan server response:', response.status, response.statusText);
             if (response.ok) {
                 return response.json();
             } else {
@@ -4330,47 +4327,29 @@ class SitePlanManager {
             }
         })
         .then(data => {
-            console.log('Site plan server data:', data);
             if (data.backgroundImage) {
-                console.log('Loading site plan background from server');
                 const img = new Image();
                 img.onload = () => {
                     this.sitePlanImage = img;
-                    console.log('Site plan background loaded from server');
-                    showToast('Site plan loaded from server', 'success');
                 };
                 img.src = data.backgroundImage;
-            } else {
-                console.log('No site plan background found on server');
-                showToast('No site plan found on server', 'info');
             }
         })
         .catch(error => {
-            console.error('Error loading site plan from server:', error);
-            showToast(`Site plan server error: ${error.message}`, 'error');
-            
             // Fallback to localStorage
             const savedBackground = localStorage.getItem('sitePlanBackground');
             if (savedBackground) {
-                console.log('Falling back to localStorage for site plan background');
                 const img = new Image();
                 img.onload = () => {
                     this.sitePlanImage = img;
-                    console.log('Site plan background restored from localStorage');
-                    showToast('Site plan loaded from local storage', 'warning');
                 };
                 img.src = savedBackground;
-            } else {
-                console.log('No site plan background found locally either');
-                showToast('No site plan background available', 'info');
             }
         });
     }
 
     loadDoorPositionsFromServer(doorsArray) {
         const token = localStorage.getItem('token');
-        console.log('Attempting to load door positions from server...');
-        console.log('Token available:', !!token);
         
         fetch('/api/site-plan/positions', {
             headers: {
@@ -4378,7 +4357,6 @@ class SitePlanManager {
             }
         })
         .then(response => {
-            console.log('Door positions server response:', response.status, response.statusText);
             if (response.ok) {
                 return response.json();
             } else {
@@ -4387,22 +4365,13 @@ class SitePlanManager {
         })
         .then(data => {
             const savedPositions = data.positions || {};
-            console.log('Loaded door positions from server:', savedPositions);
-            console.log('Available door IDs from API:', doorsArray.map(d => d.id));
-            console.log('Saved position door IDs:', Object.keys(savedPositions));
             
             // Process each door with server positions
             doorsArray.forEach(door => {
-                console.log('Processing door:', door);
-                
                 // Use saved position if available, otherwise use API position or default
                 const savedPos = savedPositions[door.id];
-                console.log(`Door ${door.id} - Saved pos:`, savedPos);
-                
                 const x = savedPos ? savedPos.x : (door.position_x || door.x || 100 + (door.id * 50) % (this.canvas.width - 200));
                 const y = savedPos ? savedPos.y : (door.position_y || door.y || 100 + (door.id * 30) % (this.canvas.height - 200));
-                
-                console.log(`Door ${door.id} - Final position: x=${x}, y=${y}`);
                 
                 const processedDoor = {
                     id: door.id,
@@ -4417,28 +4386,17 @@ class SitePlanManager {
                     location: door.location,
                     ipAddress: door.ipAddress || door.ip_address || door.controllerIp
                 };
-                console.log('Processed door:', processedDoor);
                 this.doors.push(processedDoor);
             });
-            
-            console.log('Final doors array:', this.doors);
-            console.log(`Successfully loaded ${this.doors.length} doors`);
             
             this.drawSitePlan();
         })
         .catch(error => {
-            console.error('Error loading door positions from server:', error);
-            showToast(`Door positions server error: ${error.message}`, 'error');
-            
             // Fallback to localStorage
             const savedPositions = JSON.parse(localStorage.getItem('doorPositions') || '{}');
-            console.log('Falling back to localStorage for door positions:', savedPositions);
-            showToast('Using local door positions (server sync failed)', 'warning');
             
             // Process each door with localStorage positions
             doorsArray.forEach(door => {
-                console.log('Processing door:', door);
-                
                 // Use saved position if available, otherwise use API position or default
                 const savedPos = savedPositions[door.id];
                 const x = savedPos ? savedPos.x : (door.position_x || door.x || 100 + (door.id * 50) % (this.canvas.width - 200));
@@ -4457,12 +4415,8 @@ class SitePlanManager {
                     location: door.location,
                     ipAddress: door.ipAddress || door.ip_address || door.controllerIp
                 };
-                console.log('Processed door:', processedDoor);
                 this.doors.push(processedDoor);
             });
-            
-            console.log('Final doors array:', this.doors);
-            console.log(`Successfully loaded ${this.doors.length} doors`);
             
             this.drawSitePlan();
         });
@@ -5098,102 +5052,6 @@ function closeDoorDetails() {
     document.getElementById('doorDetailsPanel').style.display = 'none';
 }
 
-function refreshDoorData() {
-    console.log('Manual refresh triggered');
-    sitePlanManager.loadDoorPositions();
-    showToast('Door data refreshed', 'success');
-}
-
-function syncDoorPositions() {
-    console.log('Manual position sync triggered');
-    showToast('Syncing door positions from server...', 'info');
-    
-    const token = localStorage.getItem('token');
-    
-    fetch('/api/site-plan/positions', {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        } else {
-            throw new Error('Failed to load door positions from server');
-        }
-    })
-    .then(data => {
-        const savedPositions = data.positions || {};
-        console.log('Synced door positions from server:', savedPositions);
-        
-        // Update existing door positions
-        sitePlanManager.doors.forEach(door => {
-            const savedPos = savedPositions[door.id];
-            if (savedPos) {
-                console.log(`Updating door ${door.id} position from ${door.x},${door.y} to ${savedPos.x},${savedPos.y}`);
-                door.x = savedPos.x;
-                door.y = savedPos.y;
-            }
-        });
-        
-        console.log('Updated doors:', sitePlanManager.doors);
-        sitePlanManager.drawSitePlan();
-        showToast('Door positions synced from server!', 'success');
-    })
-    .catch(error => {
-        console.error('Error syncing door positions:', error);
-        showToast('Error syncing door positions', 'error');
-    });
-}
-
-function testServerData() {
-    showToast('Testing server data...', 'info');
-    
-    const token = localStorage.getItem('token');
-    
-    // Test site plan background
-    fetch('/api/site-plan', {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        } else {
-            throw new Error(`Site plan: ${response.status} ${response.statusText}`);
-        }
-    })
-    .then(data => {
-        const hasBackground = data.backgroundImage ? 'YES' : 'NO';
-        showToast(`Site plan background: ${hasBackground}`, 'success');
-        
-        // Test door positions
-        return fetch('/api/site-plan/positions', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        } else {
-            throw new Error(`Positions: ${response.status} ${response.statusText}`);
-        }
-    })
-    .then(data => {
-        const positionCount = Object.keys(data.positions || {}).length;
-        showToast(`Door positions: ${positionCount} saved`, 'success');
-        
-        // Show current door positions
-        const currentPositions = sitePlanManager.doors.map(d => `Door ${d.id}: ${Math.round(d.x)},${Math.round(d.y)}`).join(' | ');
-        showToast(`Current: ${currentPositions}`, 'info');
-    })
-    .catch(error => {
-        showToast(`Server error: ${error.message}`, 'error');
-    });
-}
 
 
 // Initialize the application
