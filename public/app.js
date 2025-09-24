@@ -4582,19 +4582,13 @@ class SitePlanManager {
                 console.log('Processed doors array:', doorsArray);
                 console.log('Number of doors found:', doorsArray.length);
                 
-                this.doors = doorsArray.map(door => {
+                // Clear any existing doors first
+                this.doors = [];
+                
+                // Process each door using the same logic that works in forceLoadRealDoors
+                doorsArray.forEach(door => {
                     console.log('Processing door:', door);
-                    console.log('Door fields:', {
-                        id: door.id,
-                        name: door.name,
-                        isOnline: door.isOnline,
-                        isOpen: door.isOpen,
-                        isLocked: door.isLocked,
-                        location: door.location,
-                        controllerIp: door.controllerIp
-                    });
-                    
-                    return {
+                    const processedDoor = {
                         id: door.id,
                         name: door.name || `Door ${door.id}`,
                         number: door.doorNumber || door.door_number || door.id,
@@ -4607,27 +4601,21 @@ class SitePlanManager {
                         location: door.location,
                         ipAddress: door.ipAddress || door.ip_address || door.controllerIp
                     };
+                    console.log('Processed door:', processedDoor);
+                    this.doors.push(processedDoor);
                 });
                 
                 console.log('Final doors array:', this.doors);
                 
-                if (this.doors.length === 0) {
-                    console.log('No doors found in system - creating sample doors for testing');
-                    this.createSampleDoors();
-                } else {
-                    console.log(`Successfully loaded ${this.doors.length} doors`);
-                    // Force draw even if doors seem empty
-                    console.log('Door details:', this.doors.map(d => ({ id: d.id, name: d.name, status: d.status, x: d.x, y: d.y })));
-                }
+                console.log(`Successfully loaded ${this.doors.length} doors`);
+                console.log('Door details:', this.doors.map(d => ({ id: d.id, name: d.name, status: d.status, x: d.x, y: d.y })));
                 
                 this.drawSitePlan();
             })
             .catch(error => {
                 console.error('Error loading doors:', error);
                 console.error('Error details:', error.message);
-                console.log('API failed - creating sample doors for testing');
-                this.createSampleDoors();
-                this.drawSitePlan();
+                this.showNoDoorsMessage();
             });
     }
 
