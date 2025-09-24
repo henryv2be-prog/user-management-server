@@ -4905,8 +4905,15 @@ function refreshDoorData() {
 // Test function to check API directly
 function testDoorAPI() {
     console.log('Testing door API directly...');
+    showToast('Testing API...', 'info');
+    
     const token = localStorage.getItem('token');
     console.log('Token available:', !!token);
+    
+    if (!token) {
+        showToast('No authentication token found!', 'error');
+        return;
+    }
     
     fetch(addCacheBusting('/api/doors?limit=10'), {
         headers: {
@@ -4915,14 +4922,17 @@ function testDoorAPI() {
     })
     .then(response => {
         console.log('Direct API test - Status:', response.status, response.statusText);
+        showToast(`API Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
         return response.json();
     })
     .then(data => {
         console.log('Direct API test - Data:', data);
         console.log('Direct API test - Doors:', data.doors);
+        showToast(`Found ${data.doors ? data.doors.length : 0} doors`, 'success');
     })
     .catch(error => {
         console.error('Direct API test - Error:', error);
+        showToast(`API Error: ${error.message}`, 'error');
     });
 }
 
