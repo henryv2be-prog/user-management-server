@@ -1,0 +1,67 @@
+/* Clean Door Icons - All using same SVG template with different glow colors */
+
+/* Offline Door Icon - No Glow, Muted Gray */
+.door-panel.offline::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3C!-- Simple Door - Closed --%3E%3Crect x='20' y='10' width='60' height='100' fill='%23666' rx='2'/%3E%3C!-- Door Handle --%3E%3Ccircle cx='70' cy='60' r='4' fill='%23999'/%3E%3C/svg%3E");
+    animation: offlinePulse 3s ease-in-out infinite;
+}
+
+/* Locked Door Icon - Green Neon Glow */
+.door-panel.locked-closed::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3C!-- Simple Door - Closed --%3E%3Crect x='20' y='10' width='60' height='100' fill='%23666' rx='2'/%3E%3C!-- Door Handle --%3E%3Ccircle cx='70' cy='60' r='4' fill='%23999'/%3E%3C/svg%3E");
+    filter: drop-shadow(0 0 10px rgba(0, 255, 65, 0.8)) drop-shadow(0 0 20px rgba(0, 255, 65, 0.6)) drop-shadow(0 0 30px rgba(0, 255, 65, 0.4));
+    animation: lockedGlow 3s ease-in-out infinite alternate;
+}
+
+/* Unlocked Door Icon - Red Neon Glow */
+.door-panel.unlocked-closed::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3C!-- Simple Door - Closed --%3E%3Crect x='20' y='10' width='60' height='100' fill='%23666' rx='2'/%3E%3C!-- Door Handle --%3E%3Ccircle cx='70' cy='60' r='4' fill='%23999'/%3E%3C/svg%3E");
+    filter: drop-shadow(0 0 10px rgba(255, 0, 64, 0.8)) drop-shadow(0 0 20px rgba(255, 0, 64, 0.6)) drop-shadow(0 0 30px rgba(255, 0, 64, 0.4));
+    animation: unlockedGlow 3s ease-in-out infinite alternate;
+}
+
+/* Open Door Icon - Yellow Neon Glow */
+.door-panel.open::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3C!-- Simple Door - Closed --%3E%3Crect x='20' y='10' width='60' height='100' fill='%23666' rx='2'/%3E%3C!-- Door Handle --%3E%3Ccircle cx='70' cy='60' r='4' fill='%23999'/%3E%3C/svg%3E");
+    filter: drop-shadow(0 0 10px rgba(255, 193, 7, 0.8)) drop-shadow(0 0 20px rgba(255, 193, 7, 0.6)) drop-shadow(0 0 30px rgba(255, 193, 7, 0.4));
+    animation: openGlow 3s ease-in-out infinite alternate;
+}
+
+/* Glow Animations */
+@keyframes lockedGlow {
+    0% {
+        filter: drop-shadow(0 0 8px rgba(0, 255, 65, 0.9)) drop-shadow(0 0 16px rgba(0, 255, 65, 0.7)) drop-shadow(0 0 24px rgba(0, 255, 65, 0.5));
+    }
+    100% {
+        filter: drop-shadow(0 0 12px rgba(0, 255, 65, 1)) drop-shadow(0 0 24px rgba(0, 255, 65, 0.8)) drop-shadow(0 0 36px rgba(0, 255, 65, 0.6));
+    }
+}
+
+@keyframes unlockedGlow {
+    0% {
+        filter: drop-shadow(0 0 8px rgba(255, 0, 64, 0.9)) drop-shadow(0 0 16px rgba(255, 0, 64, 0.7)) drop-shadow(0 0 24px rgba(255, 0, 64, 0.5));
+    }
+    100% {
+        filter: drop-shadow(0 0 12px rgba(255, 0, 64, 1)) drop-shadow(0 0 24px rgba(255, 0, 64, 0.8)) drop-shadow(0 0 36px rgba(255, 0, 64, 0.6));
+    }
+}
+
+@keyframes openGlow {
+    0% {
+        filter: drop-shadow(0 0 8px rgba(255, 193, 7, 0.9)) drop-shadow(0 0 16px rgba(255, 193, 7, 0.7)) drop-shadow(0 0 24px rgba(255, 193, 7, 0.5));
+    }
+    100% {
+        filter: drop-shadow(0 0 12px rgba(255, 193, 7, 1)) drop-shadow(0 0 24px rgba(255, 193, 7, 0.8)) drop-shadow(0 0 36px rgba(255, 193, 7, 0.6));
+    }
+}
+
+@keyframes offlinePulse {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.6;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(0.9);
+        opacity: 0.3;
+    }
+}
