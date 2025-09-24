@@ -4269,12 +4269,34 @@ class SitePlanManager {
 
     init() {
         this.canvas = document.getElementById('sitePlanCanvas');
-        if (!this.canvas) return;
+        if (!this.canvas) {
+            console.error('Site plan canvas not found!');
+            return;
+        }
         
         this.ctx = this.canvas.getContext('2d');
         this.setupEventListeners();
+        
+        // Ensure canvas is properly sized
+        this.resizeCanvas();
+        
         this.loadDoorPositions();
         this.drawSitePlan();
+        
+        console.log('Site plan initialized with canvas:', this.canvas.width, 'x', this.canvas.height);
+    }
+    
+    resizeCanvas() {
+        const container = this.canvas.parentElement;
+        const rect = container.getBoundingClientRect();
+        
+        // Set canvas size to match container
+        this.canvas.width = Math.max(800, rect.width - 20);
+        this.canvas.height = Math.max(600, rect.height - 20);
+        
+        // Set CSS size for display
+        this.canvas.style.width = this.canvas.width + 'px';
+        this.canvas.style.height = this.canvas.height + 'px';
     }
 
     setupEventListeners() {
@@ -4288,6 +4310,15 @@ class SitePlanManager {
         this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
         this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
         this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+        
+        // Window resize
+        window.addEventListener('resize', () => {
+            this.resizeCanvas();
+            this.drawSitePlan();
+        });
+        
+        // Prevent context menu on long press (mobile)
+        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     }
 
     handleMouseDown(e) {
@@ -4352,12 +4383,29 @@ class SitePlanManager {
         const x = (touch.clientX - rect.left - this.panX) / this.zoom;
         const y = (touch.clientY - rect.top - this.panY) / this.zoom;
         
+        console.log('Touch start at:', x, y);
+        
         if (this.editMode) {
             const door = this.getDoorAtPosition(x, y);
             if (door) {
+                console.log('Dragging door:', door.name);
                 this.draggedDoor = door;
                 this.isDragging = true;
                 this.dragStart = { x, y };
+                // Add haptic feedback on mobile
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+            }
+        } else {
+            const door = this.getDoorAtPosition(x, y);
+            if (door) {
+                console.log('Touched door:', door.name);
+                this.showDoorDetails(door);
+                // Add haptic feedback on mobile
+                if (navigator.vibrate) {
+                    navigator.vibrate(25);
+                }
             }
         }
     }
@@ -4387,7 +4435,7 @@ class SitePlanManager {
     getDoorAtPosition(x, y) {
         return this.doors.find(door => {
             const distance = Math.sqrt((door.x - x) ** 2 + (door.y - y) ** 2);
-            return distance < 15; // Door radius
+            return distance < 25; // Increased radius for better touch interaction
         });
     }
 
@@ -4441,10 +4489,15 @@ class SitePlanManager {
     }
 
     drawDoor(door) {
-        const radius = 12;
+        const radius = 20; // Increased size for better visibility
         const isDragging = this.draggedDoor === door;
         
-        // Door circle
+        // Door circle with shadow
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.shadowBlur = 4;
+        this.ctx.shadowOffsetX = 2;
+        this.ctx.shadowOffsetY = 2;
+        
         this.ctx.beginPath();
         this.ctx.arc(door.x, door.y, radius, 0, 2 * Math.PI);
         
@@ -4465,14 +4518,20 @@ class SitePlanManager {
         
         this.ctx.fill();
         
+        // Reset shadow
+        this.ctx.shadowColor = 'transparent';
+        this.ctx.shadowBlur = 0;
+        this.ctx.shadowOffsetX = 0;
+        this.ctx.shadowOffsetY = 0;
+        
         // Border
         this.ctx.strokeStyle = 'white';
-        this.ctx.lineWidth = 2;
+        this.ctx.lineWidth = 3;
         this.ctx.stroke();
         
-        // Door number
+        // Door number with better visibility
         this.ctx.fillStyle = 'white';
-        this.ctx.font = 'bold 10px Arial';
+        this.ctx.font = 'bold 12px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText(door.number || '?', door.x, door.y);
@@ -4480,9 +4539,16 @@ class SitePlanManager {
         // Dragging indicator
         if (isDragging) {
             this.ctx.strokeStyle = '#007bff';
-            this.ctx.lineWidth = 3;
+            this.ctx.lineWidth = 4;
             this.ctx.stroke();
         }
+        
+        // Door name label below the circle
+        this.ctx.fillStyle = '#333';
+        this.ctx.font = '10px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'top';
+        this.ctx.fillText(door.name || `Door ${door.number}`, door.x, door.y + radius + 5);
     }
 
     loadDoorPositions() {
@@ -4515,8 +4581,11 @@ class SitePlanManager {
             { id: 1, name: 'Main Entrance', number: 'D01', status: 'locked', x: 200, y: 150, isOnline: true, isOpen: false, isLocked: true },
             { id: 2, name: 'Office Door', number: 'D02', status: 'unlocked', x: 400, y: 200, isOnline: true, isOpen: false, isLocked: false },
             { id: 3, name: 'Storage Room', number: 'D03', status: 'open', x: 300, y: 350, isOnline: true, isOpen: true, isLocked: false },
-            { id: 4, name: 'Emergency Exit', number: 'D04', status: 'offline', x: 500, y: 100, isOnline: false, isOpen: false, isLocked: true }
+            { id: 4, name: 'Emergency Exit', number: 'D04', status: 'offline', x: 500, y: 100, isOnline: false, isOpen: false, isLocked: true },
+            { id: 5, name: 'Conference Room', number: 'D05', status: 'locked', x: 150, y: 300, isOnline: true, isOpen: false, isLocked: true },
+            { id: 6, name: 'Kitchen', number: 'D06', status: 'unlocked', x: 600, y: 250, isOnline: true, isOpen: false, isLocked: false }
         ];
+        console.log('Created sample doors:', this.doors);
         this.drawSitePlan();
     }
 
