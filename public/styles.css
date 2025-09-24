@@ -2615,8 +2615,6 @@ textarea:focus-visible {
 }
 
 .door-status-icon.locked {
-    background: #28a745;
-    color: white;
 }
 
 .door-status-icon.unlocked {
@@ -2641,8 +2639,6 @@ textarea:focus-visible {
 }
 
 .door-status-icon.closed {
-    background: #28a745; /* Green - indicates secure */
-    color: white;
 }
 
 .door-status-text {
