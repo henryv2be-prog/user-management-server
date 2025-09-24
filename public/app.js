@@ -4616,6 +4616,8 @@ class SitePlanManager {
                     this.createSampleDoors();
                 } else {
                     console.log(`Successfully loaded ${this.doors.length} doors`);
+                    // Force draw even if doors seem empty
+                    console.log('Door details:', this.doors.map(d => ({ id: d.id, name: d.name, status: d.status, x: d.x, y: d.y })));
                 }
                 
                 this.drawSitePlan();
@@ -4900,6 +4902,70 @@ function refreshDoorData() {
     console.log('Manual refresh triggered');
     sitePlanManager.loadDoorPositions();
     showToast('Door data refreshed', 'success');
+}
+
+function forceLoadRealDoors() {
+    console.log('Force loading real doors...');
+    showToast('Force loading real doors...', 'info');
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showToast('No authentication token!', 'error');
+        return;
+    }
+    
+    const params = new URLSearchParams({ limit: 100 });
+    
+    fetch(addCacheBusting(`/api/doors?${params}`), {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => {
+        console.log('Force load - Status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Force load - Raw data:', data);
+        const doorsArray = data.doors || [];
+        console.log('Force load - Doors array:', doorsArray);
+        
+        // Clear any existing doors
+        sitePlanManager.doors = [];
+        
+        // Process each door
+        doorsArray.forEach(door => {
+            console.log('Force processing door:', door);
+            const processedDoor = {
+                id: door.id,
+                name: door.name || `Door ${door.id}`,
+                number: door.doorNumber || door.door_number || door.id,
+                status: sitePlanManager.getDoorStatus(door),
+                x: door.position_x || door.x || 100 + (door.id * 50) % (sitePlanManager.canvas.width - 200),
+                y: door.position_y || door.y || 100 + (door.id * 30) % (sitePlanManager.canvas.height - 200),
+                isOnline: door.isOnline,
+                isOpen: door.isOpen,
+                isLocked: door.isLocked,
+                location: door.location,
+                ipAddress: door.ipAddress || door.ip_address || door.controllerIp
+            };
+            console.log('Force processed door:', processedDoor);
+            sitePlanManager.doors.push(processedDoor);
+        });
+        
+        console.log('Force load - Final doors:', sitePlanManager.doors);
+        showToast(`Loaded ${sitePlanManager.doors.length} real doors`, 'success');
+        
+        // Force redraw
+        sitePlanManager.drawSitePlan();
+    })
+    .catch(error => {
+        console.error('Force load error:', error);
+        showToast(`Error: ${error.message}`, 'error');
+    });
 }
 
 // Test function to check API directly
