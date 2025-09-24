@@ -4309,16 +4309,143 @@ class SitePlanManager {
     }
 
     restoreBackgroundImage() {
-        const savedBackground = localStorage.getItem('sitePlanBackground');
-        if (savedBackground) {
-            console.log('Restoring site plan background from localStorage');
-            const img = new Image();
-            img.onload = () => {
-                this.sitePlanImage = img;
-                console.log('Site plan background restored');
-            };
-            img.src = savedBackground;
-        }
+        // Try to load from server first
+        this.loadSitePlanFromServer();
+    }
+
+    loadSitePlanFromServer() {
+        const token = localStorage.getItem('token');
+        
+        fetch('/api/site-plan', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Failed to load site plan from server');
+            }
+        })
+        .then(data => {
+            if (data.backgroundImage) {
+                console.log('Loading site plan background from server');
+                const img = new Image();
+                img.onload = () => {
+                    this.sitePlanImage = img;
+                    console.log('Site plan background loaded from server');
+                };
+                img.src = data.backgroundImage;
+            } else {
+                console.log('No site plan background found on server');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading site plan from server:', error);
+            
+            // Fallback to localStorage
+            const savedBackground = localStorage.getItem('sitePlanBackground');
+            if (savedBackground) {
+                console.log('Falling back to localStorage for site plan background');
+                const img = new Image();
+                img.onload = () => {
+                    this.sitePlanImage = img;
+                    console.log('Site plan background restored from localStorage');
+                };
+                img.src = savedBackground;
+            }
+        });
+    }
+
+    loadDoorPositionsFromServer(doorsArray) {
+        const token = localStorage.getItem('token');
+        
+        fetch('/api/site-plan/positions', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Failed to load door positions from server');
+            }
+        })
+        .then(data => {
+            const savedPositions = data.positions || {};
+            console.log('Loaded door positions from server:', savedPositions);
+            
+            // Process each door with server positions
+            doorsArray.forEach(door => {
+                console.log('Processing door:', door);
+                
+                // Use saved position if available, otherwise use API position or default
+                const savedPos = savedPositions[door.id];
+                const x = savedPos ? savedPos.x : (door.position_x || door.x || 100 + (door.id * 50) % (this.canvas.width - 200));
+                const y = savedPos ? savedPos.y : (door.position_y || door.y || 100 + (door.id * 30) % (this.canvas.height - 200));
+                
+                const processedDoor = {
+                    id: door.id,
+                    name: door.name || `Door ${door.id}`,
+                    number: door.doorNumber || door.door_number || door.id,
+                    status: this.getDoorStatus(door),
+                    x: x,
+                    y: y,
+                    isOnline: door.isOnline,
+                    isOpen: door.isOpen,
+                    isLocked: door.isLocked,
+                    location: door.location,
+                    ipAddress: door.ipAddress || door.ip_address || door.controllerIp
+                };
+                console.log('Processed door:', processedDoor);
+                this.doors.push(processedDoor);
+            });
+            
+            console.log('Final doors array:', this.doors);
+            console.log(`Successfully loaded ${this.doors.length} doors`);
+            
+            this.drawSitePlan();
+        })
+        .catch(error => {
+            console.error('Error loading door positions from server:', error);
+            
+            // Fallback to localStorage
+            const savedPositions = JSON.parse(localStorage.getItem('doorPositions') || '{}');
+            console.log('Falling back to localStorage for door positions:', savedPositions);
+            
+            // Process each door with localStorage positions
+            doorsArray.forEach(door => {
+                console.log('Processing door:', door);
+                
+                // Use saved position if available, otherwise use API position or default
+                const savedPos = savedPositions[door.id];
+                const x = savedPos ? savedPos.x : (door.position_x || door.x || 100 + (door.id * 50) % (this.canvas.width - 200));
+                const y = savedPos ? savedPos.y : (door.position_y || door.y || 100 + (door.id * 30) % (this.canvas.height - 200));
+                
+                const processedDoor = {
+                    id: door.id,
+                    name: door.name || `Door ${door.id}`,
+                    number: door.doorNumber || door.door_number || door.id,
+                    status: this.getDoorStatus(door),
+                    x: x,
+                    y: y,
+                    isOnline: door.isOnline,
+                    isOpen: door.isOpen,
+                    isLocked: door.isLocked,
+                    location: door.location,
+                    ipAddress: door.ipAddress || door.ip_address || door.controllerIp
+                };
+                console.log('Processed door:', processedDoor);
+                this.doors.push(processedDoor);
+            });
+            
+            console.log('Final doors array:', this.doors);
+            console.log(`Successfully loaded ${this.doors.length} doors`);
+            
+            this.drawSitePlan();
+        });
     }
 
     setupEventListeners() {
@@ -4611,35 +4738,8 @@ class SitePlanManager {
                 // Clear any existing doors first
                 this.doors = [];
                 
-                // Restore saved positions from localStorage
-                const savedPositions = JSON.parse(localStorage.getItem('doorPositions') || '{}');
-                console.log('Restored door positions:', savedPositions);
-                
-                // Process each door
-                doorsArray.forEach(door => {
-                    console.log('Processing door:', door);
-                    
-                    // Use saved position if available, otherwise use API position or default
-                    const savedPos = savedPositions[door.id];
-                    const x = savedPos ? savedPos.x : (door.position_x || door.x || 100 + (door.id * 50) % (this.canvas.width - 200));
-                    const y = savedPos ? savedPos.y : (door.position_y || door.y || 100 + (door.id * 30) % (this.canvas.height - 200));
-                    
-                    const processedDoor = {
-                        id: door.id,
-                        name: door.name || `Door ${door.id}`,
-                        number: door.doorNumber || door.door_number || door.id,
-                        status: this.getDoorStatus(door),
-                        x: x,
-                        y: y,
-                        isOnline: door.isOnline,
-                        isOpen: door.isOpen,
-                        isLocked: door.isLocked,
-                        location: door.location,
-                        ipAddress: door.ipAddress || door.ip_address || door.controllerIp
-                    };
-                    console.log('Processed door:', processedDoor);
-                    this.doors.push(processedDoor);
-                });
+                // Load saved positions from server
+                this.loadDoorPositionsFromServer(doorsArray);
                 
                 console.log('Final doors array:', this.doors);
                 console.log(`Successfully loaded ${this.doors.length} doors`);
@@ -4813,17 +4913,41 @@ class SitePlanManager {
         
         console.log('Positions to save:', positions);
         
-        // Save to localStorage for immediate persistence
-        const positionsObj = {};
-        positions.forEach(pos => {
-            positionsObj[pos.id] = { x: pos.x, y: pos.y };
-        });
-        localStorage.setItem('doorPositions', JSON.stringify(positionsObj));
-        console.log('Door positions saved to localStorage');
-        
         const token = localStorage.getItem('token');
         
-        // Try to save positions via individual door updates (more reliable)
+        // Save to server for multi-device sync
+        fetch('/api/site-plan/positions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                positions: positions
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                showToast('Door positions saved to server!', 'success');
+                console.log('Door positions saved to server');
+            } else {
+                throw new Error('Failed to save door positions to server');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving positions to server:', error);
+            showToast('Error saving door positions to server', 'error');
+            
+            // Fallback to localStorage
+            const positionsObj = {};
+            positions.forEach(pos => {
+                positionsObj[pos.id] = { x: pos.x, y: pos.y };
+            });
+            localStorage.setItem('doorPositions', JSON.stringify(positionsObj));
+            showToast('Door positions saved locally (server sync failed)', 'warning');
+        });
+        
+        // Also save individual door positions to API for door management
         const savePromises = positions.map(position => {
             return fetch(`/api/doors/${position.id}`, {
                 method: 'PUT',
@@ -4842,19 +4966,10 @@ class SitePlanManager {
         
         Promise.all(savePromises)
         .then(responses => {
-            console.log('Save responses:', responses);
-            const allSuccessful = responses.every(response => response.ok);
-            
-            if (allSuccessful) {
-                showToast('Door positions saved successfully!', 'success');
-                console.log('All door positions saved successfully');
-            } else {
-                throw new Error('Some door positions failed to save');
-            }
+            console.log('Individual door position save responses:', responses);
         })
         .catch(error => {
-            console.error('Error saving positions:', error);
-            showToast('Error saving door positions', 'error');
+            console.error('Error saving individual door positions:', error);
         });
     }
 }
@@ -4876,12 +4991,10 @@ function uploadSitePlan() {
                 img.onload = () => {
                     sitePlanManager.sitePlanImage = img;
                     
-                    // Save to localStorage for persistence
-                    localStorage.setItem('sitePlanBackground', e.target.result);
-                    console.log('Site plan background saved to localStorage');
+                    // Save to server for multi-device sync
+                    saveSitePlanToServer(e.target.result);
                     
                     sitePlanManager.drawSitePlan();
-                    showToast('Site plan uploaded and saved!', 'success');
                 };
                 img.src = e.target.result;
             };
@@ -4889,6 +5002,37 @@ function uploadSitePlan() {
         }
     };
     input.click();
+}
+
+function saveSitePlanToServer(imageData) {
+    const token = localStorage.getItem('token');
+    
+    fetch('/api/site-plan', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            backgroundImage: imageData
+        })
+    })
+    .then(response => {
+        if (response.ok) {
+            showToast('Site plan uploaded and saved to server!', 'success');
+            console.log('Site plan background saved to server');
+        } else {
+            throw new Error('Failed to save site plan to server');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving site plan:', error);
+        showToast('Error saving site plan to server', 'error');
+        
+        // Fallback to localStorage
+        localStorage.setItem('sitePlanBackground', imageData);
+        showToast('Site plan saved locally (server sync failed)', 'warning');
+    });
 }
 
 function toggleEditMode() {
