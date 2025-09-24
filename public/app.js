@@ -5253,16 +5253,19 @@ function toggleEditMode() {
     sitePlanManager.editMode = !sitePlanManager.editMode;
     const editBtn = document.getElementById('editModeBtn');
     const saveBtn = document.getElementById('savePositionsBtn');
+    const doorSizeGroup = document.getElementById('doorSizeGroup');
     
     if (sitePlanManager.editMode) {
         editBtn.innerHTML = '<i class="fas fa-check"></i> Exit Edit';
         editBtn.classList.add('btn-primary');
         saveBtn.style.display = 'inline-flex';
+        doorSizeGroup.style.display = 'flex';
         sitePlanManager.canvas.style.cursor = 'crosshair';
     } else {
         editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Mode';
         editBtn.classList.remove('btn-primary');
         saveBtn.style.display = 'none';
+        doorSizeGroup.style.display = 'none';
         sitePlanManager.canvas.style.cursor = 'grab';
     }
 }
