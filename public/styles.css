@@ -1954,48 +1954,43 @@ textarea:focus-visible {
         0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
-/* Door State Icons - SVG Icons */
+/* Door State Icons - Minimalist Door Design */
 .door-panel::before {
     content: '';
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 60px;
-    height: 80px;
+    width: 80px;
+    height: 100px;
     z-index: 1;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
 }
 
-/* Open Door Icon - Yellow Glow */
-.door-panel.open::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Cdefs%3E%3Cfilter id='yellowGlow'%3E%3CfeGaussianBlur stdDeviation='3' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect x='10' y='20' width='80' height='100' fill='%23333' rx='4'/%3E%3Crect x='15' y='25' width='70' height='90' fill='%23ffc107' rx='3' filter='url(%23yellowGlow)'/%3E%3Crect x='20' y='30' width='60' height='80' fill='%23fff' rx='2'/%3E%3Ccircle cx='70' cy='70' r='8' fill='%23ffc107'/%3E%3Crect x='65' y='65' width='10' height='10' fill='%23fff' rx='2'/%3E%3C/svg%3E");
-    animation: openGlow 2s ease-in-out infinite alternate;
+/* Offline Door Icon - Gray (like the original image) */
+.door-panel.offline::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Cdefs%3E%3Cfilter id='grayGlow'%3E%3CfeGaussianBlur stdDeviation='2' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect x='20' y='10' width='60' height='100' fill='%23333' rx='2'/%3E%3Crect x='25' y='15' width='50' height='90' fill='%236c757d' rx='1' opacity='0.6' filter='url(%23grayGlow)'/%3E%3Crect x='30' y='20' width='40' height='80' fill='%23fff' rx='1' opacity='0.4'/%3E%3Ccircle cx='65' cy='60' r='6' fill='%236c757d' opacity='0.6'/%3E%3Crect x='60' y='55' width='10' height='10' fill='%23fff' rx='1' opacity='0.4'/%3E%3C/svg%3E");
+    animation: offlinePulse 3s ease-in-out infinite;
 }
 
 /* Locked Door Icon - Green Glow */
 .door-panel.locked-closed::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Cdefs%3E%3Cfilter id='greenGlow'%3E%3CfeGaussianBlur stdDeviation='3' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect x='10' y='20' width='80' height='100' fill='%23333' rx='4'/%3E%3Crect x='15' y='25' width='70' height='90' fill='%2328a745' rx='3' filter='url(%23greenGlow)'/%3E%3Crect x='20' y='30' width='60' height='80' fill='%23fff' rx='2'/%3E%3Ccircle cx='70' cy='70' r='8' fill='%2328a745'/%3E%3Crect x='65' y='65' width='10' height='10' fill='%23fff' rx='2'/%3E%3Cpath d='M65 60 L75 60 L75 70 L65 70 Z' fill='%2328a745'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Cdefs%3E%3Cfilter id='greenGlow'%3E%3CfeGaussianBlur stdDeviation='4' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect x='20' y='10' width='60' height='100' fill='%23333' rx='2'/%3E%3Crect x='25' y='15' width='50' height='90' fill='%2328a745' rx='1' filter='url(%23greenGlow)'/%3E%3Crect x='30' y='20' width='40' height='80' fill='%23fff' rx='1'/%3E%3Ccircle cx='65' cy='60' r='6' fill='%2328a745'/%3E%3Crect x='60' y='55' width='10' height='10' fill='%23fff' rx='1'/%3E%3C/svg%3E");
     animation: lockedGlow 3s ease-in-out infinite alternate;
+}
+
+/* Open Door Icon - Yellow Glow */
+.door-panel.open::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Cdefs%3E%3Cfilter id='yellowGlow'%3E%3CfeGaussianBlur stdDeviation='4' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect x='20' y='10' width='60' height='100' fill='%23333' rx='2'/%3E%3Crect x='25' y='15' width='50' height='90' fill='%23ffc107' rx='1' filter='url(%23yellowGlow)'/%3E%3Crect x='30' y='20' width='40' height='80' fill='%23fff' rx='1'/%3E%3Ccircle cx='65' cy='60' r='6' fill='%23ffc107'/%3E%3Crect x='60' y='55' width='10' height='10' fill='%23fff' rx='1'/%3E%3C/svg%3E");
+    animation: openGlow 2s ease-in-out infinite alternate;
 }
 
 /* Unlocked Door Icon - Red Glow */
 .door-panel.unlocked-closed::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Cdefs%3E%3Cfilter id='redGlow'%3E%3CfeGaussianBlur stdDeviation='3' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect x='10' y='20' width='80' height='100' fill='%23333' rx='4'/%3E%3Crect x='15' y='25' width='70' height='90' fill='%23dc3545' rx='3' filter='url(%23redGlow)'/%3E%3Crect x='20' y='30' width='60' height='80' fill='%23fff' rx='2'/%3E%3Ccircle cx='70' cy='70' r='8' fill='%23dc3545'/%3E%3Crect x='65' y='65' width='10' height='10' fill='%23fff' rx='2'/%3E%3Cpath d='M65 60 L75 60 L75 70 L65 70 Z' fill='none' stroke='%23dc3545' stroke-width='2'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Cdefs%3E%3Cfilter id='redGlow'%3E%3CfeGaussianBlur stdDeviation='4' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect x='20' y='10' width='60' height='100' fill='%23333' rx='2'/%3E%3Crect x='25' y='15' width='50' height='90' fill='%23dc3545' rx='1' filter='url(%23redGlow)'/%3E%3Crect x='30' y='20' width='40' height='80' fill='%23fff' rx='1'/%3E%3Ccircle cx='65' cy='60' r='6' fill='%23dc3545'/%3E%3Crect x='60' y='55' width='10' height='10' fill='%23fff' rx='1'/%3E%3C/svg%3E");
     animation: unlockedGlow 2.5s ease-in-out infinite alternate;
-}
-
-/* Offline Door Icon - Gray */
-.door-panel.offline::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Crect x='10' y='20' width='80' height='100' fill='%23333' rx='4'/%3E%3Crect x='15' y='25' width='70' height='90' fill='%236c757d' rx='3' opacity='0.5'/%3E%3Crect x='20' y='30' width='60' height='80' fill='%23fff' rx='2' opacity='0.3'/%3E%3Ccircle cx='70' cy='70' r='8' fill='%236c757d' opacity='0.5'/%3E%3Crect x='65' y='65' width='10' height='10' fill='%23fff' rx='2' opacity='0.3'/%3E%3C/svg%3E");
-    animation: offlinePulse 3s ease-in-out infinite;
-}
-
-/* Online Door Icon - Default */
-.door-panel.online::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Crect x='10' y='20' width='80' height='100' fill='%23333' rx='4'/%3E%3Crect x='15' y='25' width='70' height='90' fill='%2336454F' rx='3'/%3E%3Crect x='20' y='30' width='60' height='80' fill='%23fff' rx='2'/%3E%3Ccircle cx='70' cy='70' r='8' fill='%2336454F'/%3E%3Crect x='65' y='65' width='10' height='10' fill='%23fff' rx='2'/%3E%3C/svg%3E");
 }
     position: absolute;
     right: 8px;
