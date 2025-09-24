@@ -4389,6 +4389,10 @@ textarea:focus-visible {
     cursor: grabbing;
 }
 
+#sitePlanCanvas.panning {
+    cursor: grabbing !important;
+}
+
 /* Mobile-specific canvas improvements */
 @media (max-width: 768px) {
     #sitePlanCanvas {
