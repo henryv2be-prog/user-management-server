@@ -5146,6 +5146,55 @@ function syncDoorPositions() {
     });
 }
 
+function testServerData() {
+    showToast('Testing server data...', 'info');
+    
+    const token = localStorage.getItem('token');
+    
+    // Test site plan background
+    fetch('/api/site-plan', {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new Error(`Site plan: ${response.status} ${response.statusText}`);
+        }
+    })
+    .then(data => {
+        const hasBackground = data.backgroundImage ? 'YES' : 'NO';
+        showToast(`Site plan background: ${hasBackground}`, 'success');
+        
+        // Test door positions
+        return fetch('/api/site-plan/positions', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new Error(`Positions: ${response.status} ${response.statusText}`);
+        }
+    })
+    .then(data => {
+        const positionCount = Object.keys(data.positions || {}).length;
+        showToast(`Door positions: ${positionCount} saved`, 'success');
+        
+        // Show current door positions
+        const currentPositions = sitePlanManager.doors.map(d => `Door ${d.id}: ${Math.round(d.x)},${Math.round(d.y)}`).join(' | ');
+        showToast(`Current: ${currentPositions}`, 'info');
+    })
+    .catch(error => {
+        showToast(`Server error: ${error.message}`, 'error');
+    });
+}
+
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
