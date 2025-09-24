@@ -5313,6 +5313,12 @@ function changeDoorSize(size) {
     sitePlanManager.drawSitePlan();
 }
 
+function showSampleDoors() {
+    sitePlanManager.createSampleDoors();
+    sitePlanManager.drawSitePlan();
+    showToast('Sample doors loaded for testing glow effects', 'info');
+}
+
 // Zoom functions removed - using mouse wheel and pinch gestures only
 
 function closeDoorDetails() {
