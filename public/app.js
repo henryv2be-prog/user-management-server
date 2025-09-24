@@ -4286,6 +4286,9 @@ class SitePlanManager {
         // Ensure canvas is properly sized
         this.resizeCanvas();
         
+        // Restore background image from localStorage
+        this.restoreBackgroundImage();
+        
         // Don't load doors automatically - wait for dashboard section to be shown
         this.drawSitePlan(); // Just draw empty canvas initially
         
@@ -4303,6 +4306,19 @@ class SitePlanManager {
         // Set CSS size for display
         this.canvas.style.width = this.canvas.width + 'px';
         this.canvas.style.height = this.canvas.height + 'px';
+    }
+
+    restoreBackgroundImage() {
+        const savedBackground = localStorage.getItem('sitePlanBackground');
+        if (savedBackground) {
+            console.log('Restoring site plan background from localStorage');
+            const img = new Image();
+            img.onload = () => {
+                this.sitePlanImage = img;
+                console.log('Site plan background restored');
+            };
+            img.src = savedBackground;
+        }
     }
 
     setupEventListeners() {
@@ -4558,11 +4574,8 @@ class SitePlanManager {
     }
 
     loadDoorPositions() {
-        console.log('AUTO Loading doors from API...');
-        showToast('Auto loading doors...', 'info');
-        
+        console.log('Loading doors from API...');
         const token = localStorage.getItem('token');
-        console.log('Auth token available:', !!token);
         
         if (!token) {
             console.log('No token - showing no doors message');
@@ -4581,60 +4594,61 @@ class SitePlanManager {
             }
         })
             .then(response => {
-                console.log('AUTO API Response status:', response.status, response.statusText);
-                showToast(`AUTO API Status: ${response.status}`, response.ok ? 'success' : 'error');
+                console.log('API Response status:', response.status, response.statusText);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('AUTO Raw API data:', data);
-                console.log('AUTO Data type:', typeof data, 'Array?', Array.isArray(data));
+                console.log('Raw API data:', data);
                 
                 // Use exact same format as existing system - data.doors
                 const doorsArray = data.doors || [];
-                console.log('AUTO Processed doors array:', doorsArray);
-                console.log('AUTO Number of doors found:', doorsArray.length);
-                showToast(`AUTO Found ${doorsArray.length} doors`, 'info');
+                console.log('Processed doors array:', doorsArray);
+                console.log('Number of doors found:', doorsArray.length);
                 
                 // Clear any existing doors first
                 this.doors = [];
-                showToast('AUTO Cleared existing doors', 'info');
                 
-                // Process each door using the same logic that works in forceLoadRealDoors
+                // Restore saved positions from localStorage
+                const savedPositions = JSON.parse(localStorage.getItem('doorPositions') || '{}');
+                console.log('Restored door positions:', savedPositions);
+                
+                // Process each door
                 doorsArray.forEach(door => {
-                    console.log('AUTO Processing door:', door);
+                    console.log('Processing door:', door);
+                    
+                    // Use saved position if available, otherwise use API position or default
+                    const savedPos = savedPositions[door.id];
+                    const x = savedPos ? savedPos.x : (door.position_x || door.x || 100 + (door.id * 50) % (this.canvas.width - 200));
+                    const y = savedPos ? savedPos.y : (door.position_y || door.y || 100 + (door.id * 30) % (this.canvas.height - 200));
+                    
                     const processedDoor = {
                         id: door.id,
                         name: door.name || `Door ${door.id}`,
                         number: door.doorNumber || door.door_number || door.id,
                         status: this.getDoorStatus(door),
-                        x: door.position_x || door.x || 100 + (door.id * 50) % (this.canvas.width - 200),
-                        y: door.position_y || door.y || 100 + (door.id * 30) % (this.canvas.height - 200),
+                        x: x,
+                        y: y,
                         isOnline: door.isOnline,
                         isOpen: door.isOpen,
                         isLocked: door.isLocked,
                         location: door.location,
                         ipAddress: door.ipAddress || door.ip_address || door.controllerIp
                     };
-                    console.log('AUTO Processed door:', processedDoor);
+                    console.log('Processed door:', processedDoor);
                     this.doors.push(processedDoor);
                 });
                 
-                console.log('AUTO Final doors array:', this.doors);
-                
-                console.log(`AUTO Successfully loaded ${this.doors.length} doors`);
-                console.log('AUTO Door details:', this.doors.map(d => ({ id: d.id, name: d.name, status: d.status, x: d.x, y: d.y })));
-                showToast(`AUTO Processed ${this.doors.length} doors`, 'success');
+                console.log('Final doors array:', this.doors);
+                console.log(`Successfully loaded ${this.doors.length} doors`);
                 
                 this.drawSitePlan();
-                showToast('AUTO Redrawing site plan...', 'info');
             })
             .catch(error => {
-                console.error('AUTO Error loading doors:', error);
-                console.error('AUTO Error details:', error.message);
-                showToast(`AUTO Error: ${error.message}`, 'error');
+                console.error('Error loading doors:', error);
+                console.error('Error details:', error.message);
                 this.showNoDoorsMessage();
             });
     }
@@ -4799,6 +4813,14 @@ class SitePlanManager {
         
         console.log('Positions to save:', positions);
         
+        // Save to localStorage for immediate persistence
+        const positionsObj = {};
+        positions.forEach(pos => {
+            positionsObj[pos.id] = { x: pos.x, y: pos.y };
+        });
+        localStorage.setItem('doorPositions', JSON.stringify(positionsObj));
+        console.log('Door positions saved to localStorage');
+        
         const token = localStorage.getItem('token');
         
         // Try to save positions via individual door updates (more reliable)
@@ -4853,7 +4875,13 @@ function uploadSitePlan() {
                 const img = new Image();
                 img.onload = () => {
                     sitePlanManager.sitePlanImage = img;
+                    
+                    // Save to localStorage for persistence
+                    localStorage.setItem('sitePlanBackground', e.target.result);
+                    console.log('Site plan background saved to localStorage');
+                    
                     sitePlanManager.drawSitePlan();
+                    showToast('Site plan uploaded and saved!', 'success');
                 };
                 img.src = e.target.result;
             };
@@ -4912,137 +4940,6 @@ function refreshDoorData() {
     showToast('Door data refreshed', 'success');
 }
 
-function forceLoadRealDoors() {
-    console.log('Force loading real doors...');
-    showToast('Force loading real doors...', 'info');
-    
-    const token = localStorage.getItem('token');
-    if (!token) {
-        showToast('No authentication token!', 'error');
-        return;
-    }
-    
-    const params = new URLSearchParams({ limit: 100 });
-    
-    fetch(addCacheBusting(`/api/doors?${params}`), {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    })
-    .then(response => {
-        console.log('Force load - Status:', response.status);
-        showToast(`API Status: ${response.status}`, response.ok ? 'success' : 'error');
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Force load - Raw data:', data);
-        const doorsArray = data.doors || [];
-        console.log('Force load - Doors array:', doorsArray);
-        showToast(`Found ${doorsArray.length} doors in API`, 'info');
-        
-        // Clear any existing doors
-        sitePlanManager.doors = [];
-        showToast('Cleared existing doors', 'info');
-        
-        // Process each door
-        doorsArray.forEach(door => {
-            console.log('Force processing door:', door);
-            const processedDoor = {
-                id: door.id,
-                name: door.name || `Door ${door.id}`,
-                number: door.doorNumber || door.door_number || door.id,
-                status: sitePlanManager.getDoorStatus(door),
-                x: door.position_x || door.x || 100 + (door.id * 50) % (sitePlanManager.canvas.width - 200),
-                y: door.position_y || door.y || 100 + (door.id * 30) % (sitePlanManager.canvas.height - 200),
-                isOnline: door.isOnline,
-                isOpen: door.isOpen,
-                isLocked: door.isLocked,
-                location: door.location,
-                ipAddress: door.ipAddress || door.ip_address || door.controllerIp
-            };
-            console.log('Force processed door:', processedDoor);
-            sitePlanManager.doors.push(processedDoor);
-        });
-        
-        console.log('Force load - Final doors:', sitePlanManager.doors);
-        showToast(`Processed ${sitePlanManager.doors.length} doors`, 'success');
-        
-        // Force redraw
-        sitePlanManager.drawSitePlan();
-        showToast('Redrawing site plan...', 'info');
-    })
-    .catch(error => {
-        console.error('Force load error:', error);
-        showToast(`Error: ${error.message}`, 'error');
-    });
-}
-
-function testDrawDoor() {
-    console.log('Testing door drawing...');
-    showToast('Testing door drawing...', 'info');
-    
-    // Clear all doors
-    sitePlanManager.doors = [];
-    
-    // Add a simple test door
-    sitePlanManager.doors.push({
-        id: 999,
-        name: 'Test Door',
-        number: '999',
-        status: 'locked',
-        x: 300,
-        y: 200,
-        isOnline: true,
-        isOpen: false,
-        isLocked: true,
-        location: 'Test Location',
-        ipAddress: '192.168.1.999'
-    });
-    
-    console.log('Test door added:', sitePlanManager.doors);
-    showToast('Test door added to canvas', 'success');
-    
-    // Force redraw
-    sitePlanManager.drawSitePlan();
-    showToast('Canvas redrawn', 'info');
-}
-
-// Test function to check API directly
-function testDoorAPI() {
-    console.log('Testing door API directly...');
-    showToast('Testing API...', 'info');
-    
-    const token = localStorage.getItem('token');
-    console.log('Token available:', !!token);
-    
-    if (!token) {
-        showToast('No authentication token found!', 'error');
-        return;
-    }
-    
-    fetch(addCacheBusting('/api/doors?limit=10'), {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    })
-    .then(response => {
-        console.log('Direct API test - Status:', response.status, response.statusText);
-        showToast(`API Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
-        return response.json();
-    })
-    .then(data => {
-        console.log('Direct API test - Data:', data);
-        console.log('Direct API test - Doors:', data.doors);
-        showToast(`Found ${data.doors ? data.doors.length : 0} doors`, 'success');
-    })
-    .catch(error => {
-        console.error('Direct API test - Error:', error);
-        showToast(`API Error: ${error.message}`, 'error');
-    });
-}
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
