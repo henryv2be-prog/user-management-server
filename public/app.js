@@ -4556,20 +4556,18 @@ class SitePlanManager {
         const token = localStorage.getItem('token');
         console.log('Auth token available:', !!token);
         
-        // Load doors from API with authentication
+        // Load doors from API with authentication - match existing system exactly
         const params = new URLSearchParams({
             limit: 100  // Get all doors for site plan
         });
         
-        fetch(`/api/doors?${params}`, {
+        fetch(addCacheBusting(`/api/doors?${params}`), {
             headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${token}`
             }
         })
             .then(response => {
                 console.log('API Response status:', response.status, response.statusText);
-                console.log('Response headers:', response.headers);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
@@ -4579,8 +4577,8 @@ class SitePlanManager {
                 console.log('Raw API data:', data);
                 console.log('Data type:', typeof data, 'Array?', Array.isArray(data));
                 
-                // Handle both array and object responses - prioritize data.doors like existing system
-                const doorsArray = Array.isArray(data) ? data : (data.doors || data.data || []);
+                // Use exact same format as existing system - data.doors
+                const doorsArray = data.doors || [];
                 console.log('Processed doors array:', doorsArray);
                 console.log('Number of doors found:', doorsArray.length);
                 
@@ -4813,10 +4811,9 @@ function testDoorAPI() {
     const token = localStorage.getItem('token');
     console.log('Token available:', !!token);
     
-    fetch('/api/doors?limit=10', {
+    fetch(addCacheBusting('/api/doors?limit=10'), {
         headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            'Authorization': `Bearer ${token}`
         }
     })
     .then(response => {
@@ -4825,6 +4822,7 @@ function testDoorAPI() {
     })
     .then(data => {
         console.log('Direct API test - Data:', data);
+        console.log('Direct API test - Doors:', data.doors);
     })
     .catch(error => {
         console.error('Direct API test - Error:', error);
