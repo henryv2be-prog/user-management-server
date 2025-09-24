@@ -2248,7 +2248,7 @@ textarea:focus-visible {
 }
 
 .door-panel.unlocked-closed .door-lock {
-    animation: lockDisengage 0.4s ease-out, pulseUnlocked 4s infinite 0.4s;
+    animation: lockDisengage 0.4s ease-out;
 }
 
 /* Sensor Status */
@@ -2461,7 +2461,6 @@ textarea:focus-visible {
 }
 
 .door-card.unlocked .status-icon {
-    animation: pulseUnlocked 4s infinite;
 }
 
 .door-card.locked .status-icon {
@@ -2482,7 +2481,7 @@ textarea:focus-visible {
 }
 
 .door-status-badge.unlocked {
-    animation: pulseUnlocked 4s infinite, fadeInScale 0.5s ease-out;
+    animation: fadeInScale 0.5s ease-out;
 }
 
 .door-status-badge.locked {
