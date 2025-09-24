@@ -50,7 +50,17 @@ app.use('/api/doors/heartbeat', (req, res, next) => {
   next();
 });
 
-// Serve static files
+// Serve static files with cache-busting for development
+if (process.env.NODE_ENV !== 'production') {
+    app.use((req, res, next) => {
+        res.set({
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        });
+        next();
+    });
+}
 app.use(express.static('public'));
 
 // Disable caching for API endpoints
