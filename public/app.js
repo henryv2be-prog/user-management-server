@@ -4265,9 +4265,6 @@ class SitePlanManager {
         this.ctx = null;
         this.doors = [];
         this.editMode = false;
-        this.zoom = 1;
-        this.panX = 0;
-        this.panY = 0;
         this.isDragging = false;
         this.dragStart = { x: 0, y: 0 };
         this.draggedDoor = null;
@@ -4447,8 +4444,8 @@ class SitePlanManager {
 
     handleMouseDown(e) {
         const rect = this.canvas.getBoundingClientRect();
-        let x = (e.clientX - rect.left - this.panX) / this.zoom;
-        let y = (e.clientY - rect.top - this.panY) / this.zoom;
+        let x = e.clientX - rect.left;
+        let y = e.clientY - rect.top;
         
         // Adjust coordinates for centered image
         if (this.sitePlanImage) {
@@ -4486,8 +4483,8 @@ class SitePlanManager {
     handleMouseMove(e) {
         if (this.isDragging && this.draggedDoor) {
             const rect = this.canvas.getBoundingClientRect();
-            let x = (e.clientX - rect.left - this.panX) / this.zoom;
-            let y = (e.clientY - rect.top - this.panY) / this.zoom;
+            let x = e.clientX - rect.left;
+            let y = e.clientY - rect.top;
             
             // Adjust coordinates for centered image
             if (this.sitePlanImage) {
@@ -4540,8 +4537,8 @@ class SitePlanManager {
         e.preventDefault();
         const touch = e.touches[0];
         const rect = this.canvas.getBoundingClientRect();
-        let x = (touch.clientX - rect.left - this.panX) / this.zoom;
-        let y = (touch.clientY - rect.top - this.panY) / this.zoom;
+        let x = touch.clientX - rect.left;
+        let y = touch.clientY - rect.top;
         
         // Adjust coordinates for centered image
         if (this.sitePlanImage) {
@@ -4593,8 +4590,8 @@ class SitePlanManager {
         if (this.isDragging && this.draggedDoor) {
             const touch = e.touches[0];
             const rect = this.canvas.getBoundingClientRect();
-            let x = (touch.clientX - rect.left - this.panX) / this.zoom;
-            let y = (touch.clientY - rect.top - this.panY) / this.zoom;
+            let x = touch.clientX - rect.left;
+            let y = touch.clientY - rect.top;
             
             // Adjust coordinates for centered image
             if (this.sitePlanImage) {
@@ -4640,10 +4637,7 @@ class SitePlanManager {
         
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Apply zoom and pan
-        this.ctx.save();
-        this.ctx.translate(this.panX, this.panY);
-        this.ctx.scale(this.zoom, this.zoom);
+        // No zoom/pan needed with centered image
         
         // Draw site plan background
         if (this.sitePlanImage) {
@@ -5146,22 +5140,7 @@ function saveDoorPositions() {
     sitePlanManager.saveDoorPositions();
 }
 
-function zoomIn() {
-    sitePlanManager.zoom = Math.min(3, sitePlanManager.zoom * 1.2);
-    sitePlanManager.drawSitePlan();
-}
-
-function zoomOut() {
-    sitePlanManager.zoom = Math.max(0.1, sitePlanManager.zoom * 0.8);
-    sitePlanManager.drawSitePlan();
-}
-
-function resetZoom() {
-    sitePlanManager.zoom = 1;
-    sitePlanManager.panX = 0;
-    sitePlanManager.panY = 0;
-    sitePlanManager.drawSitePlan();
-}
+// Zoom functions removed - no longer needed with centered image
 
 function closeDoorDetails() {
     document.getElementById('doorDetailsPanel').style.display = 'none';
