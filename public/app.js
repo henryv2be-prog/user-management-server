@@ -1001,9 +1001,6 @@ async function loadDashboard() {
                     console.log('Loading doors and site plan background for dashboard...');
                     sitePlanManager.restoreBackgroundImage(); // Load background image
                     sitePlanManager.loadDoorPositions(); // Load doors with positions
-                    
-                    // Add test door for demonstration
-                    sitePlanManager.addTestDoor();
                 }
             } catch (error) {
                 console.error('Failed to load dashboard doors:', error);
@@ -4392,6 +4389,9 @@ class SitePlanManager {
                 this.doors.push(processedDoor);
             });
             
+            // Add test door after real doors are loaded
+            this.addTestDoor();
+            
             this.drawSitePlan();
         })
         .catch(error => {
@@ -4420,6 +4420,9 @@ class SitePlanManager {
                 };
                 this.doors.push(processedDoor);
             });
+            
+            // Add test door after real doors are loaded
+            this.addTestDoor();
             
             this.drawSitePlan();
         });
