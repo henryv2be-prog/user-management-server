@@ -4251,6 +4251,416 @@ function fetchServerLogs() {
         });
 }
 
+// Site Plan Functionality
+class SitePlanManager {
+    constructor() {
+        this.canvas = null;
+        this.ctx = null;
+        this.doors = [];
+        this.editMode = false;
+        this.zoom = 1;
+        this.panX = 0;
+        this.panY = 0;
+        this.isDragging = false;
+        this.dragStart = { x: 0, y: 0 };
+        this.draggedDoor = null;
+        this.sitePlanImage = null;
+    }
+
+    init() {
+        this.canvas = document.getElementById('sitePlanCanvas');
+        if (!this.canvas) return;
+        
+        this.ctx = this.canvas.getContext('2d');
+        this.setupEventListeners();
+        this.loadDoorPositions();
+        this.drawSitePlan();
+    }
+
+    setupEventListeners() {
+        // Canvas mouse events
+        this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+        this.canvas.addEventListener('wheel', (e) => this.handleWheel(e));
+        
+        // Touch events for mobile
+        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
+        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
+        this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+    }
+
+    handleMouseDown(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left - this.panX) / this.zoom;
+        const y = (e.clientY - rect.top - this.panY) / this.zoom;
+        
+        if (this.editMode) {
+            const door = this.getDoorAtPosition(x, y);
+            if (door) {
+                this.draggedDoor = door;
+                this.isDragging = true;
+                this.dragStart = { x, y };
+            }
+        } else {
+            const door = this.getDoorAtPosition(x, y);
+            if (door) {
+                this.showDoorDetails(door);
+            }
+        }
+    }
+
+    handleMouseMove(e) {
+        if (this.isDragging && this.draggedDoor) {
+            const rect = this.canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - this.panX) / this.zoom;
+            const y = (e.clientY - rect.top - this.panY) / this.zoom;
+            
+            this.draggedDoor.x = x;
+            this.draggedDoor.y = y;
+            this.drawSitePlan();
+        }
+    }
+
+    handleMouseUp(e) {
+        if (this.isDragging && this.draggedDoor) {
+            this.isDragging = false;
+            this.draggedDoor = null;
+        }
+    }
+
+    handleWheel(e) {
+        e.preventDefault();
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+        const newZoom = Math.max(0.1, Math.min(3, this.zoom * zoomFactor));
+        
+        this.panX = mouseX - (mouseX - this.panX) * (newZoom / this.zoom);
+        this.panY = mouseY - (mouseY - this.panY) * (newZoom / this.zoom);
+        this.zoom = newZoom;
+        
+        this.drawSitePlan();
+    }
+
+    handleTouchStart(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = this.canvas.getBoundingClientRect();
+        const x = (touch.clientX - rect.left - this.panX) / this.zoom;
+        const y = (touch.clientY - rect.top - this.panY) / this.zoom;
+        
+        if (this.editMode) {
+            const door = this.getDoorAtPosition(x, y);
+            if (door) {
+                this.draggedDoor = door;
+                this.isDragging = true;
+                this.dragStart = { x, y };
+            }
+        }
+    }
+
+    handleTouchMove(e) {
+        e.preventDefault();
+        if (this.isDragging && this.draggedDoor) {
+            const touch = e.touches[0];
+            const rect = this.canvas.getBoundingClientRect();
+            const x = (touch.clientX - rect.left - this.panX) / this.zoom;
+            const y = (touch.clientY - rect.top - this.panY) / this.zoom;
+            
+            this.draggedDoor.x = x;
+            this.draggedDoor.y = y;
+            this.drawSitePlan();
+        }
+    }
+
+    handleTouchEnd(e) {
+        e.preventDefault();
+        if (this.isDragging && this.draggedDoor) {
+            this.isDragging = false;
+            this.draggedDoor = null;
+        }
+    }
+
+    getDoorAtPosition(x, y) {
+        return this.doors.find(door => {
+            const distance = Math.sqrt((door.x - x) ** 2 + (door.y - y) ** 2);
+            return distance < 15; // Door radius
+        });
+    }
+
+    drawSitePlan() {
+        if (!this.ctx) return;
+        
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Apply zoom and pan
+        this.ctx.save();
+        this.ctx.translate(this.panX, this.panY);
+        this.ctx.scale(this.zoom, this.zoom);
+        
+        // Draw site plan background
+        if (this.sitePlanImage) {
+            this.ctx.drawImage(this.sitePlanImage, 0, 0, this.canvas.width, this.canvas.height);
+        } else {
+            // Default grid background
+            this.drawGridBackground();
+        }
+        
+        // Draw doors
+        this.doors.forEach(door => {
+            this.drawDoor(door);
+        });
+        
+        this.ctx.restore();
+    }
+
+    drawGridBackground() {
+        this.ctx.fillStyle = '#f8f9fa';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        this.ctx.strokeStyle = '#e9ecef';
+        this.ctx.lineWidth = 1;
+        
+        // Draw grid
+        for (let x = 0; x < this.canvas.width; x += 50) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, 0);
+            this.ctx.lineTo(x, this.canvas.height);
+            this.ctx.stroke();
+        }
+        
+        for (let y = 0; y < this.canvas.height; y += 50) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, y);
+            this.ctx.lineTo(this.canvas.width, y);
+            this.ctx.stroke();
+        }
+    }
+
+    drawDoor(door) {
+        const radius = 12;
+        const isDragging = this.draggedDoor === door;
+        
+        // Door circle
+        this.ctx.beginPath();
+        this.ctx.arc(door.x, door.y, radius, 0, 2 * Math.PI);
+        
+        // Set color based on status
+        switch (door.status) {
+            case 'locked':
+                this.ctx.fillStyle = '#00ff41';
+                break;
+            case 'unlocked':
+                this.ctx.fillStyle = '#ff0040';
+                break;
+            case 'open':
+                this.ctx.fillStyle = '#ffc107';
+                break;
+            default:
+                this.ctx.fillStyle = '#6c757d';
+        }
+        
+        this.ctx.fill();
+        
+        // Border
+        this.ctx.strokeStyle = 'white';
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+        
+        // Door number
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = 'bold 10px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(door.number || '?', door.x, door.y);
+        
+        // Dragging indicator
+        if (isDragging) {
+            this.ctx.strokeStyle = '#007bff';
+            this.ctx.lineWidth = 3;
+            this.ctx.stroke();
+        }
+    }
+
+    loadDoorPositions() {
+        // Load doors from API
+        fetch('/api/doors')
+            .then(response => response.json())
+            .then(data => {
+                this.doors = data.map(door => ({
+                    id: door.id,
+                    name: door.name,
+                    number: door.doorNumber || door.id,
+                    status: this.getDoorStatus(door),
+                    x: door.x || Math.random() * (this.canvas.width - 100) + 50,
+                    y: door.y || Math.random() * (this.canvas.height - 100) + 50,
+                    isOnline: door.isOnline,
+                    isOpen: door.isOpen,
+                    isLocked: door.isLocked
+                }));
+                this.drawSitePlan();
+            })
+            .catch(error => {
+                console.error('Error loading doors:', error);
+                // Create sample doors for demo
+                this.createSampleDoors();
+            });
+    }
+
+    createSampleDoors() {
+        this.doors = [
+            { id: 1, name: 'Main Entrance', number: 'D01', status: 'locked', x: 200, y: 150, isOnline: true, isOpen: false, isLocked: true },
+            { id: 2, name: 'Office Door', number: 'D02', status: 'unlocked', x: 400, y: 200, isOnline: true, isOpen: false, isLocked: false },
+            { id: 3, name: 'Storage Room', number: 'D03', status: 'open', x: 300, y: 350, isOnline: true, isOpen: true, isLocked: false },
+            { id: 4, name: 'Emergency Exit', number: 'D04', status: 'offline', x: 500, y: 100, isOnline: false, isOpen: false, isLocked: true }
+        ];
+        this.drawSitePlan();
+    }
+
+    getDoorStatus(door) {
+        if (!door.isOnline) return 'offline';
+        if (door.isOpen) return 'open';
+        if (!door.isLocked) return 'unlocked';
+        return 'locked';
+    }
+
+    showDoorDetails(door) {
+        const panel = document.getElementById('doorDetailsPanel');
+        const title = document.getElementById('doorDetailsTitle');
+        const content = document.getElementById('doorDetailsContent');
+        
+        title.textContent = door.name;
+        content.innerHTML = `
+            <div class="door-detail-item">
+                <span class="door-detail-label">Door Number:</span>
+                <span class="door-detail-value">${door.number}</span>
+            </div>
+            <div class="door-detail-item">
+                <span class="door-detail-label">Status:</span>
+                <span class="door-detail-value">${door.status.toUpperCase()}</span>
+            </div>
+            <div class="door-detail-item">
+                <span class="door-detail-label">Online:</span>
+                <span class="door-detail-value">${door.isOnline ? 'Yes' : 'No'}</span>
+            </div>
+            <div class="door-detail-item">
+                <span class="door-detail-label">Open:</span>
+                <span class="door-detail-value">${door.isOpen ? 'Yes' : 'No'}</span>
+            </div>
+            <div class="door-detail-item">
+                <span class="door-detail-label">Locked:</span>
+                <span class="door-detail-value">${door.isLocked ? 'Yes' : 'No'}</span>
+            </div>
+        `;
+        
+        panel.style.display = 'block';
+    }
+
+    updateDoorStatus(doorId, status) {
+        const door = this.doors.find(d => d.id === doorId);
+        if (door) {
+            door.status = status;
+            this.drawSitePlan();
+        }
+    }
+
+    saveDoorPositions() {
+        const positions = this.doors.map(door => ({
+            id: door.id,
+            x: door.x,
+            y: door.y
+        }));
+        
+        fetch('/api/doors/positions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(positions)
+        })
+        .then(response => response.json())
+        .then(data => {
+            showToast('Door positions saved successfully!', 'success');
+        })
+        .catch(error => {
+            console.error('Error saving positions:', error);
+            showToast('Error saving door positions', 'error');
+        });
+    }
+}
+
+// Global site plan manager
+const sitePlanManager = new SitePlanManager();
+
+// Site Plan Functions
+function uploadSitePlan() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    sitePlanManager.sitePlanImage = img;
+                    sitePlanManager.drawSitePlan();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    input.click();
+}
+
+function toggleEditMode() {
+    sitePlanManager.editMode = !sitePlanManager.editMode;
+    const editBtn = document.getElementById('editModeBtn');
+    const saveBtn = document.getElementById('savePositionsBtn');
+    
+    if (sitePlanManager.editMode) {
+        editBtn.innerHTML = '<i class="fas fa-check"></i> Exit Edit';
+        editBtn.classList.add('btn-primary');
+        saveBtn.style.display = 'inline-flex';
+        sitePlanManager.canvas.style.cursor = 'crosshair';
+    } else {
+        editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Mode';
+        editBtn.classList.remove('btn-primary');
+        saveBtn.style.display = 'none';
+        sitePlanManager.canvas.style.cursor = 'grab';
+    }
+}
+
+function saveDoorPositions() {
+    sitePlanManager.saveDoorPositions();
+}
+
+function zoomIn() {
+    sitePlanManager.zoom = Math.min(3, sitePlanManager.zoom * 1.2);
+    sitePlanManager.drawSitePlan();
+}
+
+function zoomOut() {
+    sitePlanManager.zoom = Math.max(0.1, sitePlanManager.zoom * 0.8);
+    sitePlanManager.drawSitePlan();
+}
+
+function resetZoom() {
+    sitePlanManager.zoom = 1;
+    sitePlanManager.panX = 0;
+    sitePlanManager.panY = 0;
+    sitePlanManager.drawSitePlan();
+}
+
+function closeDoorDetails() {
+    document.getElementById('doorDetailsPanel').style.display = 'none';
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     checkAuthStatus();
@@ -4259,4 +4669,6 @@ document.addEventListener('DOMContentLoaded', function() {
     startDoorStatusUpdates();
     // Start keep-alive mechanism
     startKeepAlive();
+    // Initialize site plan
+    sitePlanManager.init();
 });
