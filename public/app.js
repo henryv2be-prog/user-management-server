@@ -1493,14 +1493,14 @@ function displayUsers(users) {
             <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn edit" onclick="editUser(${user.id})">
-                        <i class="fas fa-edit"></i>
+                    <button class="action-btn edit" onclick="editUser(${user.id})" title="Edit User">
+                        <span>Edit</span>
                     </button>
-                    <button class="action-btn access-groups" onclick="manageUserAccessGroups(${user.id})">
-                        <i class="fas fa-shield-alt"></i>
+                    <button class="action-btn access-groups" onclick="manageUserAccessGroups(${user.id})" title="Access Groups">
+                        <span>Access</span>
                     </button>
-                    <button class="action-btn delete" onclick="deleteUser(${user.id})" ${user.id === currentUser.id ? 'disabled' : ''}>
-                        <i class="fas fa-trash"></i>
+                    <button class="action-btn delete" onclick="deleteUser(${user.id})" ${user.id === currentUser.id ? 'disabled' : ''} title="Delete User">
+                        <span>Delete</span>
                     </button>
                 </div>
             </td>
@@ -1846,15 +1846,15 @@ function displayDoors(doors) {
             <td>${door.lastSeen ? formatDoorTime(door.lastSeen) : 'Never'}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn edit" onclick="editDoor(${door.id})">
-                        <i class="fas fa-edit"></i>
+                    <button class="action-btn edit" onclick="editDoor(${door.id})" title="Edit Door">
+                        <span>Edit</span>
                     </button>
-                    <button class="action-btn delete" onclick="deleteDoor(${door.id})">
-                        <i class="fas fa-trash"></i>
+                    <button class="action-btn delete" onclick="deleteDoor(${door.id})" title="Delete Door">
+                        <span>Delete</span>
                     </button>
                     ${door.isOnline ? `
                         <button class="action-btn control" onclick="controlDoor(${door.id}, 'open')" title="Open Door">
-                            <i class="fas fa-door-open"></i>
+                            <span>Open</span>
                         </button>
                     ` : ''}
                 </div>
@@ -2264,14 +2264,14 @@ async function displayAccessGroups(accessGroups) {
             <td>${new Date(group.createdAt).toLocaleDateString()}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn edit" onclick="editAccessGroup(${group.id})">
-                        <i class="fas fa-edit"></i>
+                    <button class="action-btn edit" onclick="editAccessGroup(${group.id})" title="Edit Group">
+                        <span>Edit</span>
                     </button>
                     <button class="action-btn details" onclick="manageAccessGroupDetails(${group.id})" title="Manage Doors">
-                        <i class="fas fa-door-open"></i>
+                        <span>Doors</span>
                     </button>
-                    <button class="action-btn delete" onclick="deleteAccessGroup(${group.id})">
-                        <i class="fas fa-trash"></i>
+                    <button class="action-btn delete" onclick="deleteAccessGroup(${group.id})" title="Delete Group">
+                        <span>Delete</span>
                     </button>
                 </div>
             </td>
