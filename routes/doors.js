@@ -21,6 +21,9 @@ const { asyncHandler, NotFoundError, AuthorizationError } = require('../utils/er
 
 const router = express.Router();
 
+// Cache for tracking ESP32 heartbeats
+const heartbeatCache = new Map();
+
 // Cache prevention middleware for all routes
 router.use((req, res, next) => {
   res.set({
@@ -54,7 +57,7 @@ router.post('/heartbeat', validateHeartbeat, asyncHandler(async (req, res) => {
     console.log('Request body:', req.body);
     console.log('Request headers:', req.headers);
     
-    let { deviceID, deviceName, ip, mac, status, doorOpen, signal, freeHeap, uptime } = req.body;
+    let { deviceID, deviceName, ip, mac, status, doorOpen, signal, freeHeap, uptime, firmware, deviceType } = req.body;
     
     console.log('Heartbeat received:', { deviceID, deviceName, ip, mac, status });
     
@@ -69,6 +72,30 @@ router.post('/heartbeat', validateHeartbeat, asyncHandler(async (req, res) => {
     // Handle empty deviceName
     if (!deviceName || deviceName.trim() === '') {
       deviceName = 'ESP32-' + mac.replace(/:/g, '');
+    }
+    
+    // Update heartbeat cache with device info
+    heartbeatCache.set(deviceID, {
+      deviceID,
+      deviceName,
+      ip,
+      mac,
+      status,
+      doorOpen,
+      signal,
+      freeHeap,
+      uptime,
+      firmware,
+      deviceType,
+      lastSeen: new Date().toISOString()
+    });
+    
+    // Clean up old entries from cache (older than 5 minutes)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    for (const [key, device] of heartbeatCache.entries()) {
+      if (new Date(device.lastSeen) < fiveMinutesAgo) {
+        heartbeatCache.delete(key);
+      }
     }
     
     // Find door by ESP32 IP first (most reliable)
@@ -680,43 +707,22 @@ router.get('/accessible/me', authenticate, async (req, res) => {
   }
 });
 
-// ESP32 Discovery endpoint
+// ESP32 Discovery endpoint - finds unregistered ESP32s that have sent heartbeats
 router.post('/discover', authenticate, requireAdmin, async (req, res) => {
   try {
     // Log ESP32 discovery event
     await EventLogger.log(req, 'system', 'door_controller_discovery_started', 'system', null, 'System', 'Door Controller discovery scan initiated');
     
-    // Mock ESP32 discovery - in a real implementation, this would scan the network
-    const mockDevices = [
-      {
-        mac: 'AA:BB:CC:DD:EE:01',
-        ip: '192.168.1.100',
-        name: 'ESP32-Door-001',
-        status: 'discovered',
-        signal: -45,
-        lastSeen: new Date().toISOString(),
-        deviceType: 'ESP32',
-        firmware: '1.0.0'
-      },
-      {
-        mac: 'AA:BB:CC:DD:EE:02',
-        ip: '192.168.1.101',
-        name: 'ESP32-Door-002',
-        status: 'discovered',
-        signal: -52,
-        lastSeen: new Date().toISOString(),
-        deviceType: 'ESP32',
-        firmware: '1.0.0'
-      }
-    ];
+    // Get unregistered ESP32 devices from heartbeat cache
+    const discoveredDevices = await getUnregisteredDevices();
     
     // Log discovery completion
-    await EventLogger.log(req, 'system', 'door_controller_discovery_completed', 'system', null, 'System', `Door Controller discovery completed - found ${mockDevices.length} devices`);
+    await EventLogger.log(req, 'system', 'door_controller_discovery_completed', 'system', null, 'System', `Door Controller discovery completed - found ${discoveredDevices.length} devices`);
     
     res.json({
       message: 'Door Controller discovery completed',
-      devices: mockDevices,
-      count: mockDevices.length
+      devices: discoveredDevices,
+      count: discoveredDevices.length
     });
   } catch (error) {
     console.error('Door Controller discovery error:', error);
@@ -727,29 +733,116 @@ router.post('/discover', authenticate, requireAdmin, async (req, res) => {
   }
 });
 
+// Get unregistered devices from heartbeat cache
+async function getUnregisteredDevices() {
+  const devices = [];
+  
+  // Get all devices from heartbeat cache
+  for (const [key, device] of heartbeatCache.entries()) {
+    // Check if device is already registered
+    const existingDoor = await Door.findByMac(device.mac);
+    
+    if (!existingDoor) {
+      // Device not registered, add to discovered list
+      devices.push({
+        mac: device.mac,
+        ip: device.ip,
+        name: device.deviceName || `ESP32-${device.mac.replace(/:/g, '')}`,
+        status: 'discovered',
+        signal: device.signal || 0,
+        lastSeen: device.lastSeen,
+        deviceType: device.deviceType || 'ESP32',
+        firmware: device.firmware || '1.0.0',
+        deviceID: device.deviceID
+      });
+    }
+  }
+  
+  return devices;
+}
 
-// ESP32 Access Request endpoint (for QR code scanning)
+// Auto-register discovered ESP32 device
+router.post('/auto-register/:deviceID', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const { deviceID } = req.params;
+    const { name, location } = req.body;
+    
+    // Get device from heartbeat cache
+    const cachedDevice = heartbeatCache.get(deviceID);
+    
+    if (!cachedDevice) {
+      return res.status(404).json({
+        error: 'Device Not Found',
+        message: 'Device not found in discovery cache. Make sure the device is sending heartbeats.'
+      });
+    }
+    
+    // Check if already registered
+    const existingDoor = await Door.findByMac(cachedDevice.mac);
+    if (existingDoor) {
+      return res.status(400).json({
+        error: 'Device Already Registered',
+        message: 'This device is already registered as a door'
+      });
+    }
+    
+    // Create new door
+    const door = await Door.create({
+      name: name || cachedDevice.deviceName,
+      location: location || 'Unknown Location',
+      controllerIp: cachedDevice.ip,
+      controllerMac: cachedDevice.mac
+    });
+    
+    // Log auto-registration event
+    await EventLogger.log(req, 'door', 'auto_registered', 'door', door.id, door.name, 
+      `Door auto-registered from discovered device ${cachedDevice.deviceID}`);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Door registered successfully',
+      door: door.toJSON()
+    });
+  } catch (error) {
+    console.error('Auto-registration error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to auto-register door'
+    });
+  }
+});
+
+
+// ESP32 Access Request endpoint (for QR code/NFC scanning)
 router.post('/access/request', async (req, res) => {
   try {
-    const { doorId, userId, reason } = req.body;
+    const { doorId, userId, userName, reason } = req.body;
     
-    if (!doorId) {
+    if (!doorId || !userId) {
       return res.status(400).json({
         error: 'Bad Request',
-        message: 'doorId is required'
+        message: 'doorId and userId are required'
       });
     }
     
     const door = await Door.findById(doorId);
     if (!door) {
+      await Door.logAccess(doorId, userId, false, 'Door not found');
       return res.status(404).json({
         error: 'Door Not Found',
-        message: 'The requested door does not exist'
+        message: 'The requested door does not exist',
+        accessGranted: false
       });
     }
     
     // Check if door is online
     if (!door.isOnline) {
+      await Door.logAccess(doorId, userId, false, 'Door is offline');
+      
+      // Log door offline event
+      await EventLogger.log(req, 'access', 'denied', 'door', door.id, door.name, 
+        `Access denied for user ${userName || userId} - door is offline`);
+      
       return res.json({
         success: false,
         message: 'Door is offline',
@@ -757,58 +850,89 @@ router.post('/access/request', async (req, res) => {
       });
     }
     
-    // If userId provided, check access permissions
-    if (userId) {
-      const hasAccess = await door.verifyAccess(userId);
-      if (!hasAccess) {
-        await Door.logAccess(doorId, userId, false, 'Access denied - no permission');
-        return res.json({
-          success: false,
-          message: 'Access denied',
-          accessGranted: false
-        });
-      }
+    // Check access permissions
+    const hasAccess = await door.verifyAccess(userId);
+    
+    if (!hasAccess) {
+      await Door.logAccess(doorId, userId, false, 'Access denied - no permission');
+      
+      // Log access denied event
+      await EventLogger.log(req, 'access', 'denied', 'door', door.id, door.name, 
+        `Access denied for user ${userName || userId} - insufficient permissions`);
+      
+      return res.json({
+        success: false,
+        message: 'Access denied - insufficient permissions',
+        accessGranted: false
+      });
     }
     
-    // Grant access
-    await Door.logAccess(doorId, userId, true, reason || 'QR code access');
+    // Access granted - log it
+    await Door.logAccess(doorId, userId, true, reason || 'Mobile app access');
+    
+    // Log access granted event
+    await EventLogger.log(req, 'access', 'granted', 'door', door.id, door.name, 
+      `Access granted to user ${userName || userId} via ${reason || 'mobile app'}`);
     
     // Send door open command to ESP32
     try {
+      console.log(`Sending open command to ESP32 at ${door.esp32Ip}`);
+      
+      const fetch = require('node-fetch');
       const response = await fetch(`http://${door.esp32Ip}/door`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ action: 'open' })
+        body: JSON.stringify({ action: 'open' }),
+        timeout: 5000 // 5 second timeout
       });
       
       if (response.ok) {
+        const result = await response.json();
+        console.log('ESP32 responded:', result);
+        
         res.json({
           success: true,
-          message: 'Access granted - door opening',
-          accessGranted: true
+          message: 'Access granted - door opened',
+          accessGranted: true,
+          doorName: door.name,
+          location: door.location
         });
       } else {
+        console.error('ESP32 returned error:', response.status, response.statusText);
+        
         res.json({
-          success: false,
+          success: true,
           message: 'Access granted but door control failed',
-          accessGranted: true
+          accessGranted: true,
+          doorName: door.name,
+          location: door.location,
+          controlError: true
         });
       }
     } catch (doorError) {
       console.error('Door control error:', doorError);
+      
+      // Log door control error
+      await EventLogger.log(req, 'system', 'error', 'door', door.id, door.name, 
+        `Door control failed: ${doorError.message}`);
+      
       res.json({
-        success: false,
+        success: true,
         message: 'Access granted but door control failed',
-        accessGranted: true
+        accessGranted: true,
+        doorName: door.name,
+        location: door.location,
+        controlError: true
       });
     }
   } catch (error) {
     console.error('Access request error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to process access request'
+      message: 'Failed to process access request',
+      accessGranted: false
     });
   }
 });

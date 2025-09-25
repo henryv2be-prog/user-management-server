@@ -617,7 +617,7 @@ void sendHeartbeat() {
   http.begin(serverURL + "/api/doors/heartbeat");
   http.addHeader("Content-Type", "application/json");
   
-  StaticJsonDocument<200> doc;
+  StaticJsonDocument<300> doc;
   doc["deviceID"] = deviceID;
   doc["deviceName"] = deviceName;
   doc["ip"] = WiFi.localIP().toString();
@@ -627,6 +627,8 @@ void sendHeartbeat() {
   doc["signal"] = WiFi.RSSI();
   doc["freeHeap"] = ESP.getFreeHeap();
   doc["uptime"] = millis();
+  doc["firmware"] = "1.0.0";
+  doc["deviceType"] = "ESP32";
   
   String jsonString;
   serializeJson(doc, jsonString);
@@ -636,6 +638,18 @@ void sendHeartbeat() {
   if (httpResponseCode > 0) {
     String response = http.getString();
     Serial.println("Heartbeat sent successfully: " + String(httpResponseCode));
+    
+    // Parse response for any immediate commands
+    StaticJsonDocument<200> responseDoc;
+    DeserializationError error = deserializeJson(responseDoc, response);
+    if (!error && responseDoc.containsKey("command")) {
+      String command = responseDoc["command"];
+      if (command == "open") {
+        openDoor();
+      } else if (command == "close") {
+        closeDoor();
+      }
+    }
   } else {
     Serial.println("Heartbeat failed: " + String(httpResponseCode));
   }
