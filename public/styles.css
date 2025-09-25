@@ -432,6 +432,18 @@ body {
     color: var(--text-primary);
 }
 
+/* Fallback for when Font Awesome doesn't load */
+.nav-toggle-fallback {
+    display: none;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.nav-toggle i:not(.fa-bars) + .nav-toggle-fallback,
+.nav-toggle:not(:has(i)) .nav-toggle-fallback {
+    display: inline-block;
+}
+
 .nav-toggle:hover {
     background: var(--background-tertiary);
 }
@@ -891,14 +903,13 @@ textarea:focus-visible {
 }
 
 .brand-title {
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg, #000000 0%, #2563eb 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     font-size: 2.5rem;
     font-weight: 800;
     margin: 0 0 8px 0;
-    letter-spacing: -0.02em;
     letter-spacing: -0.02em;
 }
 
@@ -1352,18 +1363,50 @@ textarea:focus-visible {
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
+    font-weight: 500;
     transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 4px;
     min-width: 36px;
     height: 32px;
     line-height: 1;
+    text-transform: capitalize;
+}
+
+/* When showing text, adjust minimum width */
+body.fa-failed .action-btn {
+    min-width: 60px;
+    font-size: 0.8rem;
 }
 
 .action-btn i {
     font-size: 0.875rem;
+}
+
+/* Hide text by default, show only icon */
+.action-btn .btn-text {
+    display: none;
+}
+
+/* If Font Awesome fails to load, show text instead */
+body.fa-failed .action-btn .btn-text {
+    display: inline;
+}
+
+body.fa-failed .action-btn i {
+    display: none;
+}
+
+/* Show hamburger fallback when FA fails */
+body.fa-failed .nav-toggle i {
+    display: none;
+}
+
+body.fa-failed .nav-toggle-fallback {
+    display: inline-block !important;
 }
 
 .action-btn.edit {
