@@ -1,4 +1,7 @@
 const { User } = require('../database/models');
+const { JWT_SECRET } = require('../config/security');
+const { AuthenticationError } = require('../utils/errors');
+const jwt = require('jsonwebtoken');
 
 // Authentication middleware
 const authenticate = async (req, res, next) => {
@@ -6,24 +9,17 @@ const authenticate = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'No valid authentication token provided'
-      });
+      throw new AuthenticationError('No valid authentication token provided');
     }
     
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
     
     try {
-      const jwt = require('jsonwebtoken');
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
+      const decoded = jwt.verify(token, JWT_SECRET);
       const user = await User.findById(decoded.userId);
       
       if (!user) {
-        return res.status(401).json({
-          error: 'Unauthorized',
-          message: 'User not found'
-        });
+        throw new AuthenticationError('User not found');
       }
       
       // User is always active (is_active column removed)
@@ -31,17 +27,15 @@ const authenticate = async (req, res, next) => {
       req.user = user;
       next();
     } catch (tokenError) {
-      return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'Invalid or expired token'
-      });
+      if (tokenError.name === 'JsonWebTokenError') {
+        throw new AuthenticationError('Invalid token');
+      } else if (tokenError.name === 'TokenExpiredError') {
+        throw new AuthenticationError('Token expired');
+      }
+      throw tokenError;
     }
   } catch (error) {
-    console.error('Authentication error:', error);
-    return res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Authentication failed'
-    });
+    next(error);
   }
 };
 
@@ -75,8 +69,7 @@ const optionalAuth = async (req, res, next) => {
       const token = authHeader.substring(7);
       
       try {
-        const jwt = require('jsonwebtoken');
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production');
+        const decoded = jwt.verify(token, JWT_SECRET);
         const user = await User.findById(decoded.userId);
         
         if (user) {

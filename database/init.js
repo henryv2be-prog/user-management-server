@@ -1,9 +1,10 @@
 const { getDatabase, DB_PATH } = require('./connection');
+const pool = require('./pool');
 
 // Initialize database tables
-const initDatabase = () => {
-    return new Promise((resolve, reject) => {
-        const db = getDatabase();
+const initDatabase = async () => {
+    return new Promise(async (resolve, reject) => {
+        const db = await pool.getConnection();
         
         let completedTables = 0;
         const totalTables = 9; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, access_requests, events, admin_user
@@ -11,6 +12,7 @@ const initDatabase = () => {
         const checkCompletion = () => {
             completedTables++;
             if (completedTables === totalTables) {
+                pool.releaseConnection(db);
                 resolve();
             }
         };

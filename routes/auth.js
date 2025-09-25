@@ -3,6 +3,9 @@ const { User } = require('../database/models');
 const { validateLogin, validateRegister, validatePasswordChange } = require('../middleware/validation');
 const { authenticate } = require('../middleware/auth');
 const EventLogger = require('../utils/eventLogger');
+const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/security');
+const { AuthenticationError, ValidationError, ConflictError, asyncHandler } = require('../utils/errors');
+const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
@@ -39,7 +42,6 @@ router.post('/login', validateLogin, async (req, res) => {
     }
     
     // Generate JWT token
-    const jwt = require('jsonwebtoken');
     const token = jwt.sign(
       { 
         userId: user.id, 
@@ -47,8 +49,8 @@ router.post('/login', validateLogin, async (req, res) => {
         email: user.email, 
         role: user.role 
       },
-      process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
     );
     
     // Log user login event
@@ -93,7 +95,6 @@ router.post('/register', validateRegister, async (req, res) => {
     await EventLogger.logUserRegistration(req, user);
     
     // Generate JWT token
-    const jwt = require('jsonwebtoken');
     const token = jwt.sign(
       { 
         userId: user.id, 
@@ -101,8 +102,8 @@ router.post('/register', validateRegister, async (req, res) => {
         email: user.email, 
         role: user.role 
       },
-      process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
     );
     
     res.status(201).json({

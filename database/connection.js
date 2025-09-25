@@ -1,83 +1,29 @@
-const sqlite3 = require('sqlite3').verbose();
+const pool = require('./pool');
 const path = require('path');
-const fs = require('fs');
 
-// Database path - use environment variable for Render compatibility
+// Re-export pool methods for backward compatibility
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'users.db');
 
-// Ensure database directory exists
-const dbDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-}
-
-// Create a singleton database connection
-let dbInstance = null;
-
-const getDatabase = () => {
-    if (!dbInstance) {
-        dbInstance = new sqlite3.Database(DB_PATH, (err) => {
-            if (err) {
-                console.error('Error opening database:', err.message);
-                throw err;
-            }
-            console.log('Connected to SQLite database at:', DB_PATH);
-        });
-    }
-    return dbInstance;
+// Legacy getDatabase function - returns a connection from the pool
+const getDatabase = async () => {
+    return await pool.getConnection();
 };
 
-const closeDatabase = () => {
-    if (dbInstance) {
-        dbInstance.close((err) => {
-            if (err) {
-                console.error('Error closing database:', err.message);
-            } else {
-                console.log('Database connection closed');
-            }
-        });
-        dbInstance = null;
-    }
+const closeDatabase = async () => {
+    await pool.closeAll();
 };
 
 // Helper function to run queries with automatic connection management
-const runQuery = (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-        const db = getDatabase();
-        db.run(sql, params, function(err) {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve({ lastID: this.lastID, changes: this.changes });
-        });
-    });
+const runQuery = async (sql, params = []) => {
+    return await pool.run(sql, params);
 };
 
-const getQuery = (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-        const db = getDatabase();
-        db.get(sql, params, (err, row) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(row);
-        });
-    });
+const getQuery = async (sql, params = []) => {
+    return await pool.get(sql, params);
 };
 
-const allQuery = (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-        const db = getDatabase();
-        db.all(sql, params, (err, rows) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(rows);
-        });
-    });
+const allQuery = async (sql, params = []) => {
+    return await pool.all(sql, params);
 };
 
 module.exports = {

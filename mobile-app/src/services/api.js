@@ -1,13 +1,21 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiConfig from '../config/api';
 
-// Configure your server URL here
-const SERVER_URL = 'http://192.168.1.20:3000';
-
+// Create axios instance without baseURL initially
 export const api = axios.create({
-  baseURL: `${SERVER_URL}/api`,
   timeout: 10000,
 });
+
+// Function to update axios baseURL
+const updateApiBaseUrl = async () => {
+  const serverUrl = await apiConfig.getServerUrl();
+  api.defaults.baseURL = `${serverUrl}/api`;
+  return serverUrl;
+};
+
+// Initialize API base URL
+updateApiBaseUrl();
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
