@@ -14,7 +14,10 @@ const {
   requireAdmin, 
   authorizeSelfOrAdmin 
 } = require('../middleware/auth');
+const { validateHeartbeat, validateDoorCommand } = require('../middleware/esp32Validation');
 const EventLogger = require('../utils/eventLogger');
+const accessMutex = require('../utils/accessMutex');
+const { asyncHandler, NotFoundError, AuthorizationError } = require('../utils/errors');
 
 const router = express.Router();
 
@@ -42,7 +45,7 @@ router.get('/public', async (req, res) => {
 });
 
 // ESP32 Heartbeat endpoint (no auth required)
-router.post('/heartbeat', async (req, res) => {
+router.post('/heartbeat', validateHeartbeat, asyncHandler(async (req, res) => {
   try {
     console.log('Heartbeat endpoint hit');
     

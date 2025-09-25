@@ -9,6 +9,11 @@ const fetch = require('node-fetch');
 const { initDatabase } = require('./database/init');
 require('dotenv').config();
 
+// Load security config first to validate environment
+const securityConfig = require('./config/security');
+const { enforceHTTPS, contentSecurityPolicy, securityHeaders } = require('./middleware/security');
+const { errorHandler } = require('./utils/errors');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -17,9 +22,14 @@ const PORT = process.env.PORT || 3000;
 // for accurate IP detection and rate limiting when deployed behind services like Render
 app.set('trust proxy', 1);
 
+// Apply security middleware
+app.use(enforceHTTPS);
+app.use(securityHeaders);
+app.use(contentSecurityPolicy);
+
 // Security middleware
 app.use(helmet({
-  contentSecurityPolicy: false, // Disable CSP for development
+  contentSecurityPolicy: false, // We handle CSP separately
   crossOriginEmbedderPolicy: false
 }));
 
@@ -188,26 +198,8 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Error handling middleware
-app.use(async (err, req, res, next) => {
-  console.error('Error:', err);
-  
-  // Log error event
-  try {
-    const EventLogger = require('./utils/eventLogger');
-    await EventLogger.logError(req, err, `Route: ${req.method} ${req.path}`);
-  } catch (logError) {
-    console.error('Failed to log error event:', logError);
-  }
-  
-  // Don't leak error details in production
-  const isDevelopment = process.env.NODE_ENV !== 'production';
-  
-  res.status(err.status || 500).json({
-    error: isDevelopment ? err.message : 'Internal Server Error',
-    ...(isDevelopment && { stack: err.stack })
-  });
-});
+// Error handling middleware - Use the new error handler
+app.use(errorHandler);
 
 // 404 handler
 app.use('*', (req, res) => {
