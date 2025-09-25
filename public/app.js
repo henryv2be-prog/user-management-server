@@ -950,22 +950,31 @@ function hideAllSections() {
 function toggleNav() {
     const navMenu = document.getElementById('navMenu');
     const navToggle = document.querySelector('.nav-toggle');
-    const isActive = navMenu.classList.toggle('active');
     
-    // Update aria-expanded for accessibility
-    if (navToggle) {
-        navToggle.setAttribute('aria-expanded', isActive);
+    // Toggle display directly
+    if (navMenu.style.display === 'none' || navMenu.style.display === '') {
+        navMenu.style.display = 'flex';
+        if (navToggle) {
+            navToggle.setAttribute('aria-expanded', 'true');
+        }
+    } else {
+        navMenu.style.display = 'none';
+        if (navToggle) {
+            navToggle.setAttribute('aria-expanded', 'false');
+        }
     }
 }
 
 function closeMobileMenu() {
     const navMenu = document.getElementById('navMenu');
     const navToggle = document.querySelector('.nav-toggle');
-    navMenu.classList.remove('active');
     
-    // Update aria-expanded for accessibility
-    if (navToggle) {
-        navToggle.setAttribute('aria-expanded', 'false');
+    // Only hide on mobile
+    if (window.innerWidth <= 768) {
+        navMenu.style.display = 'none';
+        if (navToggle) {
+            navToggle.setAttribute('aria-expanded', 'false');
+        }
     }
 }
 
@@ -5339,6 +5348,23 @@ function closeDoorDetails() {
 
 
 // Initialize the application
+// Handle responsive navigation
+function handleResponsiveNav() {
+    const navMenu = document.getElementById('navMenu');
+    const navToggle = document.querySelector('.nav-toggle');
+    
+    if (window.innerWidth > 768) {
+        // Desktop - show menu, hide toggle
+        navMenu.style.display = 'flex';
+        if (navToggle) navToggle.style.display = 'none';
+    } else {
+        // Mobile - hide menu, show toggle
+        navMenu.style.display = 'none';
+        if (navToggle) navToggle.style.display = 'block';
+    }
+}
+
+// Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     checkAuthStatus();
     setupEventListeners();
@@ -5348,4 +5374,8 @@ document.addEventListener('DOMContentLoaded', function() {
     startKeepAlive();
     // Initialize site plan
     sitePlanManager.init();
+    
+    // Set up responsive navigation
+    handleResponsiveNav();
+    window.addEventListener('resize', handleResponsiveNav);
 });
