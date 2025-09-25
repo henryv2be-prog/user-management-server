@@ -7,6 +7,19 @@
     box-sizing: border-box;
 }
 
+/* Ensure Font Awesome icons are visible */
+.fas, .far, .fab {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    display: inline-block !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    text-rendering: auto !important;
+    line-height: 1 !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
 /* Focus management for accessibility */
 *:focus {
     outline: 2px solid var(--primary-color);
@@ -408,9 +421,14 @@ body {
     border: none;
     padding: var(--space-2);
     border-radius: var(--radius-md);
-    color: var(--text-primary);
+    color: var(--text-primary, #333);
     cursor: pointer;
     transition: all var(--transition-fast);
+}
+
+.nav-toggle i {
+    color: inherit;
+    font-size: 1.5rem;
 }
 
 .nav-toggle:hover {
@@ -1154,6 +1172,15 @@ textarea:focus-visible {
     cursor: pointer;
     font-size: 0.9rem;
     transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+}
+
+.action-btn i {
+    font-size: 1rem;
+    display: inline-block;
 }
 
 .action-btn.edit {
