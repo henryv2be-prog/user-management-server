@@ -1495,12 +1495,15 @@ function displayUsers(users) {
                 <div class="action-buttons">
                     <button class="action-btn edit" onclick="editUser(${user.id})" title="Edit User">
                         <i class="fas fa-edit"></i>
+                        <span class="btn-text">Edit</span>
                     </button>
                     <button class="action-btn access-groups" onclick="manageUserAccessGroups(${user.id})" title="Access Groups">
                         <i class="fas fa-shield-alt"></i>
+                        <span class="btn-text">Access</span>
                     </button>
                     <button class="action-btn delete" onclick="deleteUser(${user.id})" ${user.id === currentUser.id ? 'disabled' : ''} title="Delete User">
                         <i class="fas fa-trash"></i>
+                        <span class="btn-text">Delete</span>
                     </button>
                 </div>
             </td>
@@ -1848,13 +1851,16 @@ function displayDoors(doors) {
                 <div class="action-buttons">
                     <button class="action-btn edit" onclick="editDoor(${door.id})" title="Edit Door">
                         <i class="fas fa-edit"></i>
+                        <span class="btn-text">Edit</span>
                     </button>
                     <button class="action-btn delete" onclick="deleteDoor(${door.id})" title="Delete Door">
                         <i class="fas fa-trash"></i>
+                        <span class="btn-text">Delete</span>
                     </button>
                     ${door.isOnline ? `
                         <button class="action-btn control" onclick="controlDoor(${door.id}, 'open')" title="Open Door">
                             <i class="fas fa-door-open"></i>
+                            <span class="btn-text">Open</span>
                         </button>
                     ` : ''}
                 </div>
@@ -2266,12 +2272,15 @@ async function displayAccessGroups(accessGroups) {
                 <div class="action-buttons">
                     <button class="action-btn edit" onclick="editAccessGroup(${group.id})" title="Edit Group">
                         <i class="fas fa-edit"></i>
+                        <span class="btn-text">Edit</span>
                     </button>
                     <button class="action-btn details" onclick="manageAccessGroupDetails(${group.id})" title="Manage Doors">
                         <i class="fas fa-door-open"></i>
+                        <span class="btn-text">Doors</span>
                     </button>
                     <button class="action-btn delete" onclick="deleteAccessGroup(${group.id})" title="Delete Group">
                         <i class="fas fa-trash"></i>
+                        <span class="btn-text">Delete</span>
                     </button>
                 </div>
             </td>
@@ -5365,6 +5374,32 @@ function handleResponsiveNav() {
 }
 
 // Initialize the application
+// Check if Font Awesome is loaded
+function checkFontAwesome() {
+    // Create a test element
+    const testElement = document.createElement('i');
+    testElement.className = 'fas fa-check';
+    testElement.style.position = 'absolute';
+    testElement.style.visibility = 'hidden';
+    document.body.appendChild(testElement);
+    
+    // Check if Font Awesome loaded by checking the font-family
+    const computedStyle = window.getComputedStyle(testElement, ':before');
+    const fontFamily = computedStyle.fontFamily || computedStyle.getPropertyValue('font-family');
+    const fontAwesomeLoaded = fontFamily && fontFamily.includes('Font Awesome');
+    
+    // Clean up
+    document.body.removeChild(testElement);
+    
+    // If Font Awesome didn't load, add fallback class to body
+    if (!fontAwesomeLoaded) {
+        document.body.classList.add('fa-failed');
+    }
+    
+    return fontAwesomeLoaded;
+}
+
+// Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     checkAuthStatus();
     setupEventListeners();
@@ -5378,4 +5413,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set up responsive navigation
     handleResponsiveNav();
     window.addEventListener('resize', handleResponsiveNav);
+    
+    // Check Font Awesome after a short delay
+    setTimeout(checkFontAwesome, 500);
 });
