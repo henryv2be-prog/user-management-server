@@ -30,8 +30,6 @@ bool doorOpen = false;
 bool apMode = false;
 unsigned long lastHeartbeat = 0;
 const unsigned long HEARTBEAT_INTERVAL = 10000; // 10 seconds
-unsigned long lastAccessCheck = 0;
-const unsigned long ACCESS_CHECK_INTERVAL = 5000; // 5 seconds
 
 // Button state for AP activation
 bool lastButtonState = HIGH;
@@ -51,7 +49,6 @@ void openDoor();
 void closeDoor();
 void sendHeartbeat();
 void updateStatusLED();
-void checkAccessEvents();
 
 void setup() {
   Serial.begin(115200);
@@ -119,12 +116,6 @@ void loop() {
     if (millis() - lastHeartbeat >= HEARTBEAT_INTERVAL) {
       sendHeartbeat();
       lastHeartbeat = millis();
-    }
-    
-    // Check for access events from server
-    if (millis() - lastAccessCheck >= ACCESS_CHECK_INTERVAL) {
-      checkAccessEvents();
-      lastAccessCheck = millis();
     }
   } else if (isConfigured) {
     // Try to reconnect to WiFi
@@ -677,49 +668,4 @@ void updateStatusLED() {
     // Fast blink when disconnected
     digitalWrite(STATUS_LED_PIN, (millis() / 200) % 2);
   }
-}
-
-void checkAccessEvents() {
-  if (serverURL.length() == 0 || WiFi.status() != WL_CONNECTED) return;
-  
-  // Check for pending access events from server
-  http.begin(serverURL + "/api/doors/" + deviceID + "/access-events");
-  http.addHeader("Content-Type", "application/json");
-  
-  StaticJsonDocument<100> doc;
-  doc["deviceID"] = deviceID;
-  doc["lastCheck"] = lastAccessCheck;
-  
-  String jsonString;
-  serializeJson(doc, jsonString);
-  
-  int httpResponseCode = http.POST(jsonString);
-  
-  if (httpResponseCode == 200) {
-    String response = http.getString();
-    StaticJsonDocument<1024> responseDoc;
-    DeserializationError error = deserializeJson(responseDoc, response);
-    
-    if (!error && responseDoc.containsKey("events")) {
-      JsonArray events = responseDoc["events"].as<JsonArray>();
-      
-      for (JsonVariant event : events) {
-        String action = event["action"];
-        String userId = event["userId"];
-        String userName = event["userName"];
-        
-        Serial.println("Access event: " + action + " for user " + userName);
-        
-        if (action == "grant_access") {
-          Serial.println("Granting access to: " + userName);
-          openDoor();
-          
-          // Log the access locally
-          Serial.println("Access granted to user ID: " + userId);
-        }
-      }
-    }
-  }
-  
-  http.end();
 }
