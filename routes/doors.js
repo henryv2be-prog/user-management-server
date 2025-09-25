@@ -126,7 +126,7 @@ router.post('/heartbeat', validateHeartbeat, asyncHandler(async (req, res) => {
       message: 'Failed to process heartbeat'
     });
   }
-});
+}));
 
 // Get all doors (admin only)
 router.get('/', authenticate, requireAdmin, validatePagination, async (req, res) => {
