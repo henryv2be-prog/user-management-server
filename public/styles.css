@@ -417,18 +417,17 @@ body {
 
 .nav-toggle {
     display: none;
-    background: none;
-    border: none;
+    background: transparent;
+    border: 1px solid #ddd;
     padding: var(--space-2);
     border-radius: var(--radius-md);
-    color: var(--text-primary, #333);
+    color: #333;
     cursor: pointer;
     transition: all var(--transition-fast);
-}
-
-.nav-toggle i {
-    color: inherit;
     font-size: 1.5rem;
+    line-height: 1;
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .nav-toggle:hover {
@@ -1170,16 +1169,19 @@ textarea:focus-visible {
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
+    font-weight: 500;
     transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 36px;
+    min-width: 60px;
+    height: 32px;
+    line-height: 1;
+    text-transform: capitalize;
 }
 
-.action-btn i {
-    font-size: 1rem;
+.action-btn span {
     display: inline-block;
 }
 
