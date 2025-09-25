@@ -25,12 +25,12 @@
     
     <!-- Preload critical resources -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style">
     
     <!-- Stylesheets -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="styles.css?v=35" rel="stylesheet">
+    <link href="styles.css?v=36" rel="stylesheet">
     
     <!-- Mobile cache prevention -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -56,8 +56,8 @@
                 <div class="nav-brand">
                     <span class="brand-text">SimplifiAccess</span>
                 </div>
-                <button class="nav-toggle" onclick="toggleNav()" aria-label="Toggle navigation menu" aria-expanded="false" style="display: block; color: #333; font-size: 1.5rem; font-weight: bold;">
-                    ☰
+                <button class="nav-toggle" onclick="toggleNav()" aria-label="Toggle navigation menu" aria-expanded="false" style="display: block;">
+                    <i class="fas fa-bars"></i>
                 </button>
                 <div class="nav-menu" id="navMenu" role="menubar" style="display: none;">
                     <a href="#" class="nav-link" onclick="showSection('dashboard')" role="menuitem" aria-label="Go to Dashboard">
