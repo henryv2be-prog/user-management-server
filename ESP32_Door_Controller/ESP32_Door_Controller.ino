@@ -39,16 +39,17 @@ const unsigned long AP_ACTIVATION_TIME = 3000; // Hold for 3 seconds
 
 // Function declarations
 void connectToWiFi(bool restartAPOnFailure = true);
-void checkBootButton();
-void handleBootButton();
 void startAPMode();
 void setupConfigWebServer();
 void setupNormalWebServer();
 void loadConfiguration();
+void sendHeartbeat();
+void factoryReset();
+void updateStatusLED();
 void openDoor();
 void closeDoor();
-void sendHeartbeat();
-void updateStatusLED();
+void checkBootButton();
+void handleBootButton();
 
 void setup() {
   Serial.begin(115200);
@@ -90,6 +91,7 @@ void setup() {
     // No configuration, wait for button press
     Serial.println("No configuration found. Press and hold boot button for 3 seconds to enter configuration mode.");
     Serial.println("ESP32 will wait for button press - no AP will start automatically.");
+    Serial.println("Current state: apMode=" + String(apMode) + ", isConfigured=" + String(isConfigured));
     // Blink LED to indicate waiting for configuration
     for (int i = 0; i < 3; i++) {
       digitalWrite(STATUS_LED_PIN, HIGH);
@@ -98,12 +100,20 @@ void setup() {
       delay(500);
     }
     Serial.println("Setup complete. Waiting for button press...");
+    Serial.println("ESP32 is now in WAITING mode - no AP, no WiFi connection attempts");
   }
 }
 
 void loop() {
   // Handle button press for AP activation
   handleBootButton();
+  
+  // Debug: Print state every 10 seconds
+  static unsigned long lastDebug = 0;
+  if (millis() - lastDebug > 10000) {
+    Serial.println("Loop debug - apMode: " + String(apMode) + ", isConfigured: " + String(isConfigured) + ", WiFi: " + String(WiFi.status()));
+    lastDebug = millis();
+  }
   
   if (apMode) {
     // In AP mode, handle web server
@@ -117,10 +127,12 @@ void loop() {
       sendHeartbeat();
       lastHeartbeat = millis();
     }
-  } else if (isConfigured) {
-    // Try to reconnect to WiFi
-    connectToWiFi();
+  } else if (isConfigured && WiFi.status() != WL_CONNECTED) {
+    // Try to reconnect to WiFi only if configured but not connected
+    // Don't restart AP mode on reconnection attempts
+    connectToWiFi(false);
   }
+  // If not configured and not in AP mode, do nothing (wait for button press)
   
   // Update status LED
   updateStatusLED();
@@ -147,19 +159,26 @@ void handleBootButton() {
     // Button just pressed
     buttonPressTime = millis();
     buttonPressed = true;
-    Serial.println("Boot button pressed");
+    Serial.println("Boot button pressed - timing...");
+  }
+  
+  if (buttonPressed && currentButtonState == LOW) {
+    // Button still pressed - check duration
+    unsigned long pressDuration = millis() - buttonPressTime;
+    
+    if (pressDuration >= AP_ACTIVATION_TIME && !apMode) {
+      // Long press detected - activate AP mode
+      Serial.println("Long press detected (" + String(pressDuration) + "ms) - activating AP mode");
+      buttonPressed = false; // Reset to prevent multiple triggers
+      startAPMode();
+    }
   }
   
   if (buttonPressed && currentButtonState == HIGH) {
     // Button released
     buttonPressed = false;
     unsigned long pressDuration = millis() - buttonPressTime;
-    
-    if (pressDuration >= AP_ACTIVATION_TIME) {
-      // Long press - activate AP mode
-      Serial.println("Long press detected - activating AP mode");
-      startAPMode();
-    }
+    Serial.println("Boot button released after " + String(pressDuration) + "ms");
   }
   
   lastButtonState = currentButtonState;
@@ -171,9 +190,11 @@ void startAPMode() {
   // Stop any existing WiFi connections
   Serial.println("Disconnecting from any existing WiFi...");
   WiFi.disconnect();
+  delay(500);
+  
   Serial.println("Setting WiFi mode to OFF...");
   WiFi.mode(WIFI_OFF);
-  delay(100);
+  delay(1000);
   
   // Start AP
   Serial.println("Setting WiFi mode to AP...");
@@ -185,11 +206,14 @@ void startAPMode() {
     Serial.println("✅ AP started successfully!");
   } else {
     Serial.println("❌ Failed to start AP!");
+    return;
   }
   
   IPAddress apIP = WiFi.softAPIP();
   Serial.print("AP started with IP: ");
   Serial.println(apIP);
+  Serial.println("Connect to WiFi: " + String(AP_SSID));
+  Serial.println("Then go to: http://" + apIP.toString());
   
   // Setup web server for configuration
   setupConfigWebServer();
@@ -204,6 +228,11 @@ void startAPMode() {
     digitalWrite(STATUS_LED_PIN, LOW);
     delay(200);
   }
+  
+  Serial.println("=== AP MODE ACTIVE - Ready for configuration ===");
+  Serial.println("Connect to WiFi: " + String(AP_SSID));
+  Serial.println("Then go to: http://" + WiFi.softAPIP().toString());
+  Serial.println("Configuration interface should be available at root URL");
 }
 
 void setupConfigWebServer() {
@@ -232,6 +261,10 @@ void setupConfigWebServer() {
     html += "</style></head><body>";
     html += "<div class='container'>";
     html += "<h1>🔐 ESP32 Door Configuration</h1>";
+    html += "<div style='background: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin: 10px 0; border: 1px solid #ffeaa7;'>";
+    html += "🔧 <strong>Configuration Mode Active</strong><br>";
+    html += "Hold BOOT button for 3+ seconds to enter this mode";
+    html += "</div>";
     html += "<p>Configure your ESP32 door controller</p>";
     html += "<button onclick='scanWiFi()' class='secondary'>📡 Scan for WiFi Networks</button>";
     html += "<div id='wifiList' class='wifi-list' style='display: none;'></div>";
@@ -244,6 +277,8 @@ void setupConfigWebServer() {
     html += "<input type='text' id='deviceName' placeholder='Device Name (e.g., Main Entrance)' required>";
     html += "<button type='submit'>Configure & Connect</button>";
     html += "</form>";
+    html += "<hr style='margin: 20px 0;'>";
+    html += "<button onclick='factoryReset()' class='secondary' style='background: #dc3545;'>🗑️ Factory Reset (Clear All Settings)</button>";
     html += "<div id='status'></div>";
     html += "<script>";
     html += "function scanWiFi() {";
@@ -298,6 +333,16 @@ void setupConfigWebServer() {
     html += "      }";
     html += "    });";
     html += "});";
+    html += "function factoryReset() {";
+    html += "  if (confirm('Are you sure you want to factory reset? This will clear all settings and restart the device.')) {";
+    html += "    fetch('/factory-reset', { method: 'POST' })";
+    html += "      .then(response => response.json())";
+    html += "      .then(data => {";
+    html += "        const status = document.getElementById('status');";
+    html += "        status.innerHTML = '<div class=\"status success\">Factory reset initiated. Device will restart...</div>';";
+    html += "      });";
+    html += "  }";
+    html += "}";
     html += "</script>";
     html += "</div></body></html>";
     
@@ -324,25 +369,25 @@ void setupConfigWebServer() {
         preferences.putBool("configured", true);
         
         // Generate device ID
-        deviceID = "ESP32-" + WiFi.macAddress();
+        String deviceID = "ESP32-" + WiFi.macAddress();
         deviceID.replace(":", "");
         preferences.putString("device_id", deviceID);
         
-        // Update global variables
-        isConfigured = true;
-        serverURL = serverUrl;
-        deviceName = deviceName;
-        
         StaticJsonDocument<200> response;
         response["success"] = true;
-        response["message"] = "Configuration saved! Connecting to WiFi...";
+        response["message"] = "Configuration saved! Stopping AP and connecting to WiFi...";
         
         String responseStr;
         serializeJson(response, responseStr);
         server.send(200, "application/json", responseStr);
         
-        // Start connection process after a short delay
-        delay(1000);
+        // Stop AP mode first, then connect to WiFi
+        Serial.println("Stopping AP mode before WiFi connection...");
+        WiFi.softAPdisconnect(true);
+        apMode = false;
+        delay(2000); // Give time for AP to fully stop
+        
+        // Now connect to WiFi (restart AP if it fails)
         connectToWiFi(true);
       } else {
         StaticJsonDocument<200> response;
@@ -394,6 +439,14 @@ void setupConfigWebServer() {
     serializeJson(doc, response);
     server.send(200, "application/json", response);
   });
+  
+  // Factory reset endpoint
+  server.on("/factory-reset", HTTP_POST, []() {
+    Serial.println("=== FACTORY RESET REQUESTED ===");
+    server.send(200, "application/json", "{\"success\": true, \"message\": \"Factory reset initiated\"}");
+    delay(1000);
+    factoryReset();
+  });
 }
 
 void loadConfiguration() {
@@ -418,7 +471,6 @@ void loadConfiguration() {
 
 void connectToWiFi(bool restartAPOnFailure) {
   Serial.println("=== connectToWiFi() called ===");
-  Serial.println("restartAPOnFailure: " + String(restartAPOnFailure));
   
   if (!isConfigured) {
     Serial.println("ERROR: Not configured, cannot connect to WiFi");
@@ -435,13 +487,6 @@ void connectToWiFi(bool restartAPOnFailure) {
   if (ssid.length() == 0) {
     Serial.println("ERROR: No SSID found in preferences");
     return;
-  }
-  
-  // Stop AP mode if it's running
-  if (apMode) {
-    Serial.println("Stopping AP mode before connecting to WiFi...");
-    WiFi.softAPdisconnect(true);
-    delay(2000); // Give time for AP to fully stop
   }
   
   Serial.println("Setting WiFi mode to STA...");
@@ -510,12 +555,108 @@ void connectToWiFi(bool restartAPOnFailure) {
       // Return to AP mode for reconfiguration
       startAPMode();
     } else {
-      Serial.println("Not restarting AP mode - will retry later");
+      Serial.println("Not restarting AP mode - will retry connection later");
     }
   }
 }
 
 void setupNormalWebServer() {
+  // Root endpoint - main menu with configuration option
+  server.on("/", []() {
+    String html = "<!DOCTYPE html><html><head><title>ESP32 Door Controller</title>";
+    html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
+    html += "<style>";
+    html += "body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }";
+    html += ".container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }";
+    html += "h1 { color: #333; text-align: center; }";
+    html += ".status-card { background: #e9ecef; padding: 15px; border-radius: 8px; margin: 10px 0; }";
+    html += ".status-item { margin: 8px 0; }";
+    html += ".status-label { font-weight: bold; color: #495057; }";
+    html += ".status-value { color: #212529; }";
+    html += "button { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }";
+    html += ".btn-primary { background: #007bff; color: white; }";
+    html += ".btn-primary:hover { background: #0056b3; }";
+    html += ".btn-secondary { background: #6c757d; color: white; }";
+    html += ".btn-secondary:hover { background: #5a6268; }";
+    html += ".btn-warning { background: #ffc107; color: #212529; }";
+    html += ".btn-warning:hover { background: #e0a800; }";
+    html += ".btn-danger { background: #dc3545; color: white; }";
+    html += ".btn-danger:hover { background: #c82333; }";
+    html += ".menu-section { margin: 20px 0; padding: 15px; border: 1px solid #dee2e6; border-radius: 8px; }";
+    html += ".menu-title { font-size: 18px; font-weight: bold; color: #495057; margin-bottom: 10px; }";
+    html += "</style></head><body>";
+    html += "<div class='container'>";
+    html += "<h1>🔐 ESP32 Door Controller</h1>";
+    
+    // Status section
+    html += "<div class='status-card'>";
+    html += "<div class='menu-title'>📊 Device Status</div>";
+    html += "<div class='status-item'><span class='status-label'>Device:</span> <span class='status-value'>" + deviceName + "</span></div>";
+    html += "<div class='status-item'><span class='status-label'>ID:</span> <span class='status-value'>" + deviceID + "</span></div>";
+    html += "<div class='status-item'><span class='status-label'>IP:</span> <span class='status-value'>" + WiFi.localIP().toString() + "</span></div>";
+    html += "<div class='status-item'><span class='status-label'>Status:</span> <span class='status-value'>";
+    html += (doorOpen ? "🔓 Open" : "🔒 Closed");
+    html += "</span></div>";
+    html += "<div class='status-item'><span class='status-label'>Uptime:</span> <span class='status-value'>" + String(millis() / 1000) + " seconds</span></div>";
+    html += "<div class='status-item'><span class='status-label'>Free Memory:</span> <span class='status-value'>" + String(ESP.getFreeHeap()) + " bytes</span></div>";
+    html += "</div>";
+    
+    // Control section
+    html += "<div class='menu-section'>";
+    html += "<div class='menu-title'>🎛️ Door Control</div>";
+    html += "<button class='btn-primary' onclick='controlDoor(\"open\")'>🔓 Open Door</button>";
+    html += "<button class='btn-secondary' onclick='controlDoor(\"close\")'>🔒 Close Door</button>";
+    html += "</div>";
+    
+    // Configuration section - only show if in AP mode
+    if (apMode) {
+      html += "<div class='menu-section'>";
+      html += "<div class='menu-title'>⚙️ Configuration Mode</div>";
+      html += "<p style='color: #856404; background: #fff3cd; padding: 10px; border-radius: 5px;'>";
+      html += "🔧 Configuration mode active. Hold BOOT button for 3+ seconds to enter this mode.";
+      html += "</p>";
+      html += "<button class='btn-warning' onclick='enterConfigMode()'>🔧 Reconfigure Device</button>";
+      html += "<button class='btn-danger' onclick='factoryReset()'>🗑️ Factory Reset</button>";
+      html += "</div>";
+    } else {
+      html += "<div class='menu-section'>";
+      html += "<div class='menu-title'>⚙️ Configuration</div>";
+      html += "<p style='color: #6c757d; font-style: italic;'>";
+      html += "Hold BOOT button for 3+ seconds to enter configuration mode";
+      html += "</p>";
+      html += "</div>";
+    }
+    
+    html += "<div id='status'></div>";
+    html += "<script>";
+    html += "function controlDoor(action) {";
+    html += "  fetch('/door', {";
+    html += "    method: 'POST',";
+    html += "    headers: {'Content-Type': 'application/json'},";
+    html += "    body: JSON.stringify({action: action})";
+    html += "  }).then(response => response.json())";
+    html += "    .then(data => {";
+    html += "      const status = document.getElementById('status');";
+    html += "      status.innerHTML = '<div style=\"background: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin: 10px 0;\">' + data.message + '</div>';";
+    html += "      setTimeout(() => location.reload(), 2000);";
+    html += "    });";
+    html += "}";
+    html += "function factoryReset() {";
+    html += "  if (confirm('This will clear ALL settings and restart the device. Are you sure?')) {";
+    html += "    fetch('/factory-reset', { method: 'POST' })";
+    html += "      .then(response => response.json())";
+    html += "      .then(data => {";
+    html += "        const status = document.getElementById('status');";
+    html += "        status.innerHTML = '<div style=\"background: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin: 10px 0;\">' + data.message + '</div>';";
+    html += "      });";
+    html += "  }";
+    html += "}";
+    html += "</script>";
+    html += "</div></body></html>";
+    
+    server.send(200, "text/html", html);
+  });
+  
   // Device discovery endpoint
   server.on("/discover", HTTP_GET, []() {
     StaticJsonDocument<300> doc;
@@ -575,24 +716,7 @@ void setupNormalWebServer() {
     server.send(200, "application/json", response);
   });
   
-  // Root endpoint - simple status page
-  server.on("/", []() {
-    String html = "<!DOCTYPE html><html><head><title>ESP32 Door Controller</title></head><body>";
-    html += "<h1>🔐 ESP32 Door Controller</h1>";
-    html += "<p><strong>Device:</strong> " + deviceName + "</p>";
-    html += "<p><strong>ID:</strong> " + deviceID + "</p>";
-    html += "<p><strong>IP:</strong> " + WiFi.localIP().toString() + "</p>";
-    html += "<p><strong>Status:</strong> ";
-    html += (doorOpen ? "🔓 Open" : "🔒 Closed");
-    html += "</p>";
-    html += "<p><strong>Uptime:</strong> " + String(millis() / 1000) + " seconds</p>";
-    html += "<p><strong>Free Memory:</strong> " + String(ESP.getFreeHeap()) + " bytes</p>";
-    html += "<hr>";
-    html += "<p><em>This device is configured and connected to your access control system.</em></p>";
-    html += "</body></html>";
-    
-    server.send(200, "text/html", html);
-  });
+  
 }
 
 void openDoor() {
@@ -617,7 +741,7 @@ void sendHeartbeat() {
   http.begin(serverURL + "/api/doors/heartbeat");
   http.addHeader("Content-Type", "application/json");
   
-  StaticJsonDocument<300> doc;
+  StaticJsonDocument<200> doc;
   doc["deviceID"] = deviceID;
   doc["deviceName"] = deviceName;
   doc["ip"] = WiFi.localIP().toString();
@@ -627,8 +751,6 @@ void sendHeartbeat() {
   doc["signal"] = WiFi.RSSI();
   doc["freeHeap"] = ESP.getFreeHeap();
   doc["uptime"] = millis();
-  doc["firmware"] = "1.0.0";
-  doc["deviceType"] = "ESP32";
   
   String jsonString;
   serializeJson(doc, jsonString);
@@ -638,23 +760,20 @@ void sendHeartbeat() {
   if (httpResponseCode > 0) {
     String response = http.getString();
     Serial.println("Heartbeat sent successfully: " + String(httpResponseCode));
-    
-    // Parse response for any immediate commands
-    StaticJsonDocument<200> responseDoc;
-    DeserializationError error = deserializeJson(responseDoc, response);
-    if (!error && responseDoc.containsKey("command")) {
-      String command = responseDoc["command"];
-      if (command == "open") {
-        openDoor();
-      } else if (command == "close") {
-        closeDoor();
-      }
-    }
   } else {
     Serial.println("Heartbeat failed: " + String(httpResponseCode));
   }
   
   http.end();
+}
+
+void factoryReset() {
+  Serial.println("=== FACTORY RESET ===");
+  preferences.clear();  // Clear all saved preferences
+  preferences.end();
+  Serial.println("All settings cleared. Restarting...");
+  delay(1000);
+  ESP.restart();
 }
 
 void updateStatusLED() {
