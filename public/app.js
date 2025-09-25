@@ -949,12 +949,24 @@ function hideAllSections() {
 
 function toggleNav() {
     const navMenu = document.getElementById('navMenu');
-    navMenu.classList.toggle('active');
+    const navToggle = document.querySelector('.nav-toggle');
+    const isActive = navMenu.classList.toggle('active');
+    
+    // Update aria-expanded for accessibility
+    if (navToggle) {
+        navToggle.setAttribute('aria-expanded', isActive);
+    }
 }
 
 function closeMobileMenu() {
     const navMenu = document.getElementById('navMenu');
+    const navToggle = document.querySelector('.nav-toggle');
     navMenu.classList.remove('active');
+    
+    // Update aria-expanded for accessibility
+    if (navToggle) {
+        navToggle.setAttribute('aria-expanded', 'false');
+    }
 }
 
 // Dashboard functions
