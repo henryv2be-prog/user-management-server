@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { colors, shadows, spacing, typography, borderRadius } from '../theme/colors';
 
 export default function ProfileScreen({ navigation }) {
   const { user, logout } = useAuth();
@@ -34,7 +35,7 @@ export default function ProfileScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={colors.text.inverse} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
         <View style={styles.placeholder} />
@@ -43,7 +44,7 @@ export default function ProfileScreen({ navigation }) {
       <View style={styles.content}>
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
-            <Ionicons name="person" size={48} color="#36454F" />
+            <Ionicons name="person" size={48} color={colors.brand.primary} />
           </View>
           
           <View style={styles.userInfo}>
@@ -61,26 +62,26 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={styles.menu}>
           <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="settings" size={24} color="#36454F" />
+            <Ionicons name="settings" size={24} color={colors.brand.primary} />
             <Text style={styles.menuText}>Settings</Text>
-            <Ionicons name="chevron-forward" size={20} color="#ccc" />
+            <Ionicons name="chevron-forward" size={20} color={colors.text.muted} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="help-circle" size={24} color="#36454F" />
+            <Ionicons name="help-circle" size={24} color={colors.brand.primary} />
             <Text style={styles.menuText}>Help & Support</Text>
-            <Ionicons name="chevron-forward" size={20} color="#ccc" />
+            <Ionicons name="chevron-forward" size={20} color={colors.text.muted} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="information-circle" size={24} color="#36454F" />
+            <Ionicons name="information-circle" size={24} color={colors.brand.primary} />
             <Text style={styles.menuText}>About</Text>
-            <Ionicons name="chevron-forward" size={20} color="#ccc" />
+            <Ionicons name="chevron-forward" size={20} color={colors.text.muted} />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name="log-out" size={24} color="#dc3545" />
+          <Ionicons name="log-out" size={24} color={colors.danger[600]} />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
@@ -91,120 +92,108 @@ export default function ProfileScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background.dark,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: '#36454F',
+    padding: spacing.xl,
+    paddingTop: spacing['5xl'],
+    backgroundColor: colors.background.card,
+    ...shadows.sm,
   },
   backButton: {
-    padding: 8,
+    padding: spacing.sm,
   },
   headerTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
+    color: colors.text.inverse,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
   },
   placeholder: {
     width: 40,
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: spacing.xl,
   },
   profileCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 24,
+    backgroundColor: colors.background.card,
+    borderRadius: borderRadius.xl,
+    padding: spacing['2xl'],
     alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    marginBottom: spacing['2xl'],
+    ...shadows.lg,
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#f0f4ff',
+    backgroundColor: colors.primary[100],
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   userInfo: {
     alignItems: 'center',
   },
   userName: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.light,
+    marginBottom: spacing.xs,
   },
   userEmail: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 12,
+    fontSize: typography.fontSize.base,
+    color: colors.text.muted,
+    marginBottom: spacing.md,
   },
   roleBadge: {
-    backgroundColor: '#e3f2fd',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: colors.primary[200],
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.lg,
   },
   roleText: {
-    fontSize: 12,
-    color: '#36454F',
-    fontWeight: '600',
+    fontSize: typography.fontSize.xs,
+    color: colors.brand.primary,
+    fontWeight: typography.fontWeight.semibold,
   },
   menu: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: colors.background.card,
+    borderRadius: borderRadius.xl,
+    marginBottom: spacing['2xl'],
+    ...shadows.md,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: colors.primary[700],
   },
   menuText: {
     flex: 1,
-    fontSize: 16,
-    color: '#333',
-    marginLeft: 12,
+    fontSize: typography.fontSize.base,
+    color: colors.text.light,
+    marginLeft: spacing.md,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: colors.background.card,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: '#dc3545',
+    borderColor: colors.danger[600],
+    ...shadows.sm,
   },
   logoutText: {
-    fontSize: 16,
-    color: '#dc3545',
-    fontWeight: '600',
-    marginLeft: 8,
+    fontSize: typography.fontSize.base,
+    color: colors.danger[600],
+    fontWeight: typography.fontWeight.semibold,
+    marginLeft: spacing.sm,
   },
 });

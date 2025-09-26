@@ -9,8 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { colors, shadows, spacing, typography, borderRadius } from '../theme/colors';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -52,6 +54,7 @@ export default function LoginScreen() {
               value={email}
               onChangeText={setEmail}
               placeholder="Enter your email"
+              placeholderTextColor={colors.text.muted}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -65,6 +68,7 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               placeholder="Enter your password"
+              placeholderTextColor={colors.text.muted}
               secureTextEntry
               autoCapitalize="none"
             />
@@ -75,9 +79,11 @@ export default function LoginScreen() {
             onPress={handleLogin}
             disabled={isLoading}
           >
-            <Text style={styles.loginButtonText}>
-              {isLoading ? 'Signing In...' : 'Sign In'}
-            </Text>
+            {isLoading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.loginButtonText}>Sign In</Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -94,78 +100,75 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background.dark,
   },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: spacing.xl,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: spacing['4xl'],
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#36454F',
-    marginBottom: 8,
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.inverse,
+    marginBottom: spacing.sm,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: typography.fontSize.lg,
+    color: colors.text.muted,
+    textAlign: 'center',
   },
   form: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: colors.background.card,
+    borderRadius: borderRadius.xl,
+    padding: spacing['2xl'],
+    ...shadows.lg,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.light,
+    marginBottom: spacing.sm,
   },
   input: {
     borderWidth: 2,
-    borderColor: '#e1e5e9',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    backgroundColor: '#f8f9fa',
+    borderColor: colors.primary[700],
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    fontSize: typography.fontSize.base,
+    backgroundColor: colors.primary[900],
+    color: colors.text.inverse,
   },
   loginButton: {
-    backgroundColor: '#36454F',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: colors.brand.primary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: spacing.md,
+    ...shadows.md,
   },
   loginButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: colors.primary[500],
   },
   loginButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
+    color: colors.text.inverse,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
   },
   footer: {
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: spacing['4xl'],
   },
   footerText: {
-    color: '#666',
-    fontSize: 14,
+    color: colors.text.muted,
+    fontSize: typography.fontSize.sm,
+    textAlign: 'center',
   },
 });

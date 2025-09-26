@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { doorsAPI } from '../services/api';
+import { colors, shadows, spacing, typography, borderRadius } from '../theme/colors';
 
 export default function HomeScreen({ navigation }) {
   const [doors, setDoors] = useState([]);
@@ -53,7 +54,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   const getStatusColor = (isOnline) => {
-    return isOnline ? '#28a745' : '#dc3545';
+    return isOnline ? colors.success[600] : colors.danger[600];
   };
 
   const getStatusText = (isOnline) => {
@@ -65,7 +66,7 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.header}>
         <Text style={styles.welcomeText}>Welcome, {user?.first_name || 'User'}!</Text>
         <TouchableOpacity onPress={handleProfile} style={styles.profileButton}>
-          <Ionicons name="person-circle" size={32} color="#36454F" />
+          <Ionicons name="person-circle" size={32} color={colors.text.inverse} />
         </TouchableOpacity>
       </View>
 
@@ -82,7 +83,7 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.secondaryButton} onPress={handleAccessHistory}>
-            <Ionicons name="time" size={24} color="#36454F" />
+            <Ionicons name="time" size={24} color={colors.brand.primary} />
             <Text style={styles.secondaryButtonText}>Access History</Text>
           </TouchableOpacity>
         </View>
@@ -91,7 +92,7 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Available Doors</Text>
           {doors.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="home" size={48} color="#ccc" />
+              <Ionicons name="home" size={48} color={colors.text.muted} />
               <Text style={styles.emptyStateText}>No doors available</Text>
             </View>
           ) : (
@@ -124,111 +125,111 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background.dark,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: 'white',
+    padding: spacing.xl,
+    paddingTop: spacing['5xl'],
+    backgroundColor: colors.background.card,
     borderBottomWidth: 1,
-    borderBottomColor: '#e1e5e9',
+    borderBottomColor: colors.primary[700],
+    ...shadows.sm,
   },
   welcomeText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.inverse,
   },
   profileButton: {
-    padding: 4,
+    padding: spacing.xs,
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: spacing.xl,
   },
   quickActions: {
-    marginBottom: 30,
+    marginBottom: spacing['3xl'],
   },
   primaryButton: {
-    backgroundColor: '#36454F',
+    backgroundColor: colors.brand.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+    ...shadows.md,
   },
   primaryButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 8,
+    color: colors.text.inverse,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    marginLeft: spacing.sm,
   },
   secondaryButton: {
-    backgroundColor: 'white',
+    backgroundColor: colors.background.card,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
     borderWidth: 2,
-    borderColor: '#36454F',
+    borderColor: colors.brand.primary,
+    ...shadows.sm,
   },
   secondaryButtonText: {
-    color: '#36454F',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+    color: colors.brand.primary,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    marginLeft: spacing.sm,
   },
   doorsSection: {
-    marginTop: 10,
+    marginTop: spacing.md,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 16,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.inverse,
+    marginBottom: spacing.lg,
   },
   emptyState: {
     alignItems: 'center',
-    padding: 40,
+    padding: spacing['4xl'],
+    backgroundColor: colors.background.card,
+    borderRadius: borderRadius.lg,
+    ...shadows.sm,
   },
   emptyStateText: {
-    color: '#666',
-    fontSize: 16,
-    marginTop: 12,
+    color: colors.text.muted,
+    fontSize: typography.fontSize.base,
+    marginTop: spacing.md,
+    textAlign: 'center',
   },
   doorCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: colors.background.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    ...shadows.md,
   },
   doorInfo: {
     flex: 1,
   },
   doorName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.light,
+    marginBottom: spacing.xs,
   },
   doorLocation: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: typography.fontSize.sm,
+    color: colors.text.muted,
   },
   doorStatus: {
     flexDirection: 'row',
@@ -237,11 +238,11 @@ const styles = StyleSheet.create({
   statusIndicator: {
     width: 8,
     height: 8,
-    borderRadius: 4,
-    marginRight: 6,
+    borderRadius: borderRadius.full,
+    marginRight: spacing.sm,
   },
   statusText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: typography.fontSize.sm,
+    color: colors.text.muted,
   },
 });

@@ -6,9 +6,11 @@ import {
   FlatList,
   RefreshControl,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { accessAPI } from '../services/api';
+import { colors, shadows, spacing, typography, borderRadius } from '../theme/colors';
 
 export default function AccessHistoryScreen({ navigation }) {
   const [history, setHistory] = useState([]);
@@ -47,7 +49,7 @@ export default function AccessHistoryScreen({ navigation }) {
   };
 
   const getStatusColor = (granted) => {
-    return granted ? '#28a745' : '#dc3545';
+    return granted ? colors.success[600] : colors.danger[600];
   };
 
   const renderHistoryItem = ({ item }) => (

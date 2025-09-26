@@ -150,6 +150,16 @@ console.log('Site plan routes module loaded');
     });
   });
 
+  // Test endpoint for mobile app connection testing
+  app.get('/api/test', (req, res) => {
+    res.json({
+      success: true,
+      message: 'Server connection successful',
+      timestamp: new Date().toISOString(),
+      server: 'SimplifiAccess API'
+    });
+  });
+
   // Additional keep-alive endpoints
   app.get('/api/ping', (req, res) => {
     res.json({ pong: Date.now() });

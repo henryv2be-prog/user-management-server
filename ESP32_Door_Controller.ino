@@ -738,7 +738,13 @@ void closeDoor() {
 void sendHeartbeat() {
   if (serverURL.length() == 0) return;
   
-  http.begin(serverURL + "/api/doors/heartbeat");
+  // Convert HTTPS to HTTP for testing
+  String testURL = serverURL;
+  testURL.replace("https://", "http://");
+  
+  Serial.println("Attempting heartbeat to: " + testURL + "/api/doors/heartbeat");
+  
+  http.begin(testURL + "/api/doors/heartbeat");
   http.addHeader("Content-Type", "application/json");
   
   StaticJsonDocument<200> doc;
@@ -760,8 +766,10 @@ void sendHeartbeat() {
   if (httpResponseCode > 0) {
     String response = http.getString();
     Serial.println("Heartbeat sent successfully: " + String(httpResponseCode));
+    Serial.println("Response: " + response);
   } else {
     Serial.println("Heartbeat failed: " + String(httpResponseCode));
+    Serial.println("Error details: " + http.errorToString(httpResponseCode));
   }
   
   http.end();
