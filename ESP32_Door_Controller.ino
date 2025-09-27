@@ -732,9 +732,10 @@ void setupNormalWebServer() {
 }
 
 void openDoor() {
+  Serial.println("🔓 RELAY ACTIVATING - GPIO5 HIGH");
   digitalWrite(RELAY_PIN, HIGH);  // Activate relay
   doorOpen = true;
-  Serial.println("Door opened via GPIO5");
+  Serial.println("✅ Door opened via GPIO5 - RELAY ON");
   
   // Auto-close after 5 seconds
   delay(5000);
@@ -742,9 +743,10 @@ void openDoor() {
 }
 
 void closeDoor() {
+  Serial.println("🔒 RELAY DEACTIVATING - GPIO5 LOW");
   digitalWrite(RELAY_PIN, LOW);   // Deactivate relay
   doorOpen = false;
-  Serial.println("Door closed via GPIO5");
+  Serial.println("✅ Door closed via GPIO5 - RELAY OFF");
 }
 
 void sendHeartbeat() {

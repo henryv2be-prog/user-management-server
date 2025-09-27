@@ -216,6 +216,45 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
+// Database migration function
+async function migrateDatabase() {
+  try {
+    console.log('🔄 Running database migrations...');
+    const sqlite3 = require('sqlite3').verbose();
+    const dbPath = process.env.DB_PATH || path.join(__dirname, 'database', 'users.db');
+    
+    const db = new sqlite3.Database(dbPath);
+    
+    // Create door_commands table if it doesn't exist
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE TABLE IF NOT EXISTS door_commands (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        door_id INTEGER NOT NULL,
+        command TEXT NOT NULL,
+        status TEXT DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        executed_at DATETIME,
+        FOREIGN KEY (door_id) REFERENCES doors (id)
+      )`, (err) => {
+        db.close();
+        if (err) {
+          console.error('❌ Migration failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ Door commands table created/verified');
+          resolve();
+        }
+      });
+    });
+    
+    console.log('✅ Database migration completed');
+    
+  } catch (error) {
+    console.error('❌ Database migration failed:', error);
+    throw error;
+  }
+}
+
 // Database reset function
 async function resetDatabase() {
   try {
@@ -269,6 +308,9 @@ async function startServer() {
       console.log('Database path:', process.env.DB_PATH || path.join(__dirname, 'database', 'users.db'));
       await initDatabase();
       console.log('✅ Database initialization completed');
+      
+      // Run migrations to ensure all tables exist
+      await migrateDatabase();
     }
     
     console.log('Starting server...');
