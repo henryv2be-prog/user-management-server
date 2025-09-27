@@ -1,92 +1,112 @@
 import React, { useState, useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
-import { Platform } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Import screens
+import ServerConfigScreen from './src/screens/ServerConfigScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import QRScannerScreen from './src/screens/QRScannerScreen';
-import QRScannerWebScreen from './src/screens/QRScannerWebScreen';
-import AccessHistoryScreen from './src/screens/AccessHistoryScreen';
-import ProfileScreen from './src/screens/ProfileScreen';
-import ServerConfigScreen from './src/screens/ServerConfigScreen';
 
-// Import context
-import { AuthProvider, useAuth } from './src/context/AuthContext';
-
-const Stack = createStackNavigator();
-
-function AppNavigator() {
-  const { isAuthenticated, isLoading } = useAuth();
+export default function App() {
+  const [currentScreen, setCurrentScreen] = useState('loading');
   const [hasServerConfig, setHasServerConfig] = useState(false);
-  const [isCheckingConfig, setIsCheckingConfig] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    checkServerConfig();
+    checkInitialState();
   }, []);
 
-  const checkServerConfig = async () => {
+  const checkInitialState = async () => {
     try {
-      const storedUrl = await AsyncStorage.getItem('serverUrl');
-      setHasServerConfig(!!storedUrl);
+      const serverUrl = await AsyncStorage.getItem('serverUrl');
+      const token = await AsyncStorage.getItem('authToken');
+
+      setHasServerConfig(!!serverUrl);
+      setIsAuthenticated(!!token);
+
+      if (!serverUrl) {
+        setCurrentScreen('serverConfig');
+      } else if (!token) {
+        setCurrentScreen('login');
+      } else {
+        setCurrentScreen('home');
+      }
     } catch (error) {
-      console.error('Error checking server config:', error);
-      setHasServerConfig(false);
-    } finally {
-      setIsCheckingConfig(false);
+      console.error('Error checking initial state:', error);
+      setCurrentScreen('serverConfig');
     }
   };
 
   const handleServerConfigured = () => {
     setHasServerConfig(true);
+    setCurrentScreen('login');
   };
 
-  if (isLoading || isCheckingConfig) {
-    return null; // You can add a loading screen here
-  }
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+    setCurrentScreen('home');
+  };
 
-  // If no server is configured, show the server config screen
-  if (!hasServerConfig) {
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('authToken');
+      setIsAuthenticated(false);
+      setCurrentScreen('login');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
+
+  const handleNavigateToScanner = () => {
+    setCurrentScreen('scanner');
+  };
+
+  const handleBackToHome = () => {
+    setCurrentScreen('home');
+  };
+
+  if (currentScreen === 'loading') {
     return (
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="ServerConfig">
-            {(props) => <ServerConfigScreen {...props} onConfigured={handleServerConfigured} />}
-          </Stack.Screen>
-        </Stack.Navigator>
-      </NavigationContainer>
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
     );
   }
 
+  if (currentScreen === 'serverConfig') {
+    return <ServerConfigScreen onConfigured={handleServerConfigured} />;
+  }
+
+  if (currentScreen === 'login') {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+
+  if (currentScreen === 'scanner') {
+    return <QRScannerScreen onBack={handleBackToHome} />;
+  }
+
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isAuthenticated ? (
-          <>
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen 
-              name="QRScanner" 
-              component={Platform.OS === 'web' ? QRScannerWebScreen : QRScannerScreen} 
-            />
-            <Stack.Screen name="AccessHistory" component={AccessHistoryScreen} />
-            <Stack.Screen name="Profile" component={ProfileScreen} />
-          </>
-        ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <>
+      <StatusBar style="auto" />
+      <HomeScreen 
+        onLogout={handleLogout} 
+        onNavigateToScanner={handleNavigateToScanner} 
+      />
+    </>
   );
 }
 
-export default function App() {
-  return (
-    <AuthProvider>
-      <StatusBar style="auto" />
-      <AppNavigator />
-    </AuthProvider>
-  );
-}
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0f172a',
+  },
+  loadingText: {
+    color: 'white',
+    fontSize: 18,
+  },
+});

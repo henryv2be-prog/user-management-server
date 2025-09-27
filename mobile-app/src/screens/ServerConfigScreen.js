@@ -6,13 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import apiConfig from '../config/api';
 
 export default function ServerConfigScreen({ onConfigured }) {
   const [serverUrl, setServerUrl] = useState('');
@@ -29,24 +25,27 @@ export default function ServerConfigScreen({ onConfigured }) {
     if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
       cleanUrl = 'http://' + cleanUrl;
     }
-    
-    // Remove trailing slash
     cleanUrl = cleanUrl.replace(/\/$/, '');
 
     setIsLoading(true);
 
     try {
       // Test the connection to the server
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       const testResponse = await fetch(`${cleanUrl}/api/test`, {
         method: 'GET',
-        timeout: 5000,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (testResponse.ok) {
         // Save the server URL
-        await apiConfig.setServerUrl(cleanUrl);
+        await AsyncStorage.setItem('serverUrl', cleanUrl);
         Alert.alert(
-          'Success', 
+          'Success',
           'Server connection successful! You can now log in.',
           [{ text: 'OK', onPress: onConfigured }]
         );
@@ -70,85 +69,69 @@ export default function ServerConfigScreen({ onConfigured }) {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>🔐 SimplifiAccess</Text>
-          <Text style={styles.subtitle}>Configure Server Connection</Text>
-        </View>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>🔐 SimplifiAccess</Text>
+        <Text style={styles.subtitle}>Configure Server Connection</Text>
+      </View>
 
-        <View style={styles.form}>
-          <View style={styles.description}>
-            <Text style={styles.descriptionText}>
-              Enter your SimplifiAccess server URL to get started. This is typically the IP address 
-              and port where your server is running.
-            </Text>
-          </View>
+      <View style={styles.form}>
+        <Text style={styles.description}>
+          Enter your SimplifiAccess server URL to get started. This is typically the IP address and port where your server is running.
+        </Text>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Server URL</Text>
-            <TextInput
-              style={styles.input}
-              value={serverUrl}
-              onChangeText={setServerUrl}
-              placeholder="http://192.168.1.20:3000"
-              placeholderTextColor="#9ca3af"
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-              returnKeyType="done"
-              onSubmitEditing={validateAndSaveServerUrl}
-            />
-          </View>
+        <TextInput
+          style={styles.input}
+          value={serverUrl}
+          onChangeText={setServerUrl}
+          placeholder="http://192.168.1.20:3000"
+          placeholderTextColor="#9ca3af"
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
+        />
+
+        <TouchableOpacity
+          style={[styles.configButton, isLoading && styles.configButtonDisabled]}
+          onPress={validateAndSaveServerUrl}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.configButtonText}>Connect to Server</Text>
+          )}
+        </TouchableOpacity>
+
+        <View style={styles.quickSetupSection}>
+          <Text style={styles.quickSetupTitle}>Quick Setup</Text>
 
           <TouchableOpacity
-            style={[styles.configButton, isLoading && styles.configButtonDisabled]}
-            onPress={validateAndSaveServerUrl}
-            disabled={isLoading}
+            style={styles.quickSetupButton}
+            onPress={() => handleQuickSetup('http://192.168.1.20:3000')}
           >
-            {isLoading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.configButtonText}>Connect to Server</Text>
-            )}
+            <Text style={styles.quickSetupButtonText}>Local Server (192.168.1.20:3000)</Text>
           </TouchableOpacity>
 
-          <View style={styles.quickSetupSection}>
-            <Text style={styles.quickSetupTitle}>Quick Setup</Text>
-            <Text style={styles.quickSetupDescription}>
-              Common server configurations:
-            </Text>
-            
-            <TouchableOpacity
-              style={styles.quickSetupButton}
-              onPress={() => handleQuickSetup('http://192.168.1.20:3000')}
-            >
-              <Text style={styles.quickSetupButtonText}>Local Server (192.168.1.20:3000)</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickSetupButton}
-              onPress={() => handleQuickSetup('http://localhost:3000')}
-            >
-              <Text style={styles.quickSetupButtonText}>Development Server (localhost:3000)</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.helpSection}>
-            <Text style={styles.helpTitle}>Need Help?</Text>
-            <Text style={styles.helpText}>
-              • Make sure your server is running{'\n'}
-              • Use your computer's IP address (check with 'ipconfig' or 'ifconfig'){'\n'}
-              • Ensure port 3000 is accessible{'\n'}
-              • Both devices should be on the same network
-            </Text>
-          </View>
+          <TouchableOpacity
+            style={styles.quickSetupButton}
+            onPress={() => handleQuickSetup('http://localhost:3000')}
+          >
+            <Text style={styles.quickSetupButtonText}>Development Server (localhost:3000)</Text>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+        <View style={styles.helpSection}>
+          <Text style={styles.helpTitle}>Need Help?</Text>
+          <Text style={styles.helpText}>
+            • Make sure your server is running{'\n'}
+            • Use your computer's IP address{'\n'}
+            • Ensure port 3000 is accessible{'\n'}
+            • Both devices should be on the same network
+          </Text>
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -156,9 +139,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f172a',
-  },
-  scrollContainer: {
-    flexGrow: 1,
     justifyContent: 'center',
     padding: 20,
   },
@@ -181,32 +161,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e293b',
     borderRadius: 16,
     padding: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
   },
   description: {
-    marginBottom: 24,
-  },
-  descriptionText: {
     fontSize: 14,
     color: '#d1d5db',
-    lineHeight: 20,
     textAlign: 'center',
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#f3f4f6',
-    marginBottom: 8,
+    marginBottom: 24,
+    lineHeight: 20,
   },
   input: {
     borderWidth: 2,
@@ -216,6 +177,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#111827',
     color: '#ffffff',
+    marginBottom: 20,
   },
   configButton: {
     backgroundColor: '#374151',
@@ -243,11 +205,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#f3f4f6',
     marginBottom: 8,
-  },
-  quickSetupDescription: {
-    fontSize: 14,
-    color: '#9ca3af',
-    marginBottom: 16,
   },
   quickSetupButton: {
     backgroundColor: '#4b5563',

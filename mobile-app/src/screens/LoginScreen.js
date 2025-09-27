@@ -6,19 +6,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import { useAuth } from '../context/AuthContext';
-import { colors, shadows, spacing, typography, borderRadius } from '../theme/colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function LoginScreen() {
+export default function LoginScreen({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -27,148 +22,156 @@ export default function LoginScreen() {
     }
 
     setIsLoading(true);
-    const result = await login(email, password);
-    setIsLoading(false);
 
-    if (!result.success) {
-      Alert.alert('Login Failed', result.error || 'Invalid credentials');
+    try {
+      // Get server URL
+      const serverUrl = await AsyncStorage.getItem('serverUrl');
+      if (!serverUrl) {
+        Alert.alert('Error', 'Server URL not configured');
+        return;
+      }
+
+      // Make login request
+      const response = await fetch(`${serverUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.token) {
+        // Save token
+        await AsyncStorage.setItem('authToken', data.token);
+        await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+
+        onLogin();
+      } else {
+        Alert.alert('Login Failed', data.message || 'Invalid credentials');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert('Error', 'Failed to connect to server. Please check your connection.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>🔐 SimplifiAccess</Text>
-          <Text style={styles.subtitle}>Door Access Control</Text>
-        </View>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>🔐 SimplifiAccess</Text>
+        <Text style={styles.subtitle}>Door Access Control</Text>
+      </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Enter your email"
-              placeholderTextColor={colors.text.muted}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
+      <View style={styles.form}>
+        <TextInput
+          style={styles.input}
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Enter your email"
+          placeholderTextColor="#9ca3af"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter your password"
-              placeholderTextColor={colors.text.muted}
-              secureTextEntry
-              autoCapitalize="none"
-            />
-          </View>
+        <TextInput
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Enter your password"
+          placeholderTextColor="#9ca3af"
+          secureTextEntry
+          autoCapitalize="none"
+        />
 
-          <TouchableOpacity
-            style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-            onPress={handleLogin}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.loginButtonText}>Sign In</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.loginButtonText}>Sign In</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Scan QR codes to access doors
-          </Text>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>
+          Scan QR codes to access doors
+        </Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.dark,
-  },
-  scrollContainer: {
-    flexGrow: 1,
+    backgroundColor: '#0f172a',
     justifyContent: 'center',
-    padding: spacing.xl,
+    padding: 20,
   },
   header: {
     alignItems: 'center',
-    marginBottom: spacing['4xl'],
+    marginBottom: 40,
   },
   title: {
-    fontSize: typography.fontSize['4xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.inverse,
-    marginBottom: spacing.sm,
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: typography.fontSize.lg,
-    color: colors.text.muted,
+    fontSize: 16,
+    color: '#9ca3af',
     textAlign: 'center',
   },
   form: {
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.xl,
-    padding: spacing['2xl'],
-    ...shadows.lg,
-  },
-  inputContainer: {
-    marginBottom: spacing.xl,
-  },
-  label: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.light,
-    marginBottom: spacing.sm,
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 24,
   },
   input: {
     borderWidth: 2,
-    borderColor: colors.primary[700],
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    fontSize: typography.fontSize.base,
-    backgroundColor: colors.primary[900],
-    color: colors.text.inverse,
+    borderColor: '#374151',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    backgroundColor: '#111827',
+    color: '#ffffff',
+    marginBottom: 16,
   },
   loginButton: {
-    backgroundColor: colors.brand.primary,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
+    backgroundColor: '#374151',
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
-    marginTop: spacing.md,
-    ...shadows.md,
+    marginTop: 8,
   },
   loginButtonDisabled: {
-    backgroundColor: colors.primary[500],
+    backgroundColor: '#6b7280',
   },
   loginButtonText: {
-    color: colors.text.inverse,
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
   },
   footer: {
     alignItems: 'center',
-    marginTop: spacing['4xl'],
+    marginTop: 40,
   },
   footerText: {
-    color: colors.text.muted,
-    fontSize: typography.fontSize.sm,
+    color: '#9ca3af',
+    fontSize: 14,
     textAlign: 'center',
   },
 });

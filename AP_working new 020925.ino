@@ -319,6 +319,37 @@ static void handleClient(AsyncWebServerRequest* req) {
   req->send(200, "text/html", html);
 }
 
+// ===== Door Control Handler =====
+void handleDoorControl(AsyncWebServerRequest* request) {
+  if (!request->hasParam("plain", true)) {
+    request->send(400, "application/json", "{\"success\": false, \"message\": \"No data received\"}");
+    return;
+  }
+  
+  String body = request->getParam("plain", true)->value();
+  Serial.println("[DOOR] Received: " + body);
+  
+  // Simple JSON parsing for {"action": "open"} or {"action": "close"}
+  if (body.indexOf("\"action\"") >= 0) {
+    if (body.indexOf("\"open\"") >= 0) {
+      Serial.println("[DOOR] Opening door via GPIO5");
+      digitalWrite(RELAY_PIN, HIGH);
+      relayActive = true;
+      relayOffAtMs = millis() + RELAY_ON_MS;
+      request->send(200, "application/json", "{\"success\": true, \"message\": \"Door opened\"}");
+    } else if (body.indexOf("\"close\"") >= 0) {
+      Serial.println("[DOOR] Closing door via GPIO5");
+      digitalWrite(RELAY_PIN, LOW);
+      relayActive = false;
+      request->send(200, "application/json", "{\"success\": true, \"message\": \"Door closed\"}");
+    } else {
+      request->send(400, "application/json", "{\"success\": false, \"message\": \"Invalid action\"}");
+    }
+  } else {
+    request->send(400, "application/json", "{\"success\": false, \"message\": \"No action specified\"}");
+  }
+}
+
 // ===== Setup =====
 void setup() {
   Serial.begin(115200);
@@ -357,6 +388,7 @@ void setup() {
   server.on("/prove",      HTTP_POST, [](AsyncWebServerRequest* r){ handleProve(r, true); });
   server.on("/prove",      HTTP_GET,  [](AsyncWebServerRequest* r){ handleProve(r, false); });
   server.on("/client",     HTTP_GET,  handleClient);
+  server.on("/door",       HTTP_POST, handleDoorControl);
   Serial.println("[SETUP] Routes configured");
 
   server.begin();

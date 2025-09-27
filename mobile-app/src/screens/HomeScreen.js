@@ -1,123 +1,101 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  ScrollView,
-  RefreshControl,
+  TouchableOpacity,
   Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../context/AuthContext';
-import { doorsAPI } from '../services/api';
-import { colors, shadows, spacing, typography, borderRadius } from '../theme/colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function HomeScreen({ navigation }) {
-  const [doors, setDoors] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    loadDoors();
-  }, []);
-
-  const loadDoors = async () => {
-    try {
-      const response = await doorsAPI.getDoors();
-      setDoors(response.data.doors || []);
-    } catch (error) {
-      console.error('Failed to load doors:', error);
-      Alert.alert('Error', 'Failed to load doors. Make sure you have access to any doors.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadDoors();
-    setRefreshing(false);
-  };
-
+export default function HomeScreen({ onLogout, onNavigateToScanner }) {
   const handleQRScan = () => {
-    navigation.navigate('QRScanner');
+    onNavigateToScanner();
   };
 
-  const handleAccessHistory = () => {
-    navigation.navigate('AccessHistory');
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          onPress: onLogout,
+        },
+      ]
+    );
   };
 
-  const handleProfile = () => {
-    navigation.navigate('Profile');
-  };
-
-  const getStatusColor = (isOnline) => {
-    return isOnline ? colors.success[600] : colors.danger[600];
-  };
-
-  const getStatusText = (isOnline) => {
-    return isOnline ? 'Online' : 'Offline';
+  const handleViewProfile = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('userData');
+      if (userData) {
+        const user = JSON.parse(userData);
+        Alert.alert(
+          'User Profile',
+          `Name: ${user.firstName} ${user.lastName}\nEmail: ${user.email}\nRole: ${user.role}`,
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load user data');
+    }
   };
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>Welcome, {user?.first_name || 'User'}!</Text>
-        <TouchableOpacity onPress={handleProfile} style={styles.profileButton}>
-          <Ionicons name="person-circle" size={32} color={colors.text.inverse} />
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>🔐 SimplifiAccess</Text>
+          <Text style={styles.headerSubtitle}>Welcome back!</Text>
+        </View>
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+          <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        style={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.primaryButton} onPress={handleQRScan}>
-            <Ionicons name="qr-code" size={24} color="white" />
-            <Text style={styles.primaryButtonText}>Scan QR Code</Text>
+      {/* Main Content */}
+      <View style={styles.content}>
+        <View style={styles.welcomeCard}>
+          <Text style={styles.welcomeTitle}>🎉 Login Successful!</Text>
+          <Text style={styles.welcomeText}>
+            You are now connected to the SimplifiAccess system.
+          </Text>
+        </View>
+
+        <View style={styles.actionCard}>
+          <Text style={styles.actionTitle}>Quick Actions</Text>
+
+          <TouchableOpacity style={styles.actionButton} onPress={handleQRScan}>
+            <Text style={styles.actionButtonText}>📱 Scan QR Code</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.secondaryButton} onPress={handleAccessHistory}>
-            <Ionicons name="time" size={24} color={colors.brand.primary} />
-            <Text style={styles.secondaryButtonText}>Access History</Text>
+          <TouchableOpacity style={styles.secondaryButton} onPress={handleViewProfile}>
+            <Text style={styles.secondaryButtonText}>👤 View Profile</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.doorsSection}>
-          <Text style={styles.sectionTitle}>Available Doors</Text>
-          {doors.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="home" size={48} color={colors.text.muted} />
-              <Text style={styles.emptyStateText}>No doors available</Text>
-            </View>
-          ) : (
-            doors.map((door) => (
-              <View key={door.id} style={styles.doorCard}>
-                <View style={styles.doorInfo}>
-                  <Text style={styles.doorName}>{door.name}</Text>
-                  <Text style={styles.doorLocation}>{door.location || 'No location'}</Text>
-                </View>
-                <View style={styles.doorStatus}>
-                  <View
-                    style={[
-                      styles.statusIndicator,
-                      { backgroundColor: getStatusColor(door.isOnline) }
-                    ]}
-                  />
-                  <Text style={styles.statusText}>
-                    {getStatusText(door.isOnline)}
-                  </Text>
-                </View>
-              </View>
-            ))
-          )}
+        <View style={styles.statusCard}>
+          <Text style={styles.statusTitle}>System Status</Text>
+          <View style={styles.statusRow}>
+            <Text style={styles.statusIcon}>🔗</Text>
+            <Text style={styles.statusText}>Connected to server</Text>
+          </View>
+          <View style={styles.statusRow}>
+            <Text style={styles.statusIcon}>👤</Text>
+            <Text style={styles.statusText}>User authenticated</Text>
+          </View>
+          <View style={styles.statusRow}>
+            <Text style={styles.statusIcon}>🔓</Text>
+            <Text style={styles.statusText}>Ready for door access</Text>
+          </View>
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -125,124 +103,121 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.dark,
+    backgroundColor: '#0f172a',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: spacing.xl,
-    paddingTop: spacing['5xl'],
-    backgroundColor: colors.background.card,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.primary[700],
-    ...shadows.sm,
+    padding: 20,
+    paddingTop: 60,
+    backgroundColor: '#1e293b',
   },
-  welcomeText: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.inverse,
+  headerContent: {
+    flex: 1,
   },
-  profileButton: {
-    padding: spacing.xs,
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#9ca3af',
+    marginTop: 4,
+  },
+  logoutButton: {
+    padding: 8,
+  },
+  logoutButtonText: {
+    color: '#ef4444',
+    fontSize: 16,
+    fontWeight: '600',
   },
   content: {
     flex: 1,
-    padding: spacing.xl,
+    padding: 20,
   },
-  quickActions: {
-    marginBottom: spacing['3xl'],
-  },
-  primaryButton: {
-    backgroundColor: colors.brand.primary,
-    flexDirection: 'row',
+  welcomeCard: {
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.md,
-    ...shadows.md,
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 30,
+    marginBottom: 20,
   },
-  primaryButtonText: {
-    color: colors.text.inverse,
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    marginLeft: spacing.sm,
-  },
-  secondaryButton: {
-    backgroundColor: colors.background.card,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-    borderRadius: borderRadius.lg,
-    borderWidth: 2,
-    borderColor: colors.brand.primary,
-    ...shadows.sm,
-  },
-  secondaryButtonText: {
-    color: colors.brand.primary,
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    marginLeft: spacing.sm,
-  },
-  doorsSection: {
-    marginTop: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.inverse,
-    marginBottom: spacing.lg,
-  },
-  emptyState: {
-    alignItems: 'center',
-    padding: spacing['4xl'],
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
-    ...shadows.sm,
-  },
-  emptyStateText: {
-    color: colors.text.muted,
-    fontSize: typography.fontSize.base,
-    marginTop: spacing.md,
+  welcomeTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginTop: 16,
+    marginBottom: 8,
     textAlign: 'center',
   },
-  doorCard: {
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  welcomeText: {
+    fontSize: 16,
+    color: '#9ca3af',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  actionCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+  },
+  actionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#f3f4f6',
+    marginBottom: 16,
+  },
+  actionButton: {
+    backgroundColor: '#374151',
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
-    ...shadows.md,
+    marginBottom: 12,
   },
-  doorInfo: {
-    flex: 1,
+  actionButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
-  doorName: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.light,
-    marginBottom: spacing.xs,
-  },
-  doorLocation: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.muted,
-  },
-  doorStatus: {
-    flexDirection: 'row',
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#374151',
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
   },
-  statusIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: borderRadius.full,
-    marginRight: spacing.sm,
+  secondaryButtonText: {
+    color: '#d1d5db',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  statusCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 20,
+  },
+  statusTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#f3f4f6',
+    marginBottom: 12,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statusIcon: {
+    fontSize: 16,
+    marginRight: 8,
   },
   statusText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.muted,
+    fontSize: 14,
+    color: '#9ca3af',
   },
 });

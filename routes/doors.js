@@ -51,9 +51,6 @@ router.get('/public', async (req, res) => {
 router.post('/heartbeat', validateHeartbeat, asyncHandler(async (req, res) => {
   try {
     console.log('Heartbeat endpoint hit');
-    
-    // Log heartbeat event
-    await EventLogger.log(req, 'system', 'esp32_heartbeat', 'system', null, 'System', `Door Controller heartbeat received from IP: ${req.ip}`);
     console.log('Request body:', req.body);
     console.log('Request headers:', req.headers);
     
@@ -127,7 +124,7 @@ router.post('/heartbeat', validateHeartbeat, asyncHandler(async (req, res) => {
       // Update last seen and online status
       await door.updateLastSeen();
       
-      // Log door coming back online if it was previously offline
+      // Only log door coming back online if it was previously offline
       if (wasOffline) {
         await EventLogger.log(req, 'door', 'online', 'door', door.id, door.name, `Door came back online - heartbeat received from IP: ${ip}`);
       }
@@ -874,53 +871,39 @@ router.post('/access/request', async (req, res) => {
     await EventLogger.log(req, 'access', 'granted', 'door', door.id, door.name, 
       `Access granted to user ${userName || userId} via ${reason || 'mobile app'}`);
     
-    // Send door open command to ESP32
+    // Store door open command in queue for ESP32 to pick up
     try {
-      console.log(`Sending open command to ESP32 at ${door.esp32Ip}`);
+      console.log(`Storing door open command for door ${door.id}`);
       
-      const fetch = require('node-fetch');
-      const response = await fetch(`http://${door.esp32Ip}/door`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'open' }),
-        timeout: 5000 // 5 second timeout
+      const db = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+      await new Promise((resolve, reject) => {
+        db.run('INSERT INTO door_commands (door_id, command, status) VALUES (?, ?, ?)', 
+               [door.id, 'open', 'pending'], (err) => {
+          db.close();
+          if (err) reject(err);
+          else resolve();
+        });
       });
       
-      if (response.ok) {
-        const result = await response.json();
-        console.log('ESP32 responded:', result);
-        
-        res.json({
-          success: true,
-          message: 'Access granted - door opened',
-          accessGranted: true,
-          doorName: door.name,
-          location: door.location
-        });
-      } else {
-        console.error('ESP32 returned error:', response.status, response.statusText);
-        
-        res.json({
-          success: true,
-          message: 'Access granted but door control failed',
-          accessGranted: true,
-          doorName: door.name,
-          location: door.location,
-          controlError: true
-        });
-      }
-    } catch (doorError) {
-      console.error('Door control error:', doorError);
-      
-      // Log door control error
-      await EventLogger.log(req, 'system', 'error', 'door', door.id, door.name, 
-        `Door control failed: ${doorError.message}`);
+      console.log('Door command stored successfully');
       
       res.json({
         success: true,
-        message: 'Access granted but door control failed',
+        message: 'Access granted - door command queued',
+        accessGranted: true,
+        doorName: door.name,
+        location: door.location
+      });
+    } catch (doorError) {
+      console.error('Door command storage error:', doorError);
+      
+      // Log door control error
+      await EventLogger.log(req, 'system', 'error', 'door', door.id, door.name, 
+        `Door command storage failed: ${doorError.message}`);
+      
+      res.json({
+        success: true,
+        message: 'Access granted but door command failed',
         accessGranted: true,
         doorName: door.name,
         location: door.location,
@@ -987,6 +970,62 @@ router.post('/:id/control', authenticate, requireAdmin, validateId, async (req, 
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to control door'
+    });
+  }
+});
+
+// ESP32 command polling endpoint
+router.get('/commands/:doorId', async (req, res) => {
+  try {
+    const doorId = parseInt(req.params.doorId);
+    
+    if (isNaN(doorId)) {
+      return res.status(400).json({
+        error: 'Invalid door ID',
+        message: 'Door ID must be a number'
+      });
+    }
+    
+    // Get pending commands for this door
+    const db = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+    
+    const commands = await new Promise((resolve, reject) => {
+      db.all('SELECT * FROM door_commands WHERE door_id = ? AND status = ? ORDER BY created_at ASC', 
+             [doorId, 'pending'], (err, rows) => {
+        db.close();
+        if (err) reject(err);
+        else resolve(rows);
+      });
+    });
+    
+    // Mark commands as executed
+    if (commands.length > 0) {
+      const commandIds = commands.map(cmd => cmd.id);
+      const db2 = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+      await new Promise((resolve, reject) => {
+        db2.run(`UPDATE door_commands SET status = 'executed', executed_at = CURRENT_TIMESTAMP WHERE id IN (${commandIds.map(() => '?').join(',')})`, 
+                 commandIds, (err) => {
+          db2.close();
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    }
+    
+    res.json({
+      success: true,
+      commands: commands.map(cmd => ({
+        id: cmd.id,
+        command: cmd.command,
+        created_at: cmd.created_at
+      }))
+    });
+    
+  } catch (error) {
+    console.error('Command polling error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to fetch commands'
     });
   }
 });

@@ -6,45 +6,27 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "newArchEnabled": false,
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#36454F"
+      "backgroundColor": "#0f172a"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.simplifiaccess.mobile"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#36454F"
+        "backgroundColor": "#0f172a"
       },
       "package": "com.simplifiaccess.mobile",
-      "versionCode": 1,
       "permissions": [
-        "CAMERA",
-        "INTERNET",
-        "ACCESS_NETWORK_STATE",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
-      ],
-      "allowBackup": false,
-      "softwareKeyboardLayoutMode": "pan"
+        "CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-camera"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "b7b217fe-cafc-467c-b873-5d597a26a8a1"
-      }
     }
   }
 }

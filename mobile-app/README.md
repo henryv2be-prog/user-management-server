@@ -1,149 +1,99 @@
 # SimplifiAccess Mobile App
 
-A React Native mobile app for door access control using QR code scanning.
+A simple mobile app for scanning QR codes to access doors through the SimplifiAccess server.
 
 ## Features
 
-- **User Authentication**: Secure login with JWT tokens
-- **QR Code Scanning**: Scan QR codes to request door access
-- **Door Status**: View available doors and their online/offline status
-- **Access History**: View your access history
-- **Profile Management**: View and manage your profile
+- 🔧 **Server Configuration**: Easy setup with server URL validation
+- 🔐 **User Authentication**: Login with email/password
+- 📱 **QR Code Scanning**: Scan QR codes attached to doors
+- 🚪 **Door Access**: Request access to doors via QR code scanning
 
-## Setup
+## Getting Started
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
+- Node.js (v14 or later)
 - Expo CLI (`npm install -g @expo/cli`)
-- iOS Simulator (for iOS development) or Android Studio (for Android development)
+- Android device or emulator
 
 ### Installation
 
-1. Navigate to the mobile app directory:
-   ```bash
-   cd mobile-app
-   ```
-
-2. Install dependencies:
+1. Install dependencies:
    ```bash
    npm install
    ```
 
-3. Start the development server:
+2. Start the development server:
    ```bash
    npm start
    ```
 
-4. Run on your preferred platform:
-   ```bash
-   npm run ios     # For iOS
-   npm run android # For Android
-   npm run web     # For web (testing)
-   ```
+3. Scan the QR code with Expo Go app or build for production.
 
-## Configuration
+## Building APK
 
-### Server URL
+### Method 1: Development Build (Recommended)
 
-Update the server URL in `src/services/api.js`:
+```bash
+# Install Expo CLI if not already installed
+npm install -g @expo/cli
 
-```javascript
-const SERVER_URL = 'http://YOUR_SERVER_IP:3000';
+# Build development build
+npx expo build:android --type apk
 ```
 
-Replace `YOUR_SERVER_IP` with your actual server IP address.
+### Method 2: Prebuild + Gradle
 
-### QR Code Formats
+```bash
+# Prebuild the project
+npx expo prebuild --platform android --clear
 
-The app supports two QR code formats:
+# Build APK
+cd android
+./gradlew assembleDebug
+```
 
-1. **JSON Format (Static)**: Contains door information directly
-   ```json
-   {
-     "doorId": 1,
-     "doorName": "Main Entrance",
-     "location": "Building A",
-     "esp32Ip": "192.168.1.100",
-     "serverUrl": "http://192.168.1.20:3000",
-     "type": "door_access"
-   }
-   ```
-
-2. **URL Format (Dynamic)**: Contains server URL with parameters
-   ```
-   http://192.168.1.20:3000/access?door=1&type=request&t=1234567890&e=1234567890
-   ```
+The APK will be created at: `android/app/build/outputs/apk/debug/app-debug.apk`
 
 ## Usage
 
-### For Users
+1. **Configure Server**: Enter your SimplifiAccess server URL (e.g., `http://192.168.1.20:3000`)
+2. **Login**: Use your credentials (default: `admin@example.com` / `admin123`)
+3. **Scan QR Codes**: Tap "Scan QR Code" and point camera at door QR codes
 
-1. **Login**: Enter your email and password
-2. **Scan QR Code**: Use the "Scan QR Code" button to scan door QR codes
-3. **View Doors**: See available doors and their status
-4. **Access History**: Check your access history
+## QR Code Formats
 
-### For Administrators
+The app supports multiple QR code formats:
 
-1. **Generate QR Codes**: Use the web-based QR generator (`QR_Code_Generator.html`)
-2. **Choose Format**: Select JSON format for static QR codes or URL format for dynamic ones
-3. **Print QR Codes**: Download and print QR codes for doors
-
-## API Endpoints
-
-The app communicates with these server endpoints:
-
-- `POST /api/auth/login` - User authentication
-- `GET /api/auth/verify` - Token verification
-- `GET /api/doors/accessible/me` - Get accessible doors for user
-- `POST /api/doors/access/request` - Request door access
+- **JSON Format**: `{"doorId": 1, "type": "door_access"}`
+- **URL Format**: `https://example.com?door=1`
+- **Simple ID**: Just the door ID number
 
 ## Troubleshooting
 
-### Common Issues
+### Build Issues
 
-1. **Camera Permission Denied**: Enable camera permissions in device settings
-2. **Network Connection**: Ensure the mobile device can reach the server
-3. **QR Code Not Recognized**: Try generating QR codes in JSON format
-4. **Authentication Failed**: Check server URL and user credentials
+If you encounter build issues, try:
 
-### Debug Mode
+1. Clear Expo cache: `npx expo start --clear`
+2. Clean Gradle: `cd android && ./gradlew clean`
+3. Reinstall dependencies: `rm -rf node_modules && npm install`
 
-Enable debug logging by setting `console.log` statements in the code or using React Native Debugger.
+### Camera Issues
 
-## Development
+- Make sure camera permissions are granted
+- Ensure you're using a real device (camera doesn't work on simulators)
+- Check that the APK is properly signed and installed
 
-### Project Structure
+## Server Integration
 
-```
-src/
-├── context/
-│   └── AuthContext.js      # Authentication context
-├── screens/
-│   ├── LoginScreen.js      # Login screen
-│   ├── HomeScreen.js       # Main dashboard
-│   ├── QRScannerScreen.js  # QR code scanner
-│   ├── AccessHistoryScreen.js # Access history
-│   └── ProfileScreen.js    # User profile
-└── services/
-    └── api.js              # API service layer
-```
+The app integrates with your SimplifiAccess server through these endpoints:
 
-### Adding New Features
+- `GET /api/test` - Server connection test
+- `POST /api/auth/login` - User authentication
+- `POST /api/access-requests/request` - Door access requests
 
-1. Create new screens in `src/screens/`
-2. Add API endpoints in `src/services/api.js`
-3. Update navigation in `App.js`
-4. Test on both iOS and Android platforms
+## License
 
-## Security Notes
-
-- Tokens are stored securely using Expo SecureStore
-- All API communication uses HTTPS in production
-- QR codes contain minimal sensitive information
-- Access permissions are verified server-side
-
-## Support
-
-For issues or questions, check the server logs and ensure all components are properly configured.
+This project is part of the SimplifiAccess system.

@@ -64,6 +64,29 @@ const migrateDatabase = () => {
                     });
                 }
                 
+                // Create door_commands table if it doesn't exist
+                migrations.push(() => {
+                    return new Promise((resolve, reject) => {
+                        db.run(`CREATE TABLE IF NOT EXISTS door_commands (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            door_id INTEGER NOT NULL,
+                            command TEXT NOT NULL,
+                            status TEXT DEFAULT 'pending',
+                            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            executed_at DATETIME,
+                            FOREIGN KEY (door_id) REFERENCES doors (id)
+                        )`, (err) => {
+                            if (err) {
+                                console.error('Error creating door_commands table:', err.message);
+                                reject(err);
+                            } else {
+                                console.log('✅ Created door_commands table');
+                                resolve();
+                            }
+                        });
+                    });
+                });
+                
                 // Execute migrations sequentially
                 const runMigrations = async () => {
                     for (const migration of migrations) {

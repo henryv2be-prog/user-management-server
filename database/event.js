@@ -87,6 +87,10 @@ class Event {
     let sql = 'SELECT * FROM events WHERE 1=1';
     const params = [];
     
+    // Exclude heartbeat events from the events list
+    sql += ' AND NOT (type = ? AND action = ?)';
+    params.push('system', 'esp32_heartbeat');
+    
     if (type) {
       sql += ' AND type = ?';
       params.push(type);
@@ -123,6 +127,10 @@ class Event {
     
     let sql = 'SELECT COUNT(*) as count FROM events WHERE 1=1';
     const params = [];
+    
+    // Exclude heartbeat events from the count
+    sql += ' AND NOT (type = ? AND action = ?)';
+    params.push('system', 'esp32_heartbeat');
     
     if (type) {
       sql += ' AND type = ?';

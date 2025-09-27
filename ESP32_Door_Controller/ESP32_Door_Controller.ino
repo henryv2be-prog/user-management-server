@@ -29,7 +29,12 @@ bool isConfigured = false;
 bool doorOpen = false;
 bool apMode = false;
 unsigned long lastHeartbeat = 0;
+unsigned long lastCommandCheck = 0;
 const unsigned long HEARTBEAT_INTERVAL = 10000; // 10 seconds
+const unsigned long COMMAND_CHECK_INTERVAL = 1000; // 1 second
+
+// Door ID from server (set during heartbeat)
+int doorId = -1;
 
 // Button state for AP activation
 bool lastButtonState = HIGH;
@@ -44,6 +49,7 @@ void setupConfigWebServer();
 void setupNormalWebServer();
 void loadConfiguration();
 void sendHeartbeat();
+void checkForCommands();
 void factoryReset();
 void updateStatusLED();
 void openDoor();
@@ -126,6 +132,12 @@ void loop() {
     if (millis() - lastHeartbeat >= HEARTBEAT_INTERVAL) {
       sendHeartbeat();
       lastHeartbeat = millis();
+    }
+    
+    // Check for commands more frequently
+    if (millis() - lastCommandCheck >= COMMAND_CHECK_INTERVAL) {
+      checkForCommands();
+      lastCommandCheck = millis();
     }
   } else if (isConfigured && WiFi.status() != WL_CONNECTED) {
     // Try to reconnect to WiFi only if configured but not connected
@@ -738,24 +750,17 @@ void closeDoor() {
 void sendHeartbeat() {
   if (serverURL.length() == 0) return;
   
-  // Ensure serverURL doesn't end with slash to avoid double slashes
-  String cleanURL = serverURL;
-  if (cleanURL.endsWith("/")) {
-    cleanURL = cleanURL.substring(0, cleanURL.length() - 1);
-  }
-  
-  String heartbeatURL = cleanURL + "/api/doors/heartbeat";
-  Serial.println("Attempting heartbeat to: " + heartbeatURL);
-  
   // Use HTTPS directly (server requires HTTPS)
-  Serial.println("Using HTTPS connection: " + heartbeatURL);
+  String heartbeatURL = serverURL;
+  if (heartbeatURL.endsWith("/")) {
+    heartbeatURL = heartbeatURL.substring(0, heartbeatURL.length() - 1);
+  }
+  heartbeatURL += "/api/doors/heartbeat";
+  
+  Serial.println("Attempting heartbeat to: " + heartbeatURL);
   
   // Configure HTTP client for HTTPS
   http.begin(heartbeatURL);
-  
-  // Set timeout for HTTPS connections
-  http.setTimeout(10000); // 10 seconds timeout
-  
   http.addHeader("Content-Type", "application/json");
   
   StaticJsonDocument<200> doc;
@@ -778,9 +783,68 @@ void sendHeartbeat() {
     String response = http.getString();
     Serial.println("Heartbeat sent successfully: " + String(httpResponseCode));
     Serial.println("Response: " + response);
+    
+    // Parse response to get doorId
+    StaticJsonDocument<200> doc;
+    DeserializationError error = deserializeJson(doc, response);
+    
+    if (!error && doc["success"] == true && doc.containsKey("doorId")) {
+      doorId = doc["doorId"];
+      Serial.println("Door ID set to: " + String(doorId));
+    } else {
+      Serial.println("Failed to get door ID from heartbeat response");
+    }
   } else {
     Serial.println("Heartbeat failed: " + String(httpResponseCode));
     Serial.println("Error details: " + http.errorToString(httpResponseCode));
+  }
+  
+  http.end();
+}
+
+void checkForCommands() {
+  if (serverURL.length() == 0 || doorId == -1) return;
+  
+  // Use HTTPS directly (server requires HTTPS)
+  String commandsURL = serverURL;
+  if (commandsURL.endsWith("/")) {
+    commandsURL = commandsURL.substring(0, commandsURL.length() - 1);
+  }
+  commandsURL += "/api/doors/commands/" + String(doorId);
+  
+  Serial.println("Checking for commands at: " + commandsURL);
+  
+  http.begin(commandsURL);
+  http.setTimeout(5000); // 5 second timeout
+  
+  int httpResponseCode = http.GET();
+  
+  if (httpResponseCode > 0) {
+    String response = http.getString();
+    Serial.println("Commands response: " + response);
+    
+    // Parse JSON response
+    StaticJsonDocument<512> doc;
+    DeserializationError error = deserializeJson(doc, response);
+    
+    if (!error && doc["success"] == true) {
+      JsonArray commands = doc["commands"];
+      
+      for (JsonObject cmd : commands) {
+        String command = cmd["command"];
+        Serial.println("Executing command: " + command);
+        
+        if (command == "open") {
+          openDoor();
+        } else if (command == "close") {
+          closeDoor();
+        }
+      }
+    } else {
+      Serial.println("Failed to parse commands response");
+    }
+  } else {
+    Serial.println("Commands check failed: " + String(httpResponseCode));
   }
   
   http.end();

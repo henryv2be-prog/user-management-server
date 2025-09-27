@@ -216,14 +216,60 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
+// Database reset function
+async function resetDatabase() {
+  try {
+    console.log('🔄 Resetting database...');
+    const sqlite3 = require('sqlite3').verbose();
+    const dbPath = process.env.DB_PATH || path.join(__dirname, 'database', 'users.db');
+    
+    const db = new sqlite3.Database(dbPath);
+    
+    // Drop all tables
+    await new Promise((resolve, reject) => {
+      db.exec(`
+        DROP TABLE IF EXISTS door_commands;
+        DROP TABLE IF EXISTS access_requests;
+        DROP TABLE IF EXISTS events;
+        DROP TABLE IF EXISTS door_access_groups;
+        DROP TABLE IF EXISTS user_access_groups;
+        DROP TABLE IF EXISTS access_groups;
+        DROP TABLE IF EXISTS doors;
+        DROP TABLE IF EXISTS users;
+        DROP TABLE IF EXISTS admin_user;
+        DROP TABLE IF EXISTS access_log;
+      `, (err) => {
+        db.close();
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+    
+    console.log('✅ Database reset completed');
+    
+    // Recreate tables
+    await initDatabase();
+    console.log('✅ Database recreated successfully');
+    
+  } catch (error) {
+    console.error('❌ Database reset failed:', error);
+    throw error;
+  }
+}
+
 // Start server
 async function startServer() {
   try {
-    // Initialize database first
-    console.log('🗄️  Initializing database...');
-    console.log('Database path:', process.env.DB_PATH || path.join(__dirname, 'database', 'users.db'));
-    await initDatabase();
-    console.log('✅ Database initialization completed');
+    // Reset database if RESET_DB environment variable is set
+    if (process.env.RESET_DB === 'true') {
+      await resetDatabase();
+    } else {
+      // Initialize database first
+      console.log('🗄️  Initializing database...');
+      console.log('Database path:', process.env.DB_PATH || path.join(__dirname, 'database', 'users.db'));
+      await initDatabase();
+      console.log('✅ Database initialization completed');
+    }
     
     console.log('Starting server...');
     console.log('Port:', PORT);

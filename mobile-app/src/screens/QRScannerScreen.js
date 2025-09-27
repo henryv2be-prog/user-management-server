@@ -7,18 +7,22 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Ionicons } from '@expo/vector-icons';
-import { doorsAPI } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { Camera } from 'expo-camera';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
-export default function QRScannerScreen({ navigation }) {
-  const [permission, requestPermission] = useCameraPermissions();
+export default function QRScannerScreen({ onBack }) {
+  const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const { user } = useAuth();
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setHasPermission(status === 'granted');
+    })();
+  }, []);
 
   const handleBarCodeScanned = async ({ type, data }) => {
     if (scanned || isProcessing) return;
@@ -28,7 +32,7 @@ export default function QRScannerScreen({ navigation }) {
 
     try {
       let doorId;
-      
+
       // Try to parse as JSON first (for static QR codes)
       try {
         const qrData = JSON.parse(data);
@@ -55,24 +59,46 @@ export default function QRScannerScreen({ navigation }) {
         throw new Error('Invalid QR code: No door ID found');
       }
 
+      // Get server URL and token
+      const serverUrl = await AsyncStorage.getItem('serverUrl');
+      const token = await AsyncStorage.getItem('authToken');
+
+      if (!serverUrl || !token) {
+        Alert.alert('Error', 'Server configuration missing');
+        return;
+      }
+
       // Request access
-      const response = await doorsAPI.requestAccess(parseInt(doorId), 'qr_scan', data);
-      
-      if (response.data.access) {
+      const response = await fetch(`${serverUrl}/api/access-requests/request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          doorId: parseInt(doorId),
+          requestType: 'qr_scan',
+          qrCodeData: data,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.access) {
         Alert.alert(
           'Access Granted! ✅',
-          response.data.message || 'Door will open shortly...',
+          result.message || 'Door will open shortly...',
           [
             {
               text: 'OK',
-              onPress: () => navigation.goBack(),
+              onPress: () => onBack(),
             },
           ]
         );
       } else {
         Alert.alert(
           'Access Denied ❌',
-          response.data.message || 'You do not have permission to access this door',
+          result.message || 'You do not have permission to access this door',
           [
             {
               text: 'Try Again',
@@ -83,7 +109,7 @@ export default function QRScannerScreen({ navigation }) {
             },
             {
               text: 'Cancel',
-              onPress: () => navigation.goBack(),
+              onPress: () => onBack(),
             },
           ]
         );
@@ -103,7 +129,7 @@ export default function QRScannerScreen({ navigation }) {
           },
           {
             text: 'Cancel',
-            onPress: () => navigation.goBack(),
+            onPress: () => onBack(),
           },
         ]
       );
@@ -115,7 +141,7 @@ export default function QRScannerScreen({ navigation }) {
     setIsProcessing(false);
   };
 
-  if (!permission) {
+  if (hasPermission === null) {
     return (
       <View style={styles.container}>
         <Text style={styles.message}>Requesting camera permission...</Text>
@@ -123,20 +149,16 @@ export default function QRScannerScreen({ navigation }) {
     );
   }
 
-  if (!permission.granted) {
+  if (hasPermission === false) {
     return (
       <View style={styles.container}>
-        <Ionicons name="camera" size={64} color="#dc3545" />
         <Text style={styles.message}>Camera permission required</Text>
         <Text style={styles.subMessage}>
           Please allow camera access to scan QR codes
         </Text>
-        <TouchableOpacity style={styles.button} onPress={requestPermission}>
+        <TouchableOpacity style={styles.button} onPress={() => Camera.requestCameraPermissionsAsync()}>
           <Text style={styles.buttonText}>Allow Camera Access</Text>
         </TouchableOpacity>
-        <Text style={styles.helpText}>
-          💡 If permission is denied, try refreshing the page or check browser settings
-        </Text>
       </View>
     );
   }
@@ -144,19 +166,18 @@ export default function QRScannerScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="white" />
+        <TouchableOpacity onPress={() => onBack()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Scan QR Code</Text>
         <View style={styles.placeholder} />
       </View>
 
-      <CameraView
+      <Camera
         style={styles.scanner}
-        facing="back"
-        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-        barcodeScannerSettings={{
-          barcodeTypes: ['qr', 'pdf417'],
+        onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+        barCodeScannerSettings={{
+          barCodeTypes: ['qr', 'pdf417'],
         }}
       />
 
@@ -202,13 +223,18 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
   },
+  backButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   headerTitle: {
     color: 'white',
     fontSize: 18,
     fontWeight: '600',
   },
   placeholder: {
-    width: 40,
+    width: 60,
   },
   scanner: {
     flex: 1,
@@ -233,7 +259,7 @@ const styles = StyleSheet.create({
     height: 30,
     borderLeftWidth: 4,
     borderTopWidth: 4,
-    borderColor: '#36454F',
+    borderColor: '#00ff00',
     top: 0,
     left: 0,
   },
@@ -271,18 +297,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   button: {
-    backgroundColor: '#36454F',
+    backgroundColor: '#00ff00',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   buttonText: {
-    color: 'white',
+    color: 'black',
     fontSize: 16,
     fontWeight: '600',
   },
   processingText: {
-    color: '#36454F',
+    color: '#00ff00',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -297,12 +323,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 30,
-  },
-  helpText: {
-    color: '#999',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 20,
-    paddingHorizontal: 20,
   },
 });
