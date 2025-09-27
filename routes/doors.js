@@ -876,6 +876,28 @@ router.post('/access/request', async (req, res) => {
       console.log(`Storing door open command for door ${door.id}`);
       
       const db = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+      
+      // Ensure door_commands table exists (fallback for missing migration)
+      await new Promise((resolve, reject) => {
+        db.run(`CREATE TABLE IF NOT EXISTS door_commands (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          door_id INTEGER NOT NULL,
+          command TEXT NOT NULL,
+          status TEXT DEFAULT 'pending',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          executed_at DATETIME,
+          FOREIGN KEY (door_id) REFERENCES doors (id)
+        )`, (err) => {
+          if (err) {
+            console.error('Error creating door_commands table:', err.message);
+            reject(err);
+          } else {
+            console.log('✅ Door commands table verified/created');
+            resolve();
+          }
+        });
+      });
+      
       await new Promise((resolve, reject) => {
         db.run('INSERT INTO door_commands (door_id, command, status) VALUES (?, ?, ?)', 
                [door.id, 'open', 'pending'], (err) => {
