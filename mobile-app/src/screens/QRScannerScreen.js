@@ -6,6 +6,7 @@ import {
   Alert,
   TouchableOpacity,
   Dimensions,
+  TextInput,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +19,8 @@ export default function QRScannerScreen({ navigation }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualDoorId, setManualDoorId] = useState('');
   const { user } = useAuth();
 
   const handleBarCodeScanned = async ({ type, data }) => {
@@ -115,6 +118,75 @@ export default function QRScannerScreen({ navigation }) {
     setIsProcessing(false);
   };
 
+  const handleManualAccess = async () => {
+    if (!manualDoorId.trim()) {
+      Alert.alert('Error', 'Please enter a door ID');
+      return;
+    }
+
+    const doorId = parseInt(manualDoorId.trim());
+    if (isNaN(doorId)) {
+      Alert.alert('Error', 'Please enter a valid door ID number');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const response = await doorsAPI.requestAccess(doorId, 'manual_input', manualDoorId);
+      
+      if (response.data.access) {
+        Alert.alert(
+          'Access Granted! ✅',
+          response.data.message || 'Door will open shortly...',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Access Denied ❌',
+          response.data.message || 'You do not have permission to access this door',
+          [
+            {
+              text: 'Try Again',
+              onPress: () => {
+                setIsProcessing(false);
+                setManualDoorId('');
+              },
+            },
+            {
+              text: 'Cancel',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Manual access error:', error);
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to request access',
+        [
+          {
+            text: 'Try Again',
+            onPress: () => {
+              setIsProcessing(false);
+              setManualDoorId('');
+            },
+          },
+          {
+            text: 'Cancel',
+            onPress: () => navigation.goBack(),
+          },
+        ]
+      );
+    }
+  };
+
   if (!permission) {
     return (
       <View style={styles.container}>
@@ -134,6 +206,15 @@ export default function QRScannerScreen({ navigation }) {
         <TouchableOpacity style={styles.button} onPress={requestPermission}>
           <Text style={styles.buttonText}>Allow Camera Access</Text>
         </TouchableOpacity>
+        
+        <View style={styles.divider}>
+          <Text style={styles.dividerText}>OR</Text>
+        </View>
+        
+        <TouchableOpacity style={styles.manualButton} onPress={() => setShowManualInput(true)}>
+          <Text style={styles.manualButtonText}>Enter Door ID Manually</Text>
+        </TouchableOpacity>
+        
         <Text style={styles.helpText}>
           💡 If permission is denied, try refreshing the page or check browser settings
         </Text>
@@ -173,6 +254,15 @@ export default function QRScannerScreen({ navigation }) {
         <Text style={styles.instructionText}>
           Position the QR code within the frame
         </Text>
+        
+        <View style={styles.divider}>
+          <Text style={styles.dividerText}>OR</Text>
+        </View>
+        
+        <TouchableOpacity style={styles.manualButton} onPress={() => setShowManualInput(true)}>
+          <Text style={styles.manualButtonText}>Enter Door ID Manually</Text>
+        </TouchableOpacity>
+        
         {scanned && (
           <TouchableOpacity style={styles.button} onPress={resetScanner}>
             <Text style={styles.buttonText}>Scan Again</Text>
@@ -182,6 +272,47 @@ export default function QRScannerScreen({ navigation }) {
           <Text style={styles.processingText}>Processing...</Text>
         )}
       </View>
+      
+      {/* Manual Input Modal */}
+      {showManualInput && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Enter Door ID</Text>
+            <Text style={styles.modalSubtitle}>
+              Type the door ID number (e.g., 1, 2, 3) to request access
+            </Text>
+            
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.textInput}
+                value={manualDoorId}
+                onChangeText={setManualDoorId}
+                placeholder="Enter door ID..."
+                keyboardType="numeric"
+                autoFocus
+              />
+            </View>
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.modalButton} 
+                onPress={() => setShowManualInput(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.modalButtonPrimary]} 
+                onPress={handleManualAccess}
+                disabled={isProcessing}
+              >
+                <Text style={styles.modalButtonPrimaryText}>
+                  {isProcessing ? 'Processing...' : 'Request Access'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -304,5 +435,84 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     paddingHorizontal: 20,
+  },
+  divider: {
+    alignItems: 'center',
+    marginVertical: 15,
+  },
+  dividerText: {
+    color: '#999',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  modalContent: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    padding: 24,
+    width: width * 0.85,
+    maxWidth: 400,
+  },
+  modalTitle: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    color: '#ccc',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  textInput: {
+    backgroundColor: '#3a3a3a',
+    color: 'white',
+    fontSize: 16,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#555',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginHorizontal: 4,
+    backgroundColor: '#555',
+  },
+  modalButtonPrimary: {
+    backgroundColor: '#28a745',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  modalButtonPrimaryText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
