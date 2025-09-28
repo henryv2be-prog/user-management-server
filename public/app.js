@@ -3418,6 +3418,9 @@ function displayEvents(events) {
             <div class="event-icon ${event.type}">
                 <i class="fas ${getEventIcon(event.type)}"></i>
             </div>
+            <div class="event-status-indicator ${getEventStatusClass(event.type, event.action)}">
+                <div class="status-dot"></div>
+            </div>
             <div class="event-content">
                 <div class="event-main">
                     <div class="event-header">
@@ -3934,6 +3937,9 @@ function addNewEventToList(event) {
         <div class="event-icon ${event.type}">
             <i class="fas ${getEventIcon(event.type)}"></i>
         </div>
+        <div class="event-status-indicator ${getEventStatusClass(event.type, event.action)}">
+            <div class="status-dot"></div>
+        </div>
         <div class="event-content">
             <div class="event-main">
                 <div class="event-header">
@@ -4037,6 +4043,23 @@ function getEventIcon(type) {
         'system': 'fa-cog'
     };
     return icons[type] || 'fa-info-circle';
+}
+
+function getEventStatusClass(type, action) {
+    // Door online/offline status
+    if (type === 'door') {
+        if (action === 'online') return 'status-online';
+        if (action === 'offline') return 'status-offline';
+    }
+    
+    // Access granted/denied status
+    if (type === 'access') {
+        if (action === 'granted') return 'status-granted';
+        if (action === 'denied') return 'status-denied';
+    }
+    
+    // General info (yellow) for all other events
+    return 'status-info';
 }
 
 function formatEventAction(action) {

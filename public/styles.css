@@ -3232,7 +3232,7 @@ body.fa-failed .nav-toggle-fallback {
 
 .event-item {
     display: grid;
-    grid-template-columns: 24px 1fr auto;
+    grid-template-columns: 24px 8px 1fr auto;
     gap: 0.75rem;
     align-items: center;
     padding: 0.75rem 1rem;
@@ -3241,13 +3241,13 @@ body.fa-failed .nav-toggle-fallback {
     font-size: 0.9rem;
     /* Mobile responsiveness */
     @media (max-width: 768px) {
-        grid-template-columns: 20px 1fr auto;
+        grid-template-columns: 20px 6px 1fr auto;
         gap: 0.5rem;
         padding: 0.5rem 0.75rem;
         font-size: 0.85rem;
     }
     @media (max-width: 480px) {
-        grid-template-columns: 18px 1fr auto;
+        grid-template-columns: 18px 5px 1fr auto;
         gap: 0.4rem;
         padding: 0.4rem 0.5rem;
         font-size: 0.8rem;
@@ -3304,6 +3304,62 @@ body.fa-failed .nav-toggle-fallback {
 .event-icon.access { background: #20c997; }
 .event-icon.error { background: #dc3545; }
 .event-icon.system { background: #6c757d; }
+
+/* Status indicator styles */
+.event-status-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+/* Status colors */
+.status-online .status-dot {
+    background-color: #22c55e; /* Green for online */
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.status-offline .status-dot {
+    background-color: #ef4444; /* Red for offline */
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.status-granted .status-dot {
+    background-color: #22c55e; /* Green for access granted */
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.status-denied .status-dot {
+    background-color: #ef4444; /* Red for access denied */
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.status-info .status-dot {
+    background-color: #f59e0b; /* Yellow for general info */
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+/* Mobile responsiveness for status dots */
+@media (max-width: 768px) {
+    .status-dot {
+        width: 6px;
+        height: 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    .status-dot {
+        width: 5px;
+        height: 5px;
+    }
+}
 
 .event-content {
     display: grid;
