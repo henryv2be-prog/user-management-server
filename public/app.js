@@ -5408,12 +5408,12 @@ class SitePlanManager {
                 newStatus = 'open';
                 console.log(`Door ${door.name} status set to OPEN due to access granted`);
                 
-                // Reset to unlocked after 5 seconds (only for access granted)
+                // Reset to locked after 5 seconds (only for access granted)
                 setTimeout(() => {
                     if (this.doors[doorIndex] && this.doors[doorIndex].status === 'open') {
-                        this.doors[doorIndex].status = 'unlocked';
+                        this.doors[doorIndex].status = 'locked';
                         this.drawSitePlan(); // Redraw to update status
-                        console.log(`Door ${door.name} status reset to UNLOCKED after access granted`);
+                        console.log(`Door ${door.name} status reset to LOCKED after access granted`);
                     }
                 }, 5000);
                 break;
