@@ -3808,6 +3808,20 @@ function connectEventStream() {
                             console.log('New door event data:', data.event);
                             sitePlanManager.updateDoorStatus(data.event);
                         }
+                        
+                        // Update site plan door status if this is an access event
+                        if (data.event && data.event.type === 'access' && data.event.action === 'granted' && sitePlanManager && typeof sitePlanManager.updateDoorStatus === 'function') {
+                            console.log('🔄 Updating site plan door status due to access granted event');
+                            console.log('Access granted event data:', data.event);
+                            // Convert access event to door event format
+                            const doorEvent = {
+                                ...data.event,
+                                type: 'door',
+                                action: 'access_granted',
+                                entityId: data.event.doorId || data.event.entityId || data.event.id
+                            };
+                            sitePlanManager.updateDoorStatus(doorEvent);
+                        }
                     }
                 } catch (error) {
                     console.error('Error parsing event stream data:', error);
@@ -5335,9 +5349,10 @@ class SitePlanManager {
         console.log('Updating door status from event:', event);
         
         // Try multiple ways to find the door ID
-        let doorId = event.entityId || event.doorId || event.door_id;
+        let doorId = event.entityId || event.doorId || event.door_id || event.id;
         if (!doorId) {
             console.log('Invalid event data for door status update - no door ID found');
+            console.log('Available event properties:', Object.keys(event));
             return;
         }
 
