@@ -3813,14 +3813,47 @@ function connectEventStream() {
                         if (data.event && data.event.type === 'access' && data.event.action === 'granted' && sitePlanManager && typeof sitePlanManager.updateDoorStatus === 'function') {
                             console.log('🔄 Updating site plan door status due to access granted event');
                             console.log('Access granted event data:', data.event);
-                            // Convert access event to door event format
-                            const doorEvent = {
-                                ...data.event,
-                                type: 'door',
-                                action: 'access_granted',
-                                entityId: data.event.doorId || data.event.entityId || data.event.id
-                            };
-                            sitePlanManager.updateDoorStatus(doorEvent);
+                            
+                            // For access events, we need to find the door ID from the event details or use a default
+                            // Since access events don't contain door ID directly, we'll update all doors or find by IP
+                            const accessEvent = data.event;
+                            
+                            // Try to extract door ID from event details or use first door as fallback
+                            let targetDoorId = null;
+                            
+                            // Check if event details contain door information
+                            if (accessEvent.details && accessEvent.details.includes('IP:')) {
+                                const ipMatch = accessEvent.details.match(/IP:\s*(\d+\.\d+\.\d+\.\d+)/);
+                                if (ipMatch) {
+                                    const ip = ipMatch[1];
+                                    // Find door by IP
+                                    const doorByIp = sitePlanManager.doors.find(door => door.ip === ip);
+                                    if (doorByIp) {
+                                        targetDoorId = doorByIp.id;
+                                        console.log(`Found door by IP ${ip}:`, doorByIp.name, 'ID:', doorByIp.id);
+                                    }
+                                }
+                            }
+                            
+                            // If no door found by IP, use the first door as fallback
+                            if (!targetDoorId && sitePlanManager.doors.length > 0) {
+                                targetDoorId = sitePlanManager.doors[0].id;
+                                console.log('Using first door as fallback:', sitePlanManager.doors[0].name, 'ID:', targetDoorId);
+                            }
+                            
+                            if (targetDoorId) {
+                                // Convert access event to door event format
+                                const doorEvent = {
+                                    ...accessEvent,
+                                    type: 'door',
+                                    action: 'access_granted',
+                                    entityId: targetDoorId,
+                                    id: targetDoorId
+                                };
+                                sitePlanManager.updateDoorStatus(doorEvent);
+                            } else {
+                                console.log('No doors available in site plan for access event');
+                            }
                         }
                     }
                 } catch (error) {
@@ -5360,6 +5393,8 @@ class SitePlanManager {
         const doorIndex = this.doors.findIndex(door => door.id === doorId);
         if (doorIndex === -1) {
             console.log('Door not found in site plan:', doorId);
+            console.log('Available doors in site plan:', this.doors.map(d => ({id: d.id, name: d.name})));
+            console.log('Event details:', event);
             return;
         }
 
