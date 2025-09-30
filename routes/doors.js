@@ -974,6 +974,27 @@ router.get('/commands/:doorId', async (req, res) => {
     // Get pending commands for this door
     const db = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
     
+    // First, ensure the door_commands table exists
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE TABLE IF NOT EXISTS door_commands (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        door_id INTEGER NOT NULL,
+        command TEXT NOT NULL,
+        status TEXT DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        executed_at DATETIME,
+        FOREIGN KEY (door_id) REFERENCES doors (id)
+      )`, (err) => {
+        if (err) {
+          console.error('Error creating door_commands table:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ Door commands table verified/created');
+          resolve();
+        }
+      });
+    });
+    
     const commands = await new Promise((resolve, reject) => {
       db.all('SELECT * FROM door_commands WHERE door_id = ? AND status = ? ORDER BY created_at ASC', 
              [doorId, 'pending'], (err, rows) => {
