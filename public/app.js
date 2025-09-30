@@ -1014,8 +1014,11 @@ async function loadDashboard() {
         // Delay door loading to ensure everything is initialized
         setTimeout(async () => {
             try {
+                console.log('setTimeout callback started');
                 await loadDashboardDoors();
+                console.log('loadDashboardDoors completed');
                 hideDashboardDoorsLoading();
+                console.log('hideDashboardDoorsLoading completed');
                 
                 // Load doors and site plan background when dashboard is shown
                 console.log('sitePlanManager exists:', !!sitePlanManager);
