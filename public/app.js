@@ -3783,6 +3783,7 @@ function connectEventStream() {
                         }
                     } else if (data.type === 'new_event') {
                         console.log('✅ New event received from public endpoint:', data);
+                        console.log('New event details:', data.event);
                         addDebugLog(`New event received: ${data.type}`, 'success');
                         
                         // Show a visual indicator that a new event was received
@@ -3799,6 +3800,13 @@ function connectEventStream() {
                             console.log('🔄 Refreshing events list due to new event');
                             const currentType = document.getElementById('eventTypeFilter')?.value || '';
                             loadEvents(1, currentType);
+                        }
+                        
+                        // Update site plan door status if this is a door event
+                        if (data.event && data.event.type === 'door' && sitePlanManager && typeof sitePlanManager.updateDoorStatus === 'function') {
+                            console.log('🔄 Updating site plan door status due to new door event');
+                            console.log('New door event data:', data.event);
+                            sitePlanManager.updateDoorStatus(data.event);
                         }
                     }
                 } catch (error) {
