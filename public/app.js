@@ -4391,19 +4391,28 @@ class SitePlanManager {
                 const img = new Image();
                 img.onload = () => {
                     this.sitePlanImage = img;
+                    console.log('Site plan background loaded from server');
+                    this.drawSitePlan(); // Draw the site plan after loading
                 };
                 img.src = data.backgroundImage;
+            } else {
+                console.log('No site plan background found on server');
             }
         })
         .catch(error => {
+            console.error('Error loading site plan from server:', error);
             // Fallback to localStorage
             const savedBackground = localStorage.getItem('sitePlanBackground');
             if (savedBackground) {
                 const img = new Image();
                 img.onload = () => {
                     this.sitePlanImage = img;
+                    console.log('Site plan background loaded from localStorage fallback');
+                    this.drawSitePlan(); // Draw the site plan after loading
                 };
                 img.src = savedBackground;
+            } else {
+                console.log('No site plan background found in localStorage');
             }
         });
     }
