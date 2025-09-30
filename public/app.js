@@ -1167,7 +1167,7 @@ function displayDoorStatus(doors) {
     const doorGrid = document.getElementById('doorGrid');
     
     if (!doorGrid) {
-        console.error('doorGrid element not found!');
+        console.log('doorGrid element not found - skipping door status display');
         return;
     }
     
