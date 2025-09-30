@@ -7,7 +7,7 @@ const initDatabase = async () => {
         const db = await pool.getConnection();
         
         let completedTables = 0;
-        const totalTables = 10; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, access_requests, events, admin_user, door_commands
+        const totalTables = 12; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, access_requests, events, admin_user, door_commands, site_plan, door_positions
         
         const checkCompletion = () => {
             completedTables++;
@@ -236,6 +236,42 @@ const initDatabase = async () => {
                     return;
                 }
                 console.log('Events table created/verified');
+                checkCompletion();
+            });
+            
+            // Site plan table for background images
+            db.run(`CREATE TABLE IF NOT EXISTS site_plan (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                background_image TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`, (err) => {
+                if (err) {
+                    console.error('Error creating site_plan table:', err.message);
+                    reject(err);
+                    return;
+                }
+                console.log('Site plan table created/verified');
+                checkCompletion();
+            });
+            
+            // Door positions table for site plan
+            db.run(`CREATE TABLE IF NOT EXISTS door_positions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                door_id INTEGER,
+                x REAL,
+                y REAL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(door_id),
+                FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE
+            )`, (err) => {
+                if (err) {
+                    console.error('Error creating door_positions table:', err.message);
+                    reject(err);
+                    return;
+                }
+                console.log('Door positions table created/verified');
                 checkCompletion();
             });
 
