@@ -1012,7 +1012,7 @@ async function loadDashboard() {
         await loadEvents();
         
         // Delay door loading to ensure everything is initialized
-        console.log('About to start setTimeout for site plan loading...');
+        console.log('About to start setTimeout for site plan loading... [NEW VERSION - TIMESTAMP: ' + Date.now() + ']');
         setTimeout(async () => {
             try {
                 console.log('setTimeout callback started');
@@ -1024,7 +1024,7 @@ async function loadDashboard() {
                 // Load doors and site plan background when dashboard is shown
                 console.log('sitePlanManager exists:', !!sitePlanManager);
                 if (sitePlanManager) {
-                    console.log('Loading doors and site plan background for dashboard...');
+                    console.log('Loading doors and site plan background for dashboard... [NEW VERSION - TIMESTAMP: ' + Date.now() + ']');
                     sitePlanManager.restoreBackgroundImage(); // Load background image
                     sitePlanManager.loadDoorPositions(); // Load doors with positions
                 } else {
