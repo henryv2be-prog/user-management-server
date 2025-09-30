@@ -1012,6 +1012,7 @@ async function loadDashboard() {
         await loadEvents();
         
         // Delay door loading to ensure everything is initialized
+        console.log('About to start setTimeout for site plan loading...');
         setTimeout(async () => {
             try {
                 console.log('setTimeout callback started');
