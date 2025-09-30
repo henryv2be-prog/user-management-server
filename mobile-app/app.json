@@ -7,6 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
+    "scheme": "simplifiaccess",
+    "deepLinking": {
+      "scheme": "simplifiaccess",
+      "pathPrefix": "/"
+    },
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "contain",
@@ -22,7 +27,28 @@
       },
       "package": "com.simplifiaccess.mobile",
       "permissions": [
-        "CAMERA"
+        "android.permission.NFC",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ],
+      "intentFilters": [
+        {
+          "action": "android.nfc.action.TAG_DISCOVERED",
+          "category": ["android.intent.category.DEFAULT"]
+        }
+      ],
+      "shortcuts": [
+        {
+          "shortcutId": "nfc_scan",
+          "shortcutShortLabel": "Scan NFC",
+          "shortcutLongLabel": "Scan NFC Tag for Door Access",
+          "icon": "./assets/icon.png",
+          "intent": {
+            "action": "android.intent.action.MAIN",
+            "targetClass": "com.simplifiaccess.mobile.MainActivity",
+            "targetPackage": "com.simplifiaccess.mobile"
+          }
+        }
       ]
     },
     "web": {

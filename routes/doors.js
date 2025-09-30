@@ -58,17 +58,22 @@ router.post('/heartbeat', validateHeartbeat, asyncHandler(async (req, res) => {
     
     console.log('Heartbeat received:', { deviceID, deviceName, ip, mac, status });
     
-    if (!deviceID || !ip) {
-      console.log('Heartbeat rejected - missing deviceID or ip');
+    if (!ip) {
+      console.log('Heartbeat rejected - missing ip');
       return res.status(400).json({
         error: 'Bad Request',
-        message: 'deviceID and ip are required'
+        message: 'IP address is required'
       });
+    }
+    
+    // Generate deviceID if not provided
+    if (!deviceID) {
+      deviceID = 'ESP32-' + (mac ? mac.replace(/:/g, '') : ip.replace(/\./g, ''));
     }
     
     // Handle empty deviceName
     if (!deviceName || deviceName.trim() === '') {
-      deviceName = 'ESP32-' + mac.replace(/:/g, '');
+      deviceName = 'ESP32-' + (mac ? mac.replace(/:/g, '') : ip.replace(/\./g, ''));
     }
     
     // Update heartbeat cache with device info
@@ -480,48 +485,6 @@ router.delete('/:id/access-groups/:accessGroupId', authenticate, requireAdmin, v
   }
 });
 
-// ESP32 heartbeat endpoint (public endpoint)
-router.post('/heartbeat', async (req, res) => {
-  try {
-    const { esp32_ip, esp32_mac, status = 'online' } = req.body;
-    
-    if (!esp32_ip) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'ESP32 IP address is required'
-      });
-    }
-    
-    // Find door by IP
-    const door = await Door.findByIp(esp32_ip);
-    if (!door) {
-      return res.status(404).json({
-        error: 'Door not found',
-        message: 'No door found with this IP address'
-      });
-    }
-    
-    // Update last seen timestamp
-    await door.updateLastSeen();
-    
-    // Log heartbeat activity
-    console.log(`Heartbeat received from ${door.name} (${esp32_ip}) - Status: ${status}`);
-    
-    res.json({
-      success: true,
-      message: 'Heartbeat received',
-      door_name: door.name,
-      timestamp: new Date().toISOString()
-    });
-    
-  } catch (error) {
-    console.error('Heartbeat error:', error);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to process heartbeat'
-    });
-  }
-});
 
 // Generate static QR code for door (admin only)
 router.get('/:id/qr-code', authenticate, requireAdmin, async (req, res) => {

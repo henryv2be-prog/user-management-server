@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Linking from 'expo-linking';
 
 // Import screens
 import ServerConfigScreen from './src/screens/ServerConfigScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import QRScannerScreen from './src/screens/QRScannerScreen';
+import QuickAccessWidget from './src/components/QuickAccessWidget';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('loading');
@@ -16,7 +18,28 @@ export default function App() {
 
   useEffect(() => {
     checkInitialState();
+    handleDeepLink();
   }, []);
+
+  const handleDeepLink = async () => {
+    const url = await Linking.getInitialURL();
+    if (url) {
+      handleUrl(url);
+    }
+    
+    // Listen for incoming links when app is already open
+    const subscription = Linking.addEventListener('url', handleUrl);
+    return () => subscription?.remove();
+  };
+
+  const handleUrl = (url) => {
+    if (url.includes('scan')) {
+      // If user is authenticated, go directly to scanner
+      if (isAuthenticated) {
+        setCurrentScreen('scanner');
+      }
+    }
+  };
 
   const checkInitialState = async () => {
     try {
@@ -63,6 +86,10 @@ export default function App() {
     setCurrentScreen('scanner');
   };
 
+  const handleQuickAccess = () => {
+    setCurrentScreen('scanner');
+  };
+
   const handleBackToHome = () => {
     setCurrentScreen('home');
   };
@@ -92,7 +119,8 @@ export default function App() {
       <StatusBar style="auto" />
       <HomeScreen 
         onLogout={handleLogout} 
-        onNavigateToScanner={handleNavigateToScanner} 
+        onNavigateToScanner={handleNavigateToScanner}
+        onQuickAccess={handleQuickAccess}
       />
     </>
   );

@@ -1,10 +1,10 @@
 const { body, validationResult } = require('express-validator');
 
 const validateHeartbeat = [
-  body('deviceID').isString().trim().isLength({ min: 1, max: 100 }).escape(),
+  body('deviceID').optional().isString().trim().isLength({ min: 1, max: 100 }).escape(),
   body('deviceName').optional().isString().trim().isLength({ max: 100 }).escape(),
-  body('ip').isIP(),
-  body('mac').matches(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/),
+  body('ip').isIP().withMessage('IP address is required and must be valid'),
+  body('mac').optional().matches(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/).withMessage('MAC address must be in format AA:BB:CC:DD:EE:FF or AA-BB-CC-DD-EE-FF'),
   body('status').optional().isIn(['online', 'offline']),
   body('doorOpen').optional().isBoolean(),
   body('signal').optional().isInt({ min: -100, max: 0 }),

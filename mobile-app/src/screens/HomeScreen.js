@@ -5,11 +5,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import QuickAccessWidget from '../components/QuickAccessWidget';
 
-export default function HomeScreen({ onLogout, onNavigateToScanner }) {
-  const handleQRScan = () => {
+export default function HomeScreen({ onLogout, onNavigateToScanner, onQuickAccess }) {
+  const handleNFCScan = () => {
     onNavigateToScanner();
   };
 
@@ -71,8 +73,9 @@ export default function HomeScreen({ onLogout, onNavigateToScanner }) {
         <View style={styles.actionCard}>
           <Text style={styles.actionTitle}>Quick Actions</Text>
 
-          <TouchableOpacity style={styles.actionButton} onPress={handleQRScan}>
-            <Text style={styles.actionButtonText}>📱 Scan QR Code</Text>
+          <TouchableOpacity style={styles.primaryButton} onPress={handleNFCScan}>
+            <Text style={styles.primaryButtonText}>📱 Scan NFC Tag</Text>
+            <Text style={styles.primaryButtonSubtext}>Tap to scan and access door</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.secondaryButton} onPress={handleViewProfile}>
@@ -95,6 +98,12 @@ export default function HomeScreen({ onLogout, onNavigateToScanner }) {
             <Text style={styles.statusText}>Ready for door access</Text>
           </View>
         </View>
+
+        {/* Quick Access Widget */}
+        <QuickAccessWidget 
+          onQuickScan={onQuickAccess}
+          onViewProfile={handleViewProfile}
+        />
       </View>
     </View>
   );
@@ -171,17 +180,28 @@ const styles = StyleSheet.create({
     color: '#f3f4f6',
     marginBottom: 16,
   },
-  actionButton: {
-    backgroundColor: '#374151',
+  primaryButton: {
+    backgroundColor: '#059669',
     borderRadius: 12,
-    padding: 16,
+    padding: 20,
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  actionButtonText: {
+  primaryButtonText: {
     color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  primaryButtonSubtext: {
+    color: '#d1fae5',
+    fontSize: 14,
+    textAlign: 'center',
   },
   secondaryButton: {
     backgroundColor: 'transparent',
