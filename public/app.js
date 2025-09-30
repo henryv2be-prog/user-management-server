@@ -1018,10 +1018,13 @@ async function loadDashboard() {
                 hideDashboardDoorsLoading();
                 
                 // Load doors and site plan background when dashboard is shown
+                console.log('sitePlanManager exists:', !!sitePlanManager);
                 if (sitePlanManager) {
                     console.log('Loading doors and site plan background for dashboard...');
                     sitePlanManager.restoreBackgroundImage(); // Load background image
                     sitePlanManager.loadDoorPositions(); // Load doors with positions
+                } else {
+                    console.log('sitePlanManager not available - skipping site plan load');
                 }
             } catch (error) {
                 console.error('Failed to load dashboard doors:', error);
@@ -4367,6 +4370,7 @@ class SitePlanManager {
     }
 
     restoreBackgroundImage() {
+        console.log('restoreBackgroundImage() called');
         // Try to load from server first
         this.loadSitePlanFromServer();
     }
