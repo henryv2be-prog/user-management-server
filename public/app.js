@@ -4379,7 +4379,9 @@ class SitePlanManager {
         
         fetch('/api/site-plan', {
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
             }
         })
         .then(response => {
@@ -4399,7 +4401,9 @@ class SitePlanManager {
                     console.log('Site plan background loaded from server');
                     this.drawSitePlan(); // Draw the site plan after loading
                 };
-                img.src = data.backgroundImage;
+                // Add cache-busting parameter to image URL
+                const separator = data.backgroundImage.includes('?') ? '&' : '?';
+                img.src = data.backgroundImage + separator + 't=' + Date.now();
             } else {
                 console.log('No site plan background found on server');
             }
@@ -4415,7 +4419,9 @@ class SitePlanManager {
                     console.log('Site plan background loaded from localStorage fallback');
                     this.drawSitePlan(); // Draw the site plan after loading
                 };
-                img.src = savedBackground;
+                // Add cache-busting parameter to localStorage image URL
+                const separator = savedBackground.includes('?') ? '&' : '?';
+                img.src = savedBackground + separator + 't=' + Date.now();
             } else {
                 console.log('No site plan background found in localStorage');
             }
