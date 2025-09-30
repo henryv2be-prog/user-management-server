@@ -4401,9 +4401,13 @@ class SitePlanManager {
                     console.log('Site plan background loaded from server');
                     this.drawSitePlan(); // Draw the site plan after loading
                 };
-                // Add cache-busting parameter to image URL
-                const separator = data.backgroundImage.includes('?') ? '&' : '?';
-                img.src = data.backgroundImage + separator + 't=' + Date.now();
+                // Add cache-busting parameter to image URL (only for HTTP URLs, not data URLs)
+                if (data.backgroundImage.startsWith('data:')) {
+                    img.src = data.backgroundImage; // Data URLs can't have query parameters
+                } else {
+                    const separator = data.backgroundImage.includes('?') ? '&' : '?';
+                    img.src = data.backgroundImage + separator + 't=' + Date.now();
+                }
             } else {
                 console.log('No site plan background found on server');
             }
@@ -4419,9 +4423,13 @@ class SitePlanManager {
                     console.log('Site plan background loaded from localStorage fallback');
                     this.drawSitePlan(); // Draw the site plan after loading
                 };
-                // Add cache-busting parameter to localStorage image URL
-                const separator = savedBackground.includes('?') ? '&' : '?';
-                img.src = savedBackground + separator + 't=' + Date.now();
+                // Add cache-busting parameter to localStorage image URL (only for HTTP URLs, not data URLs)
+                if (savedBackground.startsWith('data:')) {
+                    img.src = savedBackground; // Data URLs can't have query parameters
+                } else {
+                    const separator = savedBackground.includes('?') ? '&' : '?';
+                    img.src = savedBackground + separator + 't=' + Date.now();
+                }
             } else {
                 console.log('No site plan background found in localStorage');
             }
