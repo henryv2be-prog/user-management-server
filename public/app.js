@@ -4420,8 +4420,9 @@ class SitePlanManager {
                 const img = new Image();
                 img.onload = () => {
                     this.sitePlanImage = img;
-                    console.log('Site plan background loaded from server');
-                    this.drawSitePlan(); // Draw the site plan after loading
+        console.log('Site plan background loaded from server');
+        console.log('Current doors in site plan:', this.doors.length, this.doors.map(d => ({id: d.id, name: d.name, status: d.status})));
+        this.drawSitePlan(); // Draw the site plan after loading
                 };
                 // Add cache-busting parameter to image URL (only for HTTP URLs, not data URLs)
                 if (data.backgroundImage.startsWith('data:')) {
@@ -5460,6 +5461,27 @@ class SitePlanManager {
 
 // Global site plan manager
 const sitePlanManager = new SitePlanManager();
+
+// Global test functions for debugging door status
+window.testDoorStatus = function(doorId, status) {
+    console.log(`Testing door status update - Door ID: ${doorId}, Status: ${status}`);
+    if (sitePlanManager) {
+        sitePlanManager.testDoorStatusUpdate(doorId, status);
+    } else {
+        console.log('Site plan manager not available');
+    }
+};
+
+window.showDoorInfo = function() {
+    if (sitePlanManager && sitePlanManager.doors) {
+        console.log('Current doors in site plan:');
+        sitePlanManager.doors.forEach((door, index) => {
+            console.log(`${index + 1}. ID: ${door.id}, Name: ${door.name}, Status: ${door.status}`);
+        });
+    } else {
+        console.log('No doors loaded in site plan');
+    }
+};
 
 // Site Plan Functions
 function uploadSitePlan() {
