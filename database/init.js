@@ -7,7 +7,7 @@ const initDatabase = async () => {
         const db = await pool.getConnection();
         
         let completedTables = 0;
-        const totalTables = 9; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, access_requests, events, admin_user
+        const totalTables = 10; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, access_requests, events, admin_user, door_commands
         
         const checkCompletion = () => {
             completedTables++;
@@ -88,23 +88,25 @@ const initDatabase = async () => {
                     }
                 });
                 
-                // Create door_commands table if it doesn't exist
-                db.run(`CREATE TABLE IF NOT EXISTS door_commands (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    door_id INTEGER NOT NULL,
-                    command TEXT NOT NULL,
-                    status TEXT DEFAULT 'pending',
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    executed_at DATETIME,
-                    FOREIGN KEY (door_id) REFERENCES doors (id)
-                )`, (err) => {
-                    if (err) {
-                        console.error('Error creating door_commands table:', err.message);
-                    } else {
-                        console.log('✅ Door commands table created/verified');
-                    }
-                });
-                
+                checkCompletion();
+            });
+            
+            // Door commands table (separate from doors table)
+            db.run(`CREATE TABLE IF NOT EXISTS door_commands (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                door_id INTEGER NOT NULL,
+                command TEXT NOT NULL,
+                status TEXT DEFAULT 'pending',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                executed_at DATETIME,
+                FOREIGN KEY (door_id) REFERENCES doors (id)
+            )`, (err) => {
+                if (err) {
+                    console.error('Error creating door_commands table:', err.message);
+                    reject(err);
+                    return;
+                }
+                console.log('✅ Door commands table created/verified');
                 checkCompletion();
             });
 
