@@ -3738,6 +3738,12 @@ function connectEventStream() {
                     } else if (data.type === 'heartbeat') {
                         console.log('✅ Heartbeat received from public endpoint');
                         addDebugLog('Heartbeat received from public endpoint', 'info');
+                        
+                        // Update site plan door status if heartbeat contains door info
+                        if (sitePlanManager && data.doorId && typeof sitePlanManager.updateDoorFromHeartbeat === 'function') {
+                            console.log('🔄 Updating site plan door status from heartbeat');
+                            sitePlanManager.updateDoorFromHeartbeat(data);
+                        }
                     } else if (data.type === 'event') {
                         console.log('✅ Live event received from public endpoint:', data.event);
                         addDebugLog(`Live event received: ${data.event.type} ${data.event.action} - ${data.event.entityName}`, 'success');
@@ -3766,6 +3772,12 @@ function connectEventStream() {
                         } else if (data.event.type === 'door' && typeof loadDoors === 'function') {
                             console.log('🔄 Refreshing doors list due to door event');
                             loadDoors();
+                            
+                            // Update site plan door status if site plan is active
+                            if (sitePlanManager && typeof sitePlanManager.updateDoorStatus === 'function') {
+                                console.log('🔄 Updating site plan door status due to door event');
+                                sitePlanManager.updateDoorStatus(data.event);
+                            }
                         }
                     } else if (data.type === 'new_event') {
                         console.log('✅ New event received from public endpoint:', data);
@@ -5305,6 +5317,110 @@ class SitePlanManager {
         .catch(error => {
             console.error('Error saving individual door positions:', error);
         });
+    }
+
+    // Update door status from SSE events
+    updateDoorStatus(event) {
+        console.log('Updating door status from event:', event);
+        
+        if (!event || !event.entityId) {
+            console.log('Invalid event data for door status update');
+            return;
+        }
+
+        // Find the door in our current doors array
+        const doorIndex = this.doors.findIndex(door => door.id === event.entityId);
+        if (doorIndex === -1) {
+            console.log('Door not found in site plan:', event.entityId);
+            return;
+        }
+
+        // Update door status based on event action
+        const door = this.doors[doorIndex];
+        let newStatus = door.status;
+
+        switch (event.action) {
+            case 'access_granted':
+                // Show yellow (open) status for 5 seconds after access granted
+                newStatus = 'open';
+                console.log(`Door ${door.name} status set to OPEN due to access granted`);
+                
+                // Reset to unlocked after 5 seconds
+                setTimeout(() => {
+                    if (this.doors[doorIndex] && this.doors[doorIndex].status === 'open') {
+                        this.doors[doorIndex].status = 'unlocked';
+                        this.drawSitePlan(); // Redraw to update status
+                        console.log(`Door ${door.name} status reset to UNLOCKED`);
+                    }
+                }, 5000);
+                break;
+                
+            case 'locked':
+                newStatus = 'locked';
+                break;
+                
+            case 'unlocked':
+                newStatus = 'unlocked';
+                break;
+                
+            case 'offline':
+                newStatus = 'offline';
+                break;
+                
+            case 'online':
+                // If coming online, default to locked unless we have more specific info
+                newStatus = event.data?.status || 'locked';
+                break;
+        }
+
+        // Update the door status
+        if (newStatus !== door.status) {
+            this.doors[doorIndex].status = newStatus;
+            console.log(`Door ${door.name} status updated: ${door.status} -> ${newStatus}`);
+            
+            // Redraw the site plan to show the new status
+            this.drawSitePlan();
+        }
+    }
+
+    // Update door status from heartbeat events
+    updateDoorFromHeartbeat(heartbeatData) {
+        console.log('Updating door status from heartbeat:', heartbeatData);
+        
+        if (!heartbeatData || !heartbeatData.doorId) {
+            console.log('Invalid heartbeat data for door status update');
+            return;
+        }
+
+        // Find the door in our current doors array
+        const doorIndex = this.doors.findIndex(door => door.id === heartbeatData.doorId);
+        if (doorIndex === -1) {
+            console.log('Door not found in site plan:', heartbeatData.doorId);
+            return;
+        }
+
+        const door = this.doors[doorIndex];
+        let newStatus = 'online'; // Default to online if heartbeat received
+
+        // Determine status based on heartbeat data
+        if (heartbeatData.status === 'offline' || heartbeatData.signal < -80) {
+            newStatus = 'offline';
+        } else if (heartbeatData.doorOpen === true) {
+            newStatus = 'open';
+        } else if (heartbeatData.status === 'unlocked') {
+            newStatus = 'unlocked';
+        } else {
+            newStatus = 'locked'; // Default to locked if online
+        }
+
+        // Update the door status
+        if (newStatus !== door.status) {
+            door.status = newStatus;
+            console.log(`Door ${door.name} status updated from heartbeat: ${door.status} -> ${newStatus}`);
+            
+            // Redraw the site plan to show the new status
+            this.drawSitePlan();
+        }
     }
 }
 
