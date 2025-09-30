@@ -3746,6 +3746,7 @@ function connectEventStream() {
                         }
                     } else if (data.type === 'event') {
                         console.log('✅ Live event received from public endpoint:', data.event);
+                        console.log('Event details - Type:', data.event.type, 'Action:', data.event.action, 'Entity:', data.event.entityName, 'ID:', data.event.entityId);
                         addDebugLog(`Live event received: ${data.event.type} ${data.event.action} - ${data.event.entityName}`, 'success');
                         
                         // Show a visual indicator that a new event was received
@@ -3776,6 +3777,7 @@ function connectEventStream() {
                             // Update site plan door status if site plan is active
                             if (sitePlanManager && typeof sitePlanManager.updateDoorStatus === 'function') {
                                 console.log('🔄 Updating site plan door status due to door event');
+                                console.log('Door event data:', data.event);
                                 sitePlanManager.updateDoorStatus(data.event);
                             }
                         }
@@ -5323,15 +5325,17 @@ class SitePlanManager {
     updateDoorStatus(event) {
         console.log('Updating door status from event:', event);
         
-        if (!event || !event.entityId) {
-            console.log('Invalid event data for door status update');
+        // Try multiple ways to find the door ID
+        let doorId = event.entityId || event.doorId || event.door_id;
+        if (!doorId) {
+            console.log('Invalid event data for door status update - no door ID found');
             return;
         }
 
         // Find the door in our current doors array
-        const doorIndex = this.doors.findIndex(door => door.id === event.entityId);
+        const doorIndex = this.doors.findIndex(door => door.id === doorId);
         if (doorIndex === -1) {
-            console.log('Door not found in site plan:', event.entityId);
+            console.log('Door not found in site plan:', doorId);
             return;
         }
 
@@ -5345,12 +5349,12 @@ class SitePlanManager {
                 newStatus = 'open';
                 console.log(`Door ${door.name} status set to OPEN due to access granted`);
                 
-                // Reset to unlocked after 5 seconds
+                // Reset to unlocked after 5 seconds (only for access granted)
                 setTimeout(() => {
                     if (this.doors[doorIndex] && this.doors[doorIndex].status === 'open') {
                         this.doors[doorIndex].status = 'unlocked';
                         this.drawSitePlan(); // Redraw to update status
-                        console.log(`Door ${door.name} status reset to UNLOCKED`);
+                        console.log(`Door ${door.name} status reset to UNLOCKED after access granted`);
                     }
                 }, 5000);
                 break;
@@ -5370,6 +5374,18 @@ class SitePlanManager {
             case 'online':
                 // If coming online, default to locked unless we have more specific info
                 newStatus = event.data?.status || 'locked';
+                break;
+                
+            case 'door_opened':
+            case 'door_open':
+                // Handle door opened events
+                newStatus = 'open';
+                break;
+                
+            case 'door_closed':
+            case 'door_close':
+                // Handle door closed events - return to previous status
+                newStatus = 'unlocked'; // Default to unlocked when closed
                 break;
         }
 
@@ -5421,6 +5437,24 @@ class SitePlanManager {
             // Redraw the site plan to show the new status
             this.drawSitePlan();
         }
+    }
+
+    // Test function to manually update door status (for debugging)
+    testDoorStatusUpdate(doorId, status) {
+        console.log(`Testing door status update - Door ID: ${doorId}, Status: ${status}`);
+        
+        const doorIndex = this.doors.findIndex(door => door.id === doorId);
+        if (doorIndex === -1) {
+            console.log('Door not found for test:', doorId);
+            return;
+        }
+
+        const door = this.doors[doorIndex];
+        door.status = status;
+        console.log(`Door ${door.name} status set to ${status} for testing`);
+        
+        // Redraw the site plan to show the new status
+        this.drawSitePlan();
     }
 }
 
