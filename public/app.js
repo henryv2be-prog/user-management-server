@@ -4374,12 +4374,16 @@ class SitePlanManager {
     loadSitePlanFromServer() {
         const token = localStorage.getItem('token');
         
+        console.log('Loading site plan from server...');
+        console.log('Token exists:', !!token);
+        
         fetch('/api/site-plan', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         })
         .then(response => {
+            console.log('Site plan API response status:', response.status);
             if (response.ok) {
                 return response.json();
             } else {
@@ -4387,6 +4391,7 @@ class SitePlanManager {
             }
         })
         .then(data => {
+            console.log('Site plan API response data:', data);
             if (data.backgroundImage) {
                 const img = new Image();
                 img.onload = () => {
