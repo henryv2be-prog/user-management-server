@@ -140,6 +140,15 @@ console.log('Site plan routes module loaded');
 
 webhookRoutes = require('./routes/webhooks');
 console.log('Webhook routes module loaded');
+
+webhookSetupRoutes = require('./routes/webhookSetup');
+console.log('Webhook setup routes module loaded');
+
+webhookTestRoutes = require('./routes/webhookTest');
+console.log('Webhook test routes module loaded');
+
+mobileSettingsRoutes = require('./routes/mobileSettings');
+console.log('Mobile settings routes module loaded');
   
   // Setup routes
   // Health check endpoint for keep-alive
@@ -191,6 +200,9 @@ app.use('/api/logs', logsRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/site-plan', sitePlanRoutes);
 app.use('/api/webhooks', webhookRoutes);
+app.use('/api/webhook-setup', webhookSetupRoutes);
+app.use('/api/webhook-test', webhookTestRoutes);
+app.use('/api/mobile-settings', mobileSettingsRoutes);
   console.log('All routes configured successfully');
 } catch (error) {
   console.error('Error loading/setting up routes:', error);
