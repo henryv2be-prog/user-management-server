@@ -466,7 +466,7 @@ function refreshVersionInfo() {
 // Webhook Management Functions
 async function loadWebhookStatus() {
     try {
-        const response = await fetch('/api/settings/webhooks', {
+        const response = await fetch('/api/webhooks', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -544,7 +544,7 @@ async function createWebhook(event) {
     }
 
     try {
-        const response = await fetch('/api/settings/webhooks', {
+        const response = await fetch('/api/webhooks', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -569,7 +569,7 @@ async function createWebhook(event) {
 
 async function testWebhook(webhookId) {
     try {
-        const response = await fetch(`/api/settings/webhooks/${webhookId}/test`, {
+        const response = await fetch(`/api/webhooks/${webhookId}/test`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -594,7 +594,7 @@ async function deleteWebhook(webhookId) {
     }
 
     try {
-        const response = await fetch(`/api/settings/webhooks/${webhookId}`, {
+        const response = await fetch(`/api/webhooks/${webhookId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -616,7 +616,7 @@ async function deleteWebhook(webhookId) {
 
 async function testAllWebhooks() {
     try {
-        const response = await fetch('/api/settings/webhooks/test-trigger', {
+        const response = await fetch('/api/webhook-test/trigger-test', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
