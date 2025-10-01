@@ -120,10 +120,89 @@ async function sendWebhookDelivery(delivery, config) {
     delivery.attempts++;
     delivery.lastAttemptAt = new Date().toISOString();
 
-    const payload = JSON.stringify(delivery.payload);
-    const signature = generateSignature(payload, config.secret);
+    // Create Slack-compatible payload
+    let payload;
+    if (delivery.event === 'webhook.test') {
+      payload = {
+        text: `🧪 Test webhook from SimplifiAccess`,
+        attachments: [{
+          color: 'good',
+          fields: [{
+            title: 'Test Type',
+            value: delivery.payload.testType || 'admin_panel_test',
+            short: true
+          }, {
+            title: 'Timestamp',
+            value: new Date().toLocaleString(),
+            short: true
+          }]
+        }]
+      };
+    } else if (delivery.event.startsWith('access_request.')) {
+      const isGranted = delivery.event === 'access_request.granted';
+      payload = {
+        text: `${isGranted ? '🔓' : '🔒'} Access ${isGranted ? 'Granted' : 'Denied'}`,
+        attachments: [{
+          color: isGranted ? 'good' : 'danger',
+          fields: [{
+            title: 'User',
+            value: delivery.payload.userName || 'Unknown',
+            short: true
+          }, {
+            title: 'Door',
+            value: delivery.payload.entityName || 'Unknown',
+            short: true
+          }, {
+            title: 'Time',
+            value: new Date().toLocaleString(),
+            short: true
+          }]
+        }]
+      };
+    } else if (delivery.event.startsWith('door.')) {
+      const isOnline = delivery.event === 'door.online';
+      payload = {
+        text: `${isOnline ? '🟢' : '🔴'} Door ${isOnline ? 'Online' : 'Offline'}`,
+        attachments: [{
+          color: isOnline ? 'good' : 'warning',
+          fields: [{
+            title: 'Door',
+            value: delivery.payload.entityName || 'Unknown',
+            short: true
+          }, {
+            title: 'Status',
+            value: isOnline ? 'Online' : 'Offline',
+            short: true
+          }, {
+            title: 'Time',
+            value: new Date().toLocaleString(),
+            short: true
+          }]
+        }]
+      };
+    } else {
+      // Default payload for other events
+      payload = {
+        text: `📢 ${delivery.event.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
+        attachments: [{
+          color: 'good',
+          fields: [{
+            title: 'Event',
+            value: delivery.event,
+            short: true
+          }, {
+            title: 'Time',
+            value: new Date().toLocaleString(),
+            short: true
+          }]
+        }]
+      };
+    }
 
-    console.log(`📤 Sending webhook to ${config.url}:`, delivery.payload);
+    const payloadString = JSON.stringify(payload);
+    const signature = generateSignature(payloadString, config.secret);
+
+    console.log(`📤 Sending webhook to ${config.url}:`, payload);
     console.log(`📤 Headers:`, {
       'Content-Type': 'application/json',
       'X-Webhook-Signature': `sha256=${signature}`,
@@ -132,7 +211,7 @@ async function sendWebhookDelivery(delivery, config) {
       'User-Agent': 'SimplifiAccess-Webhook/1.0'
     });
 
-    const response = await axios.post(config.url, delivery.payload, {
+    const response = await axios.post(config.url, payload, {
       headers: {
         'Content-Type': 'application/json',
         'X-Webhook-Signature': `sha256=${signature}`,
