@@ -1090,6 +1090,14 @@ async function handleLogin(event) {
                     connectEventStream();
                 }
             }, 1000);
+            
+            // Initialize user webhook system for real-time updates
+            setTimeout(() => {
+                if (typeof initializeUserWebhook === 'function') {
+                    console.log('🔄 Initializing user webhook system...');
+                    initializeUserWebhook();
+                }
+            }, 2000);
             showToast('Login successful!', 'success');
         } else {
             showToast(data.message || 'Login failed', 'error');
@@ -1153,6 +1161,12 @@ function logout() {
     localStorage.removeItem('token');
     currentUser = null;
     closeMobileMenu(); // Close mobile menu on logout
+    
+    // Cleanup user webhook system
+    if (typeof cleanupUserWebhook === 'function') {
+        cleanupUserWebhook();
+    }
+    
     showLogin();
     showToast('Logged out successfully', 'info');
 }
