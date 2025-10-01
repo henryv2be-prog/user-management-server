@@ -3878,8 +3878,12 @@ function startFetchStreaming(url) {
 }
 
 function connectEventStream() {
-    console.log('🔄 connectEventStream() called - EVENTSOURCE TEST VERSION');
-    addDebugLog('Starting SSE connection attempt - EVENTSOURCE TEST VERSION', 'info');
+    console.log('🔄 connectEventStream() called - DISABLED (using polling instead)');
+    addDebugLog('SSE connection disabled - using polling system', 'info');
+    
+    // SSE is disabled - using polling system instead
+    console.log('📡 SSE disabled, using UserEventPoller for real-time updates');
+    return;
     
     // Clear any cached connections
     console.log('🧹 Clearing any cached connections...');

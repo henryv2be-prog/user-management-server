@@ -106,12 +106,13 @@ class UserEventPoller {
 
   // Handle a new event
   handleNewEvent(event) {
-    console.log('📡 New event detected:', event.type, event.action, event.message);
+    console.log('📡 New event detected:', event.type, event.action, event.details);
     
     // Show toast notification
     if (typeof showToast === 'function') {
       const emoji = this.getEventEmoji(event.type, event.action);
-      showToast(`${emoji} ${event.message}`, 'info');
+      const message = event.details || `${event.type} ${event.action}`;
+      showToast(`${emoji} ${message}`, 'info');
     }
   }
 
