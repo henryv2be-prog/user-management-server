@@ -10,6 +10,69 @@ const router = express.Router();
 // Store active SSE connections
 const sseConnections = new Set();
 
+// Webhook-based broadcasting system for all logged-in users
+const userWebhookEndpoints = new Map(); // userId -> webhook endpoint
+
+// Register user webhook endpoint for real-time updates
+function registerUserWebhook(userId, webhookUrl) {
+  userWebhookEndpoints.set(userId, webhookUrl);
+  console.log(`📡 Registered webhook for user ${userId}: ${webhookUrl}`);
+}
+
+// Unregister user webhook endpoint
+function unregisterUserWebhook(userId) {
+  userWebhookEndpoints.delete(userId);
+  console.log(`📡 Unregistered webhook for user ${userId}`);
+}
+
+// Broadcast to all registered user webhooks
+async function broadcastToUserWebhooks(event) {
+  if (userWebhookEndpoints.size === 0) {
+    console.log('📡 No user webhooks registered for broadcasting');
+    return;
+  }
+
+  console.log(`📡 Broadcasting to ${userWebhookEndpoints.size} user webhooks:`, event.type, event.action);
+
+  const payload = {
+    type: 'event_update',
+    event: {
+      id: event.id,
+      type: event.type,
+      action: event.action,
+      entityType: event.entityType,
+      entityId: event.entityId,
+      userId: event.userId,
+      userName: event.userName,
+      message: event.message,
+      timestamp: event.timestamp,
+      ipAddress: event.ipAddress
+    },
+    timestamp: new Date().toISOString()
+  };
+
+  // Send to all registered user webhooks
+  const axios = require('axios');
+  const promises = Array.from(userWebhookEndpoints.entries()).map(async ([userId, webhookUrl]) => {
+    try {
+      await axios.post(webhookUrl, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'SimplifiAccess-UserBroadcast/1.0'
+        },
+        timeout: 5000
+      });
+      console.log(`✅ Broadcasted to user ${userId} webhook`);
+    } catch (error) {
+      console.error(`❌ Failed to broadcast to user ${userId}:`, error.message);
+      // Remove failed webhook
+      userWebhookEndpoints.delete(userId);
+    }
+  });
+
+  await Promise.allSettled(promises);
+}
+
 // Global broadcast function for events
 global.broadcastEvent = function(event) {
   console.log('📡 Broadcasting event to SSE clients:', event.type, event.action, event.entityName);
@@ -23,6 +86,11 @@ global.broadcastEvent = function(event) {
     message: event.message
   });
   console.log('📡 Active connections:', sseConnections.size);
+  
+  // Broadcast to user webhooks (for all logged-in users)
+  broadcastToUserWebhooks(event).catch(error => {
+    console.error('❌ Error broadcasting to user webhooks:', error);
+  });
   
   if (sseConnections.size === 0) {
     console.log('📡 No SSE connections to broadcast to');
@@ -896,6 +964,77 @@ function broadcastEvent(event) {
     }
   });
 }
+
+// Register user webhook for real-time updates
+router.post('/register-webhook', authenticate, async (req, res) => {
+  try {
+    const { webhookUrl } = req.body;
+    const userId = req.user.id;
+
+    if (!webhookUrl) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Webhook URL is required'
+      });
+    }
+
+    registerUserWebhook(userId, webhookUrl);
+
+    res.json({
+      success: true,
+      message: 'User webhook registered successfully',
+      userId: userId
+    });
+  } catch (error) {
+    console.error('Register user webhook error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to register user webhook'
+    });
+  }
+});
+
+// Unregister user webhook
+router.post('/unregister-webhook', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    unregisterUserWebhook(userId);
+
+    res.json({
+      success: true,
+      message: 'User webhook unregistered successfully',
+      userId: userId
+    });
+  } catch (error) {
+    console.error('Unregister user webhook error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to unregister user webhook'
+    });
+  }
+});
+
+// Get registered user webhooks (admin only)
+router.get('/user-webhooks', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const webhooks = Array.from(userWebhookEndpoints.entries()).map(([userId, webhookUrl]) => ({
+      userId: parseInt(userId),
+      webhookUrl: webhookUrl
+    }));
+
+    res.json({
+      success: true,
+      webhooks: webhooks,
+      count: webhooks.length
+    });
+  } catch (error) {
+    console.error('Get user webhooks error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to retrieve user webhooks'
+    });
+  }
+});
 
 // Export the broadcast function for use in other modules
 module.exports = { router, broadcastEvent };
