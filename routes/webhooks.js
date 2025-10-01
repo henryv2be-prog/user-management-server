@@ -242,11 +242,19 @@ router.post('/', authenticate, requireAdmin, [
   body('name').notEmpty().withMessage('Name is required'),
   body('url').isURL().withMessage('Valid URL is required'),
   body('events').isArray().withMessage('Events must be an array'),
-  body('events.*').isIn(Object.values(WEBHOOK_EVENTS)).withMessage('Invalid event type')
+  body('events.*').custom((value) => {
+    const validEvents = Object.values(WEBHOOK_EVENTS);
+    if (!validEvents.includes(value)) {
+      throw new Error(`Invalid event type: ${value}. Valid events are: ${validEvents.join(', ')}`);
+    }
+    return true;
+  })
 ], async (req, res) => {
   try {
+    console.log('Create webhook request body:', req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({
         error: 'Validation Error',
         errors: errors.array()
