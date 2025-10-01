@@ -5013,3 +5013,144 @@ body.fa-failed .nav-toggle-fallback {
         align-items: stretch;
     }
 }
+
+
+/* Webhook Management Styles */
+.webhook-management {
+    display: grid;
+    gap: 2rem;
+}
+
+.webhook-status, .webhook-create, .webhook-list, .webhook-examples {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.status-summary {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.status-indicator.active {
+    background: #28a745;
+}
+
+.status-indicator.inactive {
+    background: #dc3545;
+}
+
+.webhook-item {
+    background: white;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.webhook-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.webhook-header h4 {
+    margin: 0;
+    color: #2c5aa0;
+}
+
+.webhook-url {
+    color: #6c757d;
+    font-size: 0.9em;
+    word-break: break-all;
+    margin-bottom: 0.5rem;
+}
+
+.webhook-events {
+    color: #6c757d;
+    font-size: 0.9em;
+    margin-bottom: 1rem;
+}
+
+.webhook-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.event-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: normal;
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.example-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.example-card {
+    background: white;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.example-card h4 {
+    margin: 0 0 0.5rem 0;
+    color: #2c5aa0;
+}
+
+.example-card p {
+    margin: 0 0 1rem 0;
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.no-webhooks {
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    padding: 2rem;
+}
+
+.form-help {
+    color: #6c757d;
+    font-size: 0.8em;
+    margin-top: 0.25rem;
+}
+
+.form-help a {
+    color: #2c5aa0;
+    text-decoration: none;
+}
+
+.form-help a:hover {
+    text-decoration: underline;
+}

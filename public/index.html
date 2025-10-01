@@ -729,6 +729,113 @@
                         </div>
                     </div>
                     
+                    <!-- Webhook Management Panel -->
+                    <div class="settings-panel">
+                        <div class="panel-header">
+                            <h2><i class="fas fa-link"></i> Webhook Management</h2>
+                            <p>Configure webhooks to receive real-time notifications</p>
+                        </div>
+                        
+                        <div class="webhook-management">
+                            <!-- Webhook Status -->
+                            <div class="webhook-status">
+                                <h3>Webhook Status</h3>
+                                <div id="webhookStatusDisplay">
+                                    <span class="loading">Loading webhook status...</span>
+                                </div>
+                                <button class="btn btn-outline" onclick="loadWebhookStatus()">
+                                    <i class="fas fa-sync"></i> Refresh Status
+                                </button>
+                            </div>
+                            
+                            <!-- Create New Webhook -->
+                            <div class="webhook-create">
+                                <h3>Create New Webhook</h3>
+                                <form id="webhookForm" onsubmit="createWebhook(event)">
+                                    <div class="form-group">
+                                        <label for="webhookName">Webhook Name</label>
+                                        <input type="text" id="webhookName" placeholder="e.g., Slack Notifications" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="webhookUrl">Webhook URL</label>
+                                        <input type="url" id="webhookUrl" placeholder="https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK" required>
+                                        <small class="form-help">For testing, use <a href="https://webhook.site" target="_blank">webhook.site</a></small>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Events to Subscribe To</label>
+                                        <div class="event-checkboxes">
+                                            <label class="checkbox-item">
+                                                <input type="checkbox" value="access_request.granted" checked>
+                                                <span>Access Granted</span>
+                                            </label>
+                                            <label class="checkbox-item">
+                                                <input type="checkbox" value="access_request.denied" checked>
+                                                <span>Access Denied</span>
+                                            </label>
+                                            <label class="checkbox-item">
+                                                <input type="checkbox" value="door.offline">
+                                                <span>Door Offline</span>
+                                            </label>
+                                            <label class="checkbox-item">
+                                                <input type="checkbox" value="door.online">
+                                                <span>Door Online</span>
+                                            </label>
+                                            <label class="checkbox-item">
+                                                <input type="checkbox" value="user.login">
+                                                <span>User Login</span>
+                                            </label>
+                                            <label class="checkbox-item">
+                                                <input type="checkbox" value="system.error">
+                                                <span>System Error</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> Create Webhook
+                                        </button>
+                                        <button type="button" class="btn btn-outline" onclick="testAllWebhooks()">
+                                            <i class="fas fa-play"></i> Test All Webhooks
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <!-- Webhook List -->
+                            <div class="webhook-list">
+                                <h3>Configured Webhooks</h3>
+                                <div id="webhookListDisplay">
+                                    <span class="loading">Loading webhooks...</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Quick Examples -->
+                            <div class="webhook-examples">
+                                <h3>Quick Examples</h3>
+                                <div class="example-cards">
+                                    <div class="example-card">
+                                        <h4><i class="fab fa-slack"></i> Slack Integration</h4>
+                                        <p>Get notifications in your Slack channel when access is granted or denied.</p>
+                                        <button class="btn btn-sm" onclick="showSlackExample()">Show Example</button>
+                                    </div>
+                                    <div class="example-card">
+                                        <h4><i class="fas fa-envelope"></i> Email Notifications</h4>
+                                        <p>Use Zapier or IFTTT to send email notifications when events occur.</p>
+                                        <button class="btn btn-sm" onclick="showEmailExample()">Show Example</button>
+                                    </div>
+                                    <div class="example-card">
+                                        <h4><i class="fas fa-mobile-alt"></i> Mobile Push</h4>
+                                        <p>Send push notifications to your mobile app when doors go offline.</p>
+                                        <button class="btn btn-sm" onclick="showMobileExample()">Show Example</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Version Information Panel -->
                     <div class="settings-panel">
                         <div class="panel-header">

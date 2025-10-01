@@ -372,7 +372,8 @@ async function loadSettings() {
     try {
         await Promise.all([
             loadSystemInfo(),
-            loadVersionInfo()
+            loadVersionInfo(),
+            loadWebhookStatus()
         ]);
     } catch (error) {
         console.error('Failed to load settings:', error);
@@ -460,6 +461,229 @@ function copyCommitSha() {
 function refreshVersionInfo() {
     loadVersionInfo();
     showToast('Version information refreshed', 'success');
+}
+
+// Webhook Management Functions
+async function loadWebhookStatus() {
+    try {
+        const response = await fetch('/api/settings/webhooks', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            updateWebhookStatus(data);
+        } else {
+            console.error('Failed to load webhook status');
+            document.getElementById('webhookStatusDisplay').innerHTML = '<span class="error">Failed to load webhook status</span>';
+        }
+    } catch (error) {
+        console.error('Webhook status error:', error);
+        document.getElementById('webhookStatusDisplay').innerHTML = '<span class="error">Error loading webhook status</span>';
+    }
+}
+
+function updateWebhookStatus(data) {
+    const statusDiv = document.getElementById('webhookStatusDisplay');
+    const listDiv = document.getElementById('webhookListDisplay');
+    
+    if (data.webhooks && data.webhooks.length > 0) {
+        const activeWebhooks = data.webhooks.filter(w => w.active);
+        const inactiveWebhooks = data.webhooks.filter(w => !w.active);
+        
+        statusDiv.innerHTML = `
+            <div class="status-summary">
+                <span class="status-indicator active"></span>
+                <strong>${activeWebhooks.length} active webhook(s)</strong>
+                <span class="status-indicator inactive"></span>
+                <span>${inactiveWebhooks.length} inactive</span>
+            </div>
+        `;
+        
+        listDiv.innerHTML = data.webhooks.map(webhook => `
+            <div class="webhook-item">
+                <div class="webhook-header">
+                    <h4>${webhook.name}</h4>
+                    <span class="status-indicator ${webhook.active ? 'active' : 'inactive'}"></span>
+                </div>
+                <div class="webhook-url">${webhook.url}</div>
+                <div class="webhook-events">Events: ${webhook.events.join(', ')}</div>
+                <div class="webhook-actions">
+                    <button class="btn btn-sm" onclick="testWebhook('${webhook.id}')">
+                        <i class="fas fa-play"></i> Test
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteWebhook('${webhook.id}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        statusDiv.innerHTML = `
+            <div class="status-summary">
+                <span class="status-indicator inactive"></span>
+                <strong>No webhooks configured</strong>
+            </div>
+        `;
+        listDiv.innerHTML = '<div class="no-webhooks">No webhooks configured yet. Create one above to get started.</div>';
+    }
+}
+
+async function createWebhook(event) {
+    event.preventDefault();
+    
+    const name = document.getElementById('webhookName').value;
+    const url = document.getElementById('webhookUrl').value;
+    const events = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+    
+    if (events.length === 0) {
+        showToast('Please select at least one event.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/settings/webhooks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ name, url, events })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Webhook created successfully!', 'success');
+            document.getElementById('webhookForm').reset();
+            loadWebhookStatus();
+        } else {
+            showToast('Error: ' + (result.message || 'Failed to create webhook'), 'error');
+        }
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+async function testWebhook(webhookId) {
+    try {
+        const response = await fetch(`/api/settings/webhooks/${webhookId}/test`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Test webhook sent successfully!', 'success');
+        } else {
+            showToast('Test failed: ' + (result.message || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+async function deleteWebhook(webhookId) {
+    if (!confirm('Are you sure you want to delete this webhook?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/settings/webhooks/${webhookId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Webhook deleted successfully!', 'success');
+            loadWebhookStatus();
+        } else {
+            showToast('Error: ' + (result.message || 'Failed to delete webhook'), 'error');
+        }
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+async function testAllWebhooks() {
+    try {
+        const response = await fetch('/api/settings/webhooks/test-trigger', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                event: 'webhook.test',
+                timestamp: new Date().toISOString(),
+                data: {
+                    message: 'Test webhook from admin panel',
+                    testType: 'admin_panel_test',
+                    timestamp: new Date().toISOString()
+                }
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Test webhook sent to all configured webhooks!', 'success');
+        } else {
+            showToast('Test failed: ' + (result.message || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+function showSlackExample() {
+    const example = `
+Slack Setup:
+1. Go to https://api.slack.com/apps
+2. Create new app → "From scratch"
+3. Go to "Incoming Webhooks" → Activate
+4. Add webhook to workspace → Choose channel
+5. Copy the webhook URL
+6. Use it in the form above
+
+Example webhook URL format:
+https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK/URL
+    `;
+    alert(example);
+}
+
+function showEmailExample() {
+    const example = `
+Email Setup:
+1. Go to https://zapier.com or https://ifttt.com
+2. Create a new Zap/Applet
+3. Choose "Webhooks" as trigger
+4. Choose "Email" as action
+5. Use the webhook URL from Zapier/IFTTT
+6. Configure email settings
+    `;
+    alert(example);
+}
+
+function showMobileExample() {
+    const example = `
+Mobile Push Setup:
+1. Set up Firebase Cloud Messaging (FCM)
+2. Create webhook endpoint in your mobile app
+3. Configure push notification service
+4. Use your app's webhook URL
+5. Test with door offline events
+    `;
+    alert(example);
 }
 
 // Format uptime in human readable format
