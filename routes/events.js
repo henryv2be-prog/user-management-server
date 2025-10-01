@@ -73,9 +73,9 @@ async function broadcastToUserWebhooks(event) {
   await Promise.allSettled(promises);
 }
 
-// Global broadcast function for events
+// Global broadcast function for events - Webhook-based only
 global.broadcastEvent = function(event) {
-  console.log('📡 Broadcasting event to SSE clients:', event.type, event.action, event.entityName);
+  console.log('📡 Broadcasting event via webhooks:', event.type, event.action, event.entityName);
   console.log('📡 Event details:', {
     id: event.id,
     type: event.type,
@@ -85,70 +85,16 @@ global.broadcastEvent = function(event) {
     entityName: event.entityName,
     message: event.message
   });
-  console.log('📡 Active connections:', sseConnections.size);
   
-  // Broadcast to user webhooks (for all logged-in users)
+  // Broadcast to user webhooks (for all logged-in users) - PRIMARY METHOD
   broadcastToUserWebhooks(event).catch(error => {
     console.error('❌ Error broadcasting to user webhooks:', error);
   });
   
-  if (sseConnections.size === 0) {
-    console.log('📡 No SSE connections to broadcast to');
-    return;
-  }
+  // Skip SSE broadcasting - using webhook-based system instead
+  console.log('📡 Using webhook-based broadcasting instead of SSE');
   
-  const eventMessage = {
-    type: 'event',
-    event: {
-      id: event.id,
-      type: event.type,
-      action: event.action,
-      entityType: event.entityType,
-      entityId: event.entityId,
-      userId: event.userId,
-      userName: event.userName,
-      message: event.message,
-      timestamp: event.timestamp,
-      ipAddress: event.ipAddress
-    },
-    timestamp: new Date().toISOString()
-  };
-  
-  const message = `data: ${JSON.stringify(eventMessage)}\n\n`;
-  
-  // Send to all connected clients
-  const connectionsToRemove = [];
-  sseConnections.forEach((connection) => {
-    try {
-      if (connection.res && !connection.res.destroyed && connection.res.writable) {
-        connection.res.write(message);
-        connection.res.flush();
-        console.log('📤 Event broadcasted to connection:', connection.userId || 'public');
-        console.log('📤 Connection state after write:', {
-          writable: connection.res.writable,
-          destroyed: connection.res.destroyed,
-          finished: connection.res.finished
-        });
-      } else {
-        console.log('📡 Removing dead connection - state:', {
-          hasRes: !!connection.res,
-          destroyed: connection.res?.destroyed,
-          writable: connection.res?.writable
-        });
-        connectionsToRemove.push(connection);
-      }
-    } catch (error) {
-      console.log('❌ Error broadcasting to connection:', error.message);
-      connectionsToRemove.push(connection);
-    }
-  });
-  
-  // Clean up dead connections
-  connectionsToRemove.forEach(connection => {
-    sseConnections.delete(connection);
-  });
-  
-  console.log('📡 Event broadcast completed. Active connections:', sseConnections.size);
+  // SSE broadcasting disabled - using webhook-based system only
 };
 
 // Test endpoint to manually trigger an event broadcast

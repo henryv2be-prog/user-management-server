@@ -1083,13 +1083,8 @@ async function handleLogin(event) {
             currentUser = data.user;
             showAuthenticatedUI();
             loadDashboard();
-            // Ensure SSE connection is established after login
-            setTimeout(() => {
-                if (!isEventStreamConnected) {
-                    console.log('🔄 Establishing SSE connection after login...');
-                    connectEventStream();
-                }
-            }, 1000);
+            // SSE connection disabled - using webhook-based system instead
+            console.log('🔄 SSE disabled, using webhook-based real-time updates');
             
             // Initialize user webhook system for real-time updates
             setTimeout(() => {
@@ -1097,7 +1092,7 @@ async function handleLogin(event) {
                     console.log('🔄 Initializing user webhook system...');
                     initializeUserWebhook();
                 }
-            }, 2000);
+            }, 1000);
             showToast('Login successful!', 'success');
         } else {
             showToast(data.message || 'Login failed', 'error');
@@ -3049,10 +3044,11 @@ function showSection(sectionName) {
     
     if (sectionName === 'dashboard') {
         loadDashboard();
-        connectEventStream(); // Connect to live event stream
-        // Door status updates are handled via Server-Sent Events (SSE)
+        // SSE disabled - using webhook-based system instead
+        console.log('🔄 SSE disabled for dashboard, using webhook-based updates');
     } else {
-        connectEventStream(); // Keep SSE connection alive on all sections
+        // SSE disabled - using webhook-based system instead
+        console.log('🔄 SSE disabled for section, using webhook-based updates');
         if (sectionName === 'users') {
             loadUsers();
         } else if (sectionName === 'doors') {
