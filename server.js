@@ -97,6 +97,15 @@ const authLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// ESP32-specific rate limiter (more lenient for IoT devices)
+const esp32Limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // limit each IP to 60 requests per minute (1 per second)
+  message: 'ESP32 rate limit exceeded, please slow down requests.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // limit each IP to 1000 requests per windowMs
@@ -105,6 +114,12 @@ const generalLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// Apply ESP32 rate limiter to ESP32-specific endpoints
+app.use('/api/doors/commands', esp32Limiter);
+app.use('/api/doors/heartbeat', esp32Limiter);
+app.use('/api/doors/access/request', esp32Limiter);
+
+// Apply general rate limiter to all other API endpoints
 app.use('/api', generalLimiter);
 
 // Load and setup routes
