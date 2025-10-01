@@ -123,6 +123,15 @@ async function sendWebhookDelivery(delivery, config) {
     const payload = JSON.stringify(delivery.payload);
     const signature = generateSignature(payload, config.secret);
 
+    console.log(`📤 Sending webhook to ${config.url}:`, delivery.payload);
+    console.log(`📤 Headers:`, {
+      'Content-Type': 'application/json',
+      'X-Webhook-Signature': `sha256=${signature}`,
+      'X-Webhook-Event': delivery.event,
+      'X-Webhook-Delivery': delivery.id,
+      'User-Agent': 'SimplifiAccess-Webhook/1.0'
+    });
+
     const response = await axios.post(config.url, delivery.payload, {
       headers: {
         'Content-Type': 'application/json',
@@ -158,13 +167,15 @@ async function sendWebhookDelivery(delivery, config) {
     return true;
 
   } catch (error) {
+    console.error(`❌ Webhook delivery failed: ${config.name} (${delivery.event})`, error.message);
+    console.error(`❌ Error response:`, error.response?.data);
+    console.error(`❌ Error status:`, error.response?.status);
+    
     delivery.error = {
       message: error.message,
       code: error.code,
       status: error.response?.status
     };
-
-    console.error(`❌ Webhook delivery failed: ${config.name} (${delivery.event})`, error.message);
 
     // Determine if we should retry
     if (delivery.attempts < delivery.maxAttempts) {
