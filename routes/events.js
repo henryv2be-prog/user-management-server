@@ -24,6 +24,27 @@ global.broadcastEvent = function(event) {
   });
   console.log('📡 Active connections:', sseConnections.size);
   
+  // Filter out webhook-related events from SSE broadcasts
+  // These events are now handled by webhooks and don't need to clutter the events section
+  const webhookEventTypes = [
+    'access.granted',
+    'access.denied', 
+    'access.status_changed',
+    'door.opened',
+    'door.closed',
+    'door.online',
+    'door.offline',
+    'door.controlled',
+    'auth.login',
+    'auth.logout'
+  ];
+
+  const eventKey = `${event.type}.${event.action}`;
+  if (webhookEventTypes.includes(eventKey)) {
+    console.log('📡 Skipping webhook event from SSE broadcast:', eventKey);
+    return;
+  }
+  
   if (sseConnections.size === 0) {
     console.log('📡 No SSE connections to broadcast to');
     return;
