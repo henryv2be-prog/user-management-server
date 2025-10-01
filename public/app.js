@@ -540,7 +540,7 @@ async function createWebhook(event) {
     
     const name = document.getElementById('webhookName').value;
     const url = document.getElementById('webhookUrl').value;
-    const events = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+    const events = Array.from(document.querySelectorAll('.event-checkboxes input[type="checkbox"]:checked')).map(cb => cb.value);
     
     console.log('Creating webhook with:', { name, url, events });
     
