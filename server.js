@@ -382,7 +382,7 @@ async function startServer() {
     const { Door } = require('./database/door');
     setInterval(async () => {
       try {
-        const offlineDoors = await Door.checkOfflineDoors(0.17); // 10 second timeout (0.17 minutes)
+        const offlineDoors = await Door.checkOfflineDoors(3); // 3 minute timeout (more reasonable for ESP32 devices)
         if (offlineDoors.length > 0) {
           console.log(`🔴 ${offlineDoors.length} doors marked as offline due to timeout`);
           
@@ -400,7 +400,7 @@ async function startServer() {
       } catch (error) {
         console.error('Error checking offline doors:', error);
       }
-    }, 10000); // Check every 10 seconds
+    }, 30000); // Check every 30 seconds (less frequent)
 
     server.on('error', (error) => {
       console.error('Server error:', error);
