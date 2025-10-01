@@ -8,6 +8,7 @@ class UserEventPoller {
     this.pollInterval = null;
     this.lastEventId = null;
     this.pollIntervalMs = 2000; // Poll every 2 seconds
+    this.processedEventIds = new Set(); // Track processed events to prevent duplicates
   }
 
   // Start polling for new events
@@ -87,14 +88,22 @@ class UserEventPoller {
             // Update last event ID
             this.lastEventId = Math.max(...newEvents.map(e => e.id));
 
-            // Handle new events
+            // Handle new events (check for duplicates)
             newEvents.forEach(event => {
-              this.handleNewEvent(event);
+              if (!this.processedEventIds.has(event.id)) {
+                this.processedEventIds.add(event.id);
+                this.handleNewEvent(event);
+              } else {
+                console.log('📡 Skipping duplicate event ID:', event.id);
+              }
             });
 
-            // Refresh events section
-            if (typeof loadEvents === 'function') {
-              loadEvents(currentEventPage || 1, currentEventType || '');
+            // Only refresh events section if we're currently viewing it
+            const currentSection = document.querySelector('.section.active');
+            if (currentSection && currentSection.id === 'eventsSection') {
+              if (typeof loadEvents === 'function') {
+                loadEvents(currentEventPage || 1, currentEventType || '');
+              }
             }
           }
         }
@@ -107,6 +116,7 @@ class UserEventPoller {
   // Handle a new event
   handleNewEvent(event) {
     console.log('📡 New event detected:', event.type, event.action, event.details);
+    console.log('📡 Event ID:', event.id, 'Last processed ID:', this.lastEventId);
     
     // Show toast notification
     if (typeof showToast === 'function') {
