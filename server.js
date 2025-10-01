@@ -137,6 +137,9 @@ console.log('Settings routes module loaded');
 
 sitePlanRoutes = require('./routes/sitePlan');
 console.log('Site plan routes module loaded');
+
+webhookRoutes = require('./routes/webhooks');
+console.log('Webhook routes module loaded');
   
   // Setup routes
   // Health check endpoint for keep-alive
@@ -187,6 +190,7 @@ app.use('/api/access-requests', accessRequestRoutes);
 app.use('/api/logs', logsRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/site-plan', sitePlanRoutes);
+app.use('/api/webhooks', webhookRoutes);
   console.log('All routes configured successfully');
 } catch (error) {
   console.error('Error loading/setting up routes:', error);
