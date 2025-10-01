@@ -3769,6 +3769,10 @@ function filterEvents() {
 }
 
 function startEventRefresh() {
+    // Event refresh disabled - using polling system instead
+    console.log('🔄 Event refresh disabled - using polling system');
+    return;
+    
     // Clear existing interval
     if (eventRefreshInterval) {
         clearInterval(eventRefreshInterval);
@@ -4010,13 +4014,8 @@ function connectEventStream() {
                             }, 2000);
                         }
                         
-                        // Refresh the events list to show the new event
-                        if (typeof loadEvents === 'function') {
-                            console.log('🔄 Refreshing events list due to live event');
-                            // Preserve current page and filter, but go to page 1 to show the new event
-                            const currentType = document.getElementById('eventTypeFilter')?.value || '';
-                            loadEvents(1, currentType);
-                        }
+                        // SSE event handling disabled - using polling system instead
+                        console.log('📡 SSE event handling disabled - using polling system');
                         
                         // Update other sections if needed
                         if (data.event.type === 'user' && typeof loadUsers === 'function') {
@@ -4047,12 +4046,8 @@ function connectEventStream() {
                             }, 2000);
                         }
                         
-                        // Refresh the events list to show the new event
-                        if (typeof loadEvents === 'function') {
-                            console.log('🔄 Refreshing events list due to new event');
-                            const currentType = document.getElementById('eventTypeFilter')?.value || '';
-                            loadEvents(1, currentType);
-                        }
+                        // SSE event handling disabled - using polling system instead
+                        console.log('📡 SSE event handling disabled - using polling system');
                         
                         // Update site plan door status if this is a door event
                         if (data.event && data.event.type === 'door' && sitePlanManager && typeof sitePlanManager.updateDoorStatus === 'function') {
