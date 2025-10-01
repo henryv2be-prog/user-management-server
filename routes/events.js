@@ -73,9 +73,9 @@ async function broadcastToUserWebhooks(event) {
   await Promise.allSettled(promises);
 }
 
-// Global broadcast function for events - Webhook-based only
+// Global broadcast function for events - Polling-based only
 global.broadcastEvent = function(event) {
-  console.log('📡 Broadcasting event via webhooks:', event.type, event.action, event.entityName);
+  console.log('📡 Event logged (polling will detect it):', event.type, event.action, event.entityName);
   console.log('📡 Event details:', {
     id: event.id,
     type: event.type,
@@ -86,15 +86,8 @@ global.broadcastEvent = function(event) {
     message: event.message
   });
   
-  // Broadcast to user webhooks (for all logged-in users) - PRIMARY METHOD
-  broadcastToUserWebhooks(event).catch(error => {
-    console.error('❌ Error broadcasting to user webhooks:', error);
-  });
-  
-  // Skip SSE broadcasting - using webhook-based system instead
-  console.log('📡 Using webhook-based broadcasting instead of SSE');
-  
-  // SSE broadcasting disabled - using webhook-based system only
+  // No broadcasting needed - frontend will poll for new events
+  console.log('📡 Using polling-based system for real-time updates');
 };
 
 // Test endpoint to manually trigger an event broadcast

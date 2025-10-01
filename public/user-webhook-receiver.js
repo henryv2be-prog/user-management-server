@@ -1,118 +1,171 @@
-// Simple webhook receiver for logged-in users
-// This can be used by each logged-in user to receive real-time event updates
+// Real-time event polling system for logged-in users
+// Uses polling instead of webhooks for simplicity and reliability
 
-class UserWebhookReceiver {
+class UserEventPoller {
   constructor(userId) {
     this.userId = userId;
-    this.webhookUrl = null;
-    this.isRegistered = false;
+    this.isActive = false;
+    this.pollInterval = null;
+    this.lastEventId = null;
+    this.pollIntervalMs = 2000; // Poll every 2 seconds
   }
 
-  // Generate a unique webhook URL for this user session
-  generateWebhookUrl() {
-    const sessionId = Math.random().toString(36).substring(2, 15);
-    this.webhookUrl = `${window.location.origin}/api/user-webhook/${this.userId}/${sessionId}`;
-    return this.webhookUrl;
+  // Start polling for new events
+  async start() {
+    if (this.isActive) return;
+
+    console.log(`🔄 Starting event polling for user ${this.userId}`);
+    this.isActive = true;
+
+    // Get the latest event ID to start from
+    await this.getLatestEventId();
+
+    // Start polling
+    this.pollInterval = setInterval(() => {
+      this.pollForNewEvents();
+    }, this.pollIntervalMs);
+
+    console.log(`✅ Event polling started (every ${this.pollIntervalMs}ms)`);
   }
 
-  // Register this user's webhook with the server
-  async register() {
-    if (!this.webhookUrl) {
-      this.generateWebhookUrl();
-    }
+  // Stop polling
+  stop() {
+    if (!this.isActive) return;
 
-    try {
-      const response = await fetch('/api/events/register-webhook', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ webhookUrl: this.webhookUrl })
-      });
+    console.log(`🛑 Stopping event polling for user ${this.userId}`);
+    this.isActive = false;
 
-      if (response.ok) {
-        this.isRegistered = true;
-        console.log(`✅ User webhook registered: ${this.webhookUrl}`);
-        return true;
-      } else {
-        console.error('Failed to register user webhook:', await response.text());
-        return false;
-      }
-    } catch (error) {
-      console.error('Error registering user webhook:', error);
-      return false;
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
     }
   }
 
-  // Unregister this user's webhook
-  async unregister() {
-    if (!this.isRegistered) return;
-
+  // Get the latest event ID to start polling from
+  async getLatestEventId() {
     try {
-      const response = await fetch('/api/events/unregister-webhook', {
-        method: 'POST',
+      const response = await fetch('/api/events/recent?limit=1', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
 
       if (response.ok) {
-        this.isRegistered = false;
-        console.log(`✅ User webhook unregistered: ${this.webhookUrl}`);
-        return true;
-      } else {
-        console.error('Failed to unregister user webhook:', await response.text());
-        return false;
+        const data = await response.json();
+        if (data.events && data.events.length > 0) {
+          this.lastEventId = data.events[0].id;
+          console.log(`📡 Starting polling from event ID: ${this.lastEventId}`);
+        }
       }
     } catch (error) {
-      console.error('Error unregistering user webhook:', error);
-      return false;
+      console.error('Error getting latest event ID:', error);
     }
   }
 
-  // Handle incoming webhook events
-  handleEvent(eventData) {
-    console.log('📡 Received event via webhook:', eventData);
-    
-    // Update the events section in real-time
-    if (typeof loadEvents === 'function') {
-      loadEvents(currentEventPage || 1, currentEventType || '');
-    }
-    
-    // Show a toast notification
-    if (typeof showToast === 'function') {
-      showToast(`New event: ${eventData.event.message}`, 'info');
-    }
-  }
-}
+  // Poll for new events
+  async pollForNewEvents() {
+    if (!this.isActive) return;
 
-// Global user webhook receiver instance
-let userWebhookReceiver = null;
+    try {
+      const response = await fetch('/api/events/recent?limit=10', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
 
-// Initialize user webhook receiver when user logs in
-function initializeUserWebhook() {
-  if (currentUser && currentUser.id) {
-    userWebhookReceiver = new UserWebhookReceiver(currentUser.id);
-    userWebhookReceiver.register().then(success => {
-      if (success) {
-        console.log('🎉 User webhook system initialized');
-      } else {
-        console.warn('⚠️ User webhook system failed to initialize');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.events && data.events.length > 0) {
+          // Find new events since last poll
+          const newEvents = data.events.filter(event => 
+            this.lastEventId === null || event.id > this.lastEventId
+          );
+
+          if (newEvents.length > 0) {
+            console.log(`📡 Found ${newEvents.length} new events`);
+            
+            // Update last event ID
+            this.lastEventId = Math.max(...newEvents.map(e => e.id));
+
+            // Handle new events
+            newEvents.forEach(event => {
+              this.handleNewEvent(event);
+            });
+
+            // Refresh events section
+            if (typeof loadEvents === 'function') {
+              loadEvents(currentEventPage || 1, currentEventType || '');
+            }
+          }
+        }
       }
-    });
+    } catch (error) {
+      console.error('Error polling for events:', error);
+    }
+  }
+
+  // Handle a new event
+  handleNewEvent(event) {
+    console.log('📡 New event detected:', event.type, event.action, event.message);
+    
+    // Show toast notification
+    if (typeof showToast === 'function') {
+      const emoji = this.getEventEmoji(event.type, event.action);
+      showToast(`${emoji} ${event.message}`, 'info');
+    }
+  }
+
+  // Get emoji for event type
+  getEventEmoji(type, action) {
+    if (type === 'access' && action === 'granted') return '🔓';
+    if (type === 'access' && action === 'denied') return '🔒';
+    if (type === 'door' && action === 'online') return '🟢';
+    if (type === 'door' && action === 'offline') return '🔴';
+    if (type === 'door' && action === 'opened') return '🚪';
+    if (type === 'auth' && action === 'login') return '👤';
+    if (type === 'system') return '⚙️';
+    return '📢';
   }
 }
 
-// Cleanup user webhook when user logs out
-function cleanupUserWebhook() {
-  if (userWebhookReceiver) {
-    userWebhookReceiver.unregister();
-    userWebhookReceiver = null;
-  }
+// Global user event poller instance
+let userEventPoller = null;
+
+// Initialize user event poller when user logs in
+async function initializeUserWebhook() {
+    if (!localStorage.getItem('token') || !currentUser) {
+        console.log('User not logged in, skipping event poller initialization.');
+        return;
+    }
+
+    console.log('🔄 Initializing user event poller...');
+    
+    // Create new poller instance
+    userEventPoller = new UserEventPoller(currentUser.id);
+    
+    // Start polling
+    await userEventPoller.start();
+    
+    console.log('✅ User event poller initialized successfully');
+}
+
+// Cleanup user event poller when user logs out
+async function cleanupUserWebhook() {
+    if (userEventPoller) {
+        console.log('🔄 Cleaning up user event poller...');
+        userEventPoller.stop();
+        userEventPoller = null;
+        console.log('✅ User event poller cleaned up');
+    }
+}
+
+// Legacy function names for compatibility
+function handleUserWebhookEvent(eventPayload) {
+    console.log('📡 Legacy webhook handler called:', eventPayload);
+    // This is now handled by the polling system
 }
 
 // Export for use in other modules
-window.UserWebhookReceiver = UserWebhookReceiver;
+window.UserEventPoller = UserEventPoller;
 window.initializeUserWebhook = initializeUserWebhook;
 window.cleanupUserWebhook = cleanupUserWebhook;
