@@ -466,14 +466,18 @@ function refreshVersionInfo() {
 // Webhook Management Functions
 async function loadWebhookStatus() {
     try {
+        console.log('Loading webhook status...');
         const response = await fetch('/api/webhooks', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
         
+        console.log('Webhook status response:', response.status);
+        
         if (response.ok) {
             const data = await response.json();
+            console.log('Webhook status data:', data);
             updateWebhookStatus(data);
         } else {
             console.error('Failed to load webhook status');
@@ -538,22 +542,31 @@ async function createWebhook(event) {
     const url = document.getElementById('webhookUrl').value;
     const events = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
     
+    console.log('Creating webhook with:', { name, url, events });
+    
     if (events.length === 0) {
         showToast('Please select at least one event.', 'error');
         return;
     }
 
     try {
+        const requestBody = { name, url, events };
+        console.log('Sending request body:', requestBody);
+        
         const response = await fetch('/api/webhooks', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
-            body: JSON.stringify({ name, url, events })
+            body: JSON.stringify(requestBody)
         });
 
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
         const result = await response.json();
+        console.log('Response result:', result);
         
         if (result.success) {
             showToast('Webhook created successfully!', 'success');
@@ -563,6 +576,7 @@ async function createWebhook(event) {
             showToast('Error: ' + (result.message || 'Failed to create webhook'), 'error');
         }
     } catch (error) {
+        console.error('Create webhook error:', error);
         showToast('Error: ' + error.message, 'error');
     }
 }
