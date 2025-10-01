@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const crypto = require('crypto');
+const { v4: uuidv4 } = require('uuid');
 const { body, validationResult } = require('express-validator');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const EventLogger = require('../utils/eventLogger');
@@ -34,7 +35,7 @@ const WEBHOOK_EVENTS = {
 // Webhook configuration model
 class WebhookConfig {
   constructor(data) {
-    this.id = data.id || crypto.randomUUID();
+    this.id = data.id || uuidv4();
     this.name = data.name;
     this.url = data.url;
     this.events = data.events || [];
@@ -65,7 +66,7 @@ class WebhookConfig {
 // Webhook delivery result
 class WebhookDelivery {
   constructor(config, event, payload) {
-    this.id = crypto.randomUUID();
+    this.id = uuidv4();
     this.webhookId = config.id;
     this.event = event;
     this.payload = payload;
@@ -284,8 +285,12 @@ router.post('/', authenticate, requireAdmin, [
 
     webhookConfigs.set(config.id, config);
 
-    // Log webhook creation
-    await EventLogger.log(req, 'webhook', 'created', 'WebhookConfig', config.id, `Webhook created: ${config.name}`, `URL: ${config.url}`);
+    // Log webhook creation (don't let this fail the webhook creation)
+    try {
+      await EventLogger.log(req, 'webhook', 'created', 'WebhookConfig', config.id, `Webhook created: ${config.name}`, `URL: ${config.url}`);
+    } catch (logError) {
+      console.warn('Failed to log webhook creation:', logError);
+    }
 
     res.status(201).json({
       success: true,
@@ -295,9 +300,11 @@ router.post('/', authenticate, requireAdmin, [
 
   } catch (error) {
     console.error('Create webhook error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to create webhook'
+      message: 'Failed to create webhook',
+      details: error.message
     });
   }
 });
