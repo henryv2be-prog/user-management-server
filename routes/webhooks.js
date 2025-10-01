@@ -232,16 +232,16 @@ async function sendWebhookDelivery(delivery, config) {
 
     console.log(`✅ Webhook delivered successfully: ${config.name} (${delivery.event})`);
     
-    // Log successful delivery
-    await EventLogger.log(
-      { ip: '127.0.0.1', headers: { 'user-agent': 'SimplifiAccess-Webhook' } },
-      'webhook',
-      'delivered',
-      'WebhookDelivery',
-      delivery.id,
-      `Webhook delivered successfully to ${config.name}`,
-      `Event: ${delivery.event}, Attempts: ${delivery.attempts}`
-    );
+    // Don't log webhook delivery as an event to prevent duplicates
+    // await EventLogger.log(
+    //   { ip: '127.0.0.1', headers: { 'user-agent': 'SimplifiAccess-Webhook' } },
+    //   'webhook',
+    //   'delivered',
+    //   'WebhookDelivery',
+    //   delivery.id,
+    //   `Webhook delivered successfully to ${config.name}`,
+    //   `Event: ${delivery.event}, Attempts: ${delivery.attempts}`
+    // );
 
     return true;
 
