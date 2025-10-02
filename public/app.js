@@ -2091,13 +2091,14 @@ async function loadDoors(page = 1) {
                     
                     if (tagsResponse.ok) {
                         const tagsData = await tagsResponse.json();
-                        door.tags = tagsData.doorTags;
+                        door.tags = tagsData.doorTags || [];
                         console.log(`Loaded ${door.tags.length} tags for door ${door.id}`);
                     } else {
                         console.error(`Failed to load tags for door ${door.id}:`, tagsResponse.status, tagsResponse.statusText);
                         const errorText = await tagsResponse.text();
                         console.error('Error response:', errorText);
                         door.tags = [];
+                        // Don't show error for empty tags - this is normal
                     }
                 } catch (error) {
                     console.error(`Error loading tags for door ${door.id}:`, error);
@@ -2943,12 +2944,17 @@ async function manageDoorTags(doorId) {
         let tags = [];
         if (tagsResponse.ok) {
             const tagsData = await tagsResponse.json();
-            tags = tagsData.doorTags;
+            tags = tagsData.doorTags || [];
             console.log('Tags loaded:', tags);
         } else {
             console.error('Failed to load tags:', tagsResponse.status, tagsResponse.statusText);
             const errorText = await tagsResponse.text();
             console.error('Error response:', errorText);
+            // Don't show error toast for empty tags - just continue with empty array
+            if (tagsResponse.status !== 404) {
+                showToast('Failed to load door tags', 'error');
+                return;
+            }
         }
         
         // Populate modal
