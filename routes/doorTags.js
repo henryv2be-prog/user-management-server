@@ -97,8 +97,77 @@ router.get('/door/:doorId', authenticate, requireAdmin, async (req, res) => {
     }
 
     console.log(`Door found: ${door.name}, loading tags...`);
-    const doorTags = await DoorTag.findByDoorId(doorId);
-    console.log(`Found ${doorTags.length} tags for door ${doorId}`);
+    
+    // Ensure door_tags table exists and get tags
+    let doorTags;
+    try {
+      doorTags = await DoorTag.findByDoorId(doorId);
+      console.log(`Found ${doorTags.length} tags for door ${doorId}`);
+    } catch (dbError) {
+      if (dbError.message.includes('no such table: door_tags')) {
+        console.log('door_tags table missing, creating it...');
+        // Create the table
+        const sqlite3 = require('sqlite3').verbose();
+        const path = require('path');
+        const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'database', 'users.db');
+        
+        await new Promise((resolve, reject) => {
+          const db = new sqlite3.Database(DB_PATH);
+          db.run(`CREATE TABLE IF NOT EXISTS door_tags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            door_id INTEGER NOT NULL,
+            tag_id TEXT NOT NULL,
+            tag_type TEXT NOT NULL CHECK (tag_type IN ('nfc', 'qr')),
+            tag_data TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE,
+            UNIQUE (tag_id)
+          )`, (err) => {
+            if (err) {
+              console.error('Error creating door_tags table:', err);
+              reject(err);
+            } else {
+              console.log('door_tags table created successfully');
+              resolve();
+            }
+            db.close();
+          });
+        });
+        
+        // Create indexes
+        await new Promise((resolve, reject) => {
+          const db = new sqlite3.Database(DB_PATH);
+          db.run(`CREATE INDEX IF NOT EXISTS idx_door_tags_door_id ON door_tags(door_id)`, (err) => {
+            if (err) {
+              console.error('Error creating door_id index:', err);
+            } else {
+              console.log('door_id index created');
+            }
+            db.close();
+            resolve();
+          });
+        });
+        
+        await new Promise((resolve, reject) => {
+          const db = new sqlite3.Database(DB_PATH);
+          db.run(`CREATE INDEX IF NOT EXISTS idx_door_tags_tag_id ON door_tags(tag_id)`, (err) => {
+            if (err) {
+              console.error('Error creating tag_id index:', err);
+            } else {
+              console.log('tag_id index created');
+            }
+            db.close();
+            resolve();
+          });
+        });
+        
+        // Now try to get tags again
+        doorTags = await DoorTag.findByDoorId(doorId);
+        console.log(`Found ${doorTags.length} tags for door ${doorId} after table creation`);
+      } else {
+        throw dbError;
+      }
+    }
 
     res.json({
       door: door.toJSON(),
