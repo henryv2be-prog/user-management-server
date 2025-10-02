@@ -225,16 +225,93 @@ router.post('/', authenticate, requireAdmin, validateDoorTag, async (req, res) =
       });
     }
 
-    // Check if tag is already associated
-    const existingTag = await DoorTag.findByTagId(tagId);
-    if (existingTag) {
-      return res.status(409).json({
-        error: 'Tag Already Associated',
-        message: `Tag ${tagId} is already associated with door ${existingTag.doorId}`
-      });
+    // Ensure door_tags table exists
+    try {
+      // Check if tag is already associated
+      const existingTag = await DoorTag.findByTagId(tagId);
+      if (existingTag) {
+        return res.status(409).json({
+          error: 'Tag Already Associated',
+          message: `Tag ${tagId} is already associated with door ${existingTag.doorId}`
+        });
+      }
+    } catch (dbError) {
+      if (dbError.message.includes('no such table: door_tags')) {
+        console.log('door_tags table missing in POST route, creating it...');
+        // Create the table
+        const sqlite3 = require('sqlite3').verbose();
+        const path = require('path');
+        const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'database', 'users.db');
+        
+        await new Promise((resolve, reject) => {
+          console.log('Creating door_tags table with DB_PATH:', DB_PATH);
+          const db = new sqlite3.Database(DB_PATH, (openErr) => {
+            if (openErr) {
+              console.error('Error opening database:', openErr);
+              reject(openErr);
+              return;
+            }
+            console.log('Database opened successfully');
+          });
+          
+          db.run(`CREATE TABLE IF NOT EXISTS door_tags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            door_id INTEGER NOT NULL,
+            tag_id TEXT NOT NULL,
+            tag_type TEXT NOT NULL CHECK (tag_type IN ('nfc', 'qr')),
+            tag_data TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE,
+            UNIQUE (tag_id)
+          )`, (err) => {
+            if (err) {
+              console.error('Error creating door_tags table:', err);
+              console.error('SQL error details:', err.message);
+              db.close();
+              reject(err);
+            } else {
+              console.log('door_tags table created successfully');
+              db.close();
+              resolve();
+            }
+          });
+        });
+        
+        // Create indexes
+        await new Promise((resolve, reject) => {
+          const db = new sqlite3.Database(DB_PATH);
+          db.run(`CREATE INDEX IF NOT EXISTS idx_door_tags_door_id ON door_tags(door_id)`, (err) => {
+            if (err) {
+              console.error('Error creating door_id index:', err);
+            } else {
+              console.log('door_id index created');
+            }
+            db.close();
+            resolve();
+          });
+        });
+        
+        await new Promise((resolve, reject) => {
+          const db = new sqlite3.Database(DB_PATH);
+          db.run(`CREATE INDEX IF NOT EXISTS idx_door_tags_tag_id ON door_tags(tag_id)`, (err) => {
+            if (err) {
+              console.error('Error creating tag_id index:', err);
+            } else {
+              console.log('tag_id index created');
+            }
+            db.close();
+            resolve();
+          });
+        });
+        
+        console.log('Table creation completed, continuing with tag creation...');
+      } else {
+        throw dbError;
+      }
     }
 
     // Create door tag association
+    console.log('Creating door tag with data:', { doorId, tagId, tagType, tagData });
     const tagId_result = await DoorTag.create({
       doorId,
       tagId,
