@@ -7,7 +7,7 @@ const initDatabase = async () => {
         const db = await pool.getConnection();
         
         let completedTables = 0;
-        const totalTables = 12; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, access_requests, events, admin_user, door_commands, site_plan, door_positions
+        const totalTables = 13; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, access_requests, events, admin_user, door_commands, site_plan, door_positions, door_tags
         
         const checkCompletion = () => {
             completedTables++;
@@ -275,6 +275,26 @@ const initDatabase = async () => {
                 checkCompletion();
             });
 
+            // Door tags table
+            db.run(`CREATE TABLE IF NOT EXISTS door_tags (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                door_id INTEGER NOT NULL,
+                tag_id TEXT NOT NULL,
+                tag_type TEXT NOT NULL CHECK (tag_type IN ('nfc', 'qr')),
+                tag_data TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE,
+                UNIQUE (tag_id)
+            )`, (err) => {
+                if (err) {
+                    console.error('Error creating door_tags table:', err.message);
+                    reject(err);
+                    return;
+                }
+                console.log('Door tags table created/verified');
+                checkCompletion();
+            });
+
             // Create indexes for better performance
             db.run(`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`, (err) => {
                 if (err) console.error('Error creating users username index:', err.message);
@@ -318,6 +338,14 @@ const initDatabase = async () => {
 
             db.run(`CREATE INDEX IF NOT EXISTS idx_access_requests_status ON access_requests(status)`, (err) => {
                 if (err) console.error('Error creating access_requests status index:', err.message);
+            });
+
+            db.run(`CREATE INDEX IF NOT EXISTS idx_door_tags_door_id ON door_tags(door_id)`, (err) => {
+                if (err) console.error('Error creating door_tags door_id index:', err.message);
+            });
+
+            db.run(`CREATE INDEX IF NOT EXISTS idx_door_tags_tag_id ON door_tags(tag_id)`, (err) => {
+                if (err) console.error('Error creating door_tags tag_id index:', err.message);
             });
 
             // Insert default admin user if no users exist

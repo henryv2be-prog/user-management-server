@@ -959,6 +959,152 @@ router.post('/:id/control', authenticate, requireAdmin, validateId, async (req, 
   }
 });
 
+// Associate NFC/QR tag with door (admin only)
+router.post('/:id/associate-tag', authenticate, requireAdmin, validateId, [
+  body('tagId').isString().notEmpty().withMessage('Tag ID is required'),
+  body('tagType').isIn(['nfc', 'qr']).withMessage('Tag type must be nfc or qr'),
+  body('tagData').optional().isString().withMessage('Tag data must be a string')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Please fix the validation errors below',
+        errors: errors.array()
+      });
+    }
+
+    const doorId = parseInt(req.params.id);
+    const { tagId, tagType, tagData } = req.body;
+
+    // Find the door
+    const door = await Door.findById(doorId);
+    if (!door) {
+      return res.status(404).json({
+        error: 'Door Not Found',
+        message: 'The specified door does not exist'
+      });
+    }
+
+    // Check if tag is already associated with another door
+    const existingTag = await runQuery(
+      'SELECT * FROM door_tags WHERE tag_id = ? AND door_id != ?',
+      [tagId, doorId]
+    );
+
+    if (existingTag.length > 0) {
+      return res.status(409).json({
+        error: 'Tag Already Associated',
+        message: `Tag ${tagId} is already associated with another door`
+      });
+    }
+
+    // Associate tag with door
+    await runQuery(
+      'INSERT OR REPLACE INTO door_tags (door_id, tag_id, tag_type, tag_data, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
+      [doorId, tagId, tagType, tagData || null]
+    );
+
+    // Log the association
+    await EventLogger.log(req, 'door', 'tag_associated', 'Door', doorId, door.name, 
+      `Tag ${tagId} (${tagType}) associated with door ${door.name}`);
+
+    res.json({
+      message: 'Tag associated successfully',
+      door: door.toJSON(),
+      tag: {
+        id: tagId,
+        type: tagType,
+        data: tagData
+      }
+    });
+  } catch (error) {
+    console.error('Associate tag error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to associate tag with door'
+    });
+  }
+});
+
+// Get tags associated with door
+router.get('/:id/tags', authenticate, requireAdmin, validateId, async (req, res) => {
+  try {
+    const doorId = parseInt(req.params.id);
+
+    // Find the door
+    const door = await Door.findById(doorId);
+    if (!door) {
+      return res.status(404).json({
+        error: 'Door Not Found',
+        message: 'The specified door does not exist'
+      });
+    }
+
+    // Get associated tags
+    const tags = await allQuery(
+      'SELECT * FROM door_tags WHERE door_id = ? ORDER BY created_at DESC',
+      [doorId]
+    );
+
+    res.json({
+      door: door.toJSON(),
+      tags: tags
+    });
+  } catch (error) {
+    console.error('Get door tags error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to get door tags'
+    });
+  }
+});
+
+// Remove tag association from door
+router.delete('/:id/tags/:tagId', authenticate, requireAdmin, validateId, async (req, res) => {
+  try {
+    const doorId = parseInt(req.params.id);
+    const tagId = req.params.tagId;
+
+    // Find the door
+    const door = await Door.findById(doorId);
+    if (!door) {
+      return res.status(404).json({
+        error: 'Door Not Found',
+        message: 'The specified door does not exist'
+      });
+    }
+
+    // Remove tag association
+    const result = await runQuery(
+      'DELETE FROM door_tags WHERE door_id = ? AND tag_id = ?',
+      [doorId, tagId]
+    );
+
+    if (result.changes === 0) {
+      return res.status(404).json({
+        error: 'Tag Association Not Found',
+        message: 'The specified tag is not associated with this door'
+      });
+    }
+
+    // Log the removal
+    await EventLogger.log(req, 'door', 'tag_removed', 'Door', doorId, door.name, 
+      `Tag ${tagId} removed from door ${door.name}`);
+
+    res.json({
+      message: 'Tag association removed successfully'
+    });
+  } catch (error) {
+    console.error('Remove tag association error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to remove tag association'
+    });
+  }
+});
+
 // ESP32 command polling endpoint
 router.get('/commands/:doorId', async (req, res) => {
   try {
