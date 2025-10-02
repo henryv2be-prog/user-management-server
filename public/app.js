@@ -2935,9 +2935,12 @@ async function manageDoorTags(doorId) {
         
         // Get door tags
         console.log('Loading tags for door:', doorId);
+        const token = localStorage.getItem('token');
+        console.log('Using token:', token ? 'Token exists' : 'No token found');
+        
         const tagsResponse = await fetch(`/api/door-tags/door/${doorId}`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${token}`
             }
         });
         
