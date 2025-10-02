@@ -2975,7 +2975,7 @@ async function manageDoorTags(doorId) {
         
         // Show modal
         console.log('Showing door tag modal');
-        showModal('doorTagModal');
+        document.getElementById('doorTagModal').classList.add('active');
         
     } catch (error) {
         console.error('Error managing door tags:', error);
