@@ -1110,8 +1110,10 @@ router.delete('/:id/tags/:tagId', authenticate, requireAdmin, validateId, async 
 router.get('/commands/:doorId', async (req, res) => {
   try {
     const doorId = parseInt(req.params.doorId);
+    console.log(`ESP32 polling for commands - Door ID: ${doorId}`);
     
     if (isNaN(doorId)) {
+      console.log(`Invalid door ID received: ${req.params.doorId}`);
       return res.status(400).json({
         error: 'Invalid door ID',
         message: 'Door ID must be a number'
@@ -1146,33 +1148,47 @@ router.get('/commands/:doorId', async (req, res) => {
       db.all('SELECT * FROM door_commands WHERE door_id = ? AND status = ? ORDER BY created_at ASC', 
              [doorId, 'pending'], (err, rows) => {
         db.close();
-        if (err) reject(err);
-        else resolve(rows);
+        if (err) {
+          console.error(`Error fetching commands for door ${doorId}:`, err);
+          reject(err);
+        } else {
+          console.log(`Found ${rows.length} pending commands for door ${doorId}`);
+          resolve(rows);
+        }
       });
     });
     
     // Mark commands as executed
     if (commands.length > 0) {
       const commandIds = commands.map(cmd => cmd.id);
+      console.log(`Marking ${commandIds.length} commands as executed for door ${doorId}:`, commandIds);
       const db2 = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
       await new Promise((resolve, reject) => {
         db2.run(`UPDATE door_commands SET status = 'executed', executed_at = CURRENT_TIMESTAMP WHERE id IN (${commandIds.map(() => '?').join(',')})`, 
                  commandIds, (err) => {
           db2.close();
-          if (err) reject(err);
-          else resolve();
+          if (err) {
+            console.error(`Error marking commands as executed:`, err);
+            reject(err);
+          } else {
+            console.log(`Successfully marked ${commandIds.length} commands as executed`);
+            resolve();
+          }
         });
       });
     }
     
-    res.json({
+    const response = {
       success: true,
       commands: commands.map(cmd => ({
         id: cmd.id,
         command: cmd.command,
         created_at: cmd.created_at
       }))
-    });
+    };
+    
+    console.log(`Sending response to ESP32 for door ${doorId}:`, JSON.stringify(response));
+    res.json(response);
     
   } catch (error) {
     console.error('Command polling error:', error);
