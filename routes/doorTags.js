@@ -84,17 +84,21 @@ router.get('/:id', authenticate, requireAdmin, async (req, res) => {
 router.get('/door/:doorId', authenticate, requireAdmin, async (req, res) => {
   try {
     const { doorId } = req.params;
+    console.log(`Getting tags for door ${doorId}, user: ${req.user.username} (${req.user.role})`);
     
     // Verify door exists
     const door = await Door.findById(doorId);
     if (!door) {
+      console.log(`Door ${doorId} not found`);
       return res.status(404).json({
         error: 'Door Not Found',
         message: 'The requested door does not exist'
       });
     }
 
+    console.log(`Door found: ${door.name}, loading tags...`);
     const doorTags = await DoorTag.findByDoorId(doorId);
+    console.log(`Found ${doorTags.length} tags for door ${doorId}`);
 
     res.json({
       door: door.toJSON(),
