@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
+const { body, validationResult } = require('express-validator');
 const { Door } = require('../database/door');
 const { AccessGroup } = require('../database/accessGroup');
 const { 
