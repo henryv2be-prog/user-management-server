@@ -29,11 +29,11 @@ class DoorTag {
   }
 
   // Static methods for database operations
-  static async create(tagData) {
+  static async create(data) {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(DB_PATH);
       
-      const { doorId, tagId, tagType = 'nfc', tagData } = tagData;
+      const { doorId, tagId, tagType = 'nfc', tagData } = data;
       
       const sql = `
         INSERT INTO door_tags (door_id, tag_id, tag_type, tag_data)
