@@ -137,34 +137,65 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
     const userName = req.user.firstName && req.user.lastName ? `${req.user.firstName} ${req.user.lastName}` : req.user.email || `User ${req.user.id}`;
     await EventLogger.log(req, 'access', 'granted', 'AccessRequest', accessRequest.id, `Access granted to ${userName} for ${door.name}`, `User: ${req.user.email}`);
 
-    // Send door open command to ESP32
-    let doorControlSuccess = false;
-    let doorControlMessage = '';
+    // Queue door open command for ESP32 to pick up (ESP32 polls server for commands)
+    let doorControlSuccess = true; // Assume success since we're queuing the command
+    let doorControlMessage = 'Door opening command queued for ESP32';
     
     try {
-      const response = await fetch(`http://${door.esp32Ip}/door`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'open' })
+      console.log(`Queuing door open command for door ${door.id}`);
+      
+      const sqlite3 = require('sqlite3').verbose();
+      const path = require('path');
+      const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'database', 'users.db');
+      
+      const db = new sqlite3.Database(DB_PATH);
+      
+      // Ensure door_commands table exists
+      await new Promise((resolve, reject) => {
+        db.run(`CREATE TABLE IF NOT EXISTS door_commands (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          door_id INTEGER NOT NULL,
+          command TEXT NOT NULL,
+          status TEXT DEFAULT 'pending',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          executed_at DATETIME,
+          FOREIGN KEY (door_id) REFERENCES doors (id)
+        )`, (err) => {
+          if (err) {
+            console.error('Error creating door_commands table:', err.message);
+            reject(err);
+          } else {
+            console.log('✅ Door commands table verified/created');
+            resolve();
+          }
+        });
       });
       
-      if (response.ok) {
-        doorControlSuccess = true;
-        doorControlMessage = 'Door opening command sent';
-      } else {
-        doorControlMessage = 'Access granted but door control failed';
-      }
+      // Insert door open command
+      await new Promise((resolve, reject) => {
+        db.run('INSERT INTO door_commands (door_id, command, status) VALUES (?, ?, ?)', 
+               [door.id, 'open', 'pending'], (err) => {
+          db.close();
+          if (err) {
+            console.error('Error queuing door command:', err);
+            reject(err);
+          } else {
+            console.log('Door command queued successfully');
+            resolve();
+          }
+        });
+      });
+      
     } catch (doorError) {
-      console.error('Door control error:', doorError);
-      doorControlMessage = 'Access granted but door control failed';
+      console.error('Door command queuing error:', doorError);
+      doorControlSuccess = false;
+      doorControlMessage = 'Access granted but failed to queue door command';
     }
 
     res.json({
       success: true,
       message: doorControlSuccess ? 'Access granted - door opening' : 'Access granted but door control failed',
-      access: true,
+      accessGranted: true, // Changed from 'access: true' to match mobile app expectations
       doorControlSuccess: doorControlSuccess,
       doorControlMessage: doorControlMessage,
       requestId: accessRequest.id,
