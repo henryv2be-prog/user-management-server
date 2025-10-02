@@ -2079,7 +2079,31 @@ async function loadDoors(page = 1) {
         
         if (response.ok) {
             const data = await response.json();
-            displayDoors(data.doors);
+            
+            // Load tags for each door
+            const doorsWithTags = await Promise.all(data.doors.map(async (door) => {
+                try {
+                    const tagsResponse = await fetch(`/api/doors/${door.id}/tags`, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    });
+                    
+                    if (tagsResponse.ok) {
+                        const tagsData = await tagsResponse.json();
+                        door.tags = tagsData.tags;
+                    } else {
+                        door.tags = [];
+                    }
+                } catch (error) {
+                    console.error(`Error loading tags for door ${door.id}:`, error);
+                    door.tags = [];
+                }
+                
+                return door;
+            }));
+            
+            displayDoors(doorsWithTags);
             displayDoorsPagination(data.pagination);
         } else {
             showToast('Failed to load doors', 'error');
@@ -2105,12 +2129,19 @@ function displayDoors(doors) {
                     ${door.isOnline ? 'Online' : 'Offline'}
                 </span>
             </td>
+            <td class="door-tag-cell">
+                ${formatDoorTags(door.tags || [])}
+            </td>
             <td>${door.lastSeen ? formatDoorTime(door.lastSeen) : 'Never'}</td>
             <td>
                 <div class="action-buttons">
                     <button class="action-btn edit" onclick="editDoor(${door.id})" title="Edit Door">
                         <i class="fas fa-edit"></i>
                         <span class="btn-text">Edit</span>
+                    </button>
+                    <button class="action-btn tags" onclick="manageDoorTags(${door.id})" title="Manage Tags">
+                        <i class="fas fa-tags"></i>
+                        <span class="btn-text">Tags</span>
                     </button>
                     <button class="action-btn delete" onclick="deleteDoor(${door.id})" title="Delete Door">
                         <i class="fas fa-trash"></i>
@@ -2569,6 +2600,28 @@ function formatDoorsColumn(doors) {
     }
 }
 
+function formatDoorTags(tags) {
+    if (!tags || tags.length === 0) {
+        return '<span class="no-tags">No tags</span>';
+    }
+    
+    if (tags.length <= 2) {
+        // Show all tags
+        return tags.map(tag => `
+            <span class="door-tag-badge ${tag.tag_type}">${tag.tag_id}</span>
+        `).join('');
+    } else {
+        // Show first tag + count
+        const firstTag = tags[0];
+        const remainingCount = tags.length - 1;
+        
+        return `
+            <span class="door-tag-badge ${firstTag.tag_type}">${firstTag.tag_id}</span>
+            <span class="door-count">+${remainingCount} more</span>
+        `;
+    }
+}
+
 function displayAccessGroupsPagination(pagination) {
     const paginationDiv = document.getElementById('accessGroupsPagination');
     const { page, totalPages, hasNext, hasPrev } = pagination;
@@ -2851,6 +2904,179 @@ function deselectAllUserAccessGroups() {
     checkboxes.forEach(checkbox => {
         checkbox.checked = false;
     });
+}
+
+// Door Tag Management Functions
+async function manageDoorTags(doorId) {
+    try {
+        // Get door information
+        const doorResponse = await fetch(`/api/doors/${doorId}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (!doorResponse.ok) {
+            showToast('Failed to load door information', 'error');
+            return;
+        }
+        
+        const doorData = await doorResponse.json();
+        const door = doorData.door;
+        
+        // Get door tags
+        const tagsResponse = await fetch(`/api/doors/${doorId}/tags`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        let tags = [];
+        if (tagsResponse.ok) {
+            const tagsData = await tagsResponse.json();
+            tags = tagsData.tags;
+        }
+        
+        // Populate modal
+        document.getElementById('doorTagDoorName').textContent = door.name;
+        document.getElementById('doorTagDoorLocation').textContent = door.location;
+        document.getElementById('addTagDoorId').value = doorId;
+        
+        // Clear form
+        document.getElementById('addTagId').value = '';
+        document.getElementById('addTagType').value = '';
+        document.getElementById('addTagData').value = '';
+        
+        // Display tags
+        displayDoorTags(tags);
+        
+        // Show modal
+        showModal('doorTagModal');
+        
+    } catch (error) {
+        console.error('Error managing door tags:', error);
+        showToast('Failed to load door tag information', 'error');
+    }
+}
+
+function displayDoorTags(tags) {
+    const tagsList = document.getElementById('doorTagsList');
+    
+    if (!tags || tags.length === 0) {
+        tagsList.innerHTML = '<div class="no-tags">No tags associated with this door</div>';
+        return;
+    }
+    
+    tagsList.innerHTML = tags.map(tag => `
+        <div class="tag-item">
+            <div class="tag-info">
+                <div class="tag-id">${tag.tag_id}</div>
+                <div class="tag-type ${tag.tag_type}">${tag.tag_type.toUpperCase()}</div>
+            </div>
+            <div class="tag-actions">
+                <button class="tag-remove-btn" onclick="removeDoorTag(${tag.door_id}, '${tag.tag_id}')">
+                    <i class="fas fa-trash"></i> Remove
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function handleAddTag(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const tagData = {
+        tagId: formData.get('tagId'),
+        tagType: formData.get('tagType'),
+        tagData: formData.get('tagData') || null
+    };
+    
+    const doorId = formData.get('doorId');
+    
+    try {
+        const response = await fetch(`/api/doors/${doorId}/associate-tag`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(tagData)
+        });
+        
+        if (response.ok) {
+            showToast('Tag associated successfully!', 'success');
+            
+            // Reload tags
+            const tagsResponse = await fetch(`/api/doors/${doorId}/tags`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (tagsResponse.ok) {
+                const tagsData = await tagsResponse.json();
+                displayDoorTags(tagsData.tags);
+            }
+            
+            // Clear form
+            event.target.reset();
+            document.getElementById('addTagDoorId').value = doorId;
+            
+            // Reload doors list to update tag display
+            if (typeof loadDoors === 'function') {
+                loadDoors(currentDoorPage || 1);
+            }
+        } else {
+            const errorData = await response.json();
+            showToast(errorData.message || 'Failed to associate tag', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding tag:', error);
+        showToast('Failed to associate tag', 'error');
+    }
+}
+
+async function removeDoorTag(doorId, tagId) {
+    if (!confirm('Are you sure you want to remove this tag association?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/doors/${doorId}/tags/${tagId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            showToast('Tag association removed successfully!', 'success');
+            
+            // Reload tags
+            const tagsResponse = await fetch(`/api/doors/${doorId}/tags`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (tagsResponse.ok) {
+                const tagsData = await tagsResponse.json();
+                displayDoorTags(tagsData.tags);
+            }
+            
+            // Reload doors list to update tag display
+            if (typeof loadDoors === 'function') {
+                loadDoors(currentDoorPage || 1);
+            }
+        } else {
+            const errorData = await response.json();
+            showToast(errorData.message || 'Failed to remove tag association', 'error');
+        }
+    } catch (error) {
+        console.error('Error removing tag:', error);
+        showToast('Failed to remove tag association', 'error');
+    }
 }
 
 

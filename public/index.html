@@ -431,6 +431,7 @@
                                 <th>Location</th>
                                 <th>Controller IP</th>
                                 <th>Online Status</th>
+                                <th>Tags</th>
                                 <th>Last Seen</th>
                                 <th>Actions</th>
                             </tr>
@@ -1318,6 +1319,55 @@
                     <button type="submit" class="btn btn-primary">Add as Door</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Door Tag Management Modal -->
+    <div id="doorTagModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-tags"></i> Manage Door Tags</h3>
+                <span class="close" onclick="closeModal('doorTagModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="doorTagInfo">
+                    <h4 id="doorTagDoorName">Door Name</h4>
+                    <p id="doorTagDoorLocation">Door Location</p>
+                </div>
+                
+                <div class="tag-management-section">
+                    <h5>Add New Tag</h5>
+                    <form id="addTagForm" onsubmit="handleAddTag(event)">
+                        <input type="hidden" id="addTagDoorId" name="doorId">
+                        <div class="form-group">
+                            <label for="addTagId">Tag ID</label>
+                            <input type="text" id="addTagId" name="tagId" required placeholder="e.g., NFC123456 or QR789012">
+                        </div>
+                        <div class="form-group">
+                            <label for="addTagType">Tag Type</label>
+                            <select id="addTagType" name="tagType" required>
+                                <option value="">Select tag type...</option>
+                                <option value="nfc">NFC Tag</option>
+                                <option value="qr">QR Code</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="addTagData">Tag Data (Optional)</label>
+                            <textarea id="addTagData" name="tagData" placeholder="Additional tag data or description"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Tag
+                        </button>
+                    </form>
+                </div>
+
+                <div class="tag-list-section">
+                    <h5>Associated Tags</h5>
+                    <div id="doorTagsList" class="tag-list">
+                        <!-- Tags will be loaded here -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

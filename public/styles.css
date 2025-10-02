@@ -5154,3 +5154,151 @@ body.fa-failed .nav-toggle-fallback {
 .form-help a:hover {
     text-decoration: underline;
 }
+
+/* Tag Management Styles */
+.tag-management-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.tag-management-section h5 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.tag-list-section {
+    margin-top: 20px;
+}
+
+.tag-list-section h5 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.tag-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tag-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.tag-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tag-id {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.tag-type {
+    font-size: 12px;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.tag-type.nfc {
+    color: #007bff;
+}
+
+.tag-type.qr {
+    color: #28a745;
+}
+
+.tag-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.tag-remove-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.tag-remove-btn:hover {
+    background: #c82333;
+}
+
+.door-tag-cell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.door-tag-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #e9ecef;
+    color: #495057;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.door-tag-badge.nfc {
+    background: #cce5ff;
+    color: #0056b3;
+}
+
+.door-tag-badge.qr {
+    background: #d4edda;
+    color: #155724;
+}
+
+.no-tags {
+    color: #6c757d;
+    font-style: italic;
+    font-size: 14px;
+}
+
+/* Modal body styles for tag management */
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+#doorTagInfo {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #007bff;
+}
+
+#doorTagInfo h4 {
+    margin: 0 0 5px 0;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+#doorTagInfo p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 14px;
+}
