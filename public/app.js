@@ -3036,25 +3036,30 @@ async function handleAddTag(event) {
         if (response.ok) {
             showToast('Tag associated successfully!', 'success');
             
-            // Reload tags
-            const tagsResponse = await fetch(`/api/door-tags/door/${doorId}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+            try {
+                // Reload tags
+                const tagsResponse = await fetch(`/api/door-tags/door/${doorId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (tagsResponse.ok) {
+                    const tagsData = await tagsResponse.json();
+                    displayDoorTags(tagsData.doorTags);
                 }
-            });
-            
-            if (tagsResponse.ok) {
-                const tagsData = await tagsResponse.json();
-                displayDoorTags(tagsData.doorTags);
-            }
-            
-            // Clear form
-            event.target.reset();
-            document.getElementById('addTagDoorId').value = doorId;
-            
-            // Reload doors list to update tag display
-            if (typeof loadDoors === 'function') {
-                loadDoors(currentDoorPage || 1);
+                
+                // Clear form
+                event.target.reset();
+                document.getElementById('addTagDoorId').value = doorId;
+                
+                // Reload doors list to update tag display
+                if (typeof loadDoors === 'function') {
+                    loadDoors(currentDoorPage || 1);
+                }
+            } catch (reloadError) {
+                console.error('Error reloading tags after creation:', reloadError);
+                // Don't show error toast for reload issues, just log it
             }
         } else {
             const errorData = await response.json();
