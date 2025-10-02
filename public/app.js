@@ -3026,7 +3026,7 @@ async function handleAddTag(event) {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
             body: JSON.stringify({
-                doorId: doorId,
+                doorId: parseInt(doorId),
                 tagId: tagData.tagId,
                 tagType: tagData.tagType,
                 tagData: tagData.tagData
