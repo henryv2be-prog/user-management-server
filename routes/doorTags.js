@@ -201,8 +201,11 @@ router.get('/door/:doorId', authenticate, requireAdmin, async (req, res) => {
 // Create new door tag association (admin only)
 router.post('/', authenticate, requireAdmin, validateDoorTag, async (req, res) => {
   try {
+    console.log('Creating door tag, user:', req.user.username, 'body:', req.body);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({
         error: 'Validation Error',
         message: 'Please fix the validation errors below',
@@ -211,6 +214,7 @@ router.post('/', authenticate, requireAdmin, validateDoorTag, async (req, res) =
     }
 
     const { doorId, tagId, tagType = 'nfc', tagData } = req.body;
+    console.log('Creating tag:', { doorId, tagId, tagType, tagData });
 
     // Verify door exists
     const door = await Door.findById(doorId);
@@ -252,9 +256,12 @@ router.post('/', authenticate, requireAdmin, validateDoorTag, async (req, res) =
     });
   } catch (error) {
     console.error('Create door tag error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error message:', error.message);
     res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to create door tag association'
+      message: 'Failed to create door tag association',
+      details: error.message
     });
   }
 });
