@@ -100,7 +100,7 @@ const authLimiter = rateLimit({
 // ESP32-specific rate limiter (more lenient for IoT devices)
 const esp32Limiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 60, // limit each IP to 60 requests per minute (1 per second)
+  max: 300, // limit each IP to 300 requests per minute (5 per second)
   message: 'ESP32 rate limit exceeded, please slow down requests.',
   standardHeaders: true,
   legacyHeaders: false
