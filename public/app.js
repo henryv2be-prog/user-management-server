@@ -2092,7 +2092,11 @@ async function loadDoors(page = 1) {
                     if (tagsResponse.ok) {
                         const tagsData = await tagsResponse.json();
                         door.tags = tagsData.doorTags;
+                        console.log(`Loaded ${door.tags.length} tags for door ${door.id}`);
                     } else {
+                        console.error(`Failed to load tags for door ${door.id}:`, tagsResponse.status, tagsResponse.statusText);
+                        const errorText = await tagsResponse.text();
+                        console.error('Error response:', errorText);
                         door.tags = [];
                     }
                 } catch (error) {
@@ -2909,6 +2913,8 @@ function deselectAllUserAccessGroups() {
 // Door Tag Management Functions
 async function manageDoorTags(doorId) {
     try {
+        console.log('Opening tag management for door:', doorId);
+        
         // Get door information
         const doorResponse = await fetch(`/api/doors/${doorId}`, {
             headers: {
@@ -2917,14 +2923,17 @@ async function manageDoorTags(doorId) {
         });
         
         if (!doorResponse.ok) {
+            console.error('Failed to load door information:', doorResponse.status, doorResponse.statusText);
             showToast('Failed to load door information', 'error');
             return;
         }
         
         const doorData = await doorResponse.json();
         const door = doorData.door;
+        console.log('Door loaded:', door);
         
         // Get door tags
+        console.log('Loading tags for door:', doorId);
         const tagsResponse = await fetch(`/api/door-tags/door/${doorId}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -2935,6 +2944,11 @@ async function manageDoorTags(doorId) {
         if (tagsResponse.ok) {
             const tagsData = await tagsResponse.json();
             tags = tagsData.doorTags;
+            console.log('Tags loaded:', tags);
+        } else {
+            console.error('Failed to load tags:', tagsResponse.status, tagsResponse.statusText);
+            const errorText = await tagsResponse.text();
+            console.error('Error response:', errorText);
         }
         
         // Populate modal
@@ -2951,6 +2965,7 @@ async function manageDoorTags(doorId) {
         displayDoorTags(tags);
         
         // Show modal
+        console.log('Showing door tag modal');
         showModal('doorTagModal');
         
     } catch (error) {
