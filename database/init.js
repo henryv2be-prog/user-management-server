@@ -7,7 +7,7 @@ const initDatabase = async () => {
         const db = await pool.getConnection();
         
         let completedTables = 0;
-        const totalTables = 13; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, access_requests, events, admin_user, door_commands, site_plan, door_positions, door_tags
+        const totalTables = 13; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, access_requests, events, door_commands, site_plan, door_positions, door_tags, admin_user
         
         const checkCompletion = () => {
             completedTables++;
