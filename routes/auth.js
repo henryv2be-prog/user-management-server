@@ -38,7 +38,8 @@ router.post('/login', validateLogin, async (req, res) => {
       await EventLogger.logFailedLogin(req, email, 'Non-admin user attempted web login');
       return res.status(403).json({
         error: 'Access denied',
-        message: 'Regular users can only access the system via the mobile app'
+        message: 'Regular users can only access the system via the mobile app. Please use the mobile app to log in.',
+        code: 'WEB_ACCESS_DENIED'
       });
     }
     

@@ -1095,7 +1095,12 @@ async function handleLogin(event) {
             }, 1000);
             showToast('Login successful!', 'success');
         } else {
-            showToast(data.message || 'Login failed', 'error');
+            // Handle specific error codes
+            if (data.code === 'WEB_ACCESS_DENIED') {
+                showToast('Access denied: ' + data.message, 'error');
+            } else {
+                showToast(data.message || 'Login failed', 'error');
+            }
         }
     } catch (error) {
         console.error('Login error:', error);
