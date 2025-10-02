@@ -271,9 +271,8 @@ async function migrateDatabase() {
         executed_at DATETIME,
         FOREIGN KEY (door_id) REFERENCES doors (id)
       )`, (err) => {
-        db.close();
         if (err) {
-          console.error('❌ Migration failed:', err.message);
+          console.error('❌ Door commands migration failed:', err.message);
           reject(err);
         } else {
           console.log('✅ Door commands table created/verified');
@@ -281,6 +280,55 @@ async function migrateDatabase() {
         }
       });
     });
+    
+    // Create door_tags table if it doesn't exist
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE TABLE IF NOT EXISTS door_tags (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        door_id INTEGER NOT NULL,
+        tag_id TEXT NOT NULL,
+        tag_type TEXT NOT NULL CHECK (tag_type IN ('nfc', 'qr')),
+        tag_data TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE,
+        UNIQUE (tag_id)
+      )`, (err) => {
+        if (err) {
+          console.error('❌ Door tags migration failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ Door tags table created/verified');
+          resolve();
+        }
+      });
+    });
+    
+    // Create indexes for door_tags
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE INDEX IF NOT EXISTS idx_door_tags_door_id ON door_tags(door_id)`, (err) => {
+        if (err) {
+          console.error('❌ Door tags door_id index failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ Door tags door_id index created/verified');
+          resolve();
+        }
+      });
+    });
+    
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE INDEX IF NOT EXISTS idx_door_tags_tag_id ON door_tags(tag_id)`, (err) => {
+        if (err) {
+          console.error('❌ Door tags tag_id index failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ Door tags tag_id index created/verified');
+          resolve();
+        }
+      });
+    });
+    
+    db.close();
     
     console.log('✅ Database migration completed');
     
