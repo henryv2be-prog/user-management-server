@@ -87,6 +87,7 @@ router.get('/door/:doorId', authenticate, requireAdmin, async (req, res) => {
     console.log(`Getting tags for door ${doorId}, user: ${req.user.username} (${req.user.role})`);
     
     // Verify door exists
+    console.log(`Looking for door with ID: ${doorId}`);
     const door = await Door.findById(doorId);
     if (!door) {
       console.log(`Door ${doorId} not found`);
@@ -95,6 +96,7 @@ router.get('/door/:doorId', authenticate, requireAdmin, async (req, res) => {
         message: 'The requested door does not exist'
       });
     }
+    console.log(`Door found: ${door.name} (ID: ${door.id})`);
 
     console.log(`Door found: ${door.name}, loading tags...`);
     
@@ -112,7 +114,16 @@ router.get('/door/:doorId', authenticate, requireAdmin, async (req, res) => {
         const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'database', 'users.db');
         
         await new Promise((resolve, reject) => {
-          const db = new sqlite3.Database(DB_PATH);
+          console.log('Creating door_tags table with DB_PATH:', DB_PATH);
+          const db = new sqlite3.Database(DB_PATH, (openErr) => {
+            if (openErr) {
+              console.error('Error opening database:', openErr);
+              reject(openErr);
+              return;
+            }
+            console.log('Database opened successfully');
+          });
+          
           db.run(`CREATE TABLE IF NOT EXISTS door_tags (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             door_id INTEGER NOT NULL,
@@ -125,12 +136,14 @@ router.get('/door/:doorId', authenticate, requireAdmin, async (req, res) => {
           )`, (err) => {
             if (err) {
               console.error('Error creating door_tags table:', err);
+              console.error('SQL error details:', err.message);
+              db.close();
               reject(err);
             } else {
               console.log('door_tags table created successfully');
+              db.close();
               resolve();
             }
-            db.close();
           });
         });
         
@@ -175,9 +188,12 @@ router.get('/door/:doorId', authenticate, requireAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Get door tags by door ID error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error message:', error.message);
     res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to retrieve door tags'
+      message: 'Failed to retrieve door tags',
+      details: error.message
     });
   }
 });
