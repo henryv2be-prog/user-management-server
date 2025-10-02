@@ -29,6 +29,19 @@ router.post('/login', validateLogin, async (req, res) => {
       });
     }
     
+    // Check if non-admin user is trying to login via web interface
+    const userAgent = req.headers['user-agent'] || '';
+    const isWebBrowser = userAgent.includes('Mozilla') || userAgent.includes('Chrome') || userAgent.includes('Safari') || userAgent.includes('Firefox');
+    
+    if (user.role !== 'admin' && isWebBrowser) {
+      // Log failed login attempt
+      await EventLogger.logFailedLogin(req, email, 'Non-admin user attempted web login');
+      return res.status(403).json({
+        error: 'Access denied',
+        message: 'Regular users can only access the system via the mobile app'
+      });
+    }
+    
     // Account is always active (is_active column removed)
     
     const isValidPassword = await user.verifyPassword(password);
@@ -159,11 +172,121 @@ router.post('/change-password', authenticate, validatePasswordChange, async (req
   }
 });
 
+// Mobile app login endpoint (for regular users)
+router.post('/mobile-login', validateLogin, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Try to find user by email first, then by username
+    let user = await User.findByEmail(email);
+    if (!user) {
+      user = await User.findByUsername(email);
+    }
+    
+    if (!user) {
+      // Log failed login attempt
+      await EventLogger.logFailedLogin(req, email, 'User not found');
+      return res.status(401).json({
+        error: 'Authentication failed',
+        message: 'Invalid username/email or password'
+      });
+    }
+    
+    const isValidPassword = await user.verifyPassword(password);
+    if (!isValidPassword) {
+      // Log failed login attempt
+      await EventLogger.logFailedLogin(req, email, 'Invalid password');
+      return res.status(401).json({
+        error: 'Authentication failed',
+        message: 'Invalid email or password'
+      });
+    }
+    
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        username: user.username, 
+        email: user.email, 
+        role: user.role 
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+    
+    // Log user login event
+    await EventLogger.logUserLogin(req, user);
+    
+    res.json({
+      message: 'Mobile login successful',
+      token,
+      user: user.toJSON()
+    });
+  } catch (error) {
+    console.error('Mobile login error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Mobile login failed'
+    });
+  }
+});
+
 // Get current user profile
 router.get('/me', authenticate, (req, res) => {
   res.json({
     user: req.user.toJSON()
   });
+});
+
+// Get user's accessible doors (for mobile app)
+router.get('/my-doors', authenticate, async (req, res) => {
+  try {
+    const user = req.user;
+    
+    // Admin users can see all doors
+    if (user.role === 'admin') {
+      const { Door } = require('../database/door');
+      const doors = await Door.findAll();
+      return res.json({
+        doors: doors.map(door => door.toJSON())
+      });
+    }
+    
+    // Regular users can only see doors they have access to
+    const AccessGroup = require('../database/accessGroup');
+    const userAccessGroups = await AccessGroup.findByUserId(user.id);
+    
+    if (userAccessGroups.length === 0) {
+      return res.json({
+        doors: [],
+        message: 'No doors accessible'
+      });
+    }
+    
+    // Get doors from user's access groups
+    const { Door } = require('../database/door');
+    const accessibleDoors = [];
+    
+    for (const accessGroup of userAccessGroups) {
+      const doors = await Door.findByAccessGroupId(accessGroup.id);
+      accessibleDoors.push(...doors);
+    }
+    
+    // Remove duplicates
+    const uniqueDoors = accessibleDoors.filter((door, index, self) => 
+      index === self.findIndex(d => d.id === door.id)
+    );
+    
+    res.json({
+      doors: uniqueDoors.map(door => door.toJSON())
+    });
+  } catch (error) {
+    console.error('Get user doors error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to get accessible doors'
+    });
+  }
 });
 
 // Logout endpoint (client-side token removal)
