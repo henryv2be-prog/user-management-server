@@ -4,6 +4,7 @@ const AccessRequest = require('../database/accessRequest');
 const { Door } = require('../database/door');
 const { User } = require('../database/models');
 const AccessGroup = require('../database/accessGroup');
+const { DoorTag } = require('../database/doorTag');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { validatePagination } = require('../middleware/validation');
 const EventLogger = require('../utils/eventLogger');
@@ -12,8 +13,9 @@ const router = express.Router();
 
 // Validation middleware
 const validateAccessRequest = [
-  body('doorId').isInt({ min: 1 }).withMessage('Door ID must be a positive integer'),
-  body('requestType').optional().isIn(['qr_scan', 'manual', 'emergency']).withMessage('Invalid request type'),
+  body('doorId').optional().isInt({ min: 1 }).withMessage('Door ID must be a positive integer'),
+  body('tagId').optional().isString().withMessage('Tag ID must be a string'),
+  body('requestType').optional().isIn(['qr_scan', 'nfc_scan', 'manual', 'emergency']).withMessage('Invalid request type'),
   body('qrCodeData').optional().isString().withMessage('QR code data must be a string')
 ];
 
@@ -29,11 +31,34 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
       });
     }
 
-    const { doorId, requestType = 'qr_scan', qrCodeData } = req.body;
+    const { doorId, tagId, requestType = 'nfc_scan', qrCodeData } = req.body;
     const userId = req.user.id; // User is authenticated via mobile app
     
+    let door;
+    let resolvedDoorId = doorId;
+    
+    // If tagId is provided, resolve doorId from tag association
+    if (tagId && !doorId) {
+      const doorTag = await DoorTag.findByTagId(tagId);
+      if (!doorTag) {
+        return res.status(404).json({
+          error: 'Tag Not Associated',
+          message: 'This NFC tag is not associated with any door'
+        });
+      }
+      resolvedDoorId = doorTag.doorId;
+    }
+    
+    // Validate that we have a door ID
+    if (!resolvedDoorId) {
+      return res.status(400).json({
+        error: 'Missing Door Information',
+        message: 'Either doorId or tagId must be provided'
+      });
+    }
+    
     // Find the door
-    const door = await Door.findById(doorId);
+    door = await Door.findById(resolvedDoorId);
     if (!door) {
       return res.status(404).json({
         error: 'Door Not Found',
@@ -51,19 +76,19 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
 
     // Check if user has access to this door
     // All users (including admins) must have proper access groups to access doors
-    let hasAccess = await checkUserDoorAccess(userId, doorId);
+    let hasAccess = await checkUserDoorAccess(userId, resolvedDoorId);
     
     if (hasAccess) {
-      console.log(`User ${req.user.email} (${req.user.role}) granted access to door ${doorId} via access groups`);
+      console.log(`User ${req.user.email} (${req.user.role}) granted access to door ${resolvedDoorId} via access groups`);
     } else {
-      console.log(`User ${req.user.email} (${req.user.role}) denied access to door ${doorId} - no access groups`);
+      console.log(`User ${req.user.email} (${req.user.role}) denied access to door ${resolvedDoorId} - no access groups`);
     }
     
     if (!hasAccess) {
       // Create denied request
       const requestData = {
         userId: userId,
-        doorId: doorId,
+        doorId: resolvedDoorId,
         requestType: requestType,
         status: 'denied',
         reason: 'User does not have access to this door',
@@ -96,7 +121,7 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
     // User has access - create granted request
     const requestData = {
       userId: userId,
-      doorId: doorId,
+      doorId: resolvedDoorId,
       requestType: requestType,
       status: 'granted',
       reason: 'Access granted',

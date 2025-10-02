@@ -143,6 +143,9 @@ console.log('Event routes module loaded');
 accessRequestRoutes = require('./routes/accessRequests');
 console.log('Access request routes module loaded');
 
+doorTagsRoutes = require('./routes/doorTags');
+console.log('Door tags routes module loaded');
+
 const { router: logsRoutes, addLog: addLogFunction } = require('./routes/logs');
 addLog = addLogFunction;
 console.log('Logs routes module loaded');
@@ -210,8 +213,9 @@ console.log('Mobile settings routes module loaded');
   app.use('/api/doors', doorRoutes);
 app.use('/api/access-groups', accessGroupRoutes);
 app.use('/api/events', eventRoutes);
-app.use('/api/access-requests', accessRequestRoutes);
-app.use('/api/logs', logsRoutes);
+  app.use('/api/access-requests', accessRequestRoutes);
+  app.use('/api/door-tags', doorTagsRoutes);
+  app.use('/api/logs', logsRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/site-plan', sitePlanRoutes);
 app.use('/api/webhooks', webhookRoutes);

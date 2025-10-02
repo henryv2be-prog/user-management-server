@@ -2083,7 +2083,7 @@ async function loadDoors(page = 1) {
             // Load tags for each door
             const doorsWithTags = await Promise.all(data.doors.map(async (door) => {
                 try {
-                    const tagsResponse = await fetch(`/api/doors/${door.id}/tags`, {
+                    const tagsResponse = await fetch(`/api/door-tags/door/${door.id}`, {
                         headers: {
                             'Authorization': `Bearer ${localStorage.getItem('token')}`
                         }
@@ -2091,7 +2091,7 @@ async function loadDoors(page = 1) {
                     
                     if (tagsResponse.ok) {
                         const tagsData = await tagsResponse.json();
-                        door.tags = tagsData.tags;
+                        door.tags = tagsData.doorTags;
                     } else {
                         door.tags = [];
                     }
@@ -2608,7 +2608,7 @@ function formatDoorTags(tags) {
     if (tags.length <= 2) {
         // Show all tags
         return tags.map(tag => `
-            <span class="door-tag-badge ${tag.tag_type}">${tag.tag_id}</span>
+            <span class="door-tag-badge ${tag.tagType}">${tag.tagId}</span>
         `).join('');
     } else {
         // Show first tag + count
@@ -2616,7 +2616,7 @@ function formatDoorTags(tags) {
         const remainingCount = tags.length - 1;
         
         return `
-            <span class="door-tag-badge ${firstTag.tag_type}">${firstTag.tag_id}</span>
+            <span class="door-tag-badge ${firstTag.tagType}">${firstTag.tagId}</span>
             <span class="door-count">+${remainingCount} more</span>
         `;
     }
@@ -2925,7 +2925,7 @@ async function manageDoorTags(doorId) {
         const door = doorData.door;
         
         // Get door tags
-        const tagsResponse = await fetch(`/api/doors/${doorId}/tags`, {
+        const tagsResponse = await fetch(`/api/door-tags/door/${doorId}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -2934,7 +2934,7 @@ async function manageDoorTags(doorId) {
         let tags = [];
         if (tagsResponse.ok) {
             const tagsData = await tagsResponse.json();
-            tags = tagsData.tags;
+            tags = tagsData.doorTags;
         }
         
         // Populate modal
@@ -2970,11 +2970,11 @@ function displayDoorTags(tags) {
     tagsList.innerHTML = tags.map(tag => `
         <div class="tag-item">
             <div class="tag-info">
-                <div class="tag-id">${tag.tag_id}</div>
-                <div class="tag-type ${tag.tag_type}">${tag.tag_type.toUpperCase()}</div>
+                <div class="tag-id">${tag.tagId}</div>
+                <div class="tag-type ${tag.tagType}">${tag.tagType.toUpperCase()}</div>
             </div>
             <div class="tag-actions">
-                <button class="tag-remove-btn" onclick="removeDoorTag(${tag.door_id}, '${tag.tag_id}')">
+                <button class="tag-remove-btn" onclick="removeDoorTag(${tag.id})">
                     <i class="fas fa-trash"></i> Remove
                 </button>
             </div>
@@ -2995,20 +2995,25 @@ async function handleAddTag(event) {
     const doorId = formData.get('doorId');
     
     try {
-        const response = await fetch(`/api/doors/${doorId}/associate-tag`, {
+        const response = await fetch(`/api/door-tags`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
-            body: JSON.stringify(tagData)
+            body: JSON.stringify({
+                doorId: doorId,
+                tagId: tagData.tagId,
+                tagType: tagData.tagType,
+                tagData: tagData.tagData
+            })
         });
         
         if (response.ok) {
             showToast('Tag associated successfully!', 'success');
             
             // Reload tags
-            const tagsResponse = await fetch(`/api/doors/${doorId}/tags`, {
+            const tagsResponse = await fetch(`/api/door-tags/door/${doorId}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
@@ -3016,7 +3021,7 @@ async function handleAddTag(event) {
             
             if (tagsResponse.ok) {
                 const tagsData = await tagsResponse.json();
-                displayDoorTags(tagsData.tags);
+                displayDoorTags(tagsData.doorTags);
             }
             
             // Clear form
@@ -3037,13 +3042,13 @@ async function handleAddTag(event) {
     }
 }
 
-async function removeDoorTag(doorId, tagId) {
+async function removeDoorTag(tagId) {
     if (!confirm('Are you sure you want to remove this tag association?')) {
         return;
     }
     
     try {
-        const response = await fetch(`/api/doors/${doorId}/tags/${tagId}`, {
+        const response = await fetch(`/api/door-tags/${tagId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -3053,8 +3058,11 @@ async function removeDoorTag(doorId, tagId) {
         if (response.ok) {
             showToast('Tag association removed successfully!', 'success');
             
+            // Get the door ID from the current modal
+            const doorId = document.getElementById('addTagDoorId').value;
+            
             // Reload tags
-            const tagsResponse = await fetch(`/api/doors/${doorId}/tags`, {
+            const tagsResponse = await fetch(`/api/door-tags/door/${doorId}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
@@ -3062,7 +3070,7 @@ async function removeDoorTag(doorId, tagId) {
             
             if (tagsResponse.ok) {
                 const tagsData = await tagsResponse.json();
-                displayDoorTags(tagsData.tags);
+                displayDoorTags(tagsData.doorTags);
             }
             
             // Reload doors list to update tag display
