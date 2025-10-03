@@ -406,7 +406,9 @@ async function startServer() {
     console.log('Environment:', process.env.NODE_ENV || 'development');
     console.log('Binding to 0.0.0.0:' + PORT);
     
+    console.log('Creating server instance...');
     const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log('✅ Server callback executed - server is listening');
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📱 Web interface: http://localhost:${PORT}`);
       console.log(`🔧 API endpoints: http://localhost:${PORT}/api`);
@@ -469,6 +471,9 @@ async function startServer() {
         console.error('Error checking offline doors:', error);
       }
     }, 30000); // Check every 30 seconds (less frequent)
+
+    console.log('✅ Server instance created successfully');
+    console.log('Server listening state:', server.listening);
 
     server.on('error', (error) => {
       console.error('Server error:', error);
