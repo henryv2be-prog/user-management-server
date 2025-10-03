@@ -285,6 +285,30 @@ class DoorTag {
       });
     });
   }
+
+  static async update(id, updateData) {
+    return new Promise((resolve, reject) => {
+      const db = new sqlite3.Database(DB_PATH);
+
+      const { doorId, tagId, tagType, tagData } = updateData;
+
+      const sql = `
+        UPDATE door_tags 
+        SET door_id = ?, tag_id = ?, tag_type = ?, tag_data = ?
+        WHERE id = ?
+      `;
+
+      db.run(sql, [doorId, tagId, tagType, tagData, id], function(err) {
+        if (err) {
+          console.error('Error updating door tag:', err);
+          reject(err);
+        } else {
+          resolve(this.changes > 0);
+        }
+        db.close();
+      });
+    });
+  }
 }
 
 module.exports = { DoorTag };
