@@ -418,10 +418,14 @@ async function startServer() {
       
       // Add log entries (non-blocking)
       try {
-        addLog('success', `Server started on port ${PORT}`);
-        addLog('info', `Web interface: http://localhost:${PORT}`);
-        addLog('info', `API endpoints: http://localhost:${PORT}/api`);
-        addLog('info', `Environment: ${process.env.NODE_ENV || 'development'}`);
+        if (typeof addLog === 'function') {
+          addLog('success', `Server started on port ${PORT}`);
+          addLog('info', `Web interface: http://localhost:${PORT}`);
+          addLog('info', `API endpoints: http://localhost:${PORT}/api`);
+          addLog('info', `Environment: ${process.env.NODE_ENV || 'development'}`);
+        } else {
+          console.log('⚠️ addLog function not available, skipping log entries');
+        }
       } catch (logError) {
         console.error('Failed to add log entries:', logError);
       }
@@ -471,8 +475,19 @@ async function startServer() {
       if (error.code === 'EADDRINUSE') {
         console.error(`Port ${PORT} is already in use. Please use a different port.`);
       }
+      console.error('Server failed to start. Exiting...');
       process.exit(1);
     });
+
+    // Add timeout to detect if server fails to start
+    setTimeout(() => {
+      if (!server.listening) {
+        console.error('❌ Server failed to start within 30 seconds');
+        console.error('Port:', PORT);
+        console.error('Environment:', process.env.NODE_ENV);
+        process.exit(1);
+      }
+    }, 30000);
 
   } catch (error) {
     console.error('Failed to start server:', error);
@@ -620,7 +635,17 @@ function startKeepAlive() {
 }
 
 // Start the server
-startServer();
+console.log('🚀 Starting SimplifiAccess server...');
+console.log('Environment:', process.env.NODE_ENV || 'development');
+console.log('Port:', process.env.PORT || 3000);
+console.log('Database path:', process.env.DB_PATH || path.join(__dirname, 'database', 'users.db'));
+
+startServer().catch((error) => {
+  console.error('❌ Failed to start server:', error);
+  console.error('Error details:', error.message);
+  console.error('Stack trace:', error.stack);
+  process.exit(1);
+});
 
 // Start keep-alive after server is running
 setTimeout(() => {
