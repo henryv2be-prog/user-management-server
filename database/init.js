@@ -364,10 +364,12 @@ const initDatabase = async () => {
                     const bcrypt = require('bcryptjs');
                     const hashedPassword = bcrypt.hashSync('admin123', 10);
                     
+                    console.log('About to create admin user...');
                     db.run(`INSERT INTO users (username, email, password_hash, first_name, last_name, role, email_verified) 
                             VALUES (?, ?, ?, ?, ?, ?, ?)`,
                         ['admin', 'admin@example.com', hashedPassword, 'Admin', 'User', 'admin', 1],
                         function(err) {
+                            console.log('Admin user creation callback executed');
                             if (err) {
                                 console.error('Error creating default admin user:', err.message);
                                 reject(err);
@@ -379,6 +381,7 @@ const initDatabase = async () => {
                             console.log('checkCompletion() called successfully');
                         }
                     );
+                    console.log('Admin user creation query submitted');
                 } else {
                     console.log('Users already exist, skipping default admin creation');
                     console.log('Calling checkCompletion() for existing users...');
