@@ -11,9 +11,13 @@ const initDatabase = async () => {
         
         const checkCompletion = () => {
             completedTables++;
+            console.log(`checkCompletion called: ${completedTables}/${totalTables} tables completed`);
             if (completedTables === totalTables) {
+                console.log('All tables completed, releasing database connection...');
                 pool.releaseConnection(db);
+                console.log('Database connection released, resolving initDatabase promise...');
                 resolve();
+                console.log('initDatabase promise resolved successfully');
             }
         };
         
@@ -370,12 +374,16 @@ const initDatabase = async () => {
                                 return;
                             }
                             console.log('Default admin user created (username: admin, password: admin123)');
+                            console.log('Calling checkCompletion()...');
                             checkCompletion();
+                            console.log('checkCompletion() called successfully');
                         }
                     );
                 } else {
                     console.log('Users already exist, skipping default admin creation');
+                    console.log('Calling checkCompletion() for existing users...');
                     checkCompletion();
+                    console.log('checkCompletion() called successfully for existing users');
                 }
             });
         });
