@@ -366,10 +366,18 @@ const initDatabase = async () => {
                     const hashedPassword = bcrypt.hashSync('admin123', 10);
                     
                     console.log('About to create admin user...');
+                    
+                    // Add timeout to detect hanging database operation
+                    const adminCreationTimeout = setTimeout(() => {
+                        console.error('❌ Admin user creation timed out after 10 seconds');
+                        reject(new Error('Admin user creation timed out'));
+                    }, 10000);
+                    
                     db.run(`INSERT INTO users (username, email, password_hash, first_name, last_name, role, email_verified) 
                             VALUES (?, ?, ?, ?, ?, ?, ?)`,
                         ['admin', 'admin@example.com', hashedPassword, 'Admin', 'User', 'admin', 1],
                         function(err) {
+                            clearTimeout(adminCreationTimeout);
                             console.log('Admin user creation callback executed');
                             if (err) {
                                 console.error('Error creating default admin user:', err.message);
