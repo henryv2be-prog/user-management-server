@@ -7,7 +7,7 @@ const initDatabase = async () => {
         const db = await pool.getConnection();
         
         let completedTables = 0;
-        const totalTables = 13; // 12 tables + 1 admin user creation
+        const totalTables = 14; // 13 tables + 1 admin user creation
         
         const checkCompletion = () => {
             completedTables++;
