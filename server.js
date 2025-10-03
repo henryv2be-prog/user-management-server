@@ -397,8 +397,10 @@ async function startServer() {
       // Initialize database first
       console.log('🗄️  Initializing database...');
       console.log('Database path:', process.env.DB_PATH || path.join(__dirname, 'database', 'users.db'));
+      console.log('Calling initDatabase()...');
       await initDatabase();
       console.log('✅ Database initialization completed');
+      console.log('✅ Database initialization finished, proceeding to server creation...');
     }
     
     console.log('Starting server...');
