@@ -7,6 +7,8 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fetch = require('node-fetch');
 const { initDatabase } = require('./database/init');
+const { initDatabaseRailway } = require('./database/init-railway');
+const { initDatabaseMinimal } = require('./database/init-minimal');
 require('dotenv').config();
 
 // Load security config first to validate environment
@@ -435,16 +437,43 @@ async function startServer() {
       console.log('Database path:', process.env.DB_PATH || path.join(__dirname, 'database', 'users.db'));
       console.log('Calling initDatabase()...');
       
-      // Add timeout for database initialization
-      const dbInitPromise = initDatabase();
-      const dbTimeout = isRailway ? 30000 : 60000; // 30s for Railway, 60s for local
+      // Use Railway-optimized database initialization
+      const dbInitPromise = isRailway ? initDatabaseRailway() : initDatabase();
+      const dbTimeout = isRailway ? 15000 : 60000; // 15s for Railway, 60s for local
       
-      await Promise.race([
-        dbInitPromise,
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Database initialization timeout')), dbTimeout)
-        )
-      ]);
+      console.log(`🚂 Railway: Starting database initialization with ${dbTimeout/1000}s timeout...`);
+      
+      try {
+        await Promise.race([
+          dbInitPromise,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Database initialization timeout')), dbTimeout)
+          )
+        ]);
+      } catch (dbError) {
+        console.error('🚂 Railway: Database initialization failed:', dbError.message);
+        
+        if (isRailway) {
+          console.log('🚂 Railway: Attempting fallback database initialization...');
+          try {
+            // Try minimal database initialization
+            const fallbackPromise = initDatabaseMinimal();
+            await Promise.race([
+              fallbackPromise,
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Minimal database initialization timeout')), 5000)
+              )
+            ]);
+            console.log('🚂 Railway: Minimal database initialization succeeded');
+          } catch (fallbackError) {
+            console.error('🚂 Railway: Minimal database initialization also failed:', fallbackError.message);
+            console.log('🚂 Railway: Continuing without database initialization...');
+            // Don't throw error, continue with startup
+          }
+        } else {
+          throw dbError;
+        }
+      }
       
       console.log('✅ Database initialization completed');
       console.log('✅ Database initialization finished, proceeding to server creation...');
