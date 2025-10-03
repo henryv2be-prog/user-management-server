@@ -130,19 +130,44 @@ app.use('/api', (req, res, next) => {
   return generalLimiter(req, res, next);
 });
 
-// Load and setup routes
+// Load and setup routes with better error handling
 let authRoutes, userRoutes, doorRoutes, accessGroupRoutes, addLog;
 
 try {
   console.log('Loading route modules...');
-  authRoutes = require('./routes/auth');
-  console.log('Auth routes module loaded');
-  userRoutes = require('./routes/users');
-  console.log('User routes module loaded');
-  doorRoutes = require('./routes/doors');
-  console.log('Door routes module loaded');
-  accessGroupRoutes = require('./routes/accessGroups');
-  console.log('Access group routes module loaded');
+  
+  // Load routes with individual error handling
+  try {
+    authRoutes = require('./routes/auth');
+    console.log('Auth routes module loaded');
+  } catch (err) {
+    console.error('Failed to load auth routes:', err.message);
+    throw err;
+  }
+  
+  try {
+    userRoutes = require('./routes/users');
+    console.log('User routes module loaded');
+  } catch (err) {
+    console.error('Failed to load user routes:', err.message);
+    throw err;
+  }
+  
+  try {
+    doorRoutes = require('./routes/doors');
+    console.log('Door routes module loaded');
+  } catch (err) {
+    console.error('Failed to load door routes:', err.message);
+    throw err;
+  }
+  
+  try {
+    accessGroupRoutes = require('./routes/accessGroups');
+    console.log('Access group routes module loaded');
+  } catch (err) {
+    console.error('Failed to load access group routes:', err.message);
+    throw err;
+  }
   
 const { router: eventRoutes, broadcastEvent } = require('./routes/events');
 global.broadcastEvent = broadcastEvent; // Make available globally
@@ -177,15 +202,22 @@ mobileSettingsRoutes = require('./routes/mobileSettings');
 console.log('Mobile settings routes module loaded');
   
   // Setup routes
-  // Health check endpoint for keep-alive
+  // Health check endpoint for keep-alive (Railway compatible)
   app.get('/api/health', (req, res) => {
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       memory: process.memoryUsage(),
-      version: process.version
+      version: process.version,
+      environment: process.env.NODE_ENV || 'development',
+      port: PORT
     });
+  });
+
+  // Railway-specific health check
+  app.get('/health', (req, res) => {
+    res.status(200).send('OK');
   });
 
   // Test endpoint for mobile app connection testing
@@ -390,6 +422,10 @@ async function resetDatabase() {
 // Start server
 async function startServer() {
   try {
+    // Railway-specific startup optimizations
+    const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production';
+    console.log('🚀 Starting server...', isRailway ? '(Railway deployment)' : '(Local development)');
+    
     // Reset database if RESET_DB environment variable is set
     if (process.env.RESET_DB === 'true') {
       await resetDatabase();
@@ -398,15 +434,26 @@ async function startServer() {
       console.log('🗄️  Initializing database...');
       console.log('Database path:', process.env.DB_PATH || path.join(__dirname, 'database', 'users.db'));
       console.log('Calling initDatabase()...');
-      await initDatabase();
-        console.log('✅ Database initialization completed');
-        console.log('✅ Database initialization finished, proceeding to server creation...');
-        
-        // Add delay to ensure database operations are complete (reduced for production)
-        const dbDelay = process.env.NODE_ENV === 'production' ? 500 : 2000;
-        console.log(`Waiting ${dbDelay}ms for database operations to complete...`);
-        await new Promise(resolve => setTimeout(resolve, dbDelay));
-        console.log('Database operations wait completed, creating server...');
+      
+      // Add timeout for database initialization
+      const dbInitPromise = initDatabase();
+      const dbTimeout = isRailway ? 30000 : 60000; // 30s for Railway, 60s for local
+      
+      await Promise.race([
+        dbInitPromise,
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database initialization timeout')), dbTimeout)
+        )
+      ]);
+      
+      console.log('✅ Database initialization completed');
+      console.log('✅ Database initialization finished, proceeding to server creation...');
+      
+      // Add delay to ensure database operations are complete (reduced for production)
+      const dbDelay = isRailway ? 100 : 2000; // Much shorter delay for Railway
+      console.log(`Waiting ${dbDelay}ms for database operations to complete...`);
+      await new Promise(resolve => setTimeout(resolve, dbDelay));
+      console.log('Database operations wait completed, creating server...');
     }
     
         console.log('Starting server...');
