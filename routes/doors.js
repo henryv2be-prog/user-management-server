@@ -840,39 +840,43 @@ router.post('/access/request', async (req, res) => {
       console.log(`🚪 Storing door open command for door ${door.id} (${door.name})`);
       console.log(`🚪 Door ESP32 IP: ${door.esp32Ip}, MAC: ${door.esp32Mac}`);
       
-      const db = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+      const pool = require('../database/pool');
+      const db = await pool.getConnection();
       
-      // Ensure door_commands table exists (fallback for missing migration)
-      await new Promise((resolve, reject) => {
-        db.run(`CREATE TABLE IF NOT EXISTS door_commands (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          door_id INTEGER NOT NULL,
-          command TEXT NOT NULL,
-          status TEXT DEFAULT 'pending',
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          executed_at DATETIME,
-          FOREIGN KEY (door_id) REFERENCES doors (id)
-        )`, (err) => {
-          if (err) {
-            console.error('Error creating door_commands table:', err.message);
-            reject(err);
-          } else {
-            console.log('✅ Door commands table verified/created');
-            resolve();
-          }
+      try {
+        // Ensure door_commands table exists (fallback for missing migration)
+        await new Promise((resolve, reject) => {
+          db.run(`CREATE TABLE IF NOT EXISTS door_commands (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            door_id INTEGER NOT NULL,
+            command TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            executed_at DATETIME,
+            FOREIGN KEY (door_id) REFERENCES doors (id)
+          )`, (err) => {
+            if (err) {
+              console.error('Error creating door_commands table:', err.message);
+              reject(err);
+            } else {
+              console.log('✅ Door commands table verified/created');
+              resolve();
+            }
+          });
         });
-      });
-      
-      await new Promise((resolve, reject) => {
-        db.run('INSERT INTO door_commands (door_id, command, status) VALUES (?, ?, ?)', 
-               [door.id, 'open', 'pending'], (err) => {
-          db.close();
-          if (err) reject(err);
-          else resolve();
+        
+        await new Promise((resolve, reject) => {
+          db.run('INSERT INTO door_commands (door_id, command, status) VALUES (?, ?, ?)', 
+                 [door.id, 'open', 'pending'], (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
         });
-      });
-      
-      console.log('Door command stored successfully');
+        
+        console.log('Door command stored successfully');
+      } finally {
+        pool.releaseConnection(db);
+      }
       
       res.json({
         success: true,
@@ -1123,78 +1127,82 @@ router.get('/commands/:doorId', async (req, res) => {
       });
     }
     
-    // Get pending commands for this door
-    const db = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+    // Get pending commands for this door using database pool
+    const pool = require('../database/pool');
+    const db = await pool.getConnection();
     
-    // First, ensure the door_commands table exists
-    await new Promise((resolve, reject) => {
-      db.run(`CREATE TABLE IF NOT EXISTS door_commands (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        door_id INTEGER NOT NULL,
-        command TEXT NOT NULL,
-        status TEXT DEFAULT 'pending',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        executed_at DATETIME,
-        FOREIGN KEY (door_id) REFERENCES doors (id)
-      )`, (err) => {
-        if (err) {
-          console.error('Error creating door_commands table:', err.message);
-          reject(err);
-        } else {
-          console.log('✅ Door commands table verified/created');
-          resolve();
-        }
-      });
-    });
-    
-    const commands = await new Promise((resolve, reject) => {
-      db.all('SELECT * FROM door_commands WHERE door_id = ? AND status = ? ORDER BY created_at ASC', 
-             [doorId, 'pending'], (err, rows) => {
-        db.close();
-        if (err) {
-          console.error(`❌ Error fetching commands for door ${doorId}:`, err);
-          reject(err);
-        } else {
-          console.log(`✅ Found ${rows.length} pending commands for door ${doorId}`);
-          if (rows.length > 0) {
-            console.log(`📋 Commands:`, rows.map(cmd => ({ id: cmd.id, command: cmd.command, created: cmd.created_at })));
-          }
-          resolve(rows);
-        }
-      });
-    });
-    
-    // Mark commands as executed
-    if (commands.length > 0) {
-      const commandIds = commands.map(cmd => cmd.id);
-      console.log(`Marking ${commandIds.length} commands as executed for door ${doorId}:`, commandIds);
-      const db2 = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+    try {
+      // First, ensure the door_commands table exists
       await new Promise((resolve, reject) => {
-        db2.run(`UPDATE door_commands SET status = 'executed', executed_at = CURRENT_TIMESTAMP WHERE id IN (${commandIds.map(() => '?').join(',')})`, 
-                 commandIds, (err) => {
-          db2.close();
+        db.run(`CREATE TABLE IF NOT EXISTS door_commands (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          door_id INTEGER NOT NULL,
+          command TEXT NOT NULL,
+          status TEXT DEFAULT 'pending',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          executed_at DATETIME,
+          FOREIGN KEY (door_id) REFERENCES doors (id)
+        )`, (err) => {
           if (err) {
-            console.error(`Error marking commands as executed:`, err);
+            console.error('Error creating door_commands table:', err.message);
             reject(err);
           } else {
-            console.log(`Successfully marked ${commandIds.length} commands as executed`);
+            console.log('✅ Door commands table verified/created');
             resolve();
           }
         });
       });
+      
+      const commands = await new Promise((resolve, reject) => {
+        db.all('SELECT * FROM door_commands WHERE door_id = ? AND status = ? ORDER BY created_at ASC', 
+               [doorId, 'pending'], (err, rows) => {
+          if (err) {
+            console.error(`❌ Error fetching commands for door ${doorId}:`, err);
+            reject(err);
+          } else {
+            console.log(`✅ Found ${rows.length} pending commands for door ${doorId}`);
+            if (rows.length > 0) {
+              console.log(`📋 Commands:`, rows.map(cmd => ({ id: cmd.id, command: cmd.command, created: cmd.created_at })));
+            }
+            resolve(rows);
+          }
+        });
+      });
+      
+      // Mark commands as executed
+      if (commands.length > 0) {
+        const commandIds = commands.map(cmd => cmd.id);
+        console.log(`Marking ${commandIds.length} commands as executed for door ${doorId}:`, commandIds);
+        
+        await new Promise((resolve, reject) => {
+          db.run(`UPDATE door_commands SET status = 'executed', executed_at = CURRENT_TIMESTAMP WHERE id IN (${commandIds.map(() => '?').join(',')})`, 
+                   commandIds, (err) => {
+            if (err) {
+              console.error(`Error marking commands as executed:`, err);
+              reject(err);
+            } else {
+              console.log(`Successfully marked ${commandIds.length} commands as executed`);
+              resolve();
+            }
+          });
+        });
+      }
+      
+      const response = {
+        success: true,
+        commands: commands.map(cmd => ({
+          id: cmd.id,
+          command: cmd.command,
+          created_at: cmd.created_at
+        }))
+      };
+      
+      console.log(`Sending response to ESP32 for door ${doorId}:`, JSON.stringify(response));
+      res.json(response);
+      
+    } finally {
+      pool.releaseConnection(db);
     }
-    
-    const response = {
-      success: true,
-      commands: commands.map(cmd => ({
-        id: cmd.id,
-        command: cmd.command,
-        created_at: cmd.created_at
-      }))
-    };
-    
-    console.log(`Sending response to ESP32 for door ${doorId}:`, JSON.stringify(response));
-    res.json(response);
     
   } catch (error) {
     console.error('Command polling error:', error);
@@ -1211,42 +1219,46 @@ router.get('/debug/commands/:doorId', async (req, res) => {
     const doorId = parseInt(req.params.doorId);
     console.log(`🔍 Debug: Checking commands for door ${doorId}`);
     
-    const db = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+    const pool = require('../database/pool');
+    const db = await pool.getConnection();
     
-    // Get all commands for this door (pending and executed)
-    const allCommands = await new Promise((resolve, reject) => {
-      db.all('SELECT * FROM door_commands WHERE door_id = ? ORDER BY created_at DESC', 
-             [doorId], (err, rows) => {
-        db.close();
-        if (err) {
-          console.error(`Error fetching all commands for door ${doorId}:`, err);
-          reject(err);
-        } else {
-          resolve(rows);
+    try {
+      // Get all commands for this door (pending and executed)
+      const allCommands = await new Promise((resolve, reject) => {
+        db.all('SELECT * FROM door_commands WHERE door_id = ? ORDER BY created_at DESC', 
+               [doorId], (err, rows) => {
+          if (err) {
+            console.error(`Error fetching all commands for door ${doorId}:`, err);
+            reject(err);
+          } else {
+            resolve(rows);
+          }
+        });
+      });
+      
+      // Get door info
+      const door = await Door.findById(doorId);
+      
+      res.json({
+        success: true,
+        door: door ? {
+          id: door.id,
+          name: door.name,
+          location: door.location,
+          esp32Ip: door.esp32Ip,
+          esp32Mac: door.esp32Mac,
+          isOnline: door.isOnline
+        } : null,
+        commands: allCommands,
+        summary: {
+          total: allCommands.length,
+          pending: allCommands.filter(cmd => cmd.status === 'pending').length,
+          executed: allCommands.filter(cmd => cmd.status === 'executed').length
         }
       });
-    });
-    
-    // Get door info
-    const door = await Door.findById(doorId);
-    
-    res.json({
-      success: true,
-      door: door ? {
-        id: door.id,
-        name: door.name,
-        location: door.location,
-        esp32Ip: door.esp32Ip,
-        esp32Mac: door.esp32Mac,
-        isOnline: door.isOnline
-      } : null,
-      commands: allCommands,
-      summary: {
-        total: allCommands.length,
-        pending: allCommands.filter(cmd => cmd.status === 'pending').length,
-        executed: allCommands.filter(cmd => cmd.status === 'executed').length
-      }
-    });
+    } finally {
+      pool.releaseConnection(db);
+    }
     
   } catch (error) {
     console.error('Debug endpoint error:', error);
