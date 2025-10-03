@@ -399,9 +399,6 @@ async function startServer() {
       console.log('Database path:', process.env.DB_PATH || path.join(__dirname, 'database', 'users.db'));
       await initDatabase();
       console.log('✅ Database initialization completed');
-      
-      // Run migrations to ensure all tables exist
-      await migrateDatabase();
     }
     
     console.log('Starting server...');
