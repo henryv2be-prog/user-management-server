@@ -553,93 +553,7 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-// Aggressive keep-alive mechanism to prevent Render instance from sleeping
-function startKeepAlive() {
-  const keepAliveInterval = 2 * 60 * 1000; // 2 minutes - more aggressive
-  const externalPingInterval = 3 * 60 * 1000; // 3 minutes for external pings
-  
-  // Internal ping (self-ping)
-  setInterval(async () => {
-    try {
-      const response = await fetch(`http://localhost:${PORT}/api/health`, {
-        method: 'GET',
-        headers: {
-          'User-Agent': 'KeepAlive/1.0'
-        }
-      });
-      
-      if (response.ok) {
-        console.log('✅ Internal keep-alive ping successful');
-      } else {
-        console.log('⚠️ Internal keep-alive ping failed:', response.status);
-      }
-    } catch (error) {
-      console.log('❌ Internal keep-alive ping error:', error.message);
-    }
-  }, keepAliveInterval);
-  
-  // External ping (if we have a public URL)
-  if (process.env.RENDER_EXTERNAL_URL) {
-    setInterval(async () => {
-      try {
-        const response = await fetch(`${process.env.RENDER_EXTERNAL_URL}/api/health`, {
-          method: 'GET',
-          headers: {
-            'User-Agent': 'ExternalKeepAlive/1.0'
-          }
-        });
-        
-        if (response.ok) {
-          console.log('✅ External keep-alive ping successful');
-        } else {
-          console.log('⚠️ External keep-alive ping failed:', response.status);
-        }
-      } catch (error) {
-        console.log('❌ External keep-alive ping error:', error.message);
-      }
-    }, externalPingInterval);
-  }
-  
-  // Additional activity generation
-  setInterval(() => {
-    // Generate some CPU activity to keep instance active
-    const start = Date.now();
-    let result = 0;
-    for (let i = 0; i < 1000000; i++) {
-      result += Math.random();
-    }
-    const duration = Date.now() - start;
-    console.log(`🔄 CPU activity generated (${duration}ms)`);
-  }, 4 * 60 * 1000); // Every 4 minutes
-
-  // Multiple ping strategies
-  const pingEndpoints = ['/api/health', '/api/ping', '/api/status', '/ping'];
-  let currentEndpointIndex = 0;
-  
-  setInterval(async () => {
-    const endpoint = pingEndpoints[currentEndpointIndex];
-    currentEndpointIndex = (currentEndpointIndex + 1) % pingEndpoints.length;
-    
-    try {
-      const response = await fetch(`http://localhost:${PORT}${endpoint}`, {
-        method: 'GET',
-        headers: {
-          'User-Agent': 'MultiPing/1.0'
-        }
-      });
-      
-      if (response.ok) {
-        console.log(`✅ Multi-ping successful: ${endpoint}`);
-      } else {
-        console.log(`⚠️ Multi-ping failed: ${endpoint} (${response.status})`);
-      }
-    } catch (error) {
-      console.log(`❌ Multi-ping error: ${endpoint} - ${error.message}`);
-    }
-  }, 90 * 1000); // Every 90 seconds
-  
-  console.log(`🔄 Aggressive keep-alive mechanism started (internal: ${keepAliveInterval / 1000 / 60}min, external: ${externalPingInterval / 1000 / 60}min)`);
-}
+// Keep-alive mechanism removed to fix startup issues
 
 // Start the server
 console.log('🚀 Starting SimplifiAccess server...');
@@ -654,7 +568,4 @@ startServer().catch((error) => {
   process.exit(1);
 });
 
-// Start keep-alive after server is running
-setTimeout(() => {
-  startKeepAlive();
-}, 5000); // Wait 5 seconds for server to fully start
+// Keep-alive mechanism removed to fix startup issues
