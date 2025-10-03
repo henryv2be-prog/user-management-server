@@ -119,8 +119,16 @@ app.use('/api/doors/commands', esp32Limiter);
 app.use('/api/doors/heartbeat', esp32Limiter);
 app.use('/api/doors/access/request', esp32Limiter);
 
-// Apply general rate limiter to all other API endpoints
-app.use('/api', generalLimiter);
+// Apply general rate limiter to all other API endpoints (excluding ESP32 endpoints)
+app.use('/api', (req, res, next) => {
+  // Skip rate limiting for ESP32 endpoints that already have their own limiter
+  if (req.path.startsWith('/doors/commands') || 
+      req.path.startsWith('/doors/heartbeat') || 
+      req.path.startsWith('/doors/access/request')) {
+    return next();
+  }
+  return generalLimiter(req, res, next);
+});
 
 // Load and setup routes
 let authRoutes, userRoutes, doorRoutes, accessGroupRoutes, addLog;
