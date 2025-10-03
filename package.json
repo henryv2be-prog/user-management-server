@@ -9,7 +9,8 @@
     "test": "jest",
     "migrate": "node scripts/migrate.js",
     "build": "echo 'No build step required for Node.js'",
-    "postinstall": "echo 'Installation completed'"
+    "postinstall": "echo 'Installation completed'",
+    "railway:start": "NODE_ENV=production node server.js"
   },
   "keywords": [
     "access-control",
