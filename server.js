@@ -399,17 +399,24 @@ async function startServer() {
       console.log('Database path:', process.env.DB_PATH || path.join(__dirname, 'database', 'users.db'));
       console.log('Calling initDatabase()...');
       await initDatabase();
-      console.log('✅ Database initialization completed');
-      console.log('✅ Database initialization finished, proceeding to server creation...');
+        console.log('✅ Database initialization completed');
+        console.log('✅ Database initialization finished, proceeding to server creation...');
+        
+        // Add delay to ensure database operations are complete
+        console.log('Waiting 2 seconds for database operations to complete...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('Database operations wait completed, creating server...');
     }
     
-    console.log('Starting server...');
-    console.log('Port:', PORT);
-    console.log('Environment:', process.env.NODE_ENV || 'development');
-    console.log('Binding to 0.0.0.0:' + PORT);
-    
-    console.log('Creating server instance...');
-    const server = app.listen(PORT, '0.0.0.0', () => {
+        console.log('Starting server...');
+        console.log('Port:', PORT);
+        console.log('Environment:', process.env.NODE_ENV || 'development');
+        console.log('Binding to 0.0.0.0:' + PORT);
+        
+        console.log('Creating server instance...');
+        console.log('About to call app.listen()...');
+        console.log('app.listen() called, waiting for callback...');
+        const server = app.listen(PORT, '0.0.0.0', () => {
       console.log('✅ Server callback executed - server is listening');
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📱 Web interface: http://localhost:${PORT}`);
