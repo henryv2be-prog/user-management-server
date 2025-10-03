@@ -837,7 +837,8 @@ router.post('/access/request', async (req, res) => {
     
     // Store door open command in queue for ESP32 to pick up
     try {
-      console.log(`Storing door open command for door ${door.id}`);
+      console.log(`🚪 Storing door open command for door ${door.id} (${door.name})`);
+      console.log(`🚪 Door ESP32 IP: ${door.esp32Ip}, MAC: ${door.esp32Mac}`);
       
       const db = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
       
@@ -1110,10 +1111,12 @@ router.delete('/:id/tags/:tagId', authenticate, requireAdmin, validateId, async 
 router.get('/commands/:doorId', async (req, res) => {
   try {
     const doorId = parseInt(req.params.doorId);
-    console.log(`ESP32 polling for commands - Door ID: ${doorId}`);
+    console.log(`🚪 ESP32 polling for commands - Door ID: ${doorId}`);
+    console.log(`🚪 Request from IP: ${req.ip}`);
+    console.log(`🚪 User-Agent: ${req.get('User-Agent')}`);
     
     if (isNaN(doorId)) {
-      console.log(`Invalid door ID received: ${req.params.doorId}`);
+      console.log(`❌ Invalid door ID received: ${req.params.doorId}`);
       return res.status(400).json({
         error: 'Invalid door ID',
         message: 'Door ID must be a number'
@@ -1149,10 +1152,13 @@ router.get('/commands/:doorId', async (req, res) => {
              [doorId, 'pending'], (err, rows) => {
         db.close();
         if (err) {
-          console.error(`Error fetching commands for door ${doorId}:`, err);
+          console.error(`❌ Error fetching commands for door ${doorId}:`, err);
           reject(err);
         } else {
-          console.log(`Found ${rows.length} pending commands for door ${doorId}`);
+          console.log(`✅ Found ${rows.length} pending commands for door ${doorId}`);
+          if (rows.length > 0) {
+            console.log(`📋 Commands:`, rows.map(cmd => ({ id: cmd.id, command: cmd.command, created: cmd.created_at })));
+          }
           resolve(rows);
         }
       });
@@ -1195,6 +1201,58 @@ router.get('/commands/:doorId', async (req, res) => {
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to fetch commands'
+    });
+  }
+});
+
+// Debug endpoint to check door commands (for testing)
+router.get('/debug/commands/:doorId', async (req, res) => {
+  try {
+    const doorId = parseInt(req.params.doorId);
+    console.log(`🔍 Debug: Checking commands for door ${doorId}`);
+    
+    const db = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+    
+    // Get all commands for this door (pending and executed)
+    const allCommands = await new Promise((resolve, reject) => {
+      db.all('SELECT * FROM door_commands WHERE door_id = ? ORDER BY created_at DESC', 
+             [doorId], (err, rows) => {
+        db.close();
+        if (err) {
+          console.error(`Error fetching all commands for door ${doorId}:`, err);
+          reject(err);
+        } else {
+          resolve(rows);
+        }
+      });
+    });
+    
+    // Get door info
+    const door = await Door.findById(doorId);
+    
+    res.json({
+      success: true,
+      door: door ? {
+        id: door.id,
+        name: door.name,
+        location: door.location,
+        esp32Ip: door.esp32Ip,
+        esp32Mac: door.esp32Mac,
+        isOnline: door.isOnline
+      } : null,
+      commands: allCommands,
+      summary: {
+        total: allCommands.length,
+        pending: allCommands.filter(cmd => cmd.status === 'pending').length,
+        executed: allCommands.filter(cmd => cmd.status === 'executed').length
+      }
+    });
+    
+  } catch (error) {
+    console.error('Debug endpoint error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to fetch debug info'
     });
   }
 });
