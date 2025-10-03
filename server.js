@@ -404,8 +404,9 @@ async function startServer() {
     console.log('Starting server...');
     console.log('Port:', PORT);
     console.log('Environment:', process.env.NODE_ENV || 'development');
+    console.log('Binding to 0.0.0.0:' + PORT);
     
-    const server = app.listen(PORT, '0.0.0.0', async () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📱 Web interface: http://localhost:${PORT}`);
       console.log(`🔧 API endpoints: http://localhost:${PORT}/api`);
@@ -415,24 +416,30 @@ async function startServer() {
       console.log(`   Password: ${process.env.ADMIN_PASSWORD || 'admin123'}`);
       console.log(`\n⚠️  Please change the default password after first login!`);
       
-      // Add log entries
-      addLog('success', `Server started on port ${PORT}`);
-      addLog('info', `Web interface: http://localhost:${PORT}`);
-      addLog('info', `API endpoints: http://localhost:${PORT}/api`);
-      addLog('info', `Environment: ${process.env.NODE_ENV || 'development'}`);
-      
-      // Log system startup event
+      // Add log entries (non-blocking)
       try {
-        const EventLogger = require('./utils/eventLogger');
-        const mockReq = { 
-          ip: '127.0.0.1', 
-          headers: { 'user-agent': 'SimplifiAccess-Server' },
-          get: () => 'SimplifiAccess-Server'
-        };
-        await EventLogger.logSystemEvent(mockReq, 'startup', `SimplifiAccess server started on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+        addLog('success', `Server started on port ${PORT}`);
+        addLog('info', `Web interface: http://localhost:${PORT}`);
+        addLog('info', `API endpoints: http://localhost:${PORT}/api`);
+        addLog('info', `Environment: ${process.env.NODE_ENV || 'development'}`);
       } catch (logError) {
-        console.error('Failed to log startup event:', logError);
+        console.error('Failed to add log entries:', logError);
       }
+      
+      // Log system startup event (non-blocking)
+      setImmediate(async () => {
+        try {
+          const EventLogger = require('./utils/eventLogger');
+          const mockReq = { 
+            ip: '127.0.0.1', 
+            headers: { 'user-agent': 'SimplifiAccess-Server' },
+            get: () => 'SimplifiAccess-Server'
+          };
+          await EventLogger.logSystemEvent(mockReq, 'startup', `SimplifiAccess server started on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+        } catch (logError) {
+          console.error('Failed to log startup event:', logError);
+        }
+      });
     });
 
     // Start periodic offline door check
