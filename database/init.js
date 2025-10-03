@@ -360,6 +360,7 @@ const initDatabase = async () => {
                     return;
                 }
 
+                console.log(`User count check: ${row.count} users found`);
                 if (row.count === 0) {
                     const bcrypt = require('bcryptjs');
                     const hashedPassword = bcrypt.hashSync('admin123', 10);
