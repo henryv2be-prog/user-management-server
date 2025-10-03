@@ -402,9 +402,10 @@ async function startServer() {
         console.log('✅ Database initialization completed');
         console.log('✅ Database initialization finished, proceeding to server creation...');
         
-        // Add delay to ensure database operations are complete
-        console.log('Waiting 2 seconds for database operations to complete...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Add delay to ensure database operations are complete (reduced for production)
+        const dbDelay = process.env.NODE_ENV === 'production' ? 500 : 2000;
+        console.log(`Waiting ${dbDelay}ms for database operations to complete...`);
+        await new Promise(resolve => setTimeout(resolve, dbDelay));
         console.log('Database operations wait completed, creating server...');
     }
     
@@ -493,15 +494,16 @@ async function startServer() {
       process.exit(1);
     });
 
-    // Add timeout to detect if server fails to start
+    // Add timeout to detect if server fails to start (increased for Railway)
+    const startupTimeout = process.env.NODE_ENV === 'production' ? 60000 : 30000;
     setTimeout(() => {
       if (!server.listening) {
-        console.error('❌ Server failed to start within 30 seconds');
+        console.error(`❌ Server failed to start within ${startupTimeout/1000} seconds`);
         console.error('Port:', PORT);
         console.error('Environment:', process.env.NODE_ENV);
         process.exit(1);
       }
-    }, 30000);
+    }, startupTimeout);
 
   } catch (error) {
     console.error('Failed to start server:', error);
