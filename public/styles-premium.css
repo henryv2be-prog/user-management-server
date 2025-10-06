@@ -728,6 +728,71 @@ p {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
+/* Specific Section Styling */
+#dashboardSection {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#dashboardSection.active {
+    display: block;
+}
+
+#eventsSection {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#eventsSection.active {
+    display: block;
+}
+
+#usersSection {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#usersSection.active {
+    display: block;
+}
+
+#doorsSection {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#doorsSection.active {
+    display: block;
+}
+
+#accessGroupsSection {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#accessGroupsSection.active {
+    display: block;
+}
+
+#doorControllerDiscoverySection {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#doorControllerDiscoverySection.active {
+    display: block;
+}
+
+#settingsSection {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#settingsSection.active {
+    display: block;
+}
+
+#profileSection {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#profileSection.active {
+    display: block;
+}
+
 /* Hide navbar when login is active */
 body:has(#loginSection.active) .navbar {
     display: none !important;
@@ -779,6 +844,259 @@ body:has(#loginSection.active) .navbar {
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 var(--space-6);
+}
+
+/* Dashboard Content Styling */
+.dashboard-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: var(--space-8);
+    margin-top: var(--space-8);
+}
+
+.dashboard-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-8);
+    box-shadow: var(--shadow-xl);
+    transition: all var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+}
+
+.dashboard-card:hover {
+    box-shadow: var(--shadow-2xl);
+    transform: translateY(-8px);
+}
+
+.dashboard-card h3 {
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+    font-size: var(--text-xl);
+    font-weight: var(--font-bold);
+}
+
+.dashboard-card p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+}
+
+/* Site Plan Controls */
+.site-plan-controls {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-8);
+    margin-bottom: var(--space-8);
+    box-shadow: var(--shadow-xl);
+}
+
+.controls-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    align-items: center;
+}
+
+.toolbar-group {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+/* Site Plan Canvas */
+.site-plan-canvas-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-8);
+    box-shadow: var(--shadow-xl);
+    margin-bottom: var(--space-8);
+}
+
+#sitePlanCanvas {
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-xl);
+    background: var(--bg-secondary);
+    display: block;
+    margin: 0 auto;
+    box-shadow: var(--shadow-md);
+}
+
+/* Events Log */
+.events-log {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+}
+
+.events-log-header {
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+    color: var(--text-inverse);
+    padding: var(--space-6);
+    font-weight: var(--font-bold);
+    font-size: var(--text-lg);
+}
+
+.events-log-content {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: var(--space-6);
+}
+
+.event-item {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all var(--transition);
+}
+
+.event-item:hover {
+    background: var(--bg-secondary);
+    transform: translateX(4px);
+}
+
+.event-item:last-child {
+    border-bottom: none;
+}
+
+.event-time {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+}
+
+.event-description {
+    color: var(--text-primary);
+    font-weight: var(--font-medium);
+}
+
+/* Users Table */
+.users-table-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+    margin-bottom: var(--space-8);
+}
+
+.users-table-header {
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+    color: var(--text-inverse);
+    padding: var(--space-6);
+    font-weight: var(--font-bold);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--text-lg);
+}
+
+/* Filters */
+.filters {
+    display: flex;
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.filter-group label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+}
+
+.filter-group select,
+.filter-group input {
+    padding: var(--space-3) var(--space-4);
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    color: var(--text-primary);
+    transition: all var(--transition);
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+
+/* Status Indicators */
+.status-online {
+    color: var(--brand-success);
+    font-weight: var(--font-semibold);
+}
+
+.status-offline {
+    color: var(--brand-danger);
+    font-weight: var(--font-semibold);
+}
+
+.status-pending {
+    color: var(--brand-warning);
+    font-weight: var(--font-semibold);
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.btn-icon {
+    padding: var(--space-3);
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-lg);
+    transition: all var(--transition);
+}
+
+.btn-icon:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+.btn-icon.danger:hover {
+    background: var(--error-50);
+    color: var(--brand-danger);
+}
+
+.btn-icon.success:hover {
+    background: var(--success-50);
+    color: var(--brand-success);
 }
 
 /* Utility Classes */
