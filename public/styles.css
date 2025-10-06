@@ -12,9 +12,10 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: #f1f5f9;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #0f172a;
     line-height: 1.6;
+    min-height: 100vh;
 }
 
 /* Ensure Font Awesome icons are visible */
@@ -825,17 +826,29 @@ textarea:focus-visible {
 
 /* Update cards for dark background */
 .card, .stat-card, .door-card, .table-container {
-    background: var(--bg-primary) !important;
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border-light);
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before, .stat-card::before, .door-card::before, .table-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #1e40af 0%, #7c3aed 100%);
 }
 
 .card:hover, .stat-card:hover, .door-card:hover {
-    box-shadow: 0 8px 15px -3px rgb(0 0 0 / 0.1);
-    transform: translateY(-2px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    transform: translateY(-8px);
 }
 
 /* Duplicate navigation styles removed - see main navigation section above */
@@ -849,9 +862,9 @@ textarea:focus-visible {
     min-height: 100vh;
 }
 
-/* Main content sections with professional background */
+/* Main content sections with premium background */
 .section:not(#loginSection) {
-    background: var(--bg-secondary);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     backdrop-filter: blur(10px);
 }
 
