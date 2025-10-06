@@ -713,7 +713,7 @@ p {
 
 /* Premium Sections */
 .section {
-    display: none !important;
+    display: none;
     padding: var(--space-12);
     min-height: 100vh;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -721,76 +721,23 @@ p {
 }
 
 .section.active {
-    display: block !important;
+    display: block;
 }
 
 .section:not(#loginSection) {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-/* Specific Section Styling */
-#dashboardSection {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-#dashboardSection.active {
-    display: block;
-}
-
-#eventsSection {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-#eventsSection.active {
-    display: block;
-}
-
-#usersSection {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-#usersSection.active {
-    display: block;
-}
-
-#doorsSection {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-#doorsSection.active {
-    display: block;
-}
-
-#accessGroupsSection {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-#accessGroupsSection.active {
-    display: block;
-}
-
-#doorControllerDiscoverySection {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-#doorControllerDiscoverySection.active {
-    display: block;
-}
-
-#settingsSection {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-#settingsSection.active {
-    display: block;
-}
-
+/* Specific Section Styling - Simplified */
+#dashboardSection,
+#eventsSection,
+#usersSection,
+#doorsSection,
+#accessGroupsSection,
+#doorControllerDiscoverySection,
+#settingsSection,
 #profileSection {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-#profileSection.active {
-    display: block;
 }
 
 /* Hide navbar when login is active */

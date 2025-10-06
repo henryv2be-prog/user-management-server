@@ -1188,6 +1188,14 @@ function showLogin() {
 
 function showAuthenticatedUI() {
     console.log('🔍 showAuthenticatedUI called');
+    
+    // Hide login section first
+    const loginSection = document.getElementById('loginSection');
+    if (loginSection) {
+        loginSection.classList.remove('active');
+        console.log('🔍 Removed active class from loginSection');
+    }
+    
     hideAllSections();
     console.log('🔍 hideAllSections completed');
     
@@ -1198,6 +1206,10 @@ function showAuthenticatedUI() {
         dashboardSection.classList.add('active');
         console.log('🔍 Added active class to dashboardSection');
         console.log('🔍 dashboardSection classes:', dashboardSection.className);
+        
+        // Force display with inline style as backup
+        dashboardSection.style.display = 'block';
+        console.log('🔍 Set dashboardSection display to block via inline style');
     } else {
         console.error('❌ dashboardSection element not found!');
     }
