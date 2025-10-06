@@ -12,8 +12,8 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: #f8fafc;
-    color: #1e293b;
+    background: #f1f5f9;
+    color: #0f172a;
     line-height: 1.6;
 }
 
@@ -391,14 +391,15 @@ body::after {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-hover) 100%);
-    color: var(--text-inverse);
+    background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+    color: #ffffff;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    border: 1px solid var(--brand-primary);
-    font-weight: 500;
-    padding: 12px 24px;
+    border: 1px solid #1e40af;
+    font-weight: 600;
+    padding: 14px 28px;
     border-radius: 8px;
     transition: all 0.2s ease;
+    font-size: 14px;
 }
 
 .btn-primary:hover {
