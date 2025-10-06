@@ -1187,10 +1187,31 @@ function showLogin() {
 
 
 function showAuthenticatedUI() {
+    console.log('🔍 showAuthenticatedUI called');
     hideAllSections();
-    document.getElementById('dashboardSection').classList.add('active');
-    document.getElementById('mainNavbar').style.display = 'block';
+    console.log('🔍 hideAllSections completed');
+    
+    const dashboardSection = document.getElementById('dashboardSection');
+    console.log('🔍 dashboardSection element:', dashboardSection);
+    
+    if (dashboardSection) {
+        dashboardSection.classList.add('active');
+        console.log('🔍 Added active class to dashboardSection');
+        console.log('🔍 dashboardSection classes:', dashboardSection.className);
+    } else {
+        console.error('❌ dashboardSection element not found!');
+    }
+    
+    const mainNavbar = document.getElementById('mainNavbar');
+    if (mainNavbar) {
+        mainNavbar.style.display = 'block';
+        console.log('🔍 Set mainNavbar display to block');
+    } else {
+        console.error('❌ mainNavbar element not found!');
+    }
+    
     updateProfileInfo();
+    console.log('🔍 showAuthenticatedUI completed');
 }
 
 

@@ -713,7 +713,7 @@ p {
 
 /* Premium Sections */
 .section {
-    display: none;
+    display: none !important;
     padding: var(--space-12);
     min-height: 100vh;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -721,7 +721,7 @@ p {
 }
 
 .section.active {
-    display: block;
+    display: block !important;
 }
 
 .section:not(#loginSection) {
