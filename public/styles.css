@@ -7,12 +7,14 @@
     box-sizing: border-box;
 }
 
-/* Corporate Typography */
+/* Professional Corporate Typography */
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.6;
 }
 
 /* Ensure Font Awesome icons are visible */
@@ -64,11 +66,31 @@ html {
     --primary-800: #1f2937;
     --primary-900: #111827;
     
-    /* Corporate Brand Colors */
-    --brand-primary: #2563eb;
+    /* Professional Brand Colors */
+    --brand-primary: #1e40af;
     --brand-primary-hover: #1d4ed8;
-    --brand-secondary: var(--primary-600);
+    --brand-secondary: #475569;
     --brand-accent: #3b82f6;
+    --brand-success: #059669;
+    --brand-warning: #d97706;
+    --brand-danger: #dc2626;
+    
+    /* Professional Text Colors */
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --text-inverse: #ffffff;
+    
+    /* Professional Background Colors */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #f1f5f9;
+    --bg-dark: #0f172a;
+    
+    /* Professional Border Colors */
+    --border-light: #e2e8f0;
+    --border-medium: #cbd5e1;
+    --border-dark: #94a3b8;
     
     /* Primary Color Variables */
     --primary-color: var(--primary-700);
@@ -369,38 +391,48 @@ body::after {
 }
 
 .btn-primary {
-    background: var(--brand-primary);
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-hover) 100%);
     color: var(--text-inverse);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     border: 1px solid var(--brand-primary);
+    font-weight: 500;
+    padding: 12px 24px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
 }
 
 .btn-primary:hover {
-    background: var(--brand-primary-hover);
+    background: linear-gradient(135deg, var(--brand-primary-hover) 0%, #1e3a8a 100%);
     border-color: var(--brand-primary-hover);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px -3px rgb(0 0 0 / 0.1);
+    color: var(--text-inverse);
 }
 
 .btn-secondary {
-    background: var(--background-primary);
+    background: var(--bg-primary);
     color: var(--text-primary);
     border: 1px solid var(--border-medium);
-    box-shadow: var(--shadow-xs);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    font-weight: 500;
+    padding: 12px 24px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
 }
 
 .btn-secondary:hover {
-    background: var(--background-tertiary);
+    background: var(--bg-secondary);
     border-color: var(--border-dark);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    color: var(--text-primary);
 }
 
 /* Modern Navigation */
 .navbar {
-    background: var(--background-primary);
+    background: var(--bg-primary);
     border-bottom: 1px solid var(--border-light);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
     position: fixed;
     width: 100%;
     top: 0;
@@ -792,9 +824,17 @@ textarea:focus-visible {
 
 /* Update cards for dark background */
 .card, .stat-card, .door-card, .table-container {
-    background: rgba(255, 255, 255, 0.95) !important;
+    background: var(--bg-primary) !important;
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    transition: all 0.2s ease;
+}
+
+.card:hover, .stat-card:hover, .door-card:hover {
+    box-shadow: 0 8px 15px -3px rgb(0 0 0 / 0.1);
+    transform: translateY(-2px);
 }
 
 /* Duplicate navigation styles removed - see main navigation section above */
@@ -808,9 +848,9 @@ textarea:focus-visible {
     min-height: 100vh;
 }
 
-/* Main content sections with modern corporate background */
+/* Main content sections with professional background */
 .section:not(#loginSection) {
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    background: var(--bg-secondary);
     backdrop-filter: blur(10px);
 }
 
@@ -1096,40 +1136,47 @@ body:has(#loginSection.active) .navbar {
 
 /* Forms */
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .form-group label {
     display: block;
     margin-bottom: 8px;
-    font-weight: 500;
-    color: #333;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 14px;
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
-    padding: 10px 12px;
+    padding: 12px 16px;
     border: 1px solid var(--border-medium);
-    border-radius: 6px;
-    font-size: 0.9rem;
+    border-radius: 8px;
+    font-size: 14px;
     transition: all 0.2s ease;
-    background: var(--background-primary);
+    background: var(--bg-primary);
     color: var(--text-primary);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(55, 65, 81, 0.1);
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+
+.form-group input:hover,
+.form-group select:hover {
+    border-color: var(--border-dark);
 }
 
 .form-group small {
     display: block;
-    margin-top: 5px;
-    color: #666;
-    font-size: 0.85rem;
+    margin-top: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
 }
 
 /* Buttons */
@@ -1353,11 +1400,12 @@ body:has(#loginSection.active) .navbar {
 
 /* Tables */
 .users-table-container {
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    background: var(--bg-primary);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     overflow: hidden;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-light);
 }
 
 .users-table {
@@ -1367,19 +1415,26 @@ body:has(#loginSection.active) .navbar {
 
 .users-table th,
 .users-table td {
-    padding: 15px;
+    padding: 16px 20px;
     text-align: left;
-    border-bottom: 1px solid #e1e5e9;
+    border-bottom: 1px solid var(--border-light);
 }
 
 .users-table th {
-    background: #f8f9fa;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .users-table tr:hover {
-    background: #f8f9fa;
+    background: var(--bg-secondary);
+}
+
+.users-table tr:last-child td {
+    border-bottom: none;
 }
 
 /* Role Badges */
