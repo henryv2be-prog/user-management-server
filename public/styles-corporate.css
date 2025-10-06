@@ -658,6 +658,78 @@ a:hover {
     background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
 }
 
+/* Dashboard Section */
+#dashboardSection {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+#dashboardSection.active {
+    display: block;
+}
+
+/* Events Section */
+#eventsSection {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+#eventsSection.active {
+    display: block;
+}
+
+/* Users Section */
+#usersSection {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+#usersSection.active {
+    display: block;
+}
+
+/* Doors Section */
+#doorsSection {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+#doorsSection.active {
+    display: block;
+}
+
+/* Access Groups Section */
+#accessGroupsSection {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+#accessGroupsSection.active {
+    display: block;
+}
+
+/* Door Controller Discovery Section */
+#doorControllerDiscoverySection {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+#doorControllerDiscoverySection.active {
+    display: block;
+}
+
+/* Settings Section */
+#settingsSection {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+#settingsSection.active {
+    display: block;
+}
+
+/* Profile Section */
+#profileSection {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+#profileSection.active {
+    display: block;
+}
+
 /* Hide navbar when login is active */
 body:has(#loginSection.active) .navbar {
     display: none !important;
@@ -692,6 +764,242 @@ body:has(#loginSection.active) .navbar {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 var(--space-6);
+}
+
+/* Dashboard Content */
+.dashboard-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+    margin-top: var(--space-6);
+}
+
+.dashboard-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition);
+}
+
+.dashboard-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.dashboard-card h3 {
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+}
+
+.dashboard-card p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+}
+
+/* Site Plan Controls */
+.site-plan-controls {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
+    box-shadow: var(--shadow-sm);
+}
+
+.controls-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    align-items: center;
+}
+
+.toolbar-group {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+/* Site Plan Canvas */
+.site-plan-canvas-container {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--space-6);
+}
+
+#sitePlanCanvas {
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    display: block;
+    margin: 0 auto;
+}
+
+/* Door Details Panel */
+.door-details-panel {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-lg);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    max-width: 500px;
+    width: 90%;
+    display: none;
+}
+
+.door-details-panel.show {
+    display: block;
+}
+
+/* Events Log */
+.events-log {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.events-log-header {
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-hover) 100%);
+    color: var(--text-inverse);
+    padding: var(--space-4);
+    font-weight: var(--font-semibold);
+}
+
+.events-log-content {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: var(--space-4);
+}
+
+.event-item {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.event-item:last-child {
+    border-bottom: none;
+}
+
+.event-time {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+}
+
+.event-description {
+    color: var(--text-primary);
+    font-weight: var(--font-medium);
+}
+
+/* Users Table */
+.users-table-container {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.users-table-header {
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-hover) 100%);
+    color: var(--text-inverse);
+    padding: var(--space-4);
+    font-weight: var(--font-semibold);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Filters */
+.filters {
+    display: flex;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.filter-group label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+}
+
+.filter-group select,
+.filter-group input {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius);
+    font-size: var(--text-sm);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Status Indicators */
+.status-online {
+    color: var(--success-600);
+    font-weight: var(--font-medium);
+}
+
+.status-offline {
+    color: var(--error-600);
+    font-weight: var(--font-medium);
+}
+
+.status-pending {
+    color: var(--warning-600);
+    font-weight: var(--font-medium);
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.btn-icon {
+    padding: var(--space-2);
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: all var(--transition-fast);
+}
+
+.btn-icon:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.btn-icon.danger:hover {
+    background: var(--error-50);
+    color: var(--error-600);
+}
+
+.btn-icon.success:hover {
+    background: var(--success-50);
+    color: var(--success-600);
 }
 
 /* Utility Classes */
