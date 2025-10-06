@@ -1158,52 +1158,6 @@ async function handleLogin(event) {
     }
 }
 
-async function handleRegister(event) {
-    event.preventDefault();
-    showLoading();
-    
-    const formData = new FormData(event.target);
-    const registerData = {
-        firstName: formData.get('firstName'),
-        lastName: formData.get('lastName'),
-        email: formData.get('email'),
-        password: formData.get('password')
-    };
-    
-    try {
-        const response = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(registerData)
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            localStorage.setItem('token', data.token);
-            currentUser = data.user;
-            showAuthenticatedUI();
-            loadDashboard();
-            // Ensure SSE connection is established after registration
-            setTimeout(() => {
-                if (!isEventStreamConnected) {
-                    console.log('🔄 Establishing SSE connection after registration...');
-                    connectEventStream();
-                }
-            }, 1000);
-            showToast('Registration successful!', 'success');
-        } else {
-            showToast(data.message || 'Registration failed', 'error');
-        }
-    } catch (error) {
-        console.error('Registration error:', error);
-        showToast('Registration failed. Please try again.', 'error');
-    } finally {
-        hideLoading();
-    }
-}
 
 function logout() {
     localStorage.removeItem('token');
@@ -1228,15 +1182,9 @@ function logout() {
 function showLogin() {
     hideAllSections();
     document.getElementById('loginSection').classList.add('active');
-    document.getElementById('registerSection').classList.remove('active');
     document.getElementById('mainNavbar').style.display = 'none';
 }
 
-function showRegister() {
-    hideAllSections();
-    document.getElementById('registerSection').classList.add('active');
-    document.getElementById('mainNavbar').style.display = 'none';
-}
 
 function showAuthenticatedUI() {
     hideAllSections();

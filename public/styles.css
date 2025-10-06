@@ -792,7 +792,7 @@ textarea:focus-visible {
 }
 
 /* Main content sections with semi-transparent background */
-.section:not(#loginSection):not(#registerSection) {
+.section:not(#loginSection) {
     background: rgba(255, 255, 255, 0.02);
     backdrop-filter: blur(10px);
 }
@@ -802,14 +802,12 @@ textarea:focus-visible {
 }
 
 /* Login/Register - Modern Technological Design */
-/* Hide navbar when login/register is active */
-body:has(#loginSection.active) .navbar,
-body:has(#registerSection.active) .navbar {
+/* Hide navbar when login is active */
+body:has(#loginSection.active) .navbar {
     display: none !important;
 }
 
-#loginSection,
-#registerSection {
+#loginSection {
     position: fixed;
     top: 0;
     left: 0;
