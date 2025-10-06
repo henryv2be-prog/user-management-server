@@ -81,8 +81,8 @@ class SimplifiAccessApp {
             ...options
         };
 
-        // Add auth token if available
-        const token = localStorage.getItem('token');
+        // Get valid token with automatic refresh
+        const token = await this.getValidToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -90,6 +90,22 @@ class SimplifiAccessApp {
         for (let attempt = 1; attempt <= this.retryAttempts; attempt++) {
             try {
                 const response = await fetch(`${this.apiBase}${url}`, config);
+                
+                // Handle token expiration
+                if (response.status === 401) {
+                    console.log('🔄 Token expired, attempting refresh...');
+                    const refreshed = await this.refreshTokenIfNeeded();
+                    if (refreshed && attempt === 1) {
+                        // Retry with new token
+                        config.headers.Authorization = `Bearer ${localStorage.getItem('token')}`;
+                        continue;
+                    } else {
+                        // Refresh failed, user needs to login
+                        localStorage.removeItem('token');
+                        this.showLogin();
+                        throw new Error('Authentication expired');
+                    }
+                }
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -111,9 +127,25 @@ class SimplifiAccessApp {
         }
     }
 
+    // Get valid token with automatic refresh
+    async getValidToken() {
+        if (window.tokenManager) {
+            return await window.tokenManager.getValidToken();
+        }
+        return localStorage.getItem('token');
+    }
+
+    // Refresh token if needed
+    async refreshTokenIfNeeded() {
+        if (window.tokenManager) {
+            return await window.tokenManager.refreshToken();
+        }
+        return false;
+    }
+
     // Check authentication status
     async checkAuthStatus() {
-        const token = localStorage.getItem('token');
+        const token = await this.getValidToken();
         if (!token) {
             this.showLogin();
             return;
@@ -299,9 +331,25 @@ let currentPage = 1;
 let currentFilters = {};
 let currentSection = 'dashboard';
 
+// Get valid token with automatic refresh
+async function getValidToken() {
+    if (window.tokenManager) {
+        return await window.tokenManager.getValidToken();
+    }
+    return localStorage.getItem('token');
+}
+
+// Refresh token if needed
+async function refreshTokenIfNeeded() {
+    if (window.tokenManager) {
+        return await window.tokenManager.refreshToken();
+    }
+    return false;
+}
+
 // Check if user is authenticated
 async function checkAuthStatus() {
-    const token = localStorage.getItem('token');
+    const token = await getValidToken();
     if (token) {
         try {
             const response = await fetch('/api/auth/verify', {
@@ -1161,6 +1209,11 @@ function logout() {
     localStorage.removeItem('token');
     currentUser = null;
     closeMobileMenu(); // Close mobile menu on logout
+    
+    // Stop token manager
+    if (window.tokenManager) {
+        window.tokenManager.stop();
+    }
     
     // Cleanup user webhook system
     if (typeof cleanupUserWebhook === 'function') {
@@ -6211,6 +6264,10 @@ document.addEventListener('DOMContentLoaded', function() {
     startDoorStatusUpdates();
     // Start keep-alive mechanism
     startKeepAlive();
+    // Start token manager for automatic refresh
+    if (window.tokenManager) {
+        window.tokenManager.start();
+    }
     // Initialize site plan
     sitePlanManager.init();
     
