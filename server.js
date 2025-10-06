@@ -251,6 +251,7 @@ console.log('Mobile settings routes module loaded');
   });
 
   app.use('/api/auth', authLimiter, authRoutes);
+  app.use('/api/token', authLimiter, require('./routes/tokenRefresh'));
   app.use('/api/users', userRoutes);
   app.use('/api/doors', doorRoutes);
 app.use('/api/access-groups', accessGroupRoutes);

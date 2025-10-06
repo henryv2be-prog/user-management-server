@@ -13,7 +13,7 @@ if (!JWT_SECRET || JWT_SECRET.length < 32) {
     module.exports = {
       JWT_SECRET: fallbackSecret,
       BCRYPT_ROUNDS: parseInt(process.env.BCRYPT_ROUNDS) || 12,
-      JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
+      JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '30d',
       SESSION_SECRET: process.env.SESSION_SECRET || crypto.randomBytes(64).toString('hex'),
       NODE_ENV: process.env.NODE_ENV || 'development',
       IS_PRODUCTION: (process.env.NODE_ENV || 'development') === 'production',
@@ -45,7 +45,7 @@ if (!['development', 'production', 'test'].includes(NODE_ENV)) {
 module.exports = {
   JWT_SECRET,
   BCRYPT_ROUNDS,
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '30d',
   SESSION_SECRET: process.env.SESSION_SECRET || crypto.randomBytes(64).toString('hex'),
   NODE_ENV,
   IS_PRODUCTION: NODE_ENV === 'production',
