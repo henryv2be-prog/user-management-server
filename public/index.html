@@ -122,9 +122,9 @@
                     <span class="nav-toggle-fallback">☰</span>
                 </button>
                 <div class="nav-menu" id="navMenu" role="menubar" style="display: none;">
-                    <a href="#" class="nav-link" onclick="showSection('dashboard')" role="menuitem" aria-label="Go to Dashboard">
-                        <i class="fas fa-tachometer-alt" aria-hidden="true"></i> 
-                        <span>Dashboard</span>
+                    <a href="#" class="nav-link" onclick="showSection('dashboard')" role="menuitem" aria-label="Go to Site Map">
+                        <i class="fas fa-map" aria-hidden="true"></i> 
+                        <span>Site Map</span>
                     </a>
                     <a href="#" class="nav-link" onclick="showSection('events')" role="menuitem" aria-label="Go to Events Log">
                         <i class="fas fa-history" aria-hidden="true"></i> 
@@ -251,11 +251,11 @@
             </div>
         </div>
 
-        <!-- Dashboard -->
-        <main id="dashboardSection" class="section" role="main" aria-label="Site Plan">
+        <!-- Site Map -->
+        <main id="dashboardSection" class="section" role="main" aria-label="Site Map">
             <div class="container">
                 <div class="section-header">
-                    <h1><i class="fas fa-map" aria-hidden="true"></i> Site Plan</h1>
+                    <h1><i class="fas fa-map" aria-hidden="true"></i> Site Map</h1>
                     <div class="header-actions">
                         <button class="btn btn-secondary" id="uploadMapBtn" onclick="uploadSitePlan()">
                             <i class="fas fa-upload"></i> Upload Site Plan
@@ -266,33 +266,13 @@
                         <button class="btn btn-secondary" id="savePositionsBtn" onclick="saveDoorPositions()" style="display: none;">
                             <i class="fas fa-save"></i> Save Positions
                         </button>
+                        <button class="btn btn-secondary" onclick="showSampleDoors()">
+                            <i class="fas fa-eye"></i> Test Glow Effects
+                        </button>
                     </div>
                 </div>
                 
-                <!-- Site Plan Controls -->
-                <section class="site-plan-controls" aria-label="Site Plan Controls">
-                    <div class="controls-toolbar">
-                        <div class="toolbar-group" id="doorSizeGroup" style="display: none;">
-                            <label for="doorSizeSlider" style="color: white; margin-right: 8px; font-size: 14px;">Size:</label>
-                            <input type="range" id="doorSizeSlider" min="15" max="35" value="20" 
-                                   onchange="changeDoorSize(this.value)" style="width: 100px; height: 6px;">
-                            <span id="doorSizeValue" style="color: white; margin-left: 5px; font-size: 12px;">20px</span>
-                        </div>
-                        <div class="toolbar-group">
-                            <button class="btn btn-secondary" onclick="showSampleDoors()">
-                                <i class="fas fa-eye"></i> Test Glow Effects
-                            </button>
-                        </div>
-                        <div class="toolbar-group">
-                            <div class="status-indicator online" id="sitePlanStatus">
-                                <i class="fas fa-circle"></i>
-                                <span>Live Updates</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Site Plan Canvas -->
+                <!-- Site Map Canvas -->
                 <section class="site-plan-section" aria-label="Site Plan Canvas">
                     <div class="site-plan-container">
                         <div class="site-plan-canvas-wrapper">
@@ -329,7 +309,7 @@
                         <div class="stream-status">
                             <span class="status-indicator" id="eventStreamStatus">
                                 <i class="fas fa-circle"></i>
-                                <span id="eventStreamStatusText">Live</span>
+                                <span id="eventStreamStatusText">Connected</span>
                             </span>
                         </div>
                     </div>
