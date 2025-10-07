@@ -5717,90 +5717,6 @@ class SitePlanManager {
         this.ctx.fillText('Then return here to position them on your site plan', this.canvas.width / 2, this.canvas.height / 2 + 40);
     }
 
-    createSampleDoors() {
-        console.log('Creating sample doors for testing glow effects...');
-        this.doors = [
-            {
-                id: 1,
-                name: 'Online Locked',
-                number: '001',
-                status: 'locked',
-                x: 150,
-                y: 150,
-                isOnline: true,
-                isOpen: false,
-                isLocked: true,
-                location: 'Test Area',
-                ipAddress: '192.168.1.10'
-            },
-            {
-                id: 2,
-                name: 'Online Unlocked',
-                number: '002',
-                status: 'unlocked',
-                x: 300,
-                y: 150,
-                isOnline: true,
-                isOpen: false,
-                isLocked: false,
-                location: 'Test Area',
-                ipAddress: '192.168.1.11'
-            },
-            {
-                id: 3,
-                name: 'Online Open',
-                number: '003',
-                status: 'open',
-                x: 450,
-                y: 150,
-                isOnline: true,
-                isOpen: true,
-                isLocked: false,
-                location: 'Test Area',
-                ipAddress: '192.168.1.12'
-            },
-            {
-                id: 4,
-                name: 'Offline',
-                number: '004',
-                status: 'offline',
-                x: 600,
-                y: 150,
-                isOnline: false,
-                isOpen: false,
-                isLocked: true,
-                location: 'Test Area',
-                ipAddress: '192.168.1.13'
-            },
-            {
-                id: 5,
-                name: 'Office Door',
-                number: '005',
-                status: 'locked',
-                x: 150,
-                y: 250,
-                isOnline: true,
-                isOpen: false,
-                isLocked: true,
-                location: 'Office Wing',
-                ipAddress: '192.168.1.14'
-            },
-            {
-                id: 6,
-                name: 'Conference Room',
-                number: '006',
-                status: 'unlocked',
-                x: 350,
-                y: 400,
-                isOnline: true,
-                isOpen: false,
-                isLocked: false,
-                location: 'Conference Wing',
-                ipAddress: '192.168.1.15'
-            }
-        ];
-        console.log(`Created ${this.doors.length} sample doors`);
-    }
 
     getDoorStatus(door) {
         if (!door.isOnline) return 'offline';
@@ -6172,12 +6088,6 @@ function changeDoorSize(size) {
     sitePlanManager.drawSitePlan();
 }
 
-function showSampleDoors() {
-    sitePlanManager.doorsLoaded = false; // Reset flag to allow reloading
-    sitePlanManager.createSampleDoors();
-    sitePlanManager.drawSitePlan();
-    showToast('Sample doors loaded for testing glow effects', 'info');
-}
 
 // Zoom functions removed - using mouse wheel and pinch gestures only
 
