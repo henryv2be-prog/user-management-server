@@ -26,7 +26,7 @@ async function forceRefreshAllData() {
     console.log('🔄 Force refreshing all critical data...');
     
     try {
-        // Refresh dashboard data
+        // Refresh site map data
         if (typeof loadDashboard === 'function') {
             await loadDashboard();
         }
@@ -1333,7 +1333,7 @@ function closeMobileMenu() {
     }
 }
 
-// Dashboard functions
+// Site Map functions
 
 function showDashboardDoorsLoading() {
     const doorGrid = document.getElementById('doorGrid');
@@ -1376,17 +1376,17 @@ async function loadDashboard() {
                 hideDashboardDoorsLoading();
                 console.log('hideDashboardDoorsLoading completed');
                 
-                // Load doors and site plan background when dashboard is shown
+                // Load doors and site plan background when site map is shown
                 console.log('sitePlanManager exists:', !!sitePlanManager);
                 if (sitePlanManager) {
-                    console.log('Loading doors and site plan background for dashboard... [NEW VERSION - TIMESTAMP: ' + Date.now() + ']');
+                    console.log('Loading doors and site plan background for site map... [NEW VERSION - TIMESTAMP: ' + Date.now() + ']');
                     sitePlanManager.restoreBackgroundImage(); // Load background image
                     sitePlanManager.loadDoorPositions(); // Load doors with positions
                 } else {
                     console.log('sitePlanManager not available - skipping site plan load');
                 }
             } catch (error) {
-                console.error('Failed to load dashboard doors:', error);
+                console.error('Failed to load site map doors:', error);
                 hideDashboardDoorsLoading();
             }
         }, 500); // Longer delay to ensure initialization
@@ -1394,7 +1394,7 @@ async function loadDashboard() {
         // Note: Door status updates are handled via Server-Sent Events (SSE)
         // No need for manual refresh intervals
     } catch (error) {
-        console.error('Failed to load dashboard data:', error);
+        console.error('Failed to load site map data:', error);
         hideDashboardDoorsLoading();
     }
 }
@@ -4079,7 +4079,7 @@ function startEventRefresh() {
     
     // Start new interval - refresh every 10 seconds
     eventRefreshInterval = setInterval(() => {
-        // Only refresh if we're on the dashboard and events are visible
+        // Only refresh if we're on the site map and events are visible
         const dashboardSection = document.getElementById('dashboardSection');
         if (dashboardSection && dashboardSection.classList.contains('active')) {
             loadEvents(currentEventPage, currentEventFilters.type || '');
@@ -4969,7 +4969,7 @@ class SitePlanManager {
         // Ensure canvas is properly sized
         this.resizeCanvas();
         
-        // Don't load doors automatically - wait for dashboard section to be shown
+        // Don't load doors automatically - wait for site map section to be shown
         this.drawSitePlan(); // Just draw empty canvas initially
         
         console.log('Site plan initialized with canvas:', this.canvas.width, 'x', this.canvas.height);
