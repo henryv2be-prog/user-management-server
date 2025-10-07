@@ -34,6 +34,8 @@ class NfcScanIndicator extends HTMLElement {
             0 2px 12px rgba(0,0,0,0.6);
           overflow: hidden;
           isolation: isolate;
+          transform: rotate(90deg);
+          transform-origin: center;
         }
 
         /* track */
@@ -158,7 +160,7 @@ class NfcScanIndicator extends HTMLElement {
           position: absolute;
           left: 50%;
           top: 50%;
-          transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%) rotate(-90deg);
           color: #cfe9ff;
           font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
           font-weight: 600;
@@ -185,7 +187,7 @@ class NfcScanIndicator extends HTMLElement {
           <div class="orb"></div>
           <div class="orb"></div>
         </div>
-        <div class="label">Hold near reader…</div>
+        <div class="label">Scanning...</div>
       </div>
     `;
   }
@@ -222,7 +224,7 @@ class NfcScanIndicator extends HTMLElement {
     if (!label) return;
 
     if (normalized === "scanning") {
-      label.textContent = "Scanning for NFC tag…";
+      label.textContent = "Scanning...";
     } else if (normalized === "granted") {
       label.textContent = "Access granted";
     } else {
