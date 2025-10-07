@@ -1287,29 +1287,49 @@ body:has(#registerSection.active) .navbar {
 }
 
 /* Buttons in section headers - make them work with gradient background */
-.section-header .btn-secondary {
-    background: rgba(255, 255, 255, 0.2);
-    color: var(--text-inverse);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+#dashboardSection .section-header .btn-secondary,
+#doorsSection .section-header .btn-secondary,
+#usersSection .section-header .btn-secondary,
+#accessGroupsSection .section-header .btn-secondary,
+#eventsSection .section-header .btn-secondary,
+#doorControllerDiscoverySection .section-header .btn-secondary {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: var(--text-inverse) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
     backdrop-filter: blur(10px);
 }
 
-.section-header .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
-    color: var(--text-inverse);
+#dashboardSection .section-header .btn-secondary:hover,
+#doorsSection .section-header .btn-secondary:hover,
+#usersSection .section-header .btn-secondary:hover,
+#accessGroupsSection .section-header .btn-secondary:hover,
+#eventsSection .section-header .btn-secondary:hover,
+#doorControllerDiscoverySection .section-header .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    color: var(--text-inverse) !important;
 }
 
-.section-header .btn-primary {
-    background: rgba(255, 255, 255, 0.9);
-    color: var(--primary-700);
-    border: 1px solid rgba(255, 255, 255, 0.9);
+#dashboardSection .section-header .btn-primary,
+#doorsSection .section-header .btn-primary,
+#usersSection .section-header .btn-primary,
+#accessGroupsSection .section-header .btn-primary,
+#eventsSection .section-header .btn-primary,
+#doorControllerDiscoverySection .section-header .btn-primary {
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: var(--primary-700) !important;
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
 }
 
-.section-header .btn-primary:hover {
-    background: rgba(255, 255, 255, 1);
-    color: var(--primary-800);
-    border-color: rgba(255, 255, 255, 1);
+#dashboardSection .section-header .btn-primary:hover,
+#doorsSection .section-header .btn-primary:hover,
+#usersSection .section-header .btn-primary:hover,
+#accessGroupsSection .section-header .btn-primary:hover,
+#eventsSection .section-header .btn-primary:hover,
+#doorControllerDiscoverySection .section-header .btn-primary:hover {
+    background: rgba(255, 255, 255, 1) !important;
+    color: var(--primary-800) !important;
+    border-color: rgba(255, 255, 255, 1) !important;
 }
 
 
