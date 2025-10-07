@@ -62,25 +62,29 @@ app.use('/api/doors/heartbeat', (req, res, next) => {
   next();
 });
 
-// Serve static files with cache-busting for development
-if (process.env.NODE_ENV !== 'production') {
-    app.use((req, res, next) => {
-        res.set({
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-        });
-        next();
+// Serve static files with aggressive cache prevention for all environments
+app.use((req, res, next) => {
+    // Apply cache prevention to all static files
+    res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate, private, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Last-Modified': new Date().toUTCString(),
+        'ETag': `"${Date.now()}-${Math.random().toString(36).substr(2, 9)}"`
     });
-}
+    next();
+});
 app.use(express.static('public'));
 
-// Disable caching for API endpoints
+// Disable caching for API endpoints with stronger headers
 app.use('/api', (req, res, next) => {
   res.set({
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Cache-Control': 'no-cache, no-store, must-revalidate, private, max-age=0',
     'Pragma': 'no-cache',
-    'Expires': '0'
+    'Expires': '0',
+    'Last-Modified': new Date().toUTCString(),
+    'ETag': `"${Date.now()}-${Math.random().toString(36).substr(2, 9)}"`,
+    'Vary': '*'
   });
   next();
 });

@@ -32,10 +32,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="styles.css?v=36" rel="stylesheet">
     
-    <!-- Mobile cache prevention -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <!-- Enhanced cache prevention -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, private, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Last-Modified" content="">
+    <meta http-equiv="ETag" content="">
+    
+    <!-- Additional cache prevention for mobile browsers -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
     
     <!-- Service Worker Registration -->
     <script>
@@ -141,6 +149,10 @@
                     <a href="#" class="nav-link" onclick="showSection('settings')" role="menuitem" aria-label="Go to Settings">
                         <i class="fas fa-cog" aria-hidden="true"></i> 
                         <span>Settings</span>
+                    </a>
+                    <a href="#" class="nav-link" onclick="forceRefreshAllData()" role="menuitem" aria-label="Force refresh all data">
+                        <i class="fas fa-sync-alt" aria-hidden="true"></i> 
+                        <span>Refresh Data</span>
                     </a>
                     <a href="#" class="nav-link" onclick="showSection('profile')" role="menuitem" aria-label="Go to Profile">
                         <i class="fas fa-user" aria-hidden="true"></i> 
