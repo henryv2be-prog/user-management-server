@@ -51,6 +51,8 @@ class NfcScanIndicator extends HTMLElement {
           stroke-width: 0.6px; /* hairline */
           vector-effect: non-scaling-stroke;
           shape-rendering: geometricPrecision;
+          stroke-linecap: round;
+          stroke-linejoin: round;
         }
         .laser .glow {
           fill: none;
@@ -58,6 +60,8 @@ class NfcScanIndicator extends HTMLElement {
           stroke-width: 6px;
           opacity: 0.9;
           filter: url(#glow6);
+          stroke-linecap: round;
+          stroke-linejoin: round;
         }
         :host([status="granted"]) .laser .glow { stroke: var(--success-color); }
         :host([status="denied"]) .laser .glow { stroke: var(--error-color); }
@@ -109,20 +113,25 @@ class NfcScanIndicator extends HTMLElement {
           left: 50%;
           top: 50%;
           transform: translate(-50%, -50%) rotate(-90deg);
-          color: #cfe9ff;
+          color: #e9f6ff;
           font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
           font-weight: 600;
           letter-spacing: 0.6px;
           opacity: 0.85;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+          text-shadow: 0 0 2px #fff, 0 0 10px var(--scan-glow), 0 0 26px var(--scan-glow);
           transition: color 250ms ease;
         }
-        :host([status="granted"]) .label { color: #bff5d7; }
-        :host([status="denied"]) .label { color: #ffc5c0; }
+        :host([status="scanning"]) .label { animation: textBreath 1.9s ease-in-out infinite; }
+        :host([status="granted"]) .label { color: #bff5d7; text-shadow: 0 0 2px #fff, 0 0 10px var(--success-glow), 0 0 26px var(--success-glow); }
+        :host([status="denied"]) .label { color: #ffc5c0; text-shadow: 0 0 2px #fff, 0 0 10px var(--error-glow), 0 0 26px var(--error-glow); }
 
         /* graceful reduce-motion support */
         @media (prefers-reduced-motion: reduce) {
           .orb { animation-duration: 9s; }
+        }
+        @keyframes textBreath {
+          0%, 100% { opacity: 0.85; filter: brightness(1); }
+          50% { opacity: 1; filter: brightness(1.25); }
         }
       </style>
       <div class="wrap">
@@ -136,7 +145,7 @@ class NfcScanIndicator extends HTMLElement {
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
-            <path id="rr" d="M 40 0 H 960 Q 1000 0 1000 40 V 440 Q 1000 480 960 480 H 40 Q 0 480 0 440 V 40 Q 0 0 40 0 Z" />
+            <path id="rr" d="M 36 0 H 964 A 36 36 0 0 1 1000 36 V 444 A 36 36 0 0 1 964 480 H 36 A 36 36 0 0 1 0 444 V 36 A 36 36 0 0 1 36 0 Z" />
           </defs>
           <g class="laser">
             <use href="#rr" class="glow" />
