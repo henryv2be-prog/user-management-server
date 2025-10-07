@@ -252,7 +252,7 @@
         </div>
 
         <!-- Site Map -->
-        <main id="dashboardSection" class="section" role="main" aria-label="Site Map">
+        <div id="dashboardSection" class="section">
             <div class="container">
                 <div class="section-header">
                     <h1><i class="fas fa-map" aria-hidden="true"></i> Site Map</h1>
@@ -272,17 +272,12 @@
                     </div>
                 </div>
                 
-                <!-- Site Map Canvas -->
-                <section class="site-plan-section" aria-label="Site Plan Canvas">
-                    <div class="site-plan-container">
-                        <div class="site-plan-canvas-wrapper">
-                            <canvas id="sitePlanCanvas" width="1200" height="800"></canvas>
-                            <div class="site-plan-overlay" id="sitePlanOverlay">
-                                <!-- Door status indicators will be positioned here -->
-                            </div>
-                        </div>
+                <div class="site-map-container">
+                    <canvas id="sitePlanCanvas" width="1200" height="800"></canvas>
+                    <div class="site-plan-overlay" id="sitePlanOverlay">
+                        <!-- Door status indicators will be positioned here -->
                     </div>
-                </section>
+                </div>
 
                 <!-- Door Details Panel -->
                 <section class="door-details-panel" id="doorDetailsPanel" style="display: none;">
@@ -298,7 +293,7 @@
                 </section>
                 
             </div>
-        </main>
+        </div>
 
         <!-- Events Management -->
         <div id="eventsSection" class="section">
