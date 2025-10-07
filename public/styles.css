@@ -1279,7 +1279,14 @@ body:has(#registerSection.active) .navbar {
     border-radius: 12px;
 }
 
-#doorControllerDiscoverySection .section-header h1 {
+/* Site Map Section Header */
+#dashboardSection .section-header {
+    background: var(--primary-gradient);
+    color: var(--text-inverse);
+    border-radius: 12px;
+}
+
+#dashboardSection .section-header h1 {
     color: var(--text-inverse);
 }
 
