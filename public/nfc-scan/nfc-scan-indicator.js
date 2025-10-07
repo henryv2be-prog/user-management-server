@@ -70,41 +70,7 @@ class NfcScanIndicator extends HTMLElement {
           --shadow: 0 0 18px var(--error-glow), 0 0 42px var(--error-glow), 0 0 78px var(--error-glow);
         }
 
-        /* moving orbs along the rounded rectangle path */
-        .orb {
-          position: absolute;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: white;
-          filter: blur(0.5px);
-          box-shadow:
-            0 0 12px rgba(255,255,255,0.95),
-            0 0 32px var(--scan-glow),
-            0 0 64px var(--scan-glow),
-            0 0 96px var(--scan-glow);
-          mix-blend-mode: screen;
-          animation: moveAlong 4.5s linear infinite;
-        }
-        .orb:nth-child(1) { animation-delay: 0s; }
-        .orb:nth-child(2) { animation-delay: 0.6s; }
-        .orb:nth-child(3) { animation-delay: 1.2s; }
-        .orb:nth-child(4) { animation-delay: 1.8s; }
-
-        :host([status="granted"]) .orb {
-          box-shadow:
-            0 0 12px rgba(255,255,255,0.85),
-            0 0 28px var(--success-glow),
-            0 0 56px var(--success-glow),
-            0 0 84px var(--success-glow);
-        }
-        :host([status="denied"]) .orb {
-          box-shadow:
-            0 0 12px rgba(255,255,255,0.85),
-            0 0 28px var(--error-glow),
-            0 0 56px var(--error-glow),
-            0 0 84px var(--error-glow);
-        }
+        /* moving orbs removed to avoid bright dots */
 
         /* Rounded rectangle path motion using offset-path */
         .path {
@@ -114,12 +80,7 @@ class NfcScanIndicator extends HTMLElement {
           pointer-events: none;
         }
 
-        .path .orb {
-          offset-path: path(
-            "M 28 0 H calc(100% - 28px) Q 100% 0 100% 28 V calc(100% - 28px) Q 100% 100% calc(100% - 28px) 100% H 28 Q 0 100% 0 calc(100% - 28px) V 28 Q 0 0 28 0 Z"
-          );
-          /* Fallback for browsers lacking offset-path: move with SVG animateMotion */
-        }
+        /* no orb offset-path needed */
         /* beams removed */
 
         @keyframes moveAlong {
@@ -131,13 +92,13 @@ class NfcScanIndicator extends HTMLElement {
         @keyframes scanningBreath {
           0%, 100% {
             box-shadow: 0 0 0 0.65px var(--border-color) inset,
-              0 0 10px var(--scan-glow), 0 0 22px var(--scan-glow), 0 0 38px var(--scan-glow);
-            filter: brightness(1);
+              0 0 6px var(--scan-glow), 0 0 14px var(--scan-glow), 0 0 24px var(--scan-glow);
+            filter: brightness(0.95);
           }
           50% {
             box-shadow: 0 0 0 0.65px var(--border-color) inset,
-              0 0 18px var(--scan-glow), 0 0 36px var(--scan-glow), 0 0 64px var(--scan-glow);
-            filter: brightness(1.15) saturate(1.05);
+              0 0 28px var(--scan-glow), 0 0 60px var(--scan-glow), 0 0 110px var(--scan-glow);
+            filter: brightness(1.35) saturate(1.15);
           }
         }
 
@@ -197,12 +158,7 @@ class NfcScanIndicator extends HTMLElement {
         <div class="ambient"></div>
         <div class="track"></div>
         <div class="glow-border"></div>
-        <div class="path">
-          <div class="orb"></div>
-          <div class="orb"></div>
-          <div class="orb"></div>
-          <div class="orb"></div>
-        </div>
+        <div class="path"></div>
         <div class="label">Scanning...</div>
       </div>
     `;
