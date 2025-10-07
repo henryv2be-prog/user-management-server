@@ -1250,15 +1250,22 @@ body:has(#registerSection.active) .navbar {
     color: var(--text-inverse);
 }
 
-/* Doors Section Header */
-#doorsSection .section-header {
+/* Site Map Section Header */
+#dashboardSection .section-header {
     background: var(--primary-gradient);
     color: var(--text-inverse);
     border-radius: 12px;
 }
 
-#doorsSection .section-header h1 {
+#dashboardSection .section-header h1 {
     color: var(--text-inverse);
+}
+
+/* Doors Section Header */
+#doorsSection .section-header {
+    background: var(--primary-gradient);
+    color: var(--text-inverse);
+    border-radius: 12px;
 }
 
 /* Events Section Header */
