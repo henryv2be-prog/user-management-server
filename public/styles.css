@@ -1286,8 +1286,30 @@ body:has(#registerSection.active) .navbar {
     border-radius: 12px;
 }
 
-#dashboardSection .section-header h1 {
+/* Buttons in section headers - make them work with gradient background */
+.section-header .btn-secondary {
+    background: rgba(255, 255, 255, 0.2);
     color: var(--text-inverse);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.section-header .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: var(--text-inverse);
+}
+
+.section-header .btn-primary {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--primary-700);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.section-header .btn-primary:hover {
+    background: rgba(255, 255, 255, 1);
+    color: var(--primary-800);
+    border-color: rgba(255, 255, 255, 1);
 }
 
 
