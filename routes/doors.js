@@ -937,52 +937,67 @@ router.post('/:id/control', authenticate, requireAdmin, validateId, async (req, 
       });
     }
     
-    // Send command to ESP32
-    console.log(`Attempting to send ${action} command to ESP32 at ${door.esp32Ip}`);
-    
+    // Store door control command in queue for ESP32 to pick up (same as access requests)
     try {
-      const response = await fetch(`http://${door.esp32Ip}/door`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action }),
-        timeout: 5000 // 5 second timeout
-      });
+      console.log(`🚪 Storing door ${action} command for door ${door.id} (${door.name})`);
+      console.log(`🚪 Door ESP32 IP: ${door.esp32Ip}, MAC: ${door.esp32Mac}`);
       
-      if (response.ok) {
-        console.log(`Successfully sent ${action} command to ESP32`);
+      const pool = require('../database/pool');
+      const db = await pool.getConnection();
+      
+      try {
+        // Ensure door_commands table exists
+        await new Promise((resolve, reject) => {
+          db.run(`CREATE TABLE IF NOT EXISTS door_commands (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            door_id INTEGER NOT NULL,
+            command TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            executed_at DATETIME,
+            FOREIGN KEY (door_id) REFERENCES doors (id)
+          )`, (err) => {
+            if (err) {
+              console.error('Error creating door_commands table:', err.message);
+              reject(err);
+            } else {
+              console.log('✅ Door commands table verified/created');
+              resolve();
+            }
+          });
+        });
+        
+        // Insert command into queue
+        await new Promise((resolve, reject) => {
+          db.run('INSERT INTO door_commands (door_id, command) VALUES (?, ?)', 
+                 [door.id, action], function(err) {
+            if (err) {
+              console.error(`❌ Error storing door command:`, err);
+              reject(err);
+            } else {
+              console.log(`✅ Door ${action} command queued successfully (ID: ${this.lastID})`);
+              resolve();
+            }
+          });
+        });
+        
+        console.log(`✅ Door ${action} command queued for ESP32 polling`);
+        
         res.json({
           success: true,
-          message: `Door ${action} command sent successfully`
+          message: `Door ${action} command queued successfully - ESP32 will pick it up on next poll`
         });
-      } else {
-        console.error(`ESP32 responded with status ${response.status}`);
-        res.status(500).json({
-          error: 'Door Control Failed',
-          message: 'ESP32 device responded with an error'
-        });
+        
+      } finally {
+        pool.releaseConnection(db);
       }
-    } catch (fetchError) {
-      console.error(`Failed to connect to ESP32 at ${door.esp32Ip}:`, fetchError.message);
       
-      // Check if it's a timeout or connection error
-      if (fetchError.cause && fetchError.cause.code === 'ECONNREFUSED') {
-        res.status(400).json({
-          error: 'ESP32 Not Reachable',
-          message: 'Cannot connect to door controller - device may be offline or IP address incorrect'
-        });
-      } else if (fetchError.cause && fetchError.cause.code === 'ETIMEDOUT') {
-        res.status(400).json({
-          error: 'ESP32 Timeout',
-          message: 'Door controller did not respond - device may be offline or slow to respond'
-        });
-      } else {
-        res.status(500).json({
-          error: 'Network Error',
-          message: `Failed to communicate with door controller: ${fetchError.message}`
-        });
-      }
+    } catch (error) {
+      console.error('Error queuing door command:', error);
+      res.status(500).json({
+        error: 'Command Queue Failed',
+        message: 'Failed to queue door command for ESP32'
+      });
     }
   } catch (error) {
     console.error('Door control error:', error);
