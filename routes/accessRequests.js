@@ -251,21 +251,65 @@ router.post('/door-control', async (req, res) => {
       });
     }
 
-    // Log door control action
-    await EventLogger.log(req, 'door', 'controlled', 'Door', door.id, `Door ${action} command sent to ${door.name}`, `Action: ${action}`);
-
-    res.json({
-      success: true,
-      message: `Door ${action} command sent`,
-      door: {
-        id: door.id,
-        name: door.name,
-        location: door.location,
-        esp32Ip: door.esp32Ip
-      },
-      action: action,
-      timestamp: new Date().toISOString()
-    });
+    // Send command to ESP32
+    console.log(`Attempting to send ${action} command to ESP32 at ${door.esp32Ip}`);
+    
+    try {
+      const response = await fetch(`http://${door.esp32Ip}/door`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action }),
+        timeout: 5000 // 5 second timeout
+      });
+      
+      if (response.ok) {
+        console.log(`Successfully sent ${action} command to ESP32`);
+        
+        // Log door control action
+        await EventLogger.log(req, 'door', 'controlled', 'Door', door.id, `Door ${action} command sent to ${door.name}`, `Action: ${action}`);
+        
+        res.json({
+          success: true,
+          message: `Door ${action} command sent successfully`,
+          door: {
+            id: door.id,
+            name: door.name,
+            location: door.location,
+            esp32Ip: door.esp32Ip
+          },
+          action: action,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        console.error(`ESP32 responded with status ${response.status}`);
+        res.status(500).json({
+          error: 'Door Control Failed',
+          message: 'ESP32 device responded with an error'
+        });
+      }
+    } catch (fetchError) {
+      console.error(`Failed to connect to ESP32 at ${door.esp32Ip}:`, fetchError.message);
+      
+      // Check if it's a timeout or connection error
+      if (fetchError.cause && fetchError.cause.code === 'ECONNREFUSED') {
+        res.status(400).json({
+          error: 'ESP32 Not Reachable',
+          message: 'Cannot connect to door controller - device may be offline or IP address incorrect'
+        });
+      } else if (fetchError.cause && fetchError.cause.code === 'ETIMEDOUT') {
+        res.status(400).json({
+          error: 'ESP32 Timeout',
+          message: 'Door controller did not respond - device may be offline or slow to respond'
+        });
+      } else {
+        res.status(500).json({
+          error: 'Network Error',
+          message: `Failed to communicate with door controller: ${fetchError.message}`
+        });
+      }
+    }
 
   } catch (error) {
     console.error('Door control error:', error);
