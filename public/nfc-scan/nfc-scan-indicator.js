@@ -11,7 +11,7 @@ class NfcScanIndicator extends HTMLElement {
       <style>
         :host {
           --size: 520px;
-          --border-radius: 120px;
+          --border-radius: 36px; /* tighter corners for mobile */
           --track-color: rgba(180, 220, 255, 0.28);
           --scan-color: #6ecbff;
           --scan-glow: rgba(110, 203, 255, 0.9);
@@ -41,21 +41,21 @@ class NfcScanIndicator extends HTMLElement {
         /* track */
         .track {
           position: absolute;
-          inset: 18px;
-          border-radius: calc(var(--border-radius) - 18px);
+          inset: 14px; /* tighter and thinner */
+          border-radius: calc(var(--border-radius) - 14px);
           background: transparent;
-          box-shadow: 0 0 0 3px var(--track-color) inset;
+          box-shadow: 0 0 0 1.25px var(--track-color) inset;
         }
 
         /* bright border that we tint per status */
         .glow-border {
           position: absolute;
-          inset: 18px;
-          border-radius: calc(var(--border-radius) - 18px);
+          inset: 14px;
+          border-radius: calc(var(--border-radius) - 14px);
           pointer-events: none;
           --border-color: var(--scan-color);
-          --shadow: 0 0 18px var(--scan-glow), 0 0 36px var(--scan-glow), 0 0 64px var(--scan-glow);
-          box-shadow: 0 0 0 2px var(--border-color) inset, var(--shadow);
+          --shadow: 0 0 14px var(--scan-glow), 0 0 28px var(--scan-glow), 0 0 52px var(--scan-glow);
+          box-shadow: 0 0 0 1px var(--border-color) inset, var(--shadow);
           opacity: 0.95;
           transition: box-shadow 300ms ease, filter 300ms ease, opacity 300ms ease;
         }
@@ -108,16 +108,53 @@ class NfcScanIndicator extends HTMLElement {
         /* Rounded rectangle path motion using offset-path */
         .path {
           position: absolute;
-          inset: 18px;
-          border-radius: calc(var(--border-radius) - 18px);
+          inset: 14px;
+          border-radius: calc(var(--border-radius) - 14px);
           pointer-events: none;
         }
 
         .path .orb {
           offset-path: path(
-            "M 40 0 H calc(100% - 40px) Q 100% 0 100% 40 V calc(100% - 40px) Q 100% 100% calc(100% - 40px) 100% H 40 Q 0 100% 0 calc(100% - 40px) V 40 Q 0 0 40 0 Z"
+            "M 28 0 H calc(100% - 28px) Q 100% 0 100% 28 V calc(100% - 28px) Q 100% 100% calc(100% - 28px) 100% H 28 Q 0 100% 0 calc(100% - 28px) V 28 Q 0 0 28 0 Z"
           );
           /* Fallback for browsers lacking offset-path: move with SVG animateMotion */
+        }
+        /* continuous light beams circling the rectangle */
+        .beam {
+          position: absolute;
+          width: 160px;
+          height: 10px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,0.95) 60%, transparent 100%);
+          filter: blur(0.5px);
+          mix-blend-mode: screen;
+          box-shadow:
+            0 0 12px rgba(255,255,255,0.6),
+            0 0 32px var(--scan-glow),
+            0 0 64px var(--scan-glow),
+            0 0 96px var(--scan-glow);
+          offset-path: path(
+            "M 28 0 H calc(100% - 28px) Q 100% 0 100% 28 V calc(100% - 28px) Q 100% 100% calc(100% - 28px) 100% H 28 Q 0 100% 0 calc(100% - 28px) V 28 Q 0 0 28 0 Z"
+          );
+          offset-rotate: auto;
+          animation: moveAlong 3.8s linear infinite;
+        }
+        .beam:nth-child(1) { animation-delay: 0s; }
+        .beam:nth-child(2) { animation-delay: 1.2s; }
+        .beam:nth-child(3) { animation-delay: 2.4s; }
+        :host([status="granted"]) .beam {
+          box-shadow:
+            0 0 12px rgba(255,255,255,0.5),
+            0 0 28px var(--success-glow),
+            0 0 56px var(--success-glow),
+            0 0 84px var(--success-glow);
+        }
+        :host([status="denied"]) .beam {
+          box-shadow:
+            0 0 12px rgba(255,255,255,0.5),
+            0 0 28px var(--error-glow),
+            0 0 56px var(--error-glow),
+            0 0 84px var(--error-glow);
         }
 
         @keyframes moveAlong {
@@ -182,10 +219,15 @@ class NfcScanIndicator extends HTMLElement {
         <div class="track"></div>
         <div class="glow-border"></div>
         <div class="path">
+          <!-- orbs for point glows -->
           <div class="orb"></div>
           <div class="orb"></div>
           <div class="orb"></div>
           <div class="orb"></div>
+          <!-- wide beams for continuous sweep -->
+          <div class="beam"></div>
+          <div class="beam"></div>
+          <div class="beam"></div>
         </div>
         <div class="label">Scanning...</div>
       </div>
