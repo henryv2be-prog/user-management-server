@@ -1,7 +1,57 @@
-// Cache-busting helper function
+// Enhanced cache-busting helper function
 function addCacheBusting(url) {
     const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}_cb=${Date.now()}&_r=${Math.random().toString(36).substr(2, 9)}`;
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substr(2, 9);
+    return `${url}${separator}_cb=${timestamp}&_r=${random}&_v=${Math.floor(timestamp / 1000)}`;
+}
+
+// Force refresh helper - ensures fresh data from server
+function forceRefresh(url, options = {}) {
+    const cacheBustedUrl = addCacheBusting(url);
+    const enhancedOptions = {
+        ...options,
+        headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            ...options.headers
+        }
+    };
+    return fetch(cacheBustedUrl, enhancedOptions);
+}
+
+// Global function to force refresh all critical data
+async function forceRefreshAllData() {
+    console.log('🔄 Force refreshing all critical data...');
+    
+    try {
+        // Refresh dashboard data
+        if (typeof loadDashboard === 'function') {
+            await loadDashboard();
+        }
+        
+        // Refresh doors data
+        if (typeof loadDoors === 'function') {
+            await loadDoors(1);
+        }
+        
+        // Refresh users data
+        if (typeof loadUsers === 'function') {
+            await loadUsers(1);
+        }
+        
+        // Refresh access groups data
+        if (typeof loadAccessGroups === 'function') {
+            await loadAccessGroups(1);
+        }
+        
+        console.log('✅ All critical data refreshed successfully');
+        showToast('All data refreshed from server', 'success');
+    } catch (error) {
+        console.error('❌ Error refreshing data:', error);
+        showToast('Error refreshing data', 'error');
+    }
 }
 
 // Modern ES6+ Application State Management
@@ -1449,11 +1499,7 @@ async function loadDoorStatus() {
             limit: 100
         });
         
-        const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await forceRefresh(`/api/doors?${params}`);
         
         console.log('Door status response:', response.status, response.statusText);
         
@@ -1767,11 +1813,7 @@ async function loadUsers(page = 1) {
             ...currentFilters
         });
         
-        const response = await fetch(addCacheBusting(`/api/users?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await forceRefresh(`/api/users?${params}`);
         
         if (response.ok) {
             const data = await response.json();
@@ -2124,11 +2166,7 @@ async function loadDoors(page = 1) {
             ...currentFilters
         });
         
-        const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await forceRefresh(`/api/doors?${params}`);
         
         if (response.ok) {
             const data = await response.json();
@@ -2551,11 +2589,7 @@ async function loadAccessGroups(page = 1) {
             ...currentFilters
         });
         
-        const response = await fetch(addCacheBusting(`/api/access-groups?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await forceRefresh(`/api/access-groups?${params}`);
         
         if (response.ok) {
             const data = await response.json();
@@ -3825,11 +3859,7 @@ async function refreshDoorStatus() {
             ...currentFilters
         });
         
-        const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await forceRefresh(`/api/doors?${params}`);
         
         if (response.ok) {
             const data = await response.json();
