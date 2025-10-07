@@ -254,25 +254,24 @@
         <!-- Dashboard -->
         <main id="dashboardSection" class="section" role="main" aria-label="Site Plan">
             <div class="container">
-                <header class="page-header">
+                <div class="section-header">
                     <h1><i class="fas fa-map" aria-hidden="true"></i> Site Plan</h1>
-                    <p class="page-description">Interactive site monitoring with real-time door status</p>
-                </header>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" id="uploadMapBtn" onclick="uploadSitePlan()">
+                            <i class="fas fa-upload"></i> Upload Site Plan
+                        </button>
+                        <button class="btn btn-secondary" id="editModeBtn" onclick="toggleEditMode()">
+                            <i class="fas fa-edit"></i> Edit Mode
+                        </button>
+                        <button class="btn btn-secondary" id="savePositionsBtn" onclick="saveDoorPositions()" style="display: none;">
+                            <i class="fas fa-save"></i> Save Positions
+                        </button>
+                    </div>
+                </div>
                 
                 <!-- Site Plan Controls -->
                 <section class="site-plan-controls" aria-label="Site Plan Controls">
                     <div class="controls-toolbar">
-                        <div class="toolbar-group">
-                            <button class="btn btn-secondary" id="uploadMapBtn" onclick="uploadSitePlan()">
-                                <i class="fas fa-upload"></i> Upload Site Plan
-                            </button>
-                            <button class="btn btn-secondary" id="editModeBtn" onclick="toggleEditMode()">
-                                <i class="fas fa-edit"></i> Edit Mode
-                            </button>
-                            <button class="btn btn-secondary" id="savePositionsBtn" onclick="saveDoorPositions()" style="display: none;">
-                                <i class="fas fa-save"></i> Save Positions
-                            </button>
-                        </div>
                         <div class="toolbar-group" id="doorSizeGroup" style="display: none;">
                             <label for="doorSizeSlider" style="color: white; margin-right: 8px; font-size: 14px;">Size:</label>
                             <input type="range" id="doorSizeSlider" min="15" max="35" value="20" 
@@ -371,9 +370,11 @@
             <div class="container">
                 <div class="section-header">
                     <h1><i class="fas fa-users"></i> User Management</h1>
-                    <button class="btn btn-primary" onclick="showCreateUserModal()">
-                        <i class="fas fa-plus"></i> Add User
-                    </button>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="showCreateUserModal()">
+                            <i class="fas fa-plus"></i> Add User
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="filters">
@@ -465,9 +466,11 @@
             <div class="container">
                 <div class="section-header">
                     <h1><i class="fas fa-shield-alt"></i> Access Groups</h1>
-                    <button class="btn btn-primary" onclick="showCreateAccessGroupModal()">
-                        <i class="fas fa-plus"></i> Add Access Group
-                    </button>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="showCreateAccessGroupModal()">
+                            <i class="fas fa-plus"></i> Add Access Group
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="filters">
@@ -538,7 +541,9 @@
             <div class="container">
                 <div class="section-header">
                     <h1><i class="fas fa-cog"></i> System Settings</h1>
-                    <p>Configure system settings and run diagnostics</p>
+                    <div class="header-actions">
+                        <!-- Settings don't have primary actions, but we can add status indicators here if needed -->
+                    </div>
                 </div>
                 
                 <div class="settings-container">
@@ -973,7 +978,12 @@
         <!-- Profile -->
         <div id="profileSection" class="section">
             <div class="container">
-                <h1><i class="fas fa-user"></i> My Profile</h1>
+                <div class="section-header">
+                    <h1><i class="fas fa-user"></i> My Profile</h1>
+                    <div class="header-actions">
+                        <!-- Profile actions can be added here if needed -->
+                    </div>
+                </div>
                 <div class="profile-container">
                     <div class="profile-card">
                         <div class="profile-header">
