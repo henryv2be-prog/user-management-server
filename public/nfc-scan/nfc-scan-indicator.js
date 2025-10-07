@@ -44,7 +44,7 @@ class NfcScanIndicator extends HTMLElement {
           inset: 14px; /* tighter and thinner */
           border-radius: calc(var(--border-radius) - 14px);
           background: transparent;
-          box-shadow: 0 0 0 1.25px var(--track-color) inset;
+          box-shadow: 0 0 0 0.65px var(--track-color) inset;
         }
 
         /* bright border that we tint per status */
@@ -54,11 +54,12 @@ class NfcScanIndicator extends HTMLElement {
           border-radius: calc(var(--border-radius) - 14px);
           pointer-events: none;
           --border-color: var(--scan-color);
-          --shadow: 0 0 14px var(--scan-glow), 0 0 28px var(--scan-glow), 0 0 52px var(--scan-glow);
-          box-shadow: 0 0 0 1px var(--border-color) inset, var(--shadow);
+          --shadow: 0 0 12px var(--scan-glow), 0 0 24px var(--scan-glow), 0 0 44px var(--scan-glow);
+          box-shadow: 0 0 0 0.65px var(--border-color) inset, var(--shadow);
           opacity: 0.95;
           transition: box-shadow 300ms ease, filter 300ms ease, opacity 300ms ease;
         }
+        :host([status="scanning"]) .glow-border { animation: scanningBreath 2.2s ease-in-out infinite; }
 
         :host([status="granted"]) .glow-border {
           --border-color: var(--success-color);
@@ -119,47 +120,25 @@ class NfcScanIndicator extends HTMLElement {
           );
           /* Fallback for browsers lacking offset-path: move with SVG animateMotion */
         }
-        /* continuous light beams circling the rectangle */
-        .beam {
-          position: absolute;
-          width: 160px;
-          height: 10px;
-          border-radius: 999px;
-          background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,0.95) 60%, transparent 100%);
-          filter: blur(0.5px);
-          mix-blend-mode: screen;
-          box-shadow:
-            0 0 12px rgba(255,255,255,0.6),
-            0 0 32px var(--scan-glow),
-            0 0 64px var(--scan-glow),
-            0 0 96px var(--scan-glow);
-          offset-path: path(
-            "M 28 0 H calc(100% - 28px) Q 100% 0 100% 28 V calc(100% - 28px) Q 100% 100% calc(100% - 28px) 100% H 28 Q 0 100% 0 calc(100% - 28px) V 28 Q 0 0 28 0 Z"
-          );
-          offset-rotate: auto;
-          animation: moveAlong 3.8s linear infinite;
-        }
-        .beam:nth-child(1) { animation-delay: 0s; }
-        .beam:nth-child(2) { animation-delay: 1.2s; }
-        .beam:nth-child(3) { animation-delay: 2.4s; }
-        :host([status="granted"]) .beam {
-          box-shadow:
-            0 0 12px rgba(255,255,255,0.5),
-            0 0 28px var(--success-glow),
-            0 0 56px var(--success-glow),
-            0 0 84px var(--success-glow);
-        }
-        :host([status="denied"]) .beam {
-          box-shadow:
-            0 0 12px rgba(255,255,255,0.5),
-            0 0 28px var(--error-glow),
-            0 0 56px var(--error-glow),
-            0 0 84px var(--error-glow);
-        }
+        /* beams removed */
 
         @keyframes moveAlong {
           0%   { offset-distance: 0%; }
           100% { offset-distance: 100%; }
+        }
+
+        /* breathing animation for scanning */
+        @keyframes scanningBreath {
+          0%, 100% {
+            box-shadow: 0 0 0 0.65px var(--border-color) inset,
+              0 0 10px var(--scan-glow), 0 0 22px var(--scan-glow), 0 0 38px var(--scan-glow);
+            filter: brightness(1);
+          }
+          50% {
+            box-shadow: 0 0 0 0.65px var(--border-color) inset,
+              0 0 18px var(--scan-glow), 0 0 36px var(--scan-glow), 0 0 64px var(--scan-glow);
+            filter: brightness(1.15) saturate(1.05);
+          }
         }
 
         /* faint global bloom during scanning */
@@ -219,15 +198,10 @@ class NfcScanIndicator extends HTMLElement {
         <div class="track"></div>
         <div class="glow-border"></div>
         <div class="path">
-          <!-- orbs for point glows -->
           <div class="orb"></div>
           <div class="orb"></div>
           <div class="orb"></div>
           <div class="orb"></div>
-          <!-- wide beams for continuous sweep -->
-          <div class="beam"></div>
-          <div class="beam"></div>
-          <div class="beam"></div>
         </div>
         <div class="label">Scanning...</div>
       </div>
