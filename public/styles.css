@@ -1268,6 +1268,10 @@ body:has(#registerSection.active) .navbar {
     border-radius: 12px;
 }
 
+#doorsSection .section-header h1 {
+    color: var(--text-inverse);
+}
+
 /* Events Section Header */
 #eventsSection .section-header {
     background: var(--primary-gradient);
