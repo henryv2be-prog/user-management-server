@@ -1283,16 +1283,6 @@ body:has(#registerSection.active) .navbar {
     color: var(--text-inverse);
 }
 
-/* Dashboard Section Header */
-#dashboardSection h1 {
-    background: var(--primary-gradient);
-    color: var(--text-inverse);
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-    box-shadow: 0 1px 3px var(--shadow-sm);
-    border: 1px solid var(--border-light);
-}
 
 /* Profile Section Header */
 #profileSection h1 {
