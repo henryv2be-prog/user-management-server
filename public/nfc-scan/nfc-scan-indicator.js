@@ -38,68 +38,39 @@ class NfcScanIndicator extends HTMLElement {
           transform-origin: center;
         }
 
-        /* track */
-        .track {
+        /* SVG ring for hairline laser look */
+        .ring {
           position: absolute;
-          inset: 14px; /* tighter and thinner */
-          border-radius: calc(var(--border-radius) - 14px);
-          background: transparent;
-          box-shadow: 0 0 0 0.4px var(--track-color) inset;
+          inset: 0;
+          overflow: visible;
         }
-
-        /* bright border that we tint per status */
-        .glow-border {
-          position: absolute;
-          inset: 14px;
-          border-radius: calc(var(--border-radius) - 14px);
-          pointer-events: none;
-          --border-color: var(--scan-color);
-          --shadow: 0 0 12px var(--scan-glow), 0 0 24px var(--scan-glow), 0 0 44px var(--scan-glow);
-          box-shadow: 0 0 0 0.4px var(--border-color) inset, var(--shadow);
-          opacity: 0.95;
-          transition: box-shadow 300ms ease, filter 300ms ease, opacity 300ms ease;
+        .laser { transform: translateZ(0); }
+        .laser .core {
+          fill: none;
+          stroke: #e8f8ff;
+          stroke-width: 0.6px; /* hairline */
+          vector-effect: non-scaling-stroke;
+          shape-rendering: geometricPrecision;
         }
-        :host([status="scanning"]) .glow-border { animation: scanningBreath 2.2s ease-in-out infinite; }
-
-        :host([status="granted"]) .glow-border {
-          --border-color: var(--success-color);
-          --shadow: 0 0 18px var(--success-glow), 0 0 42px var(--success-glow), 0 0 78px var(--success-glow);
+        .laser .glow {
+          fill: none;
+          stroke: var(--scan-color);
+          stroke-width: 6px;
+          opacity: 0.9;
+          filter: url(#glow6);
         }
-        :host([status="denied"]) .glow-border {
-          --border-color: var(--error-color);
-          --shadow: 0 0 18px var(--error-glow), 0 0 42px var(--error-glow), 0 0 78px var(--error-glow);
-        }
+        :host([status="granted"]) .laser .glow { stroke: var(--success-color); }
+        :host([status="denied"]) .laser .glow { stroke: var(--error-color); }
+        :host([status="scanning"]) .laser { animation: laserPulse 1.9s ease-in-out infinite; }
 
         /* moving orbs removed to avoid bright dots */
 
-        /* Rounded rectangle path motion using offset-path */
-        .path {
-          position: absolute;
-          inset: 14px;
-          border-radius: calc(var(--border-radius) - 14px);
-          pointer-events: none;
-        }
+        /* Rounded rectangle path motion removed; SVG used instead */
 
-        /* no orb offset-path needed */
-        /* beams removed */
-
-        @keyframes moveAlong {
-          0%   { offset-distance: 0%; }
-          100% { offset-distance: 100%; }
-        }
-
-        /* breathing animation for scanning */
-        @keyframes scanningBreath {
-          0%, 100% {
-            box-shadow: 0 0 0 0.4px var(--border-color) inset,
-              0 0 6px var(--scan-glow), 0 0 14px var(--scan-glow), 0 0 24px var(--scan-glow);
-            filter: brightness(0.95);
-          }
-          50% {
-            box-shadow: 0 0 0 0.4px var(--border-color) inset,
-              0 0 28px var(--scan-glow), 0 0 60px var(--scan-glow), 0 0 110px var(--scan-glow);
-            filter: brightness(1.35) saturate(1.15);
-          }
+        @keyframes laserPulse {
+          0%   { opacity: 0.35; filter: saturate(1) brightness(0.9); }
+          50%  { opacity: 1;    filter: saturate(1.25) brightness(1.35); }
+          100% { opacity: 0.35; filter: saturate(1) brightness(0.9); }
         }
 
         /* faint global bloom during scanning */
@@ -118,8 +89,8 @@ class NfcScanIndicator extends HTMLElement {
         :host([status="denied"]) .ambient { background: radial-gradient(60% 60% at 50% 50%, rgba(255, 59, 48, 0.12), transparent 60%); }
 
         /* success / denied pulse once */
-        :host([status="granted"]) .glow-border { animation: pulseGreen 800ms ease-out 1; }
-        :host([status="denied"]) .glow-border { animation: pulseRed 800ms ease-out 1; }
+        :host([status="granted"]) .laser { animation: pulseGreen 800ms ease-out 1; }
+        :host([status="denied"]) .laser { animation: pulseRed 800ms ease-out 1; }
 
         @keyframes pulseGreen {
           0% { filter: brightness(1.2); }
@@ -156,8 +127,22 @@ class NfcScanIndicator extends HTMLElement {
       </style>
       <div class="wrap">
         <div class="ambient"></div>
-        <div class="track"></div>
-        <div class="glow-border"></div>
+        <svg class="ring" width="100%" height="100%" viewBox="0 0 1000 480" preserveAspectRatio="none">
+          <defs>
+            <filter id="glow6" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="6" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <path id="rr" d="M 40 0 H 960 Q 1000 0 1000 40 V 440 Q 1000 480 960 480 H 40 Q 0 480 0 440 V 40 Q 0 0 40 0 Z" />
+          </defs>
+          <g class="laser">
+            <use href="#rr" class="glow" />
+            <use href="#rr" class="core" />
+          </g>
+        </svg>
         <div class="path"></div>
         <div class="label">Scanning...</div>
       </div>
