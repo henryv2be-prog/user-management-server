@@ -4678,14 +4678,21 @@ body.fa-failed .nav-toggle-fallback {
     font-weight: 600;
 }
 
-/* Site Plan Styles */
-.site-plan-controls {
-    background: var(--background-primary);
-    border-radius: 12px;
-    padding: 1.5rem;
+/* Site Map Styles */
+.site-map-container {
+    position: relative;
+    background: #f8f9fa;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid var(--border-light);
     margin-bottom: 2rem;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-light);
+}
+
+.site-map-container canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: #ffffff;
 }
 
 .controls-toolbar {
