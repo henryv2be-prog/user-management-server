@@ -2336,7 +2336,6 @@ async function handleCreateDoor(event) {
         const data = await response.json();
         
         if (response.ok) {
-            showToast('Door created successfully!', 'success');
             closeModal('createDoorModal');
             event.target.reset();
             refreshDoorRelatedUI();
@@ -3305,15 +3304,7 @@ async function updateAccessGroupDoors() {
         const failedResponses = responses.filter(response => !response.ok);
         
         if (failedResponses.length === 0) {
-            let message = '';
-            if (doorsToAdd.length > 0 && doorsToRemove.length > 0) {
-                message = `${doorsToAdd.length} door(s) added, ${doorsToRemove.length} door(s) removed successfully!`;
-            } else if (doorsToAdd.length > 0) {
-                message = `${doorsToAdd.length} door(s) added successfully!`;
-            } else {
-                message = `${doorsToRemove.length} door(s) removed successfully!`;
-            }
-            showToast(message, 'success');
+            // Success handled by webhook events - no duplicate toast needed
             manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
         } else {
             showToast(`Some operations failed. ${failedResponses.length} out of ${promises.length} operations failed.`, 'warning');
@@ -3586,7 +3577,6 @@ async function handleDoorControllerConfig(event) {
         const data = await response.json();
         
         if (response.ok) {
-            showToast('Door Controller configured as door successfully!', 'success');
             closeModal('doorControllerConfigModal');
             
             // Remove the configured controller from the discovered list
@@ -3686,7 +3676,7 @@ async function addAllDiscoveredControllers() {
         const failed = results.length - successful;
         
         if (successful > 0) {
-            showToast(`Successfully added ${successful} Door Controller device(s) as doors`, 'success');
+            // Success handled by webhook events - no duplicate toast needed
         }
         
         if (failed > 0) {
@@ -3753,7 +3743,6 @@ async function saveDoorControllerConfiguration() {
         });
         
         if (response.ok) {
-            showToast('Door Controller device configured successfully!', 'success');
             closeModal('doorControllerConfigModal');
             
             // Refresh the doors list if we're on that page
