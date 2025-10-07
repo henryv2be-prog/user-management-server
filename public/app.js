@@ -2280,6 +2280,8 @@ function filterDoors() {
 
 async function controlDoor(doorId, action) {
     try {
+        console.log(`Attempting to control door ${doorId} with action: ${action}`);
+        
         const response = await fetch(`/api/doors/${doorId}/control`, {
             method: 'POST',
             headers: {
@@ -2289,7 +2291,9 @@ async function controlDoor(doorId, action) {
             body: JSON.stringify({ action })
         });
         
+        console.log(`Control response status: ${response.status}`);
         const data = await response.json();
+        console.log('Control response data:', data);
         
         if (response.ok) {
             showToast(data.message, 'success');
