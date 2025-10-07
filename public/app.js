@@ -1606,11 +1606,7 @@ async function testDoorLoading() {
     try {
         // Test 1: Simple API call like dashboard was doing
         console.log('Test 1: Simple API call');
-        const simpleResponse = await fetch('/api/doors?limit=100', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const simpleResponse = await forceRefresh('/api/doors?limit=100');
         console.log('Simple response:', simpleResponse.status, simpleResponse.statusText);
         if (simpleResponse.ok) {
             const simpleData = await simpleResponse.json();
@@ -1623,11 +1619,7 @@ async function testDoorLoading() {
             page: 1,
             limit: 10
         });
-        const mgmtResponse = await fetch(addCacheBusting(`/api/doors?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const mgmtResponse = await forceRefresh(`/api/doors?${params}`);
         console.log('Management response:', mgmtResponse.status, mgmtResponse.statusText);
         if (mgmtResponse.ok) {
             const mgmtData = await mgmtResponse.json();
@@ -1640,11 +1632,7 @@ async function testDoorLoading() {
             page: 1,
             limit: 100
         });
-        const dashboardResponse = await fetch(addCacheBusting(`/api/doors?${dashboardParams}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const dashboardResponse = await forceRefresh(`/api/doors?${dashboardParams}`);
         console.log('Dashboard response:', dashboardResponse.status, dashboardResponse.statusText);
         if (dashboardResponse.ok) {
             const dashboardData = await dashboardResponse.json();
@@ -2174,11 +2162,7 @@ async function loadDoors(page = 1) {
             // Load tags for each door
             const doorsWithTags = await Promise.all(data.doors.map(async (door) => {
                 try {
-                    const tagsResponse = await fetch(`/api/door-tags/door/${door.id}`, {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
-                        }
-                    });
+                    const tagsResponse = await forceRefresh(`/api/door-tags/door/${door.id}`);
                     
                     if (tagsResponse.ok) {
                         const tagsData = await tagsResponse.json();
@@ -2616,11 +2600,7 @@ async function displayAccessGroups(accessGroups) {
     const accessGroupsWithDoors = await Promise.all(
         accessGroups.map(async (group) => {
             try {
-                const response = await fetch(`/api/access-groups/${group.id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                const response = await forceRefresh(`/api/access-groups/${group.id}`);
                 
                 if (response.ok) {
                     const data = await response.json();
@@ -2890,22 +2870,14 @@ async function manageUserAccessGroups(userId) {
     
     try {
         // Load all access groups
-        const accessGroupsResponse = await fetch('/api/access-groups?limit=100', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const accessGroupsResponse = await forceRefresh('/api/access-groups?limit=100');
         
         if (accessGroupsResponse.ok) {
             const accessGroupsData = await accessGroupsResponse.json();
             const allAccessGroups = accessGroupsData.accessGroups;
             
             // Get user's current access groups
-            const userAccessGroupsResponse = await fetch(`/api/users/${userId}/access-groups`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
+            const userAccessGroupsResponse = await forceRefresh(`/api/users/${userId}/access-groups`);
             
             let currentAccessGroups = [];
             if (userAccessGroupsResponse.ok) {
@@ -3004,11 +2976,7 @@ async function manageDoorTags(doorId) {
         console.log('Opening tag management for door:', doorId);
         
         // Get door information
-        const doorResponse = await fetch(`/api/doors/${doorId}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const doorResponse = await forceRefresh(`/api/doors/${doorId}`);
         
         if (!doorResponse.ok) {
             console.error('Failed to load door information:', doorResponse.status, doorResponse.statusText);
@@ -3025,11 +2993,7 @@ async function manageDoorTags(doorId) {
         const token = localStorage.getItem('token');
         console.log('Using token:', token ? 'Token exists' : 'No token found');
         
-        const tagsResponse = await fetch(`/api/door-tags/door/${doorId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const tagsResponse = await forceRefresh(`/api/door-tags/door/${doorId}`);
         
         let tags = [];
         if (tagsResponse.ok) {
@@ -3214,11 +3178,7 @@ async function manageAccessGroupDetails(accessGroupId) {
     
     try {
         // Load access group details
-        const accessGroupResponse = await fetch(`/api/access-groups/${accessGroupId}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const accessGroupResponse = await forceRefresh(`/api/access-groups/${accessGroupId}`);
         
         if (accessGroupResponse.ok) {
             const accessGroupData = await accessGroupResponse.json();
@@ -3226,11 +3186,7 @@ async function manageAccessGroupDetails(accessGroupId) {
             const currentDoors = accessGroupData.doors;
             
             // Load all doors for the checkboxes
-            const doorsResponse = await fetch('/api/doors?limit=100', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
+            const doorsResponse = await forceRefresh('/api/doors?limit=100');
             
             if (doorsResponse.ok) {
                 const doorsData = await doorsResponse.json();
@@ -3294,11 +3250,7 @@ async function updateAccessGroupDoors() {
         .map(cb => parseInt(cb.value));
     
     // Get current doors to determine what needs to be added/removed
-    const accessGroupResponse = await fetch(`/api/access-groups/${currentAccessGroupId}`, {
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-    });
+    const accessGroupResponse = await forceRefresh(`/api/access-groups/${currentAccessGroupId}`);
     
     if (!accessGroupResponse.ok) {
         showToast('Failed to load current access group details', 'error');
@@ -3580,11 +3532,7 @@ function displayDiscoveredControllers() {
 async function configureController(mac, ip) {
     // Load access groups for the dropdown
     try {
-        const response = await fetch('/api/access-groups?limit=100', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await forceRefresh('/api/access-groups?limit=100');
         
         if (response.ok) {
             const data = await response.json();
@@ -3703,11 +3651,7 @@ async function addAllDiscoveredControllers() {
     
     try {
         // Load access groups for default assignment
-        const accessGroupsResponse = await fetch('/api/access-groups?limit=100', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const accessGroupsResponse = await forceRefresh('/api/access-groups?limit=100');
         
         let defaultAccessGroupId = null;
         if (accessGroupsResponse.ok) {
@@ -3974,11 +3918,7 @@ async function loadEvents(page = 1, type = '') {
             params.append('status', currentEventFilters.status);
         }
         
-        const response = await fetch(addCacheBusting(`/api/events?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await forceRefresh(`/api/events?${params}`);
         
         console.log('Events response status:', response.status);
         
@@ -5716,11 +5656,7 @@ class SitePlanManager {
             limit: 100  // Get all doors for site plan
         });
         
-        fetch(addCacheBusting(`/api/doors?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        })
+        forceRefresh(`/api/doors?${params}`)
             .then(response => {
                 console.log('API Response status:', response.status, response.statusText);
                 if (!response.ok) {
