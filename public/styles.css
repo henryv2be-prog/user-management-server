@@ -1290,6 +1290,10 @@ body:has(#registerSection.active) .navbar {
     border-radius: 12px;
 }
 
+#doorControllerDiscoverySection .section-header h1 {
+    color: var(--text-inverse);
+}
+
 
 /* Buttons in section headers - make them work with gradient background */
 .section-header .btn-secondary {
