@@ -3807,7 +3807,26 @@ async function refreshDoorStatus() {
         
         if (response.ok) {
             const data = await response.json();
-            displayDoors(data.doors);
+            
+            // Load tags for each door (same as in loadDoors)
+            const doorsWithTags = await Promise.all(data.doors.map(async (door) => {
+                try {
+                    const tagsResponse = await forceRefresh(`/api/door-tags/door/${door.id}`);
+                    
+                    if (tagsResponse.ok) {
+                        const tagsData = await tagsResponse.json();
+                        door.tags = tagsData.doorTags || [];
+                    } else {
+                        door.tags = [];
+                    }
+                } catch (error) {
+                    door.tags = [];
+                }
+                
+                return door;
+            }));
+            
+            displayDoors(doorsWithTags);
             // Don't refresh pagination during auto-updates
         }
     } catch (error) {
