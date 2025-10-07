@@ -44,7 +44,7 @@ class NfcScanIndicator extends HTMLElement {
           inset: 14px; /* tighter and thinner */
           border-radius: calc(var(--border-radius) - 14px);
           background: transparent;
-          box-shadow: 0 0 0 0.65px var(--track-color) inset;
+          box-shadow: 0 0 0 0.4px var(--track-color) inset;
         }
 
         /* bright border that we tint per status */
@@ -55,7 +55,7 @@ class NfcScanIndicator extends HTMLElement {
           pointer-events: none;
           --border-color: var(--scan-color);
           --shadow: 0 0 12px var(--scan-glow), 0 0 24px var(--scan-glow), 0 0 44px var(--scan-glow);
-          box-shadow: 0 0 0 0.65px var(--border-color) inset, var(--shadow);
+          box-shadow: 0 0 0 0.4px var(--border-color) inset, var(--shadow);
           opacity: 0.95;
           transition: box-shadow 300ms ease, filter 300ms ease, opacity 300ms ease;
         }
@@ -91,12 +91,12 @@ class NfcScanIndicator extends HTMLElement {
         /* breathing animation for scanning */
         @keyframes scanningBreath {
           0%, 100% {
-            box-shadow: 0 0 0 0.65px var(--border-color) inset,
+            box-shadow: 0 0 0 0.4px var(--border-color) inset,
               0 0 6px var(--scan-glow), 0 0 14px var(--scan-glow), 0 0 24px var(--scan-glow);
             filter: brightness(0.95);
           }
           50% {
-            box-shadow: 0 0 0 0.65px var(--border-color) inset,
+            box-shadow: 0 0 0 0.4px var(--border-color) inset,
               0 0 28px var(--scan-glow), 0 0 60px var(--scan-glow), 0 0 110px var(--scan-glow);
             filter: brightness(1.35) saturate(1.15);
           }
