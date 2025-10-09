@@ -1839,6 +1839,10 @@ function displayUsers(users) {
                         <i class="fas fa-edit"></i>
                         <span class="btn-text">Edit</span>
                     </button>
+                    <button class="action-btn visitors" onclick="manageUserVisitors(${user.id})" title="Manage Visitors">
+                        <i class="fas fa-id-badge"></i>
+                        <span class="btn-text">Visitors</span>
+                    </button>
                     <button class="action-btn access-groups" onclick="manageUserAccessGroups(${user.id})" title="Access Groups">
                         <i class="fas fa-shield-alt"></i>
                         <span class="btn-text">Access</span>
@@ -2036,6 +2040,161 @@ async function deleteUser(userId) {
     } catch (error) {
         console.error('Delete user error:', error);
         showToast('Failed to delete user', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Visitor management
+function manageUserVisitors(userId) {
+    try {
+        const userIdInput = document.getElementById('visitorsUserId');
+        if (userIdInput) userIdInput.value = userId;
+        const form = document.getElementById('addVisitorForm');
+        if (form) form.reset();
+        const modal = document.getElementById('userVisitorsModal');
+        if (modal) modal.classList.add('active');
+        loadUserVisitors(userId);
+    } catch (e) {
+        console.error('Failed to open visitors modal:', e);
+    }
+}
+
+async function loadUserVisitors(userId) {
+    showLoading();
+    try {
+        const response = await fetch(`/api/users/${userId}/visitors?includeExpired=true`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        if (!response.ok) {
+            showToast('Failed to load visitors', 'error');
+            return;
+        }
+        const data = await response.json();
+        const visitors = data.visitors || [];
+        renderUserVisitors(visitors);
+    } catch (error) {
+        console.error('Load visitors error:', error);
+        showToast('Failed to load visitors', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function renderUserVisitors(visitors) {
+    const container = document.getElementById('userVisitorsList');
+    if (!container) return;
+    if (!visitors.length) {
+        container.innerHTML = '<div class="info">No visitors registered yet.</div>';
+        return;
+    }
+    const now = new Date();
+    const html = visitors.map(v => {
+        const validToDate = v.validTo ? new Date(v.validTo) : null;
+        const isExpired = validToDate ? validToDate < now : false;
+        return `
+            <div class="visitor-item ${isExpired ? 'expired' : 'active'}">
+                <div class="visitor-main">
+                    <div class="visitor-name">${escapeHtml(v.visitorName || '')}</div>
+                    <div class="visitor-contact">${escapeHtml(v.email || '')}${v.phone ? ' • ' + escapeHtml(v.phone) : ''}</div>
+                </div>
+                <div class="visitor-validity">${formatDate(v.validFrom)} → ${formatDate(v.validTo)} ${isExpired ? '<span class="role-badge">Expired</span>' : ''}</div>
+                <div class="visitor-actions">
+                    <button class="action-btn delete" title="Delete Visitor" onclick="deleteVisitor(${v.id}, ${v.userId})"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    container.innerHTML = html;
+}
+
+function escapeHtml(str) {
+    return (str || '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+}
+
+function formatDate(val) {
+    if (!val) return '';
+    try {
+        return new Date(val).toLocaleString();
+    } catch (e) {
+        return val;
+    }
+}
+
+async function handleAddVisitor(event) {
+    event.preventDefault();
+    const userIdEl = document.getElementById('visitorsUserId');
+    const userId = userIdEl ? parseInt(userIdEl.value) : null;
+    if (!userId) {
+        showToast('Missing user id', 'error');
+        return;
+    }
+    const form = event.target;
+    const visitorName = form.visitorName.value.trim();
+    const email = form.email.value.trim();
+    const phone = form.phone.value.trim();
+    const validToRaw = form.validTo.value;
+    if (!visitorName || !validToRaw) {
+        showToast('Name and Valid Until are required', 'error');
+        return;
+    }
+    let validTo;
+    try {
+        validTo = new Date(validToRaw).toISOString();
+    } catch (e) {
+        showToast('Invalid date/time', 'error');
+        return;
+    }
+    showLoading();
+    try {
+        const response = await fetch(`/api/visitors/user/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ visitorName, email: email || undefined, phone: phone || undefined, validTo })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            form.reset();
+            await loadUserVisitors(userId);
+            showToast('Visitor added', 'success');
+        } else {
+            showToast(data.message || 'Failed to add visitor', 'error');
+        }
+    } catch (error) {
+        console.error('Add visitor error:', error);
+        showToast('Failed to add visitor', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function deleteVisitor(visitorId, userId) {
+    if (!confirm('Are you sure you want to delete this visitor?')) return;
+    showLoading();
+    try {
+        const response = await fetch(`/api/visitors/${visitorId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        if (response.ok) {
+            await loadUserVisitors(userId);
+            showToast('Visitor deleted', 'success');
+        } else {
+            const data = await response.json();
+            showToast(data.message || 'Failed to delete visitor', 'error');
+        }
+    } catch (error) {
+        console.error('Delete visitor error:', error);
+        showToast('Failed to delete visitor', 'error');
     } finally {
         hideLoading();
     }

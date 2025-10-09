@@ -1048,6 +1048,52 @@
         </div>
     </div>
 
+    <!-- User Visitors Modal -->
+    <div id="userVisitorsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-id-badge"></i> User Visitors</h3>
+                <span class="close" onclick="closeModal('userVisitorsModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="visitorsUserId" />
+                <div class="form-group">
+                    <h4>Registered Visitors</h4>
+                    <div id="userVisitorsList" class="visitor-list"></div>
+                </div>
+                <hr/>
+                <div class="form-group">
+                    <h4>Add Visitor</h4>
+                    <form id="addVisitorForm" onsubmit="handleAddVisitor(event)">
+                        <div class="grid-2">
+                            <div>
+                                <label for="visitorName">Name</label>
+                                <input type="text" id="visitorName" name="visitorName" placeholder="e.g., Jane Guest" required />
+                            </div>
+                            <div>
+                                <label for="validTo">Valid Until</label>
+                                <input type="datetime-local" id="validTo" name="validTo" required />
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div>
+                                <label for="visitorEmail">Email (optional)</label>
+                                <input type="email" id="visitorEmail" name="email" placeholder="jane@example.com" />
+                            </div>
+                            <div>
+                                <label for="visitorPhone">Phone (optional)</label>
+                                <input type="text" id="visitorPhone" name="phone" placeholder="+123456789" />
+                            </div>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Visitor</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="changePasswordModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
