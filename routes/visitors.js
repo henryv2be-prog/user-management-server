@@ -237,6 +237,48 @@ router.post('/', authenticate, validateVisitor, async (req, res) => {
   }
 });
 
+// Convenience route: create visitor for a specific user (self or admin)
+router.post('/user/:userId', authenticate, validateId, async (req, res) => {
+  try {
+    const paramUserId = parseInt(req.params.userId);
+    const { visitorName, email, phone, validFrom, validTo } = req.body;
+
+    // Quick validation
+    if (!visitorName || !validTo) {
+      return res.status(400).json({ error: 'Validation Error', message: 'visitorName and validTo are required' });
+    }
+
+    const user = await User.findById(paramUserId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found', message: 'The specified user does not exist' });
+    }
+
+    if (!req.user.hasRole('admin') && req.user.id !== paramUserId) {
+      return res.status(403).json({ error: 'Forbidden', message: 'You can only create visitors for your own account' });
+    }
+
+    const nowIso = new Date().toISOString();
+    const visitorId = await Visitor.create({
+      userId: paramUserId,
+      firstName: visitorName,
+      lastName: '',
+      email: email || null,
+      phone: phone || null,
+      validFrom: validFrom || nowIso,
+      validUntil: validTo,
+      createdBy: req.user.id
+    });
+
+    const visitor = await Visitor.findById(visitorId);
+    await EventLogger.log(req, 'visitor', 'created', 'visitor', visitor.id, visitor.firstName, `Visitor added for user ${paramUserId}`);
+
+    res.status(201).json({ message: 'Visitor created successfully', visitor: visitor.toJSON() });
+  } catch (error) {
+    console.error('Create visitor (user) error:', error);
+    res.status(500).json({ error: 'Internal Server Error', message: 'Failed to create visitor' });
+  }
+});
+
 // Update visitor
 router.put('/:id', authenticate, validateId, validateVisitorUpdate, async (req, res) => {
   try {

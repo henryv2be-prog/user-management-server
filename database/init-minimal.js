@@ -56,6 +56,24 @@ const initDatabaseMinimal = async () => {
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
                 );
+
+                -- Visitors table (ensure visitor features work in minimal init)
+                CREATE TABLE IF NOT EXISTS visitors (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    visitor_name TEXT NOT NULL,
+                    email TEXT,
+                    phone TEXT,
+                    valid_from DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    valid_to DATETIME NOT NULL,
+                    notes TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_visitors_user_id ON visitors(user_id);
+                CREATE INDEX IF NOT EXISTS idx_visitors_valid_to ON visitors(valid_to);
             `;
             
             db.exec(minimalSQL, (err) => {
