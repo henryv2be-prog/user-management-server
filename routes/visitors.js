@@ -3,7 +3,8 @@ const { Visitor } = require('../database/visitor');
 const { User } = require('../database/models');
 const { 
   validateVisitor, 
-  validateVisitorUpdate
+  validateVisitorUpdate,
+  validateId
 } = require('../middleware/validation');
 const { authenticate, requireAdmin, authorizeSelfOrAdmin } = require('../middleware/auth');
 const EventLogger = require('../utils/eventLogger');
