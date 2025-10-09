@@ -137,7 +137,7 @@ app.use('/api', (req, res, next) => {
 });
 
 // Load and setup routes with better error handling
-let authRoutes, userRoutes, doorRoutes, accessGroupRoutes, addLog;
+let authRoutes, userRoutes, doorRoutes, accessGroupRoutes, addLog, visitorsRoutes;
 
 try {
   console.log('Loading route modules...');
@@ -172,6 +172,14 @@ try {
     console.log('Access group routes module loaded');
   } catch (err) {
     console.error('Failed to load access group routes:', err.message);
+    throw err;
+  }
+  
+  try {
+    visitorsRoutes = require('./routes/visitors');
+    console.log('Visitors routes module loaded');
+  } catch (err) {
+    console.error('Failed to load visitors routes:', err.message);
     throw err;
   }
   
@@ -261,6 +269,7 @@ console.log('Mobile settings routes module loaded');
 app.use('/api/access-groups', accessGroupRoutes);
 app.use('/api/events', eventRoutes);
   app.use('/api/access-requests', accessRequestRoutes);
+  app.use('/api/visitors', visitorsRoutes);
   app.use('/api/door-tags', doorTagsRoutes);
   app.use('/api/logs', logsRoutes);
 app.use('/api/settings', settingsRoutes);

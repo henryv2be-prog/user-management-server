@@ -170,6 +170,21 @@ const initDatabaseRailway = async () => {
                         FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE,
                         UNIQUE (tag_id)
                     );
+
+                    -- Visitors table
+                    CREATE TABLE IF NOT EXISTS visitors (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        visitor_name TEXT NOT NULL,
+                        email TEXT,
+                        phone TEXT,
+                        valid_from DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        valid_to DATETIME NOT NULL,
+                        notes TEXT,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+                    );
                 `;
                 
                 db.exec(createTablesSQL, (err) => {
@@ -191,6 +206,8 @@ const initDatabaseRailway = async () => {
                         CREATE INDEX IF NOT EXISTS idx_access_log_timestamp ON access_log(timestamp);
                         CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at);
                         CREATE INDEX IF NOT EXISTS idx_door_tags_tag_id ON door_tags(tag_id);
+                        CREATE INDEX IF NOT EXISTS idx_visitors_user_id ON visitors(user_id);
+                        CREATE INDEX IF NOT EXISTS idx_visitors_valid_to ON visitors(valid_to);
                     `;
                     
                     db.exec(createIndexesSQL, (err) => {

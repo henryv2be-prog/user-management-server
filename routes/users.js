@@ -348,6 +348,36 @@ router.get('/:id/access-groups', authenticate, requireAdmin, validateId, async (
   }
 });
 
+// Get user's visitors (admin only)
+router.get('/:id/visitors', authenticate, requireAdmin, validateId, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found',
+        message: 'The requested user does not exist'
+      });
+    }
+    const Visitor = require('../database/visitor');
+    const includeExpired = req.query.includeExpired === 'true';
+    const page = req.query.page ? parseInt(req.query.page) : 1;
+    const limit = req.query.limit ? parseInt(req.query.limit) : 50;
+    const visitors = await Visitor.findByUser(userId, { includeExpired, page, limit });
+    res.json({
+      user: user.toJSON(),
+      visitors: visitors.map(v => v.toJSON())
+    });
+  } catch (error) {
+    console.error('Get user visitors error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to retrieve user visitors'
+    });
+  }
+});
+
 // Update user's access groups
 router.put('/:id/access-groups', authenticate, requireAdmin, validateId, async (req, res) => {
   try {

@@ -7,7 +7,7 @@ const initDatabase = async () => {
         const db = await pool.getConnection();
         
         let completedTables = 0;
-        const totalTables = 14; // 13 tables + 1 admin user creation
+        const totalTables = 14; // 13 tables (including visitors) + 1 admin user creation
         
         const checkCompletion = () => {
             completedTables++;
@@ -299,6 +299,29 @@ const initDatabase = async () => {
                 checkCompletion();
             });
 
+            // Visitors table
+            db.run(`CREATE TABLE IF NOT EXISTS visitors (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL, -- owner user
+                visitor_name TEXT NOT NULL,
+                email TEXT,
+                phone TEXT,
+                valid_from DATETIME DEFAULT CURRENT_TIMESTAMP,
+                valid_to DATETIME NOT NULL,
+                notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+            )`, (err) => {
+                if (err) {
+                    console.error('Error creating visitors table:', err.message);
+                    reject(err);
+                    return;
+                }
+                console.log('Visitors table created/verified');
+                checkCompletion();
+            });
+
             // Create indexes for better performance
             db.run(`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`, (err) => {
                 if (err) console.error('Error creating users username index:', err.message);
@@ -350,6 +373,15 @@ const initDatabase = async () => {
 
             db.run(`CREATE INDEX IF NOT EXISTS idx_door_tags_tag_id ON door_tags(tag_id)`, (err) => {
                 if (err) console.error('Error creating door_tags tag_id index:', err.message);
+            });
+
+            // Visitors indexes
+            db.run(`CREATE INDEX IF NOT EXISTS idx_visitors_user_id ON visitors(user_id)`, (err) => {
+                if (err) console.error('Error creating visitors user_id index:', err.message);
+            });
+
+            db.run(`CREATE INDEX IF NOT EXISTS idx_visitors_valid_to ON visitors(valid_to)`, (err) => {
+                if (err) console.error('Error creating visitors valid_to index:', err.message);
             });
 
             // Insert default admin user if no users exist
