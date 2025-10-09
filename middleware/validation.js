@@ -276,16 +276,24 @@ const validateAccessGroupUpdate = [
 // Visitor validation rules
 const validateVisitor = [
   body('userId')
+    .optional()
     .isInt({ min: 1 })
     .withMessage('User ID must be a positive integer'),
   body('firstName')
+    .optional()
     .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('First name must be between 1 and 50 characters'),
+    .isLength({ min: 1, max: 100 })
+    .withMessage('First name must be between 1 and 100 characters'),
   body('lastName')
+    .optional()
     .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('Last name must be between 1 and 50 characters'),
+    .isLength({ min: 0, max: 100 })
+    .withMessage('Last name must be less than 100 characters'),
+  body('visitorName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('visitorName must be between 1 and 100 characters'),
   body('email')
     .optional()
     .isEmail()
@@ -297,9 +305,11 @@ const validateVisitor = [
     .isLength({ max: 20 })
     .withMessage('Phone must be less than 20 characters'),
   body('validFrom')
+    .optional()
     .isISO8601()
     .withMessage('Valid from must be a valid date'),
   body('validUntil')
+    .optional()
     .isISO8601()
     .withMessage('Valid until must be a valid date')
     .custom((value, { req }) => {
@@ -315,13 +325,18 @@ const validateVisitorUpdate = [
   body('firstName')
     .optional()
     .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('First name must be between 1 and 50 characters'),
+    .isLength({ min: 1, max: 100 })
+    .withMessage('First name must be between 1 and 100 characters'),
   body('lastName')
     .optional()
     .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('Last name must be between 1 and 50 characters'),
+    .isLength({ max: 100 })
+    .withMessage('Last name must be less than 100 characters'),
+  body('visitorName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('visitorName must be between 1 and 100 characters'),
   body('email')
     .optional()
     .isEmail()

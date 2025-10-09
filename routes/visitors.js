@@ -3,15 +3,9 @@ const { Visitor } = require('../database/visitor');
 const { User } = require('../database/models');
 const { 
   validateVisitor, 
-  validateVisitorUpdate, 
-  validateId, 
-  validatePagination 
+  validateVisitorUpdate
 } = require('../middleware/validation');
-const { 
-  authenticate, 
-  requireAdmin, 
-  authorizeSelfOrAdmin 
-} = require('../middleware/auth');
+const { authenticate, requireAdmin, authorizeSelfOrAdmin } = require('../middleware/auth');
 const EventLogger = require('../utils/eventLogger');
 
 const router = express.Router();
@@ -82,7 +76,7 @@ router.get('/all', authenticate, requireAdmin, async (req, res) => {
 });
 
 // Get visitors for a specific user
-router.get('/user/:userId', authenticate, validateId, authorizeSelfOrAdmin, async (req, res) => {
+router.get('/user/:userId', authenticate, authorizeSelfOrAdmin, async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     const { search, page = 1, limit = 10, activeOnly, validOnly } = req.query;
@@ -238,7 +232,7 @@ router.post('/', authenticate, validateVisitor, async (req, res) => {
 });
 
 // Convenience route: create visitor for a specific user (self or admin)
-router.post('/user/:userId', authenticate, validateId, async (req, res) => {
+router.post('/user/:userId', authenticate, async (req, res) => {
   try {
     const paramUserId = parseInt(req.params.userId);
     const { visitorName, email, phone, validFrom, validTo } = req.body;
