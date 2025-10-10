@@ -336,3 +336,10 @@ curl -X GET http://localhost:3000/api/webhooks/{id}/deliveries \
 The webhook system provides a robust, scalable solution for integrating SimplifiAccess with external systems. It complements the existing SSE system while providing better reliability and integration capabilities for third-party services.
 
 For questions or support, please refer to the main SimplifiAccess documentation or contact the development team.
+
+---
+
+Note: This guide was updated to reflect standardized webhook payloads
+(`{ event, timestamp, data }`), expanded event coverage (including a catch-all
+subscription), and recommendations for client-side polling for in-app live
+events.
