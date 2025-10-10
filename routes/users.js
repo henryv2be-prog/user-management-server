@@ -348,6 +348,57 @@ router.get('/:id/access-groups', authenticate, requireAdmin, validateId, async (
   }
 });
 
+// Get user's visitors (admin only)
+router.get('/:id/visitors', authenticate, requireAdmin, validateId, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found', message: 'The requested user does not exist' });
+    }
+    const { Visitor } = require('../database/visitor');
+    const visitors = await Visitor.findByUserId(userId, { includeExpired: true, limit: 100 });
+    res.json({ user: user.toJSON(), visitors: visitors.map(v => v.toJSON()) });
+  } catch (error) {
+    console.error('Get user visitors error:', error);
+    res.status(500).json({ error: 'Internal Server Error', message: 'Failed to retrieve user visitors' });
+  }
+});
+
+// Create a visitor for a user (admin only)
+router.post('/:id/visitors', authenticate, requireAdmin, validateId, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const { visitorName, email, phone, validFrom, validTo } = req.body;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found', message: 'The requested user does not exist' });
+    }
+    if (!visitorName || !validTo) {
+      return res.status(400).json({ error: 'Validation Error', message: 'visitorName and validTo are required' });
+    }
+    const { Visitor } = require('../database/visitor');
+    const nowIso = new Date().toISOString();
+    const visitorId = await Visitor.create({
+      userId,
+      firstName: visitorName,
+      lastName: '',
+      email: email || null,
+      phone: phone || null,
+      validFrom: validFrom || nowIso,
+      validUntil: validTo,
+      createdBy: req.user.id
+    });
+    const visitor = await Visitor.findById(visitorId);
+    const EventLogger = require('../utils/eventLogger');
+    await EventLogger.log(req, 'visitor', 'created', 'visitor', visitor.id, visitor.firstName, `Visitor added for user ${userId}`);
+    res.status(201).json({ message: 'Visitor created successfully', visitor: visitor.toJSON() });
+  } catch (error) {
+    console.error('Create user visitor error:', error);
+    res.status(500).json({ error: 'Internal Server Error', message: 'Failed to create visitor' });
+  }
+});
+
 // Update user's access groups
 router.put('/:id/access-groups', authenticate, requireAdmin, validateId, async (req, res) => {
   try {
