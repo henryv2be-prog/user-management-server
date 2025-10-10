@@ -413,10 +413,15 @@ async function checkAuthStatus() {
                 currentUser = data.user;
                 showAuthenticatedUI();
                 loadDashboard();
-                // Ensure SSE connection is established after auth check
+                // Start polling-based real-time updates when a session already exists
                 setTimeout(() => {
+                    if (typeof initializeUserWebhook === 'function') {
+                        console.log('🔄 Initializing user event poller after auth check...');
+                        initializeUserWebhook();
+                    }
+                    // SSE path remains disabled; keep call for future compatibility
                     if (!isEventStreamConnected) {
-                        console.log('🔄 Establishing SSE connection after auth check...');
+                        console.log('🔄 Establishing SSE connection after auth check (disabled path)...');
                         connectEventStream();
                     }
                 }, 1000);
