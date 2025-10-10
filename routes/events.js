@@ -73,9 +73,9 @@ async function broadcastToUserWebhooks(event) {
   await Promise.allSettled(promises);
 }
 
-// Global broadcast function for events - Polling-based only
+// Global broadcast function for events - Enhanced with both SSE and webhook support
 global.broadcastEvent = function(event) {
-  console.log('📡 Event logged (polling will detect it):', event.type, event.action, event.entityName);
+  console.log('📡 Event logged:', event.type, event.action, event.entityName);
   console.log('📡 Event details:', {
     id: event.id,
     type: event.type,
@@ -86,8 +86,68 @@ global.broadcastEvent = function(event) {
     message: event.message
   });
   
-  // No broadcasting needed - frontend will poll for new events
-  console.log('📡 Using polling-based system for real-time updates');
+  // Broadcast to SSE connections
+  try {
+    broadcastEvent(event);
+    console.log('📡 Event broadcasted to SSE connections');
+  } catch (error) {
+    console.error('❌ Error broadcasting to SSE:', error);
+  }
+  
+  // Trigger webhooks for relevant events
+  if (global.triggerWebhook) {
+    try {
+      // Map event to webhook event
+      const webhookEventMap = {
+        'access.granted': 'access_request.granted',
+        'access.denied': 'access_request.denied',
+        'access.status_changed': 'access_request.status_changed',
+        'door.opened': 'door.opened',
+        'door.closed': 'door.closed',
+        'door.online': 'door.online',
+        'door.offline': 'door.offline',
+        'door.controlled': 'door.opened',
+        'auth.login': 'user.login',
+        'auth.logout': 'user.logout',
+        'system.startup': 'system.startup',
+        'system.shutdown': 'system.shutdown',
+        'error.occurred': 'system.error'
+      };
+
+      const webhookEvent = webhookEventMap[`${event.type}.${event.action}`];
+      
+      if (webhookEvent) {
+        const webhookPayload = {
+          event: webhookEvent,
+          timestamp: event.createdAt || new Date().toISOString(),
+          data: {
+            eventId: event.id,
+            type: event.type,
+            action: event.action,
+            entityType: event.entityType,
+            entityId: event.entityId,
+            entityName: event.entityName,
+            details: event.details,
+            userId: event.userId,
+            userName: event.userName,
+            ipAddress: event.ipAddress
+          }
+        };
+
+        global.triggerWebhook(webhookEvent, webhookPayload.data).catch(error => {
+          console.error('❌ Error triggering webhook:', error);
+        });
+        
+        console.log('📡 Webhook triggered for event:', webhookEvent);
+      } else {
+        console.log('📡 No webhook event mapped for:', `${event.type}.${event.action}`);
+      }
+    } catch (error) {
+      console.error('❌ Error in webhook triggering:', error);
+    }
+  } else {
+    console.log('ℹ️ triggerWebhook function not available globally');
+  }
 };
 
 // Test endpoint to manually trigger an event broadcast
@@ -458,50 +518,44 @@ router.get('/stream-public', (req, res) => {
 
 // Server-Sent Events endpoint for live event updates (admin only)
 router.get('/stream', async (req, res) => {
-  console.log('🔗 SSE /stream endpoint accessed (public)');
+  console.log('🔗 SSE /stream endpoint accessed');
   console.log('🔗 Request headers:', req.headers);
   console.log('🔗 Query params:', req.query);
-  console.log('🔗 User-Agent:', req.headers['user-agent']);
-  console.log('🔗 Accept header:', req.headers.accept);
   
   try {
-  
-  // Set SSE headers first to establish the connection
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Cache-Control'
-  });
-  
-  console.log('📡 SSE headers set, connection should be established');
-  console.log('📡 Response state after headers:', {
-    writable: res.writable,
-    destroyed: res.destroyed,
-    headersSent: res.headersSent,
-    finished: res.finished
-  });
-  
-  // Add response close detection
-  res.on('close', () => {
-    console.log('📡 Response closed by server/client');
-  });
-  
-  res.on('finish', () => {
-    console.log('📡 Response finished');
-  });
-  
-  if (!token) {
-    console.log('❌ SSE: No token provided');
-    res.write(`data: ${JSON.stringify({ 
-      type: 'error', 
-      message: 'Token required for event stream',
-      timestamp: new Date().toISOString()
-    })}\n\n`);
-    res.end();
-    return;
-  }
+    // Get token from query parameter or Authorization header
+    const token = req.query.token || req.headers.authorization?.replace('Bearer ', '');
+    
+    // Set SSE headers first to establish the connection
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control'
+    });
+    
+    console.log('📡 SSE headers set, connection should be established');
+    
+    // Add response close detection
+    res.on('close', () => {
+      console.log('📡 Response closed by server/client');
+    });
+    
+    res.on('finish', () => {
+      console.log('📡 Response finished');
+    });
+    
+    if (!token) {
+      console.log('❌ SSE: No token provided');
+      res.write(`data: ${JSON.stringify({ 
+        type: 'error', 
+        message: 'Token required for event stream',
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+      res.end();
+      return;
+    }
   
   // Verify token and get user
   try {
