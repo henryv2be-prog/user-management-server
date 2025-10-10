@@ -16,17 +16,54 @@ const deliveryQueue = new Map();
 
 // Webhook event types
 const WEBHOOK_EVENTS = {
+  // Special: subscribe to ALL events
+  EVENTS_ALL: 'events.all',
+
+  // Access request lifecycle
   ACCESS_REQUEST_CREATED: 'access_request.created',
   ACCESS_REQUEST_GRANTED: 'access_request.granted',
   ACCESS_REQUEST_DENIED: 'access_request.denied',
   ACCESS_REQUEST_EXPIRED: 'access_request.expired',
   ACCESS_REQUEST_STATUS_CHANGED: 'access_request.status_changed',
+  ACCESS_REQUEST_DELETED: 'access_request.deleted',
+
+  // Door events
   DOOR_OPENED: 'door.opened',
   DOOR_CLOSED: 'door.closed',
   DOOR_OFFLINE: 'door.offline',
   DOOR_ONLINE: 'door.online',
+  DOOR_CONTROLLED: 'door.controlled',
+  DOOR_TAG_ASSOCIATED: 'door.tag_associated',
+  DOOR_TAG_REMOVED: 'door.tag_removed',
+  DOOR_AUTO_REGISTERED: 'door.auto_registered',
+
+  // User/auth events
   USER_LOGIN: 'user.login',
   USER_LOGOUT: 'user.logout',
+
+  // Visitor events
+  VISITOR_CREATED: 'visitor.created',
+  VISITOR_UPDATED: 'visitor.updated',
+  VISITOR_DELETED: 'visitor.deleted',
+
+  // Access group events
+  ACCESS_GROUP_CREATED: 'access_group.created',
+  ACCESS_GROUP_UPDATED: 'access_group.updated',
+  ACCESS_GROUP_DELETED: 'access_group.deleted',
+  ACCESS_GROUP_USER_ADDED: 'access_group.user_added',
+  ACCESS_GROUP_USER_REMOVED: 'access_group.user_removed',
+  ACCESS_GROUP_DOOR_ADDED: 'access_group.door_added',
+  ACCESS_GROUP_DOOR_REMOVED: 'access_group.door_removed',
+
+  // Site plan / configuration
+  SITE_PLAN_UPDATED: 'site_plan.updated',
+
+  // Webhook system itself
+  WEBHOOK_CREATED: 'webhook.created',
+  WEBHOOK_UPDATED: 'webhook.updated',
+  WEBHOOK_DELETED: 'webhook.deleted',
+
+  // System/runtime
   SYSTEM_ERROR: 'system.error',
   SYSTEM_STARTUP: 'system.startup',
   SYSTEM_SHUTDOWN: 'system.shutdown'
@@ -305,7 +342,7 @@ async function triggerWebhook(event, payload) {
   console.log(`📡 Triggering webhook for event: ${event}`);
   
   const activeWebhooks = Array.from(webhookConfigs.values())
-    .filter(config => config.active && config.events.includes(event));
+    .filter(config => config.active && (config.events.includes(event) || config.events.includes(WEBHOOK_EVENTS.EVENTS_ALL)));
 
   if (activeWebhooks.length === 0) {
     console.log(`ℹ️ No active webhooks configured for event: ${event}`);
@@ -625,17 +662,37 @@ router.get('/events/available', authenticate, requireAdmin, async (req, res) => 
 // Helper function to get event descriptions
 function getEventDescription(event) {
   const descriptions = {
+    [WEBHOOK_EVENTS.EVENTS_ALL]: 'Receive all events (catch-all subscription)',
     [WEBHOOK_EVENTS.ACCESS_REQUEST_CREATED]: 'Triggered when a new access request is created',
     [WEBHOOK_EVENTS.ACCESS_REQUEST_GRANTED]: 'Triggered when an access request is granted',
     [WEBHOOK_EVENTS.ACCESS_REQUEST_DENIED]: 'Triggered when an access request is denied',
     [WEBHOOK_EVENTS.ACCESS_REQUEST_EXPIRED]: 'Triggered when an access request expires',
     [WEBHOOK_EVENTS.ACCESS_REQUEST_STATUS_CHANGED]: 'Triggered when an access request status changes',
+    [WEBHOOK_EVENTS.ACCESS_REQUEST_DELETED]: 'Triggered when an access request is deleted',
     [WEBHOOK_EVENTS.DOOR_OPENED]: 'Triggered when a door is opened',
     [WEBHOOK_EVENTS.DOOR_CLOSED]: 'Triggered when a door is closed',
     [WEBHOOK_EVENTS.DOOR_OFFLINE]: 'Triggered when a door goes offline',
     [WEBHOOK_EVENTS.DOOR_ONLINE]: 'Triggered when a door comes online',
+    [WEBHOOK_EVENTS.DOOR_CONTROLLED]: 'Triggered when a door control command is sent',
+    [WEBHOOK_EVENTS.DOOR_TAG_ASSOCIATED]: 'Triggered when a tag is associated with a door',
+    [WEBHOOK_EVENTS.DOOR_TAG_REMOVED]: 'Triggered when a tag is removed from a door',
+    [WEBHOOK_EVENTS.DOOR_AUTO_REGISTERED]: 'Triggered when a door is auto-registered from discovery',
     [WEBHOOK_EVENTS.USER_LOGIN]: 'Triggered when a user logs in',
     [WEBHOOK_EVENTS.USER_LOGOUT]: 'Triggered when a user logs out',
+    [WEBHOOK_EVENTS.VISITOR_CREATED]: 'Triggered when a visitor is created',
+    [WEBHOOK_EVENTS.VISITOR_UPDATED]: 'Triggered when a visitor is updated',
+    [WEBHOOK_EVENTS.VISITOR_DELETED]: 'Triggered when a visitor is deleted',
+    [WEBHOOK_EVENTS.ACCESS_GROUP_CREATED]: 'Triggered when an access group is created',
+    [WEBHOOK_EVENTS.ACCESS_GROUP_UPDATED]: 'Triggered when an access group is updated',
+    [WEBHOOK_EVENTS.ACCESS_GROUP_DELETED]: 'Triggered when an access group is deleted',
+    [WEBHOOK_EVENTS.ACCESS_GROUP_USER_ADDED]: 'Triggered when a user is added to an access group',
+    [WEBHOOK_EVENTS.ACCESS_GROUP_USER_REMOVED]: 'Triggered when a user is removed from an access group',
+    [WEBHOOK_EVENTS.ACCESS_GROUP_DOOR_ADDED]: 'Triggered when a door is added to an access group',
+    [WEBHOOK_EVENTS.ACCESS_GROUP_DOOR_REMOVED]: 'Triggered when a door is removed from an access group',
+    [WEBHOOK_EVENTS.SITE_PLAN_UPDATED]: 'Triggered when the site plan is updated',
+    [WEBHOOK_EVENTS.WEBHOOK_CREATED]: 'Triggered when a webhook configuration is created',
+    [WEBHOOK_EVENTS.WEBHOOK_UPDATED]: 'Triggered when a webhook configuration is updated',
+    [WEBHOOK_EVENTS.WEBHOOK_DELETED]: 'Triggered when a webhook configuration is deleted',
     [WEBHOOK_EVENTS.SYSTEM_ERROR]: 'Triggered when a system error occurs',
     [WEBHOOK_EVENTS.SYSTEM_STARTUP]: 'Triggered when the system starts up',
     [WEBHOOK_EVENTS.SYSTEM_SHUTDOWN]: 'Triggered when the system shuts down'
