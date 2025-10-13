@@ -157,6 +157,9 @@ async function sendWebhookDelivery(delivery, config) {
     delivery.attempts++;
     delivery.lastAttemptAt = new Date().toISOString();
 
+    // Detect if this is a Slack webhook
+    const isSlackWebhook = config.url.includes('slack.com') || config.url.includes('hooks.slack');
+
     // Structured payload by default
     const structuredPayload = typeof delivery.payload === 'object' && delivery.payload.event
       ? delivery.payload
@@ -166,26 +169,68 @@ async function sendWebhookDelivery(delivery, config) {
           data: delivery.payload || {}
         };
 
-    const payloadString = JSON.stringify(structuredPayload);
+    // Format payload for Slack if needed
+    let finalPayload = structuredPayload;
+    if (isSlackWebhook) {
+      // Slack requires a simple "text" field format
+      const eventName = delivery.event || 'event';
+      const eventData = structuredPayload.data || {};
+      const entityName = eventData.entityName || eventData.userName || 'Unknown';
+      const details = eventData.details || '';
+      
+      // Create a nice formatted message for Slack
+      let text = `🔔 *${eventName}*\n`;
+      text += `👤 ${entityName}\n`;
+      if (details) {
+        text += `📝 ${details}\n`;
+      }
+      text += `⏰ ${new Date().toLocaleString()}`;
+      
+      finalPayload = {
+        text: text,
+        // Include additional data as attachments for rich display
+        attachments: [{
+          color: eventName.includes('failed') || eventName.includes('denied') ? 'danger' : 'good',
+          fields: [
+            {
+              title: 'Event',
+              value: eventName,
+              short: true
+            },
+            {
+              title: 'Timestamp',
+              value: new Date().toISOString(),
+              short: true
+            }
+          ]
+        }]
+      };
+      
+      console.log(`📤 Sending Slack-formatted webhook to ${config.name}`);
+    }
+
+    const payloadString = JSON.stringify(finalPayload);
     const signature = generateSignature(payloadString, config.secret);
 
-    console.log(`📤 Sending webhook to ${config.url}:`, structuredPayload);
-    console.log(`📤 Headers:`, {
-      'Content-Type': 'application/json',
-      'X-Webhook-Signature': `sha256=${signature}`,
-      'X-Webhook-Event': delivery.event,
-      'X-Webhook-Delivery': delivery.id,
-      'User-Agent': 'SimplifiAccess-Webhook/1.0'
-    });
+    console.log(`📤 Sending webhook to ${config.url}:`, finalPayload);
+    
+    // Slack webhooks don't need custom headers, but include them for other webhooks
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+    
+    // Only add custom headers for non-Slack webhooks
+    if (!isSlackWebhook) {
+      headers['X-Webhook-Signature'] = `sha256=${signature}`;
+      headers['X-Webhook-Event'] = delivery.event;
+      headers['X-Webhook-Delivery'] = delivery.id;
+      headers['User-Agent'] = 'SimplifiAccess-Webhook/1.0';
+    }
 
-    const response = await axios.post(config.url, structuredPayload, {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Webhook-Signature': `sha256=${signature}`,
-        'X-Webhook-Event': delivery.event,
-        'X-Webhook-Delivery': delivery.id,
-        'User-Agent': 'SimplifiAccess-Webhook/1.0'
-      },
+    console.log(`📤 Headers:`, headers);
+
+    const response = await axios.post(config.url, finalPayload, {
+      headers: headers,
       timeout: config.timeout,
       validateStatus: (status) => status >= 200 && status < 300
     });
