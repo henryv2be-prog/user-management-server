@@ -217,10 +217,16 @@ async function sendWebhookDelivery(delivery, config) {
     console.error(`❌ Error response:`, error.response?.data);
     console.error(`❌ Error status:`, error.response?.status);
     
+    // Build comprehensive error details
+    const errorMessage = error.response?.status 
+      ? `Request failed with status code ${error.response.status}`
+      : error.message;
+    
     delivery.error = {
-      message: error.message,
+      message: errorMessage,
       code: error.code,
-      status: error.response?.status
+      status: error.response?.status,
+      responseData: error.response?.data
     };
 
     // Determine if we should retry
@@ -239,8 +245,9 @@ async function sendWebhookDelivery(delivery, config) {
     } else {
       delivery.status = 'failed';
       console.error(`💀 Webhook delivery permanently failed: ${config.name}`);
+      console.error(`💀 Event: ${delivery.event}, Error: ${errorMessage}`);
       
-      // Log failed delivery
+      // Log failed delivery with comprehensive details
       await EventLogger.log(
         { ip: '127.0.0.1', headers: { 'user-agent': 'SimplifiAccess-Webhook' } },
         'webhook',
@@ -248,7 +255,7 @@ async function sendWebhookDelivery(delivery, config) {
         'WebhookDelivery',
         delivery.id,
         `Webhook delivery permanently failed to ${config.name}`,
-        `Event: ${delivery.event}, Error: ${error.message}`
+        `Event: ${delivery.event}, Error: ${errorMessage}`
       );
     }
 
