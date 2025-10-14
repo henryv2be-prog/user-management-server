@@ -310,6 +310,8 @@ const initDatabase = async () => {
                 valid_from DATETIME NOT NULL,
                 valid_until DATETIME NOT NULL,
                 is_active INTEGER DEFAULT 1,
+                access_event_limit INTEGER DEFAULT 0,
+                remaining_access_events INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 created_by INTEGER,

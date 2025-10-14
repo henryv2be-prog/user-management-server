@@ -118,7 +118,35 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
       });
     }
 
-    // User has access - create granted request
+    // User has access - check if this is a visitor and handle access events
+    let remainingEvents = null;
+    if (req.user.role === 'visitor') {
+      try {
+        const { Visitor } = require('../database/visitor');
+        const visitor = await Visitor.findByUserId(userId);
+        
+        if (visitor && visitor.isValid()) {
+          // Use one access event
+          await visitor.useAccessEvent();
+          remainingEvents = visitor.remainingAccessEvents;
+          console.log(`Visitor ${visitor.firstName} ${visitor.lastName} used access event. Remaining: ${remainingEvents}`);
+        } else if (visitor) {
+          // Visitor exists but is not valid (no events or expired)
+          return res.status(403).json({
+            access: false,
+            message: visitor.remainingAccessEvents <= 0 ? 
+              'No remaining access events. Please contact your host to add more events.' :
+              'Visitor access has expired or is inactive',
+            remainingInstances: visitor.remainingAccessEvents || 0
+          });
+        }
+      } catch (error) {
+        console.error('Error handling visitor access events:', error);
+        // Continue with normal access if visitor handling fails
+      }
+    }
+
+    // Create granted request
     const requestData = {
       userId: userId,
       doorId: resolvedDoorId,
@@ -199,6 +227,7 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
       doorControlSuccess: doorControlSuccess,
       doorControlMessage: doorControlMessage,
       requestId: accessRequest.id,
+      remainingInstances: remainingEvents, // Include remaining events for visitors
       user: {
         id: req.user.id,
         firstName: req.user.firstName,

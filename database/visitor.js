@@ -15,6 +15,8 @@ class Visitor {
         this.validFrom = data.valid_from;
         this.validUntil = data.valid_until;
         this.isActive = data.is_active !== undefined ? Boolean(data.is_active) : true;
+        this.accessEventLimit = data.access_event_limit || 0;
+        this.remainingAccessEvents = data.remaining_access_events || 0;
         this.createdAt = data.created_at;
         this.updatedAt = data.updated_at;
         this.createdBy = data.created_by;
@@ -32,6 +34,8 @@ class Visitor {
             validFrom: this.validFrom,
             validUntil: this.validUntil,
             isActive: this.isActive,
+            accessEventLimit: this.accessEventLimit,
+            remainingAccessEvents: this.remainingAccessEvents,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
             createdBy: this.createdBy
@@ -46,7 +50,13 @@ class Visitor {
         const validFrom = new Date(this.validFrom);
         const validUntil = new Date(this.validUntil);
         
-        return now >= validFrom && now <= validUntil;
+        // Check date validity
+        if (now < validFrom || now > validUntil) return false;
+        
+        // Check if visitor has remaining access events
+        if (this.remainingAccessEvents <= 0) return false;
+        
+        return true;
     }
 
     // Static methods for database operations
@@ -337,6 +347,100 @@ class Visitor {
                     resolve(row);
                 }
             );
+        });
+    }
+
+    // Use an access event (decrement remaining events)
+    async useAccessEvent() {
+        if (this.remainingAccessEvents <= 0) {
+            throw new Error('No remaining access events');
+        }
+
+        return new Promise((resolve, reject) => {
+            const db = new sqlite3.Database(DB_PATH);
+            
+            const sql = `
+                UPDATE visitors 
+                SET remaining_access_events = remaining_access_events - 1,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            `;
+            
+            db.run(sql, [this.id], (err) => {
+                if (err) {
+                    db.close();
+                    return reject(err);
+                }
+                
+                // Update local instance
+                this.remainingAccessEvents -= 1;
+                this.updatedAt = new Date().toISOString();
+                
+                db.close();
+                resolve(this);
+            });
+        });
+    }
+
+    // Add more access events
+    async addAccessEvents(additionalEvents) {
+        if (additionalEvents <= 0) {
+            throw new Error('Additional events must be positive');
+        }
+
+        return new Promise((resolve, reject) => {
+            const db = new sqlite3.Database(DB_PATH);
+            
+            const sql = `
+                UPDATE visitors 
+                SET remaining_access_events = remaining_access_events + ?,
+                    access_event_limit = access_event_limit + ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            `;
+            
+            db.run(sql, [additionalEvents, additionalEvents, this.id], (err) => {
+                if (err) {
+                    db.close();
+                    return reject(err);
+                }
+                
+                // Update local instance
+                this.remainingAccessEvents += additionalEvents;
+                this.accessEventLimit += additionalEvents;
+                this.updatedAt = new Date().toISOString();
+                
+                db.close();
+                resolve(this);
+            });
+        });
+    }
+
+    // Reset access events to original limit
+    async resetAccessEvents() {
+        return new Promise((resolve, reject) => {
+            const db = new sqlite3.Database(DB_PATH);
+            
+            const sql = `
+                UPDATE visitors 
+                SET remaining_access_events = access_event_limit,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            `;
+            
+            db.run(sql, [this.id], (err) => {
+                if (err) {
+                    db.close();
+                    return reject(err);
+                }
+                
+                // Update local instance
+                this.remainingAccessEvents = this.accessEventLimit;
+                this.updatedAt = new Date().toISOString();
+                
+                db.close();
+                resolve(this);
+            });
         });
     }
 }
