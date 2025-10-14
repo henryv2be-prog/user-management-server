@@ -1,5 +1,6 @@
 const express = require('express');
 const { User } = require('../database/models');
+const { Visitor } = require('../database/visitor');
 const { validateLogin, validateRegister, validatePasswordChange } = require('../middleware/validation');
 const { authenticate } = require('../middleware/auth');
 const EventLogger = require('../utils/eventLogger');
@@ -20,18 +21,47 @@ router.post('/login', validateLogin, async (req, res) => {
       user = await User.findByUsername(email);
     }
     
+    // If not found as user, try as visitor
+    let visitor = null;
     if (!user) {
+      visitor = await Visitor.findByEmail(email);
+      if (!visitor) {
+        visitor = await Visitor.findByUsername(email);
+      }
+    }
+    
+    if (!user && !visitor) {
       // Log failed login attempt
-      await EventLogger.logFailedLogin(req, email, 'User not found');
+      await EventLogger.logFailedLogin(req, email, 'User/Visitor not found');
       return res.status(401).json({
         error: 'Authentication failed',
         message: 'Invalid username/email or password'
       });
     }
     
-    // Account is always active (is_active column removed)
+    // Check password for user or visitor
+    let isValidPassword = false;
+    let accountType = 'user';
+    let accountData = user;
     
-    const isValidPassword = await user.verifyPassword(password);
+    if (user) {
+      isValidPassword = await user.verifyPassword(password);
+      accountData = user;
+    } else if (visitor) {
+      isValidPassword = await visitor.verifyPassword(password);
+      accountType = 'visitor';
+      accountData = visitor;
+      
+      // Check if visitor is active
+      if (!visitor.isActive) {
+        await EventLogger.logFailedLogin(req, email, 'Visitor account inactive');
+        return res.status(401).json({
+          error: 'Authentication failed',
+          message: 'Account is inactive'
+        });
+      }
+    }
+    
     if (!isValidPassword) {
       // Log failed login attempt
       await EventLogger.logFailedLogin(req, email, 'Invalid password');
@@ -44,22 +74,37 @@ router.post('/login', validateLogin, async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { 
-        userId: user.id, 
-        username: user.username, 
-        email: user.email, 
-        role: user.role 
+        userId: accountData.id, 
+        username: accountData.username, 
+        email: accountData.email, 
+        role: accountType === 'visitor' ? 'visitor' : accountData.role,
+        accountType: accountType,
+        hostUserId: accountType === 'visitor' ? accountData.hostUserId : null
       },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
     
-    // Log user login event
-    await EventLogger.logUserLogin(req, user);
+    // Log login event
+    if (accountType === 'visitor') {
+      await EventLogger.logEvent(req, {
+        type: 'visitor',
+        action: 'login',
+        entityType: 'visitor',
+        entityId: accountData.id,
+        entityName: `${accountData.firstName} ${accountData.lastName}`,
+        details: 'Visitor logged in',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      await EventLogger.logUserLogin(req, accountData);
+    }
     
     res.json({
       message: 'Login successful',
       token,
-      user: user.toJSON()
+      user: accountData.toJSON(),
+      accountType: accountType
     });
   } catch (error) {
     console.error('Login error:', error);

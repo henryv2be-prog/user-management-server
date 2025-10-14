@@ -273,6 +273,58 @@ const validateAccessGroupUpdate = [
   handleValidationErrors
 ];
 
+// Visitor validation rules
+const validateVisitor = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Must be a valid email address'),
+  body('password')
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters long')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
+  body('firstName')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('First name must be between 1 and 50 characters'),
+  body('lastName')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Last name must be between 1 and 50 characters'),
+  body('hostUserId')
+    .isInt({ min: 1 })
+    .withMessage('Host user ID must be a positive integer'),
+  body('accessInstances')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Access instances must be between 1 and 100'),
+  handleValidationErrors
+];
+
+const validateVisitorUpdate = [
+  body('email')
+    .optional()
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Must be a valid email address'),
+  body('firstName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('First name must be between 1 and 50 characters'),
+  body('lastName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Last name must be between 1 and 50 characters'),
+  body('isActive')
+    .optional()
+    .isBoolean()
+    .withMessage('Active status must be true or false'),
+  handleValidationErrors
+];
+
 module.exports = {
   handleValidationErrors,
   validateUser,
@@ -286,6 +338,8 @@ module.exports = {
   validateDoor,
   validateDoorUpdate,
   validateAccessGroup,
-  validateAccessGroupUpdate
+  validateAccessGroupUpdate,
+  validateVisitor,
+  validateVisitorUpdate
 };
 
