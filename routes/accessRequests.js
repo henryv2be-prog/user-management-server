@@ -124,10 +124,10 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
 
     // User has access - check if this is a visitor and handle access events
     let remainingEvents = null;
-    if (req.user.role === 'visitor') {
+    if (req.user.accountType === 'visitor') {
       try {
         const { Visitor } = require('../database/visitor');
-        const visitor = await Visitor.findByUserId(userId);
+        const visitor = await Visitor.findById(req.user.visitorId);
         
         if (visitor && visitor.isValid()) {
           // Use one access event
