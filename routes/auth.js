@@ -245,7 +245,10 @@ router.post('/visitor-login', async (req, res) => {
     );
     
     // Log visitor login event
-    await EventLogger.logVisitorLogin(req, visitor);
+    await EventLogger.log(req, 'visitor.login', 'login', 'visitor', visitor.id, `${visitor.firstName} ${visitor.lastName}`, {
+      email: visitor.email,
+      userId: visitor.userId
+    });
     
     res.json({
       message: 'Visitor login successful',
