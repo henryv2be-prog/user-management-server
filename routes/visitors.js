@@ -148,7 +148,6 @@ router.get('/:id', authenticate, validateId, async (req, res) => {
       });
     }
     
-<<<<<<< HEAD
     // Check if user can access this visitor
     if (!req.user.hasRole('admin') && req.user.id !== visitor.userId) {
       return res.status(403).json({
@@ -286,7 +285,6 @@ router.put('/:id', authenticate, validateId, validateVisitorUpdate, async (req, 
       });
     }
     
-<<<<<<< HEAD
     // Check if user can update this visitor
     if (!req.user.hasRole('admin') && req.user.id !== visitor.userId) {
       return res.status(403).json({
