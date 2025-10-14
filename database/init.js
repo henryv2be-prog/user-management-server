@@ -7,7 +7,7 @@ const initDatabase = async () => {
         const db = await pool.getConnection();
         
         let completedTables = 0;
-        const totalTables = 12; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, access_requests, events, admin_user, door_commands, site_plan, door_positions
+        const totalTables = 14; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, access_requests, events, admin_user, door_commands, site_plan, door_positions, door_tags, visitors
         
         const checkCompletion = () => {
             completedTables++;
@@ -275,6 +275,51 @@ const initDatabase = async () => {
                 checkCompletion();
             });
 
+            // Visitors table
+            db.run(`CREATE TABLE IF NOT EXISTS visitors (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                first_name TEXT,
+                last_name TEXT,
+                host_user_id INTEGER NOT NULL,
+                access_instances INTEGER DEFAULT 2,
+                remaining_instances INTEGER DEFAULT 2,
+                is_active INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (host_user_id) REFERENCES users (id) ON DELETE CASCADE
+            )`, (err) => {
+                if (err) {
+                    console.error('Error creating visitors table:', err.message);
+                    reject(err);
+                    return;
+                }
+                console.log('Visitors table created/verified');
+                checkCompletion();
+            });
+
+            // Visitor access log table
+            db.run(`CREATE TABLE IF NOT EXISTS visitor_access_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                visitor_id INTEGER NOT NULL,
+                door_id INTEGER NOT NULL,
+                access_granted INTEGER NOT NULL,
+                access_reason TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (visitor_id) REFERENCES visitors (id) ON DELETE CASCADE,
+                FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE
+            )`, (err) => {
+                if (err) {
+                    console.error('Error creating visitor_access_log table:', err.message);
+                    reject(err);
+                    return;
+                }
+                console.log('Visitor access log table created/verified');
+                checkCompletion();
+            });
+
             // Create indexes for better performance
             db.run(`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`, (err) => {
                 if (err) console.error('Error creating users username index:', err.message);
@@ -318,6 +363,31 @@ const initDatabase = async () => {
 
             db.run(`CREATE INDEX IF NOT EXISTS idx_access_requests_status ON access_requests(status)`, (err) => {
                 if (err) console.error('Error creating access_requests status index:', err.message);
+            });
+
+            // Visitor table indexes
+            db.run(`CREATE INDEX IF NOT EXISTS idx_visitors_username ON visitors(username)`, (err) => {
+                if (err) console.error('Error creating visitors username index:', err.message);
+            });
+
+            db.run(`CREATE INDEX IF NOT EXISTS idx_visitors_email ON visitors(email)`, (err) => {
+                if (err) console.error('Error creating visitors email index:', err.message);
+            });
+
+            db.run(`CREATE INDEX IF NOT EXISTS idx_visitors_host_user_id ON visitors(host_user_id)`, (err) => {
+                if (err) console.error('Error creating visitors host_user_id index:', err.message);
+            });
+
+            db.run(`CREATE INDEX IF NOT EXISTS idx_visitor_access_log_visitor_id ON visitor_access_log(visitor_id)`, (err) => {
+                if (err) console.error('Error creating visitor_access_log visitor_id index:', err.message);
+            });
+
+            db.run(`CREATE INDEX IF NOT EXISTS idx_visitor_access_log_door_id ON visitor_access_log(door_id)`, (err) => {
+                if (err) console.error('Error creating visitor_access_log door_id index:', err.message);
+            });
+
+            db.run(`CREATE INDEX IF NOT EXISTS idx_visitor_access_log_timestamp ON visitor_access_log(timestamp)`, (err) => {
+                if (err) console.error('Error creating visitor_access_log timestamp index:', err.message);
             });
 
             // Insert default admin user if no users exist

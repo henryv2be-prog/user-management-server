@@ -1,4 +1,5 @@
 const { User } = require('../database/models');
+const { Visitor } = require('../database/visitor');
 const { JWT_SECRET } = require('../config/security');
 const { AuthenticationError } = require('../utils/errors');
 const jwt = require('jsonwebtoken');
@@ -16,15 +17,23 @@ const authenticate = async (req, res, next) => {
     
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
-      const user = await User.findById(decoded.userId);
       
-      if (!user) {
-        throw new AuthenticationError('User not found');
+      let account = null;
+      if (decoded.accountType === 'visitor') {
+        account = await Visitor.findById(decoded.userId);
+        if (account && !account.isActive) {
+          throw new AuthenticationError('Visitor account is inactive');
+        }
+      } else {
+        account = await User.findById(decoded.userId);
       }
       
-      // User is always active (is_active column removed)
+      if (!account) {
+        throw new AuthenticationError('Account not found');
+      }
       
-      req.user = user;
+      req.user = account;
+      req.accountType = decoded.accountType || 'user';
       next();
     } catch (tokenError) {
       if (tokenError.name === 'JsonWebTokenError') {
@@ -47,6 +56,19 @@ const authorize = (requiredRole) => {
         error: 'Unauthorized',
         message: 'Authentication required'
       });
+    }
+    
+    // Handle visitor accounts
+    if (req.accountType === 'visitor') {
+      if (requiredRole === 'admin') {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Visitors cannot access admin functions'
+        });
+      }
+      // Visitors can access user-level functions
+      next();
+      return;
     }
     
     if (!req.user.hasRole(requiredRole)) {
@@ -98,6 +120,19 @@ const authorizeSelfOrAdmin = (req, res, next) => {
   }
   
   const targetUserId = parseInt(req.params.id || req.params.userId);
+  
+  // Handle visitor accounts
+  if (req.accountType === 'visitor') {
+    if (req.user.id === targetUserId) {
+      next();
+    } else {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Visitors can only access their own data'
+      });
+    }
+    return;
+  }
   
   if (req.user.id === targetUserId || req.user.hasRole('admin')) {
     next();
