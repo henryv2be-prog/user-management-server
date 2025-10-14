@@ -19,7 +19,7 @@ const validateAccessRequest = [
   body('qrCodeData').optional().isString().withMessage('QR code data must be a string')
 ];
 
-// Process access request (requires user authentication from mobile app)
+// Process access request (requires user or visitor authentication from mobile app)
 router.post('/request', authenticate, validateAccessRequest, async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -32,7 +32,11 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
     }
 
     const { doorId, tagId, requestType = 'nfc_scan', qrCodeData } = req.body;
-    const userId = req.user.id; // User is authenticated via mobile app
+    
+    // Check if this is a visitor or regular user
+    const isVisitor = req.user.accountType === 'visitor';
+    const userId = isVisitor ? req.user.userId : req.user.id; // Host user ID for visitors
+    const visitorId = isVisitor ? req.user.visitorId : null;
     
     let door;
     let resolvedDoorId = doorId;

@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const bcrypt = require('bcrypt');
 
 // Database path - use environment variable for Render compatibility
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'users.db');
@@ -12,6 +13,7 @@ class Visitor {
         this.lastName = data.last_name;
         this.email = data.email;
         this.phone = data.phone;
+        this.password = data.password;
         this.validFrom = data.valid_from;
         this.validUntil = data.valid_until;
         this.isActive = data.is_active !== undefined ? Boolean(data.is_active) : true;
@@ -20,6 +22,18 @@ class Visitor {
         this.createdAt = data.created_at;
         this.updatedAt = data.updated_at;
         this.createdBy = data.created_by;
+    }
+
+    // Hash password
+    async hashPassword(password) {
+        const saltRounds = 10;
+        return await bcrypt.hash(password, saltRounds);
+    }
+
+    // Verify password
+    async verifyPassword(password) {
+        if (!this.password) return false;
+        return await bcrypt.compare(password, this.password);
     }
 
     // Convert to JSON (exclude sensitive data)
@@ -69,19 +83,25 @@ class Visitor {
             lastName, 
             email, 
             phone, 
+            password,
             validFrom, 
             validUntil, 
+            accessEventLimit = 2,
             createdBy 
         } = visitorData;
+        
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
         
         return new Promise((resolve, reject) => {
             const db = new sqlite3.Database(DB_PATH);
             
             db.run(`INSERT INTO visitors (
-                user_id, first_name, last_name, email, phone, 
-                valid_from, valid_until, created_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
-                [userId, firstName, lastName, email, phone, validFrom, validUntil, createdBy], 
+                user_id, first_name, last_name, email, phone, password,
+                valid_from, valid_until, access_event_limit, remaining_access_events, created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+                [userId, firstName, lastName, email, phone, hashedPassword, 
+                 validFrom, validUntil, accessEventLimit, accessEventLimit, createdBy], 
                 function(err) {
                 db.close();
                 if (err) {
@@ -89,6 +109,25 @@ class Visitor {
                 }
                 resolve(this.lastID);
             });
+        });
+    }
+
+    // Find visitor by email
+    static async findByEmail(email) {
+        return new Promise((resolve, reject) => {
+            const db = new sqlite3.Database(DB_PATH);
+            
+            db.get(
+                "SELECT * FROM visitors WHERE email = ? AND is_active = 1",
+                [email.toLowerCase()],
+                (err, row) => {
+                    db.close();
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(row ? new Visitor(row) : null);
+                }
+            );
         });
     }
 
