@@ -307,6 +307,7 @@ const initDatabase = async () => {
                 last_name TEXT NOT NULL,
                 email TEXT,
                 phone TEXT,
+                password TEXT NOT NULL,
                 valid_from DATETIME NOT NULL,
                 valid_until DATETIME NOT NULL,
                 is_active INTEGER DEFAULT 1,

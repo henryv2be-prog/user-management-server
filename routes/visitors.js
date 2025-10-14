@@ -176,7 +176,7 @@ router.get('/:id', authenticate, validateId, async (req, res) => {
 // Create new visitor
 router.post('/', authenticate, validateVisitor, async (req, res) => {
   try {
-    const { userId, firstName, lastName, email, phone, validFrom, validUntil, accessEventLimit } = req.body;
+    const { userId, firstName, lastName, email, phone, password, validFrom, validUntil, accessEventLimit } = req.body;
     
     // Verify user exists
     const user = await User.findById(userId);
@@ -201,10 +201,10 @@ router.post('/', authenticate, validateVisitor, async (req, res) => {
       lastName,
       email,
       phone,
+      password,
       validFrom,
       validUntil,
-      accessEventLimit: accessEventLimit || 0,
-      remainingAccessEvents: accessEventLimit || 0,
+      accessEventLimit: accessEventLimit || 2,
       createdBy: req.user.id
     });
     

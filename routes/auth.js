@@ -175,6 +175,81 @@ router.post('/change-password', authenticate, validatePasswordChange, async (req
   }
 });
 
+// Visitor login endpoint (email and password authentication)
+router.post('/visitor-login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !email.trim()) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Email is required'
+      });
+    }
+    
+    if (!password || !password.trim()) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Password is required'
+      });
+    }
+    
+    // Find visitor by email
+    const visitor = await Visitor.findByEmail(email.trim().toLowerCase());
+    
+    if (!visitor) {
+      return res.status(401).json({
+        error: 'Authentication failed',
+        message: 'Visitor not found'
+      });
+    }
+    
+    // Verify password
+    const isValidPassword = await visitor.verifyPassword(password);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        error: 'Authentication failed',
+        message: 'Invalid email or password'
+      });
+    }
+    
+    // Check if visitor is valid and has remaining access events
+    if (!visitor.isValid()) {
+      return res.status(401).json({
+        error: 'Access denied',
+        message: 'Visitor access has expired or no remaining events'
+      });
+    }
+    
+    // Generate JWT token for visitor
+    const token = jwt.sign(
+      { 
+        visitorId: visitor.id,
+        userId: visitor.userId, // Host user ID
+        email: visitor.email,
+        accountType: 'visitor'
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+    
+    // Log visitor login event
+    await EventLogger.logVisitorLogin(req, visitor);
+    
+    res.json({
+      message: 'Visitor login successful',
+      token,
+      visitor: visitor.toJSON()
+    });
+  } catch (error) {
+    console.error('Visitor login error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Visitor login failed'
+    });
+  }
+});
+
 // Mobile app login endpoint (for regular users)
 router.post('/mobile-login', validateLogin, async (req, res) => {
   try {

@@ -304,6 +304,10 @@ const validateVisitor = [
     .trim()
     .isLength({ max: 20 })
     .withMessage('Phone must be less than 20 characters'),
+  body('password')
+    .optional()
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long'),
   body('validFrom')
     .optional()
     .isISO8601()
