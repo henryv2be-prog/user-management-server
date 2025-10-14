@@ -205,8 +205,19 @@ router.post('/visitor-login', async (req, res) => {
     }
     
     // Verify password
-    const isValidPassword = await visitor.verifyPassword(password);
+    let isValidPassword = false;
+    try {
+      isValidPassword = await visitor.verifyPassword(password);
+    } catch (passwordError) {
+      console.error('Password verification error:', passwordError);
+      return res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'Password verification failed'
+      });
+    }
+    
     if (!isValidPassword) {
+      console.log('Visitor password verification failed for:', email);
       return res.status(401).json({
         error: 'Authentication failed',
         message: 'Invalid email or password'
