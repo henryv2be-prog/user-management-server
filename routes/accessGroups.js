@@ -15,14 +15,15 @@ const EventLogger = require('../utils/eventLogger');
 
 const router = express.Router();
 
-// Cache prevention middleware for all routes
+// Cache prevention middleware for all routes - enhanced
 router.use((req, res, next) => {
   res.set({
-    'Cache-Control': 'no-cache, no-store, must-revalidate, private',
+    'Cache-Control': 'no-cache, no-store, must-revalidate, private, max-age=0',
     'Pragma': 'no-cache',
     'Expires': '0',
     'Last-Modified': new Date().toUTCString(),
-    'ETag': `"${Date.now()}"`
+    'ETag': `"${Date.now()}-${Math.random().toString(36).substr(2, 9)}"`,
+    'Vary': '*'
   });
   next();
 });

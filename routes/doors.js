@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
+const { body, validationResult } = require('express-validator');
 const { Door } = require('../database/door');
 const { AccessGroup } = require('../database/accessGroup');
 const { 
@@ -24,14 +25,15 @@ const router = express.Router();
 // Cache for tracking ESP32 heartbeats
 const heartbeatCache = new Map();
 
-// Cache prevention middleware for all routes
+// Cache prevention middleware for all routes - enhanced
 router.use((req, res, next) => {
   res.set({
-    'Cache-Control': 'no-cache, no-store, must-revalidate, private',
+    'Cache-Control': 'no-cache, no-store, must-revalidate, private, max-age=0',
     'Pragma': 'no-cache',
     'Expires': '0',
     'Last-Modified': new Date().toUTCString(),
-    'ETag': `"${Date.now()}"`
+    'ETag': `"${Date.now()}-${Math.random().toString(36).substr(2, 9)}"`,
+    'Vary': '*'
   });
   next();
 });
@@ -836,41 +838,46 @@ router.post('/access/request', async (req, res) => {
     
     // Store door open command in queue for ESP32 to pick up
     try {
-      console.log(`Storing door open command for door ${door.id}`);
+      console.log(`🚪 Storing door open command for door ${door.id} (${door.name})`);
+      console.log(`🚪 Door ESP32 IP: ${door.esp32Ip}, MAC: ${door.esp32Mac}`);
       
-      const db = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+      const pool = require('../database/pool');
+      const db = await pool.getConnection();
       
-      // Ensure door_commands table exists (fallback for missing migration)
-      await new Promise((resolve, reject) => {
-        db.run(`CREATE TABLE IF NOT EXISTS door_commands (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          door_id INTEGER NOT NULL,
-          command TEXT NOT NULL,
-          status TEXT DEFAULT 'pending',
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          executed_at DATETIME,
-          FOREIGN KEY (door_id) REFERENCES doors (id)
-        )`, (err) => {
-          if (err) {
-            console.error('Error creating door_commands table:', err.message);
-            reject(err);
-          } else {
-            console.log('✅ Door commands table verified/created');
-            resolve();
-          }
+      try {
+        // Ensure door_commands table exists (fallback for missing migration)
+        await new Promise((resolve, reject) => {
+          db.run(`CREATE TABLE IF NOT EXISTS door_commands (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            door_id INTEGER NOT NULL,
+            command TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            executed_at DATETIME,
+            FOREIGN KEY (door_id) REFERENCES doors (id)
+          )`, (err) => {
+            if (err) {
+              console.error('Error creating door_commands table:', err.message);
+              reject(err);
+            } else {
+              console.log('✅ Door commands table verified/created');
+              resolve();
+            }
+          });
         });
-      });
-      
-      await new Promise((resolve, reject) => {
-        db.run('INSERT INTO door_commands (door_id, command, status) VALUES (?, ?, ?)', 
-               [door.id, 'open', 'pending'], (err) => {
-          db.close();
-          if (err) reject(err);
-          else resolve();
+        
+        await new Promise((resolve, reject) => {
+          db.run('INSERT INTO door_commands (door_id, command, status) VALUES (?, ?, ?)', 
+                 [door.id, 'open', 'pending'], (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
         });
-      });
-      
-      console.log('Door command stored successfully');
+        
+        console.log('Door command stored successfully');
+      } finally {
+        pool.releaseConnection(db);
+      }
       
       res.json({
         success: true,
@@ -930,24 +937,66 @@ router.post('/:id/control', authenticate, requireAdmin, validateId, async (req, 
       });
     }
     
-    // Send command to ESP32
-    const response = await fetch(`http://${door.esp32Ip}/door`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ action })
-    });
-    
-    if (response.ok) {
-      res.json({
-        success: true,
-        message: `Door ${action} command sent successfully`
-      });
-    } else {
+    // Store door control command in queue for ESP32 to pick up (same as access requests)
+    try {
+      console.log(`🚪 Storing door ${action} command for door ${door.id} (${door.name})`);
+      console.log(`🚪 Door ESP32 IP: ${door.esp32Ip}, MAC: ${door.esp32Mac}`);
+      
+      const pool = require('../database/pool');
+      const db = await pool.getConnection();
+      
+      try {
+        // Ensure door_commands table exists
+        await new Promise((resolve, reject) => {
+          db.run(`CREATE TABLE IF NOT EXISTS door_commands (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            door_id INTEGER NOT NULL,
+            command TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            executed_at DATETIME,
+            FOREIGN KEY (door_id) REFERENCES doors (id)
+          )`, (err) => {
+            if (err) {
+              console.error('Error creating door_commands table:', err.message);
+              reject(err);
+            } else {
+              console.log('✅ Door commands table verified/created');
+              resolve();
+            }
+          });
+        });
+        
+        // Insert command into queue
+        await new Promise((resolve, reject) => {
+          db.run('INSERT INTO door_commands (door_id, command) VALUES (?, ?)', 
+                 [door.id, action], function(err) {
+            if (err) {
+              console.error(`❌ Error storing door command:`, err);
+              reject(err);
+            } else {
+              console.log(`✅ Door ${action} command queued successfully (ID: ${this.lastID})`);
+              resolve();
+            }
+          });
+        });
+        
+        console.log(`✅ Door ${action} command queued for ESP32 polling`);
+        
+        res.json({
+          success: true,
+          message: `Door ${action} command queued successfully - ESP32 will pick it up on next poll`
+        });
+        
+      } finally {
+        pool.releaseConnection(db);
+      }
+      
+    } catch (error) {
+      console.error('Error queuing door command:', error);
       res.status(500).json({
-        error: 'Door Control Failed',
-        message: 'Failed to send command to ESP32'
+        error: 'Command Queue Failed',
+        message: 'Failed to queue door command for ESP32'
       });
     }
   } catch (error) {
@@ -959,79 +1008,306 @@ router.post('/:id/control', authenticate, requireAdmin, validateId, async (req, 
   }
 });
 
+// Associate NFC/QR tag with door (admin only)
+router.post('/:id/associate-tag', authenticate, requireAdmin, validateId, [
+  body('tagId').isString().notEmpty().withMessage('Tag ID is required'),
+  body('tagType').isIn(['nfc', 'qr']).withMessage('Tag type must be nfc or qr'),
+  body('tagData').optional().isString().withMessage('Tag data must be a string')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Please fix the validation errors below',
+        errors: errors.array()
+      });
+    }
+
+    const doorId = parseInt(req.params.id);
+    const { tagId, tagType, tagData } = req.body;
+
+    // Find the door
+    const door = await Door.findById(doorId);
+    if (!door) {
+      return res.status(404).json({
+        error: 'Door Not Found',
+        message: 'The specified door does not exist'
+      });
+    }
+
+    // Check if tag is already associated with another door
+    const existingTag = await runQuery(
+      'SELECT * FROM door_tags WHERE tag_id = ? AND door_id != ?',
+      [tagId, doorId]
+    );
+
+    if (existingTag.length > 0) {
+      return res.status(409).json({
+        error: 'Tag Already Associated',
+        message: `Tag ${tagId} is already associated with another door`
+      });
+    }
+
+    // Associate tag with door
+    await runQuery(
+      'INSERT OR REPLACE INTO door_tags (door_id, tag_id, tag_type, tag_data, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
+      [doorId, tagId, tagType, tagData || null]
+    );
+
+    // Log the association
+    await EventLogger.log(req, 'door', 'tag_associated', 'Door', doorId, door.name, 
+      `Tag ${tagId} (${tagType}) associated with door ${door.name}`);
+
+    res.json({
+      message: 'Tag associated successfully',
+      door: door.toJSON(),
+      tag: {
+        id: tagId,
+        type: tagType,
+        data: tagData
+      }
+    });
+  } catch (error) {
+    console.error('Associate tag error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to associate tag with door'
+    });
+  }
+});
+
+// Get tags associated with door
+router.get('/:id/tags', authenticate, requireAdmin, validateId, async (req, res) => {
+  try {
+    const doorId = parseInt(req.params.id);
+
+    // Find the door
+    const door = await Door.findById(doorId);
+    if (!door) {
+      return res.status(404).json({
+        error: 'Door Not Found',
+        message: 'The specified door does not exist'
+      });
+    }
+
+    // Get associated tags
+    const tags = await allQuery(
+      'SELECT * FROM door_tags WHERE door_id = ? ORDER BY created_at DESC',
+      [doorId]
+    );
+
+    res.json({
+      door: door.toJSON(),
+      tags: tags
+    });
+  } catch (error) {
+    console.error('Get door tags error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to get door tags'
+    });
+  }
+});
+
+// Remove tag association from door
+router.delete('/:id/tags/:tagId', authenticate, requireAdmin, validateId, async (req, res) => {
+  try {
+    const doorId = parseInt(req.params.id);
+    const tagId = req.params.tagId;
+
+    // Find the door
+    const door = await Door.findById(doorId);
+    if (!door) {
+      return res.status(404).json({
+        error: 'Door Not Found',
+        message: 'The specified door does not exist'
+      });
+    }
+
+    // Remove tag association
+    const result = await runQuery(
+      'DELETE FROM door_tags WHERE door_id = ? AND tag_id = ?',
+      [doorId, tagId]
+    );
+
+    if (result.changes === 0) {
+      return res.status(404).json({
+        error: 'Tag Association Not Found',
+        message: 'The specified tag is not associated with this door'
+      });
+    }
+
+    // Log the removal
+    await EventLogger.log(req, 'door', 'tag_removed', 'Door', doorId, door.name, 
+      `Tag ${tagId} removed from door ${door.name}`);
+
+    res.json({
+      message: 'Tag association removed successfully'
+    });
+  } catch (error) {
+    console.error('Remove tag association error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to remove tag association'
+    });
+  }
+});
+
 // ESP32 command polling endpoint
 router.get('/commands/:doorId', async (req, res) => {
   try {
     const doorId = parseInt(req.params.doorId);
+    console.log(`🚪 ESP32 polling for commands - Door ID: ${doorId}`);
+    console.log(`🚪 Request from IP: ${req.ip}`);
+    console.log(`🚪 User-Agent: ${req.get('User-Agent')}`);
     
     if (isNaN(doorId)) {
+      console.log(`❌ Invalid door ID received: ${req.params.doorId}`);
       return res.status(400).json({
         error: 'Invalid door ID',
         message: 'Door ID must be a number'
       });
     }
     
-    // Get pending commands for this door
-    const db = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+    // Get pending commands for this door using database pool
+    const pool = require('../database/pool');
+    const db = await pool.getConnection();
     
-    // First, ensure the door_commands table exists
-    await new Promise((resolve, reject) => {
-      db.run(`CREATE TABLE IF NOT EXISTS door_commands (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        door_id INTEGER NOT NULL,
-        command TEXT NOT NULL,
-        status TEXT DEFAULT 'pending',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        executed_at DATETIME,
-        FOREIGN KEY (door_id) REFERENCES doors (id)
-      )`, (err) => {
-        if (err) {
-          console.error('Error creating door_commands table:', err.message);
-          reject(err);
-        } else {
-          console.log('✅ Door commands table verified/created');
-          resolve();
-        }
-      });
-    });
-    
-    const commands = await new Promise((resolve, reject) => {
-      db.all('SELECT * FROM door_commands WHERE door_id = ? AND status = ? ORDER BY created_at ASC', 
-             [doorId, 'pending'], (err, rows) => {
-        db.close();
-        if (err) reject(err);
-        else resolve(rows);
-      });
-    });
-    
-    // Mark commands as executed
-    if (commands.length > 0) {
-      const commandIds = commands.map(cmd => cmd.id);
-      const db2 = new sqlite3.Database(path.join(__dirname, '..', 'database', 'users.db'));
+    try {
+      // First, ensure the door_commands table exists
       await new Promise((resolve, reject) => {
-        db2.run(`UPDATE door_commands SET status = 'executed', executed_at = CURRENT_TIMESTAMP WHERE id IN (${commandIds.map(() => '?').join(',')})`, 
-                 commandIds, (err) => {
-          db2.close();
-          if (err) reject(err);
-          else resolve();
+        db.run(`CREATE TABLE IF NOT EXISTS door_commands (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          door_id INTEGER NOT NULL,
+          command TEXT NOT NULL,
+          status TEXT DEFAULT 'pending',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          executed_at DATETIME,
+          FOREIGN KEY (door_id) REFERENCES doors (id)
+        )`, (err) => {
+          if (err) {
+            console.error('Error creating door_commands table:', err.message);
+            reject(err);
+          } else {
+            console.log('✅ Door commands table verified/created');
+            resolve();
+          }
         });
       });
+      
+      const commands = await new Promise((resolve, reject) => {
+        db.all('SELECT * FROM door_commands WHERE door_id = ? AND status = ? ORDER BY created_at ASC', 
+               [doorId, 'pending'], (err, rows) => {
+          if (err) {
+            console.error(`❌ Error fetching commands for door ${doorId}:`, err);
+            reject(err);
+          } else {
+            console.log(`✅ Found ${rows.length} pending commands for door ${doorId}`);
+            if (rows.length > 0) {
+              console.log(`📋 Commands:`, rows.map(cmd => ({ id: cmd.id, command: cmd.command, created: cmd.created_at })));
+            }
+            resolve(rows);
+          }
+        });
+      });
+      
+      // Mark commands as executed
+      if (commands.length > 0) {
+        const commandIds = commands.map(cmd => cmd.id);
+        console.log(`Marking ${commandIds.length} commands as executed for door ${doorId}:`, commandIds);
+        
+        await new Promise((resolve, reject) => {
+          db.run(`UPDATE door_commands SET status = 'executed', executed_at = CURRENT_TIMESTAMP WHERE id IN (${commandIds.map(() => '?').join(',')})`, 
+                   commandIds, (err) => {
+            if (err) {
+              console.error(`Error marking commands as executed:`, err);
+              reject(err);
+            } else {
+              console.log(`Successfully marked ${commandIds.length} commands as executed`);
+              resolve();
+            }
+          });
+        });
+      }
+      
+      const response = {
+        success: true,
+        commands: commands.map(cmd => ({
+          id: cmd.id,
+          command: cmd.command,
+          created_at: cmd.created_at
+        }))
+      };
+      
+      console.log(`Sending response to ESP32 for door ${doorId}:`, JSON.stringify(response));
+      res.json(response);
+      
+    } finally {
+      pool.releaseConnection(db);
     }
-    
-    res.json({
-      success: true,
-      commands: commands.map(cmd => ({
-        id: cmd.id,
-        command: cmd.command,
-        created_at: cmd.created_at
-      }))
-    });
     
   } catch (error) {
     console.error('Command polling error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to fetch commands'
+    });
+  }
+});
+
+// Debug endpoint to check door commands (for testing)
+router.get('/debug/commands/:doorId', async (req, res) => {
+  try {
+    const doorId = parseInt(req.params.doorId);
+    console.log(`🔍 Debug: Checking commands for door ${doorId}`);
+    
+    const pool = require('../database/pool');
+    const db = await pool.getConnection();
+    
+    try {
+      // Get all commands for this door (pending and executed)
+      const allCommands = await new Promise((resolve, reject) => {
+        db.all('SELECT * FROM door_commands WHERE door_id = ? ORDER BY created_at DESC', 
+               [doorId], (err, rows) => {
+          if (err) {
+            console.error(`Error fetching all commands for door ${doorId}:`, err);
+            reject(err);
+          } else {
+            resolve(rows);
+          }
+        });
+      });
+      
+      // Get door info
+      const door = await Door.findById(doorId);
+      
+      res.json({
+        success: true,
+        door: door ? {
+          id: door.id,
+          name: door.name,
+          location: door.location,
+          esp32Ip: door.esp32Ip,
+          esp32Mac: door.esp32Mac,
+          isOnline: door.isOnline
+        } : null,
+        commands: allCommands,
+        summary: {
+          total: allCommands.length,
+          pending: allCommands.filter(cmd => cmd.status === 'pending').length,
+          executed: allCommands.filter(cmd => cmd.status === 'executed').length
+        }
+      });
+    } finally {
+      pool.releaseConnection(db);
+    }
+    
+  } catch (error) {
+    console.error('Debug endpoint error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to fetch debug info'
     });
   }
 });

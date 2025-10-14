@@ -32,7 +32,7 @@ export default function LoginScreen({ onLogin }) {
       }
 
       // Make login request
-      const response = await fetch(`${serverUrl}/api/auth/login`, {
+      const response = await fetch(`${serverUrl}/api/auth/mobile-login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

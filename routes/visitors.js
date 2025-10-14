@@ -3,15 +3,9 @@ const { Visitor } = require('../database/visitor');
 const { User } = require('../database/models');
 const { 
   validateVisitor, 
-  validateVisitorUpdate, 
-  validateId, 
-  validatePagination 
+  validateVisitorUpdate,
+  validateId
 } = require('../middleware/validation');
-const { 
-  authenticate, 
-  requireAdmin, 
-  authorizeSelfOrAdmin 
-} = require('../middleware/auth');
 const EventLogger = require('../utils/eventLogger');
 
 const router = express.Router();
@@ -28,22 +22,30 @@ router.use((req, res, next) => {
   next();
 });
 
-// Get all visitors (admin only)
-router.get('/', authenticate, requireAdmin, async (req, res) => {
+// Get all visitors (admin only) - MUST be before /:id route
+router.get('/all', authenticate, requireAdmin, async (req, res) => {
   try {
-    const { hostUserId, search, page = 1, limit = 10 } = req.query;
+    const { userId, search, page = 1, limit = 10, activeOnly, validOnly } = req.query;
     
     const options = {
       page: parseInt(page),
       limit: parseInt(limit)
     };
     
-    if (hostUserId) {
-      options.hostUserId = parseInt(hostUserId);
+    if (userId) {
+      options.userId = parseInt(userId);
     }
     
     if (search) {
       options.search = search;
+    }
+    
+    if (activeOnly === 'true') {
+      options.activeOnly = true;
+    }
+    
+    if (validOnly === 'true') {
+      options.validOnly = true;
     }
     
     const [visitors, totalCount] = await Promise.all([
@@ -54,7 +56,7 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
     const totalPages = Math.ceil(totalCount / options.limit);
     
     res.json({
-      visitors: visitors.map(visitor => visitor.toJSON()),
+      visitors,
       pagination: {
         page: options.page,
         limit: options.limit,
@@ -65,7 +67,7 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get visitors error:', error);
+    console.error('Get all visitors error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to retrieve visitors'
@@ -73,29 +75,62 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
   }
 });
 
-// Get visitors by host user ID
-router.get('/host/:hostUserId', authenticate, validateId, async (req, res) => {
+// Get visitors for a specific user
+router.get('/user/:userId', authenticate, authorizeSelfOrAdmin, async (req, res) => {
   try {
-    const hostUserId = parseInt(req.params.hostUserId);
+    const userId = parseInt(req.params.userId);
+    const { search, page = 1, limit = 10, activeOnly, validOnly } = req.query;
     
-    // Check if user is admin or the host user themselves
-    if (!req.user.hasRole('admin') && req.user.id !== hostUserId) {
-      return res.status(403).json({
-        error: 'Forbidden',
-        message: 'You can only view your own visitors'
+    // Verify user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found',
+        message: 'The requested user does not exist'
       });
     }
     
-    const visitors = await Visitor.findByHostUserId(hostUserId);
+    const options = {
+      page: parseInt(page),
+      limit: parseInt(limit)
+    };
+    
+    if (search) {
+      options.search = search;
+    }
+    
+    if (activeOnly === 'true') {
+      options.activeOnly = true;
+    }
+    
+    if (validOnly === 'true') {
+      options.validOnly = true;
+    }
+    
+    const [visitors, totalCount] = await Promise.all([
+      Visitor.findByUserId(userId, options),
+      Visitor.count({ ...options, userId })
+    ]);
+    
+    const totalPages = Math.ceil(totalCount / options.limit);
     
     res.json({
-      visitors: visitors.map(visitor => visitor.toJSON())
+      user: user.toJSON(),
+      visitors,
+      pagination: {
+        page: options.page,
+        limit: options.limit,
+        totalCount,
+        totalPages,
+        hasNext: options.page < totalPages,
+        hasPrev: options.page > 1
+      }
     });
   } catch (error) {
-    console.error('Get visitors by host error:', error);
+    console.error('Get user visitors error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to retrieve visitors'
+      message: 'Failed to retrieve user visitors'
     });
   }
 });
@@ -113,16 +148,21 @@ router.get('/:id', authenticate, validateId, async (req, res) => {
       });
     }
     
-    // Check if user is admin or the host user
-    if (!req.user.hasRole('admin') && req.user.id !== visitor.hostUserId) {
+<<<<<<< HEAD
+    // Check if user can access this visitor
+    if (!req.user.hasRole('admin') && req.user.id !== visitor.userId) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: 'You can only view your own visitors'
+        message: 'You can only access visitors associated with your account'
       });
     }
     
+    // Get user information
+    const user = await visitor.getUser();
+    
     res.json({
-      visitor: visitor.toJSON()
+      visitor: visitor.toJSON(),
+      user
     });
   } catch (error) {
     console.error('Get visitor error:', error);
@@ -136,44 +176,34 @@ router.get('/:id', authenticate, validateId, async (req, res) => {
 // Create new visitor
 router.post('/', authenticate, validateVisitor, async (req, res) => {
   try {
-    const { email, password, firstName, lastName, hostUserId, accessInstances = 2 } = req.body;
+    const { userId, firstName, lastName, email, phone, validFrom, validUntil } = req.body;
     
-    // Check if user is admin or creating visitor for themselves
-    if (!req.user.hasRole('admin') && req.user.id !== hostUserId) {
+    // Verify user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found',
+        message: 'The specified user does not exist'
+      });
+    }
+    
+    // Check if user can create visitor for this user
+    if (!req.user.hasRole('admin') && req.user.id !== userId) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: 'You can only create visitors for yourself'
+        message: 'You can only create visitors for your own account'
       });
     }
-    
-    // Verify host user exists
-    const hostUser = await User.findById(hostUserId);
-    if (!hostUser) {
-      return res.status(404).json({
-        error: 'Host user not found',
-        message: 'The specified host user does not exist'
-      });
-    }
-    
-    const existingVisitor = await Visitor.findByEmail(email);
-    if (existingVisitor) {
-      return res.status(409).json({
-        error: 'Visitor already exists',
-        message: 'A visitor with this email already exists'
-      });
-    }
-    
-    // Generate username from email if not provided
-    const username = email.split('@')[0];
     
     const visitorId = await Visitor.create({
-      username,
-      email,
-      password,
+      userId,
       firstName,
       lastName,
-      hostUserId,
-      accessInstances
+      email,
+      phone,
+      validFrom,
+      validUntil,
+      createdBy: req.user.id
     });
     
     const visitor = await Visitor.findById(visitorId);
@@ -185,7 +215,7 @@ router.post('/', authenticate, validateVisitor, async (req, res) => {
       entityType: 'visitor',
       entityId: visitor.id,
       entityName: `${visitor.firstName} ${visitor.lastName}`,
-      details: `Visitor created for host user ${hostUser.firstName} ${hostUser.lastName}`,
+      details: `Visitor "${visitor.firstName} ${visitor.lastName}" created for user ${user.firstName} ${user.lastName}`,
       timestamp: new Date().toISOString()
     });
     
@@ -195,21 +225,6 @@ router.post('/', authenticate, validateVisitor, async (req, res) => {
     });
   } catch (error) {
     console.error('Create visitor error:', error);
-    
-    if (error.message === 'Email already exists') {
-      return res.status(409).json({
-        error: 'Visitor already exists',
-        message: 'A visitor with this email already exists'
-      });
-    }
-    
-    if (error.message === 'Username already exists') {
-      return res.status(409).json({
-        error: 'Visitor already exists',
-        message: 'A visitor with this username already exists'
-      });
-    }
-    
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to create visitor'
@@ -217,6 +232,47 @@ router.post('/', authenticate, validateVisitor, async (req, res) => {
   }
 });
 
+// Convenience route: create visitor for a specific user (self or admin)
+router.post('/user/:userId', authenticate, async (req, res) => {
+  try {
+    const paramUserId = parseInt(req.params.userId);
+    const { visitorName, email, phone, validFrom, validTo } = req.body;
+
+    // Quick validation
+    if (!visitorName || !validTo) {
+      return res.status(400).json({ error: 'Validation Error', message: 'visitorName and validTo are required' });
+    }
+
+    const user = await User.findById(paramUserId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found', message: 'The specified user does not exist' });
+    }
+
+    if (!req.user.hasRole('admin') && req.user.id !== paramUserId) {
+      return res.status(403).json({ error: 'Forbidden', message: 'You can only create visitors for your own account' });
+    }
+
+    const nowIso = new Date().toISOString();
+    const visitorId = await Visitor.create({
+      userId: paramUserId,
+      firstName: visitorName,
+      lastName: '',
+      email: email || null,
+      phone: phone || null,
+      validFrom: validFrom || nowIso,
+      validUntil: validTo,
+      createdBy: req.user.id
+    });
+
+    const visitor = await Visitor.findById(visitorId);
+    await EventLogger.log(req, 'visitor', 'created', 'visitor', visitor.id, visitor.firstName, `Visitor added for user ${paramUserId}`);
+
+    res.status(201).json({ message: 'Visitor created successfully', visitor: visitor.toJSON() });
+  } catch (error) {
+    console.error('Create visitor (user) error:', error);
+    res.status(500).json({ error: 'Internal Server Error', message: 'Failed to create visitor' });
+  }
+});
 // Update visitor
 router.put('/:id', authenticate, validateId, validateVisitorUpdate, async (req, res) => {
   try {
@@ -230,11 +286,12 @@ router.put('/:id', authenticate, validateId, validateVisitorUpdate, async (req, 
       });
     }
     
-    // Check if user is admin or the host user
-    if (!req.user.hasRole('admin') && req.user.id !== visitor.hostUserId) {
+<<<<<<< HEAD
+    // Check if user can update this visitor
+    if (!req.user.hasRole('admin') && req.user.id !== visitor.userId) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: 'You can only update your own visitors'
+        message: 'You can only update visitors associated with your account'
       });
     }
     
@@ -248,7 +305,7 @@ router.put('/:id', authenticate, validateId, validateVisitorUpdate, async (req, 
       entityType: 'visitor',
       entityId: visitor.id,
       entityName: `${visitor.firstName} ${visitor.lastName}`,
-      details: `Visitor updated: ${changes.join(', ')}`,
+      details: `Visitor "${visitor.firstName} ${visitor.lastName}" updated: ${changes.join(', ')}`,
       timestamp: new Date().toISOString()
     });
     
@@ -265,8 +322,8 @@ router.put('/:id', authenticate, validateId, validateVisitorUpdate, async (req, 
   }
 });
 
-// Delete visitor (admin only)
-router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) => {
+// Delete visitor
+router.delete('/:id', authenticate, validateId, async (req, res) => {
   try {
     const visitorId = parseInt(req.params.id);
     const visitor = await Visitor.findById(visitorId);
@@ -278,6 +335,14 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
       });
     }
     
+    // Check if user can delete this visitor
+    if (!req.user.hasRole('admin') && req.user.id !== visitor.userId) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only delete visitors associated with your account'
+      });
+    }
+    
     // Log visitor deletion event before deleting
     await EventLogger.logEvent(req, {
       type: 'visitor',
@@ -285,7 +350,7 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
       entityType: 'visitor',
       entityId: visitor.id,
       entityName: `${visitor.firstName} ${visitor.lastName}`,
-      details: `Visitor deleted`,
+      details: `Visitor "${visitor.firstName} ${visitor.lastName}" deleted`,
       timestamp: new Date().toISOString()
     });
     
@@ -303,134 +368,29 @@ router.delete('/:id', authenticate, requireAdmin, validateId, async (req, res) =
   }
 });
 
-// Add access instances to visitor
-router.post('/:id/add-instances', authenticate, validateId, async (req, res) => {
+// Get visitor statistics (admin only)
+router.get('/stats/overview', authenticate, requireAdmin, async (req, res) => {
   try {
-    const visitorId = parseInt(req.params.id);
-    const { additionalInstances } = req.body;
-    
-    if (!additionalInstances || additionalInstances <= 0) {
-      return res.status(400).json({
-        error: 'Invalid input',
-        message: 'Additional instances must be a positive number'
-      });
-    }
-    
-    const visitor = await Visitor.findById(visitorId);
-    
-    if (!visitor) {
-      return res.status(404).json({
-        error: 'Visitor not found',
-        message: 'The requested visitor does not exist'
-      });
-    }
-    
-    // Check if user is admin or the host user
-    if (!req.user.hasRole('admin') && req.user.id !== visitor.hostUserId) {
-      return res.status(403).json({
-        error: 'Forbidden',
-        message: 'You can only manage your own visitors'
-      });
-    }
-    
-    await visitor.addAccessInstances(additionalInstances);
-    
-    // Log access instances addition event
-    await EventLogger.logEvent(req, {
-      type: 'visitor',
-      action: 'instances_added',
-      entityType: 'visitor',
-      entityId: visitor.id,
-      entityName: `${visitor.firstName} ${visitor.lastName}`,
-      details: `${additionalInstances} access instances added`,
-      timestamp: new Date().toISOString()
-    });
+    const [totalVisitors, activeVisitors, validVisitors] = await Promise.all([
+      Visitor.count({}),
+      Visitor.count({ activeOnly: true }),
+      Visitor.count({ validOnly: true })
+    ]);
     
     res.json({
-      message: 'Access instances added successfully',
-      visitor: visitor.toJSON()
+      stats: {
+        totalVisitors,
+        activeVisitors,
+        inactiveVisitors: totalVisitors - activeVisitors,
+        validVisitors,
+        expiredVisitors: activeVisitors - validVisitors
+      }
     });
   } catch (error) {
-    console.error('Add access instances error:', error);
+    console.error('Get visitor stats error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to add access instances'
-    });
-  }
-});
-
-// Get visitor access history
-router.get('/:id/access-history', authenticate, validateId, async (req, res) => {
-  try {
-    const visitorId = parseInt(req.params.id);
-    const { limit = 50 } = req.query;
-    
-    const visitor = await Visitor.findById(visitorId);
-    
-    if (!visitor) {
-      return res.status(404).json({
-        error: 'Visitor not found',
-        message: 'The requested visitor does not exist'
-      });
-    }
-    
-    // Check if user is admin or the host user
-    if (!req.user.hasRole('admin') && req.user.id !== visitor.hostUserId) {
-      return res.status(403).json({
-        error: 'Forbidden',
-        message: 'You can only view your own visitors\' access history'
-      });
-    }
-    
-    const accessHistory = await visitor.getAccessHistory(parseInt(limit));
-    
-    res.json({
-      visitor: visitor.toJSON(),
-      accessHistory
-    });
-  } catch (error) {
-    console.error('Get visitor access history error:', error);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to retrieve access history'
-    });
-  }
-});
-
-// Process door access attempt (for NFC/QR scanning)
-router.post('/:id/access/:doorId', authenticate, validateId, async (req, res) => {
-  try {
-    const visitorId = parseInt(req.params.id);
-    const doorId = parseInt(req.params.doorId);
-    
-    const visitor = await Visitor.findById(visitorId);
-    
-    if (!visitor) {
-      return res.status(404).json({
-        error: 'Visitor not found',
-        message: 'The requested visitor does not exist'
-      });
-    }
-    
-    if (!visitor.isActive) {
-      return res.status(403).json({
-        error: 'Access denied',
-        message: 'Visitor account is inactive'
-      });
-    }
-    
-    const result = await Visitor.processAccessAttempt(visitorId, doorId);
-    
-    res.json({
-      accessGranted: result.accessGranted,
-      reason: result.reason,
-      remainingInstances: visitor.remainingInstances - (result.accessGranted ? 1 : 0)
-    });
-  } catch (error) {
-    console.error('Process visitor access error:', error);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to process access attempt'
+      message: 'Failed to retrieve visitor statistics'
     });
   }
 });

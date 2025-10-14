@@ -122,6 +122,35 @@ class Event {
     }
   }
 
+  // Find a recent duplicate event within the last N seconds matching key fields
+  static async findRecentDuplicate(matchFields, withinSeconds = 3) {
+    const { type, action, entityType, entityId, details, ipAddress } = matchFields;
+    try {
+      const row = await getQuery(
+        `SELECT * FROM events 
+         WHERE type = ? AND action = ? AND IFNULL(entity_type,'') = IFNULL(?, '')
+           AND IFNULL(entity_id, -1) = IFNULL(?, -1)
+           AND IFNULL(details,'') = IFNULL(?, '')
+           AND IFNULL(ip_address,'') = IFNULL(?, '')
+           AND created_at >= datetime('now', ?)
+         ORDER BY created_at DESC LIMIT 1`,
+        [
+          type,
+          action,
+          entityType || null,
+          entityId || null,
+          details || null,
+          ipAddress || null,
+          `-${withinSeconds} seconds`
+        ]
+      );
+
+      return row ? new Event(row) : null;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async count(options = {}) {
     const { type, action, entityType, userId } = options;
     

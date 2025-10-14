@@ -4,6 +4,7 @@ const AccessRequest = require('../database/accessRequest');
 const { Door } = require('../database/door');
 const { User } = require('../database/models');
 const AccessGroup = require('../database/accessGroup');
+const { DoorTag } = require('../database/doorTag');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { validatePagination } = require('../middleware/validation');
 const EventLogger = require('../utils/eventLogger');
@@ -12,8 +13,9 @@ const router = express.Router();
 
 // Validation middleware
 const validateAccessRequest = [
-  body('doorId').isInt({ min: 1 }).withMessage('Door ID must be a positive integer'),
-  body('requestType').optional().isIn(['qr_scan', 'manual', 'emergency']).withMessage('Invalid request type'),
+  body('doorId').optional().isInt({ min: 1 }).withMessage('Door ID must be a positive integer'),
+  body('tagId').optional().isString().withMessage('Tag ID must be a string'),
+  body('requestType').optional().isIn(['qr_scan', 'nfc_scan', 'manual', 'emergency']).withMessage('Invalid request type'),
   body('qrCodeData').optional().isString().withMessage('QR code data must be a string')
 ];
 
@@ -29,11 +31,34 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
       });
     }
 
-    const { doorId, requestType = 'qr_scan', qrCodeData } = req.body;
+    const { doorId, tagId, requestType = 'nfc_scan', qrCodeData } = req.body;
     const userId = req.user.id; // User is authenticated via mobile app
     
+    let door;
+    let resolvedDoorId = doorId;
+    
+    // If tagId is provided, resolve doorId from tag association
+    if (tagId && !doorId) {
+      const doorTag = await DoorTag.findByTagId(tagId);
+      if (!doorTag) {
+        return res.status(404).json({
+          error: 'Tag Not Associated',
+          message: 'This NFC tag is not associated with any door'
+        });
+      }
+      resolvedDoorId = doorTag.doorId;
+    }
+    
+    // Validate that we have a door ID
+    if (!resolvedDoorId) {
+      return res.status(400).json({
+        error: 'Missing Door Information',
+        message: 'Either doorId or tagId must be provided'
+      });
+    }
+    
     // Find the door
-    const door = await Door.findById(doorId);
+    door = await Door.findById(resolvedDoorId);
     if (!door) {
       return res.status(404).json({
         error: 'Door Not Found',
@@ -51,19 +76,19 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
 
     // Check if user has access to this door
     // All users (including admins) must have proper access groups to access doors
-    let hasAccess = await checkUserDoorAccess(userId, doorId);
+    let hasAccess = await checkUserDoorAccess(userId, resolvedDoorId);
     
     if (hasAccess) {
-      console.log(`User ${req.user.email} (${req.user.role}) granted access to door ${doorId} via access groups`);
+      console.log(`User ${req.user.email} (${req.user.role}) granted access to door ${resolvedDoorId} via access groups`);
     } else {
-      console.log(`User ${req.user.email} (${req.user.role}) denied access to door ${doorId} - no access groups`);
+      console.log(`User ${req.user.email} (${req.user.role}) denied access to door ${resolvedDoorId} - no access groups`);
     }
     
     if (!hasAccess) {
       // Create denied request
       const requestData = {
         userId: userId,
-        doorId: doorId,
+        doorId: resolvedDoorId,
         requestType: requestType,
         status: 'denied',
         reason: 'User does not have access to this door',
@@ -96,7 +121,7 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
     // User has access - create granted request
     const requestData = {
       userId: userId,
-      doorId: doorId,
+      doorId: resolvedDoorId,
       requestType: requestType,
       status: 'granted',
       reason: 'Access granted',
@@ -112,34 +137,65 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
     const userName = req.user.firstName && req.user.lastName ? `${req.user.firstName} ${req.user.lastName}` : req.user.email || `User ${req.user.id}`;
     await EventLogger.log(req, 'access', 'granted', 'AccessRequest', accessRequest.id, `Access granted to ${userName} for ${door.name}`, `User: ${req.user.email}`);
 
-    // Send door open command to ESP32
-    let doorControlSuccess = false;
-    let doorControlMessage = '';
+    // Queue door open command for ESP32 to pick up (ESP32 polls server for commands)
+    let doorControlSuccess = true; // Assume success since we're queuing the command
+    let doorControlMessage = 'Door opening command queued for ESP32';
     
     try {
-      const response = await fetch(`http://${door.esp32Ip}/door`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'open' })
+      console.log(`Queuing door open command for door ${door.id}`);
+      
+      const sqlite3 = require('sqlite3').verbose();
+      const path = require('path');
+      const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'database', 'users.db');
+      
+      const db = new sqlite3.Database(DB_PATH);
+      
+      // Ensure door_commands table exists
+      await new Promise((resolve, reject) => {
+        db.run(`CREATE TABLE IF NOT EXISTS door_commands (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          door_id INTEGER NOT NULL,
+          command TEXT NOT NULL,
+          status TEXT DEFAULT 'pending',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          executed_at DATETIME,
+          FOREIGN KEY (door_id) REFERENCES doors (id)
+        )`, (err) => {
+          if (err) {
+            console.error('Error creating door_commands table:', err.message);
+            reject(err);
+          } else {
+            console.log('✅ Door commands table verified/created');
+            resolve();
+          }
+        });
       });
       
-      if (response.ok) {
-        doorControlSuccess = true;
-        doorControlMessage = 'Door opening command sent';
-      } else {
-        doorControlMessage = 'Access granted but door control failed';
-      }
+      // Insert door open command
+      await new Promise((resolve, reject) => {
+        db.run('INSERT INTO door_commands (door_id, command, status) VALUES (?, ?, ?)', 
+               [door.id, 'open', 'pending'], (err) => {
+          db.close();
+          if (err) {
+            console.error('Error queuing door command:', err);
+            reject(err);
+          } else {
+            console.log('Door command queued successfully');
+            resolve();
+          }
+        });
+      });
+      
     } catch (doorError) {
-      console.error('Door control error:', doorError);
-      doorControlMessage = 'Access granted but door control failed';
+      console.error('Door command queuing error:', doorError);
+      doorControlSuccess = false;
+      doorControlMessage = 'Access granted but failed to queue door command';
     }
 
     res.json({
       success: true,
       message: doorControlSuccess ? 'Access granted - door opening' : 'Access granted but door control failed',
-      access: true,
+      accessGranted: true, // Changed from 'access: true' to match mobile app expectations
       doorControlSuccess: doorControlSuccess,
       doorControlMessage: doorControlMessage,
       requestId: accessRequest.id,
@@ -195,21 +251,65 @@ router.post('/door-control', async (req, res) => {
       });
     }
 
-    // Log door control action
-    await EventLogger.log(req, 'door', 'controlled', 'Door', door.id, `Door ${action} command sent to ${door.name}`, `Action: ${action}`);
-
-    res.json({
-      success: true,
-      message: `Door ${action} command sent`,
-      door: {
-        id: door.id,
-        name: door.name,
-        location: door.location,
-        esp32Ip: door.esp32Ip
-      },
-      action: action,
-      timestamp: new Date().toISOString()
-    });
+    // Send command to ESP32
+    console.log(`Attempting to send ${action} command to ESP32 at ${door.esp32Ip}`);
+    
+    try {
+      const response = await fetch(`http://${door.esp32Ip}/door`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action }),
+        timeout: 5000 // 5 second timeout
+      });
+      
+      if (response.ok) {
+        console.log(`Successfully sent ${action} command to ESP32`);
+        
+        // Log door control action
+        await EventLogger.log(req, 'door', 'controlled', 'Door', door.id, `Door ${action} command sent to ${door.name}`, `Action: ${action}`);
+        
+        res.json({
+          success: true,
+          message: `Door ${action} command sent successfully`,
+          door: {
+            id: door.id,
+            name: door.name,
+            location: door.location,
+            esp32Ip: door.esp32Ip
+          },
+          action: action,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        console.error(`ESP32 responded with status ${response.status}`);
+        res.status(500).json({
+          error: 'Door Control Failed',
+          message: 'ESP32 device responded with an error'
+        });
+      }
+    } catch (fetchError) {
+      console.error(`Failed to connect to ESP32 at ${door.esp32Ip}:`, fetchError.message);
+      
+      // Check if it's a timeout or connection error
+      if (fetchError.cause && fetchError.cause.code === 'ECONNREFUSED') {
+        res.status(400).json({
+          error: 'ESP32 Not Reachable',
+          message: 'Cannot connect to door controller - device may be offline or IP address incorrect'
+        });
+      } else if (fetchError.cause && fetchError.cause.code === 'ETIMEDOUT') {
+        res.status(400).json({
+          error: 'ESP32 Timeout',
+          message: 'Door controller did not respond - device may be offline or slow to respond'
+        });
+      } else {
+        res.status(500).json({
+          error: 'Network Error',
+          message: `Failed to communicate with door controller: ${fetchError.message}`
+        });
+      }
+    }
 
   } catch (error) {
     console.error('Door control error:', error);

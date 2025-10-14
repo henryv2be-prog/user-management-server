@@ -22,6 +22,32 @@ class EventLogger {
         userAgent
       };
 
+      // Basic server-side de-duplication window to prevent rapid duplicates
+      // Dedupe by (type, action, entityType, entityId, details, ipAddress) within 3 seconds
+      try {
+        const duplicate = await Event.findRecentDuplicate({
+          type: event.type,
+          action: event.action,
+          entityType: event.entityType,
+          entityId: event.entityId,
+          details: event.details,
+          ipAddress: event.ipAddress
+        }, 3);
+
+        if (duplicate) {
+          // Duplicate detected, skip create/broadcast/webhook trigger
+          console.log('⚠️ EventLogger: Suppressed duplicate event within window:', {
+            type: event.type,
+            action: event.action,
+            entityType: event.entityType,
+            entityId: event.entityId
+          });
+          return;
+        }
+      } catch (dedupeError) {
+        console.warn('EventLogger: Dedupe check failed, proceeding without dedupe:', dedupeError.message);
+      }
+
       const createdEvent = await Event.create(event);
       
       // Broadcast the event to connected SSE clients
@@ -35,6 +61,18 @@ class EventLogger {
         }
       } else {
         console.log('❌ EventLogger: broadcastEvent function not available globally');
+      }
+
+      // Trigger webhooks for relevant events
+      if (global.triggerWebhook) {
+        try {
+          await this.triggerWebhookForEvent(createdEvent, req);
+        } catch (webhookError) {
+          console.error('❌ EventLogger: Error triggering webhook:', webhookError);
+          // Don't fail the main operation if webhook fails
+        }
+      } else {
+        console.log('ℹ️ EventLogger: triggerWebhook function not available globally');
       }
     } catch (error) {
       console.error('Error logging event:', error);
@@ -290,6 +328,153 @@ class EventLogger {
       entityName,
       details
     });
+  }
+
+  // Webhook triggering method
+  static async triggerWebhookForEvent(event, req) {
+    try {
+      // Map event types to webhook events
+      const webhookEventMap = {
+        // Access events
+        'access.granted': 'access_request.granted',
+        'access.denied': 'access_request.denied',
+        'access.status_changed': 'access_request.status_changed',
+        'access.deleted': 'access_request.deleted',
+        
+        // Door events
+        'door.opened': 'door.opened',
+        'door.closed': 'door.closed',
+        'door.online': 'door.online',
+        'door.offline': 'door.offline',
+        'door.control': 'door.controlled',
+        'door.controlled': 'door.controlled',
+        'door.qr_generated': 'door.qr_generated',
+        'door.tag_associated': 'door.tag_associated',
+        'door.tag_removed': 'door.tag_removed',
+        'door.auto_registered': 'door.auto_registered',
+        
+        // User events
+        'user.created': 'user.created',
+        'user.updated': 'user.updated',
+        'user.deleted': 'user.deleted',
+        'auth.login': 'user.login',
+        'auth.logout': 'user.logout',
+        
+        // System events
+        'system.startup': 'system.startup',
+        'system.shutdown': 'system.shutdown',
+        'error.occurred': 'system.error',
+
+        // Access group events
+        'access_group.created': 'access_group.created',
+        'access_group.updated': 'access_group.updated',
+        'access_group.deleted': 'access_group.deleted',
+        'access_group.user_added': 'access_group.user_added',
+        'access_group.user_removed': 'access_group.user_removed',
+        'access_group.door_added': 'access_group.door_added',
+        'access_group.door_removed': 'access_group.door_removed',
+
+        // Visitor events
+        'visitor.created': 'visitor.created',
+        'visitor.updated': 'visitor.updated',
+        'visitor.deleted': 'visitor.deleted',
+
+        // Site plan
+        'site_plan.updated': 'site_plan.updated',
+
+        // Webhook lifecycle events
+        'webhook.created': 'webhook.created',
+        'webhook.updated': 'webhook.updated',
+        'webhook.deleted': 'webhook.deleted'
+      };
+
+      const dynamicEvent = `${event.type}.${event.action}`;
+      const webhookEvent = webhookEventMap[dynamicEvent];
+
+      console.log(`🔗 EventLogger: Triggering webhook for event: ${webhookEvent}`);
+
+      // Prepare webhook payload based on event type
+      let webhookPayload = {
+        event: webhookEvent || dynamicEvent,
+        timestamp: event.createdAt,
+        data: {
+          eventId: event.id,
+          type: event.type,
+          action: event.action,
+          entityType: event.entityType,
+          entityId: event.entityId,
+          entityName: event.entityName,
+          details: event.details,
+          userId: event.userId,
+          userName: event.userName,
+          ipAddress: event.ipAddress
+        }
+      };
+
+      // Add specific data based on event type
+      if (event.type === 'access') {
+        // For access events, we need to get additional data
+        try {
+          const AccessRequest = require('../database/accessRequest');
+          const accessRequest = await AccessRequest.findById(event.entityId);
+          
+          if (accessRequest) {
+            webhookPayload.data.requestId = accessRequest.id;
+            webhookPayload.data.requestType = accessRequest.requestType;
+            webhookPayload.data.status = accessRequest.status;
+            webhookPayload.data.reason = accessRequest.reason;
+            webhookPayload.data.user = {
+              id: accessRequest.userId,
+              email: accessRequest.user?.email,
+              firstName: accessRequest.user?.firstName,
+              lastName: accessRequest.user?.lastName
+            };
+            webhookPayload.data.door = {
+              id: accessRequest.doorId,
+              name: accessRequest.door?.name,
+              location: accessRequest.door?.location
+            };
+          }
+        } catch (error) {
+          console.error('Error getting access request data for webhook:', error);
+        }
+      } else if (event.type === 'door') {
+        // For door events, add door-specific data
+        try {
+          const { Door } = require('../database/door');
+          const door = await Door.findById(event.entityId);
+          
+          if (door) {
+            webhookPayload.data.doorId = door.id;
+            webhookPayload.data.doorName = door.name;
+            webhookPayload.data.location = door.location;
+            webhookPayload.data.esp32Ip = door.esp32Ip;
+            webhookPayload.data.isOnline = door.isOnline;
+          }
+        } catch (error) {
+          console.error('Error getting door data for webhook:', error);
+        }
+      } else if (event.type === 'auth') {
+        // For auth events, add user-specific data
+        webhookPayload.data.user = {
+          id: event.userId,
+          email: event.userName,
+          ipAddress: event.ipAddress
+        };
+      }
+
+      // Determine which event name to send: use mapped event if available, otherwise dynamic
+      const eventNameToSend = webhookEvent || dynamicEvent;
+
+      // Trigger the webhook with full structured payload
+      await global.triggerWebhook(eventNameToSend, webhookPayload);
+      
+      console.log(`✅ EventLogger: Webhook triggered successfully for event: ${webhookEvent}`);
+
+    } catch (error) {
+      console.error('❌ EventLogger: Error in triggerWebhookForEvent:', error);
+      // Don't throw error to avoid breaking the main operation
+    }
   }
 }
 

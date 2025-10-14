@@ -1,12 +1,31 @@
-node_modules
-.git
-.env
+# Development files
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed for production)
+*.md
+docs/
+examples/
+
+# Test files
+test-*.js
+*-test.js
+test/
+tests/
+
+# Git files
+.git/
+.gitignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local development
 .env.local
 .env.development
-.env.test
-*.log
-logs
-database.db
-database.sqlite
-*.db
-*.sqlite

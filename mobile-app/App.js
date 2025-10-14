@@ -8,7 +8,7 @@ import * as Linking from 'expo-linking';
 import ServerConfigScreen from './src/screens/ServerConfigScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
-import QRScannerScreen from './src/screens/QRScannerScreen';
+import NFCScannerScreen from './src/screens/NFCScannerScreen';
 import QuickAccessWidget from './src/components/QuickAccessWidget';
 
 export default function App() {
@@ -34,9 +34,9 @@ export default function App() {
 
   const handleUrl = (url) => {
     if (url.includes('scan')) {
-      // If user is authenticated, go directly to scanner
+      // If user is authenticated, go directly to NFC scanner
       if (isAuthenticated) {
-        setCurrentScreen('scanner');
+        setCurrentScreen('nfcScanner');
       }
     }
   };
@@ -83,11 +83,11 @@ export default function App() {
   };
 
   const handleNavigateToScanner = () => {
-    setCurrentScreen('scanner');
+    setCurrentScreen('nfcScanner');
   };
 
   const handleQuickAccess = () => {
-    setCurrentScreen('scanner');
+    setCurrentScreen('nfcScanner');
   };
 
   const handleBackToHome = () => {
@@ -110,8 +110,8 @@ export default function App() {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
-  if (currentScreen === 'scanner') {
-    return <QRScannerScreen onBack={handleBackToHome} />;
+  if (currentScreen === 'nfcScanner') {
+    return <NFCScannerScreen onBack={handleBackToHome} />;
   }
 
   return (

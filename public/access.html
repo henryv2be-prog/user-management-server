@@ -373,14 +373,15 @@
         
         async function processAccessRequest(params) {
             try {
-                const response = await fetch('/api/access/request', {
+                const response = await fetch('/api/access-requests/request', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
                     body: JSON.stringify({
                         doorId: params.door,
-                        accessType: params.type,
+                        requestType: params.type === 'direct' ? 'manual' : 'qr_scan',
                         timestamp: params.t,
                         expiry: params.e,
                         customMessage: params.msg
