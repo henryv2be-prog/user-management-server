@@ -336,6 +336,19 @@ async function migrateDatabase() {
         }
       });
     });
+
+    // Add password column to visitors table if it doesn't exist
+    await new Promise((resolve, reject) => {
+      db.run(`ALTER TABLE visitors ADD COLUMN password TEXT`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('❌ Password column migration failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ Password column added or already exists');
+          resolve();
+        }
+      });
+    });
     
     // Create door_tags table if it doesn't exist
     await new Promise((resolve, reject) => {
@@ -491,6 +504,16 @@ async function startServer() {
       
       console.log('✅ Database initialization completed');
       console.log('✅ Database initialization finished, proceeding to server creation...');
+      
+      // Run database migrations
+      console.log('🔄 Running database migrations...');
+      try {
+        await migrateDatabase();
+        console.log('✅ Database migrations completed');
+      } catch (migrationError) {
+        console.error('❌ Database migration failed:', migrationError.message);
+        // Don't throw error, continue with startup
+      }
       
       // Add delay to ensure database operations are complete (reduced for production)
       const dbDelay = isRailway ? 100 : 2000; // Much shorter delay for Railway
