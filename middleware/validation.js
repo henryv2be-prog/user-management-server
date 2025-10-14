@@ -276,11 +276,9 @@ const validateAccessGroupUpdate = [
 // Visitor validation rules
 const validateVisitor = [
   body('userId')
-    .optional()
     .isInt({ min: 1 })
     .withMessage('User ID must be a positive integer'),
   body('firstName')
-    .optional()
     .trim()
     .isLength({ min: 1, max: 100 })
     .withMessage('First name must be between 1 and 100 characters'),
@@ -295,7 +293,6 @@ const validateVisitor = [
     .isLength({ min: 1, max: 100 })
     .withMessage('visitorName must be between 1 and 100 characters'),
   body('email')
-    .optional()
     .isEmail()
     .normalizeEmail()
     .withMessage('Must be a valid email address'),
@@ -305,7 +302,6 @@ const validateVisitor = [
     .isLength({ max: 20 })
     .withMessage('Phone must be less than 20 characters'),
   body('password')
-    .optional()
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long'),
   body('validFrom')
@@ -313,7 +309,6 @@ const validateVisitor = [
     .isISO8601()
     .withMessage('Valid from must be a valid date'),
   body('validUntil')
-    .optional()
     .isISO8601()
     .withMessage('Valid until must be a valid date')
     .custom((value, { req }) => {
