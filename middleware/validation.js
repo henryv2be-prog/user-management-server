@@ -40,8 +40,8 @@ const validateUser = [
     .withMessage('Last name must be between 1 and 50 characters'),
   body('role')
     .optional()
-    .isIn(['user', 'admin'])
-    .withMessage('Role must be user or admin'),
+    .isIn(['user', 'admin', 'visitor'])
+    .withMessage('Role must be user, admin, or visitor'),
   handleValidationErrors
 ];
 
@@ -63,8 +63,8 @@ const validateUserUpdate = [
     .withMessage('Last name must be between 1 and 50 characters'),
   body('role')
     .optional()
-    .isIn(['user', 'admin'])
-    .withMessage('Role must be user or admin'),
+    .isIn(['user', 'admin', 'visitor'])
+    .withMessage('Role must be user, admin, or visitor'),
   // isActive removed - entities are always active
   body('emailVerified')
     .optional()
@@ -161,8 +161,8 @@ const validatePagination = [
     .withMessage('Search term must be less than 100 characters'),
   query('role')
     .optional()
-    .isIn(['user', 'admin'])
-    .withMessage('Role must be user or admin'),
+    .isIn(['user', 'admin', 'visitor'])
+    .withMessage('Role must be user, admin, or visitor'),
   // isActive removed - accounts are always active
   handleValidationErrors
 ];
@@ -275,53 +275,96 @@ const validateAccessGroupUpdate = [
 
 // Visitor validation rules
 const validateVisitor = [
+  body('userId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('User ID must be a positive integer'),
+  body('firstName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('First name must be between 1 and 100 characters'),
+  body('lastName')
+    .optional()
+    .trim()
+    .isLength({ min: 0, max: 100 })
+    .withMessage('Last name must be less than 100 characters'),
+  body('visitorName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('visitorName must be between 1 and 100 characters'),
   body('email')
+    .optional()
     .isEmail()
     .normalizeEmail()
     .withMessage('Must be a valid email address'),
-  body('password')
-    .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
-  body('firstName')
-    .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('First name must be between 1 and 50 characters'),
-  body('lastName')
-    .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('Last name must be between 1 and 50 characters'),
-  body('hostUserId')
-    .isInt({ min: 1 })
-    .withMessage('Host user ID must be a positive integer'),
-  body('accessInstances')
+  body('phone')
     .optional()
-    .isInt({ min: 1, max: 100 })
-    .withMessage('Access instances must be between 1 and 100'),
+    .trim()
+    .isLength({ max: 20 })
+    .withMessage('Phone must be less than 20 characters'),
+  body('validFrom')
+    .optional()
+    .isISO8601()
+    .withMessage('Valid from must be a valid date'),
+  body('validUntil')
+    .optional()
+    .isISO8601()
+    .withMessage('Valid until must be a valid date')
+    .custom((value, { req }) => {
+      if (req.body.validFrom && new Date(value) <= new Date(req.body.validFrom)) {
+        throw new Error('Valid until must be after valid from date');
+      }
+      return true;
+    }),
   handleValidationErrors
 ];
 
 const validateVisitorUpdate = [
+  body('firstName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('First name must be between 1 and 100 characters'),
+  body('lastName')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Last name must be less than 100 characters'),
+  body('visitorName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('visitorName must be between 1 and 100 characters'),
   body('email')
     .optional()
     .isEmail()
     .normalizeEmail()
     .withMessage('Must be a valid email address'),
-  body('firstName')
+  body('phone')
     .optional()
     .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('First name must be between 1 and 50 characters'),
-  body('lastName')
+    .isLength({ max: 20 })
+    .withMessage('Phone must be less than 20 characters'),
+  body('validFrom')
     .optional()
-    .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('Last name must be between 1 and 50 characters'),
+    .isISO8601()
+    .withMessage('Valid from must be a valid date'),
+  body('validUntil')
+    .optional()
+    .isISO8601()
+    .withMessage('Valid until must be a valid date')
+    .custom((value, { req }) => {
+      if (req.body.validFrom && new Date(value) <= new Date(req.body.validFrom)) {
+        throw new Error('Valid until must be after valid from date');
+      }
+      return true;
+    }),
   body('isActive')
     .optional()
     .isBoolean()
-    .withMessage('Active status must be true or false'),
+    .withMessage('isActive must be a boolean value'),
   handleValidationErrors
 ];
 

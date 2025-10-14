@@ -1,7 +1,57 @@
-// Cache-busting helper function
+// Enhanced cache-busting helper function
 function addCacheBusting(url) {
     const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}_cb=${Date.now()}&_r=${Math.random().toString(36).substr(2, 9)}`;
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substr(2, 9);
+    return `${url}${separator}_cb=${timestamp}&_r=${random}&_v=${Math.floor(timestamp / 1000)}`;
+}
+
+// Force refresh helper - ensures fresh data from server
+function forceRefresh(url, options = {}) {
+    const cacheBustedUrl = addCacheBusting(url);
+    const enhancedOptions = {
+        ...options,
+        headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            ...options.headers
+        }
+    };
+    return fetch(cacheBustedUrl, enhancedOptions);
+}
+
+// Global function to force refresh all critical data
+async function forceRefreshAllData() {
+    console.log('🔄 Force refreshing all critical data...');
+    
+    try {
+        // Refresh site map data
+        if (typeof loadDashboard === 'function') {
+            await loadDashboard();
+        }
+        
+        // Refresh doors data
+        if (typeof loadDoors === 'function') {
+            await loadDoors(1);
+        }
+        
+        // Refresh users data
+        if (typeof loadUsers === 'function') {
+            await loadUsers(1);
+        }
+        
+        // Refresh access groups data
+        if (typeof loadAccessGroups === 'function') {
+            await loadAccessGroups(1);
+        }
+        
+        console.log('✅ All critical data refreshed successfully');
+        showToast('All data refreshed from server', 'success');
+    } catch (error) {
+        console.error('❌ Error refreshing data:', error);
+        showToast('Error refreshing data', 'error');
+    }
 }
 
 // Modern ES6+ Application State Management
@@ -81,8 +131,8 @@ class SimplifiAccessApp {
             ...options
         };
 
-        // Add auth token if available
-        const token = localStorage.getItem('token');
+        // Get valid token with automatic refresh
+        const token = await this.getValidToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -90,6 +140,22 @@ class SimplifiAccessApp {
         for (let attempt = 1; attempt <= this.retryAttempts; attempt++) {
             try {
                 const response = await fetch(`${this.apiBase}${url}`, config);
+                
+                // Handle token expiration
+                if (response.status === 401) {
+                    console.log('🔄 Token expired, attempting refresh...');
+                    const refreshed = await this.refreshTokenIfNeeded();
+                    if (refreshed && attempt === 1) {
+                        // Retry with new token
+                        config.headers.Authorization = `Bearer ${localStorage.getItem('token')}`;
+                        continue;
+                    } else {
+                        // Refresh failed, user needs to login
+                        localStorage.removeItem('token');
+                        this.showLogin();
+                        throw new Error('Authentication expired');
+                    }
+                }
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -111,9 +177,25 @@ class SimplifiAccessApp {
         }
     }
 
+    // Get valid token with automatic refresh
+    async getValidToken() {
+        if (window.tokenManager) {
+            return await window.tokenManager.getValidToken();
+        }
+        return localStorage.getItem('token');
+    }
+
+    // Refresh token if needed
+    async refreshTokenIfNeeded() {
+        if (window.tokenManager) {
+            return await window.tokenManager.refreshToken();
+        }
+        return false;
+    }
+
     // Check authentication status
     async checkAuthStatus() {
-        const token = localStorage.getItem('token');
+        const token = await this.getValidToken();
         if (!token) {
             this.showLogin();
             return;
@@ -299,9 +381,25 @@ let currentPage = 1;
 let currentFilters = {};
 let currentSection = 'dashboard';
 
+// Get valid token with automatic refresh
+async function getValidToken() {
+    if (window.tokenManager) {
+        return await window.tokenManager.getValidToken();
+    }
+    return localStorage.getItem('token');
+}
+
+// Refresh token if needed
+async function refreshTokenIfNeeded() {
+    if (window.tokenManager) {
+        return await window.tokenManager.refreshToken();
+    }
+    return false;
+}
+
 // Check if user is authenticated
 async function checkAuthStatus() {
-    const token = localStorage.getItem('token');
+    const token = await getValidToken();
     if (token) {
         try {
             const response = await fetch('/api/auth/verify', {
@@ -315,10 +413,15 @@ async function checkAuthStatus() {
                 currentUser = data.user;
                 showAuthenticatedUI();
                 loadDashboard();
-                // Ensure SSE connection is established after auth check
+                // Start polling-based real-time updates when a session already exists
                 setTimeout(() => {
+                    if (typeof initializeUserWebhook === 'function') {
+                        console.log('🔄 Initializing user event poller after auth check...');
+                        initializeUserWebhook();
+                    }
+                    // SSE path remains disabled; keep call for future compatibility
                     if (!isEventStreamConnected) {
-                        console.log('🔄 Establishing SSE connection after auth check...');
+                        console.log('🔄 Establishing SSE connection after auth check (disabled path)...');
                         connectEventStream();
                     }
                 }, 1000);
@@ -372,7 +475,8 @@ async function loadSettings() {
     try {
         await Promise.all([
             loadSystemInfo(),
-            loadVersionInfo()
+            loadVersionInfo(),
+            loadWebhookStatus()
         ]);
     } catch (error) {
         console.error('Failed to load settings:', error);
@@ -460,6 +564,243 @@ function copyCommitSha() {
 function refreshVersionInfo() {
     loadVersionInfo();
     showToast('Version information refreshed', 'success');
+}
+
+// Webhook Management Functions
+async function loadWebhookStatus() {
+    try {
+        console.log('Loading webhook status...');
+        const response = await fetch('/api/webhooks', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        console.log('Webhook status response:', response.status);
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Webhook status data:', data);
+            updateWebhookStatus(data);
+        } else {
+            console.error('Failed to load webhook status');
+            document.getElementById('webhookStatusDisplay').innerHTML = '<span class="error">Failed to load webhook status</span>';
+        }
+    } catch (error) {
+        console.error('Webhook status error:', error);
+        document.getElementById('webhookStatusDisplay').innerHTML = '<span class="error">Error loading webhook status</span>';
+    }
+}
+
+function updateWebhookStatus(data) {
+    const statusDiv = document.getElementById('webhookStatusDisplay');
+    const listDiv = document.getElementById('webhookListDisplay');
+    
+    if (data.webhooks && data.webhooks.length > 0) {
+        const activeWebhooks = data.webhooks.filter(w => w.active);
+        const inactiveWebhooks = data.webhooks.filter(w => !w.active);
+        
+        statusDiv.innerHTML = `
+            <div class="status-summary">
+                <span class="status-indicator active"></span>
+                <strong>${activeWebhooks.length} active webhook(s)</strong>
+                <span class="status-indicator inactive"></span>
+                <span>${inactiveWebhooks.length} inactive</span>
+            </div>
+        `;
+        
+        listDiv.innerHTML = data.webhooks.map(webhook => `
+            <div class="webhook-item">
+                <div class="webhook-header">
+                    <h4>${webhook.name}</h4>
+                    <span class="status-indicator ${webhook.active ? 'active' : 'inactive'}"></span>
+                </div>
+                <div class="webhook-url">${webhook.url}</div>
+                <div class="webhook-events">Events: ${webhook.events.join(', ')}</div>
+                <div class="webhook-actions">
+                    <button class="btn btn-sm" onclick="testWebhook('${webhook.id}')">
+                        <i class="fas fa-play"></i> Test
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteWebhook('${webhook.id}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        statusDiv.innerHTML = `
+            <div class="status-summary">
+                <span class="status-indicator inactive"></span>
+                <strong>No webhooks configured</strong>
+            </div>
+        `;
+        listDiv.innerHTML = '<div class="no-webhooks">No webhooks configured yet. Create one above to get started.</div>';
+    }
+}
+
+async function createWebhook(event) {
+    event.preventDefault();
+    
+    const name = document.getElementById('webhookName').value;
+    const url = document.getElementById('webhookUrl').value;
+    const events = Array.from(document.querySelectorAll('.event-checkboxes input[type="checkbox"]:checked')).map(cb => cb.value);
+    
+    console.log('Creating webhook with:', { name, url, events });
+    
+    if (events.length === 0) {
+        showToast('Please select at least one event.', 'error');
+        return;
+    }
+
+    try {
+        const requestBody = { name, url, events };
+        console.log('Sending request body:', requestBody);
+        
+        const response = await fetch('/api/webhooks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        const result = await response.json();
+        console.log('Response result:', result);
+        
+        if (result.success) {
+            showToast('Webhook created successfully!', 'success');
+            document.getElementById('webhookForm').reset();
+            loadWebhookStatus();
+        } else {
+            showToast('Error: ' + (result.message || 'Failed to create webhook'), 'error');
+        }
+    } catch (error) {
+        console.error('Create webhook error:', error);
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+async function testWebhook(webhookId) {
+    try {
+        const response = await fetch(`/api/webhooks/${webhookId}/test`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Test webhook sent successfully!', 'success');
+        } else {
+            showToast('Test failed: ' + (result.message || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+async function deleteWebhook(webhookId) {
+    if (!confirm('Are you sure you want to delete this webhook?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/webhooks/${webhookId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Webhook deleted successfully!', 'success');
+            loadWebhookStatus();
+        } else {
+            showToast('Error: ' + (result.message || 'Failed to delete webhook'), 'error');
+        }
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+async function testAllWebhooks() {
+    try {
+        const response = await fetch('/api/webhook-test/trigger-test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                event: 'webhook.test',
+                timestamp: new Date().toISOString(),
+                data: {
+                    message: 'Test webhook from admin panel',
+                    testType: 'admin_panel_test',
+                    timestamp: new Date().toISOString()
+                }
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Test webhook sent to all configured webhooks!', 'success');
+        } else {
+            showToast('Test failed: ' + (result.message || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+function showSlackExample() {
+    const example = `
+Slack Setup:
+1. Go to https://api.slack.com/apps
+2. Create new app → "From scratch"
+3. Go to "Incoming Webhooks" → Activate
+4. Add webhook to workspace → Choose channel
+5. Copy the webhook URL
+6. Use it in the form above
+
+Example webhook URL format:
+https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK/URL
+    `;
+    alert(example);
+}
+
+function showEmailExample() {
+    const example = `
+Email Setup:
+1. Go to https://zapier.com or https://ifttt.com
+2. Create a new Zap/Applet
+3. Choose "Webhooks" as trigger
+4. Choose "Email" as action
+5. Use the webhook URL from Zapier/IFTTT
+6. Configure email settings
+    `;
+    alert(example);
+}
+
+function showMobileExample() {
+    const example = `
+Mobile Push Setup:
+1. Set up Firebase Cloud Messaging (FCM)
+2. Create webhook endpoint in your mobile app
+3. Configure push notification service
+4. Use your app's webhook URL
+5. Test with door offline events
+    `;
+    alert(example);
 }
 
 // Format uptime in human readable format
@@ -845,16 +1186,24 @@ async function handleLogin(event) {
             currentUser = data.user;
             showAuthenticatedUI();
             loadDashboard();
-            // Ensure SSE connection is established after login
+            // SSE connection disabled - using webhook-based system instead
+            console.log('🔄 SSE disabled, using webhook-based real-time updates');
+            
+            // Initialize user webhook system for real-time updates
             setTimeout(() => {
-                if (!isEventStreamConnected) {
-                    console.log('🔄 Establishing SSE connection after login...');
-                    connectEventStream();
+                if (typeof initializeUserWebhook === 'function') {
+                    console.log('🔄 Initializing user webhook system...');
+                    initializeUserWebhook();
                 }
             }, 1000);
             showToast('Login successful!', 'success');
         } else {
-            showToast(data.message || 'Login failed', 'error');
+            // Handle specific error codes
+            if (data.code === 'WEB_ACCESS_DENIED') {
+                showToast('Access denied: ' + data.message, 'error');
+            } else {
+                showToast(data.message || 'Login failed', 'error');
+            }
         }
     } catch (error) {
         console.error('Login error:', error);
@@ -915,6 +1264,17 @@ function logout() {
     localStorage.removeItem('token');
     currentUser = null;
     closeMobileMenu(); // Close mobile menu on logout
+    
+    // Stop token manager
+    if (window.tokenManager) {
+        window.tokenManager.stop();
+    }
+    
+    // Cleanup user webhook system
+    if (typeof cleanupUserWebhook === 'function') {
+        cleanupUserWebhook();
+    }
+    
     showLogin();
     showToast('Logged out successfully', 'info');
 }
@@ -978,7 +1338,7 @@ function closeMobileMenu() {
     }
 }
 
-// Dashboard functions
+// Site Map functions
 
 function showDashboardDoorsLoading() {
     const doorGrid = document.getElementById('doorGrid');
@@ -1021,17 +1381,17 @@ async function loadDashboard() {
                 hideDashboardDoorsLoading();
                 console.log('hideDashboardDoorsLoading completed');
                 
-                // Load doors and site plan background when dashboard is shown
+                // Load doors and site plan background when site map is shown
                 console.log('sitePlanManager exists:', !!sitePlanManager);
                 if (sitePlanManager) {
-                    console.log('Loading doors and site plan background for dashboard... [NEW VERSION - TIMESTAMP: ' + Date.now() + ']');
+                    console.log('Loading doors and site plan background for site map... [NEW VERSION - TIMESTAMP: ' + Date.now() + ']');
                     sitePlanManager.restoreBackgroundImage(); // Load background image
                     sitePlanManager.loadDoorPositions(); // Load doors with positions
                 } else {
                     console.log('sitePlanManager not available - skipping site plan load');
                 }
             } catch (error) {
-                console.error('Failed to load dashboard doors:', error);
+                console.error('Failed to load site map doors:', error);
                 hideDashboardDoorsLoading();
             }
         }, 500); // Longer delay to ensure initialization
@@ -1039,7 +1399,7 @@ async function loadDashboard() {
         // Note: Door status updates are handled via Server-Sent Events (SSE)
         // No need for manual refresh intervals
     } catch (error) {
-        console.error('Failed to load dashboard data:', error);
+        console.error('Failed to load site map data:', error);
         hideDashboardDoorsLoading();
     }
 }
@@ -1144,11 +1504,7 @@ async function loadDoorStatus() {
             limit: 100
         });
         
-        const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await forceRefresh(`/api/doors?${params}`);
         
         console.log('Door status response:', response.status, response.statusText);
         
@@ -1255,11 +1611,7 @@ async function testDoorLoading() {
     try {
         // Test 1: Simple API call like dashboard was doing
         console.log('Test 1: Simple API call');
-        const simpleResponse = await fetch('/api/doors?limit=100', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const simpleResponse = await forceRefresh('/api/doors?limit=100');
         console.log('Simple response:', simpleResponse.status, simpleResponse.statusText);
         if (simpleResponse.ok) {
             const simpleData = await simpleResponse.json();
@@ -1272,11 +1624,7 @@ async function testDoorLoading() {
             page: 1,
             limit: 10
         });
-        const mgmtResponse = await fetch(addCacheBusting(`/api/doors?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const mgmtResponse = await forceRefresh(`/api/doors?${params}`);
         console.log('Management response:', mgmtResponse.status, mgmtResponse.statusText);
         if (mgmtResponse.ok) {
             const mgmtData = await mgmtResponse.json();
@@ -1289,11 +1637,7 @@ async function testDoorLoading() {
             page: 1,
             limit: 100
         });
-        const dashboardResponse = await fetch(addCacheBusting(`/api/doors?${dashboardParams}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const dashboardResponse = await forceRefresh(`/api/doors?${dashboardParams}`);
         console.log('Dashboard response:', dashboardResponse.status, dashboardResponse.statusText);
         if (dashboardResponse.ok) {
             const dashboardData = await dashboardResponse.json();
@@ -1462,11 +1806,7 @@ async function loadUsers(page = 1) {
             ...currentFilters
         });
         
-        const response = await fetch(addCacheBusting(`/api/users?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await forceRefresh(`/api/users?${params}`);
         
         if (response.ok) {
             const data = await response.json();
@@ -1503,6 +1843,10 @@ function displayUsers(users) {
                     <button class="action-btn edit" onclick="editUser(${user.id})" title="Edit User">
                         <i class="fas fa-edit"></i>
                         <span class="btn-text">Edit</span>
+                    </button>
+                    <button class="action-btn visitors" onclick="manageUserVisitors(${user.id})" title="Manage Visitors">
+                        <i class="fas fa-id-badge"></i>
+                        <span class="btn-text">Visitors</span>
                     </button>
                     <button class="action-btn access-groups" onclick="manageUserAccessGroups(${user.id})" title="Access Groups">
                         <i class="fas fa-shield-alt"></i>
@@ -1706,6 +2050,161 @@ async function deleteUser(userId) {
     }
 }
 
+// Visitor management
+function manageUserVisitors(userId) {
+    try {
+        const userIdInput = document.getElementById('visitorsUserId');
+        if (userIdInput) userIdInput.value = userId;
+        const form = document.getElementById('addVisitorForm');
+        if (form) form.reset();
+        const modal = document.getElementById('userVisitorsModal');
+        if (modal) modal.classList.add('active');
+        loadUserVisitors(userId);
+    } catch (e) {
+        console.error('Failed to open visitors modal:', e);
+    }
+}
+
+async function loadUserVisitors(userId) {
+    showLoading();
+    try {
+        const response = await fetch(`/api/users/${userId}/visitors?includeExpired=true`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        if (!response.ok) {
+            showToast('Failed to load visitors', 'error');
+            return;
+        }
+        const data = await response.json();
+        const visitors = data.visitors || [];
+        renderUserVisitors(visitors);
+    } catch (error) {
+        console.error('Load visitors error:', error);
+        showToast('Failed to load visitors', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function renderUserVisitors(visitors) {
+    const container = document.getElementById('userVisitorsList');
+    if (!container) return;
+    if (!visitors.length) {
+        container.innerHTML = '<div class="info">No visitors registered yet.</div>';
+        return;
+    }
+    const now = new Date();
+    const html = visitors.map(v => {
+        const validToDate = v.validTo ? new Date(v.validTo) : null;
+        const isExpired = validToDate ? validToDate < now : false;
+        return `
+            <div class="visitor-item ${isExpired ? 'expired' : 'active'}">
+                <div class="visitor-main">
+                    <div class="visitor-name">${escapeHtml(v.visitorName || '')}</div>
+                    <div class="visitor-contact">${escapeHtml(v.email || '')}${v.phone ? ' • ' + escapeHtml(v.phone) : ''}</div>
+                </div>
+                <div class="visitor-validity">${formatDate(v.validFrom)} → ${formatDate(v.validTo)} ${isExpired ? '<span class="role-badge">Expired</span>' : ''}</div>
+                <div class="visitor-actions">
+                    <button class="action-btn delete" title="Delete Visitor" onclick="deleteVisitor(${v.id}, ${v.userId})"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    container.innerHTML = html;
+}
+
+function escapeHtml(str) {
+    return (str || '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+}
+
+function formatDate(val) {
+    if (!val) return '';
+    try {
+        return new Date(val).toLocaleString();
+    } catch (e) {
+        return val;
+    }
+}
+
+async function handleAddVisitor(event) {
+    event.preventDefault();
+    const userIdEl = document.getElementById('visitorsUserId');
+    const userId = userIdEl ? parseInt(userIdEl.value) : null;
+    if (!userId) {
+        showToast('Missing user id', 'error');
+        return;
+    }
+    const form = event.target;
+    const visitorName = form.visitorName.value.trim();
+    const email = form.email.value.trim();
+    const phone = form.phone.value.trim();
+    const validToRaw = form.validTo.value;
+    if (!visitorName || !validToRaw) {
+        showToast('Name and Valid Until are required', 'error');
+        return;
+    }
+    let validTo;
+    try {
+        validTo = new Date(validToRaw).toISOString();
+    } catch (e) {
+        showToast('Invalid date/time', 'error');
+        return;
+    }
+    showLoading();
+    try {
+        const response = await fetch(`/api/visitors/user/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ visitorName, email: email || undefined, phone: phone || undefined, validTo })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            form.reset();
+            await loadUserVisitors(userId);
+            showToast('Visitor added', 'success');
+        } else {
+            showToast(data.message || 'Failed to add visitor', 'error');
+        }
+    } catch (error) {
+        console.error('Add visitor error:', error);
+        showToast('Failed to add visitor', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function deleteVisitor(visitorId, userId) {
+    if (!confirm('Are you sure you want to delete this visitor?')) return;
+    showLoading();
+    try {
+        const response = await fetch(`/api/visitors/${visitorId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        if (response.ok) {
+            await loadUserVisitors(userId);
+            showToast('Visitor deleted', 'success');
+        } else {
+            const data = await response.json();
+            showToast(data.message || 'Failed to delete visitor', 'error');
+        }
+    } catch (error) {
+        console.error('Delete visitor error:', error);
+        showToast('Failed to delete visitor', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
 // Profile functions
 function updateProfileInfo() {
     if (currentUser) {
@@ -1819,15 +2318,36 @@ async function loadDoors(page = 1) {
             ...currentFilters
         });
         
-        const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await forceRefresh(`/api/doors?${params}`);
         
         if (response.ok) {
             const data = await response.json();
-            displayDoors(data.doors);
+            
+            // Load tags for each door
+            const doorsWithTags = await Promise.all(data.doors.map(async (door) => {
+                try {
+                    const tagsResponse = await forceRefresh(`/api/door-tags/door/${door.id}`);
+                    
+                    if (tagsResponse.ok) {
+                        const tagsData = await tagsResponse.json();
+                        door.tags = tagsData.doorTags || [];
+                        console.log(`Loaded ${door.tags.length} tags for door ${door.id}`);
+                    } else {
+                        console.error(`Failed to load tags for door ${door.id}:`, tagsResponse.status, tagsResponse.statusText);
+                        const errorText = await tagsResponse.text();
+                        console.error('Error response:', errorText);
+                        door.tags = [];
+                        // Don't show error for empty tags - this is normal
+                    }
+                } catch (error) {
+                    console.error(`Error loading tags for door ${door.id}:`, error);
+                    door.tags = [];
+                }
+                
+                return door;
+            }));
+            
+            displayDoors(doorsWithTags);
             displayDoorsPagination(data.pagination);
         } else {
             showToast('Failed to load doors', 'error');
@@ -1853,12 +2373,19 @@ function displayDoors(doors) {
                     ${door.isOnline ? 'Online' : 'Offline'}
                 </span>
             </td>
+            <td class="door-tag-cell">
+                ${formatDoorTags(door.tags || [])}
+            </td>
             <td>${door.lastSeen ? formatDoorTime(door.lastSeen) : 'Never'}</td>
             <td>
                 <div class="action-buttons">
                     <button class="action-btn edit" onclick="editDoor(${door.id})" title="Edit Door">
                         <i class="fas fa-edit"></i>
                         <span class="btn-text">Edit</span>
+                    </button>
+                    <button class="action-btn tags" onclick="manageDoorTags(${door.id})" title="Manage Tags">
+                        <i class="fas fa-tags"></i>
+                        <span class="btn-text">Tags</span>
                     </button>
                     <button class="action-btn delete" onclick="deleteDoor(${door.id})" title="Delete Door">
                         <i class="fas fa-trash"></i>
@@ -1917,6 +2444,8 @@ function filterDoors() {
 
 async function controlDoor(doorId, action) {
     try {
+        console.log(`Attempting to control door ${doorId} with action: ${action}`);
+        
         const response = await fetch(`/api/doors/${doorId}/control`, {
             method: 'POST',
             headers: {
@@ -1926,7 +2455,9 @@ async function controlDoor(doorId, action) {
             body: JSON.stringify({ action })
         });
         
+        console.log(`Control response status: ${response.status}`);
         const data = await response.json();
+        console.log('Control response data:', data);
         
         if (response.ok) {
             showToast(data.message, 'success');
@@ -1973,7 +2504,6 @@ async function handleCreateDoor(event) {
         const data = await response.json();
         
         if (response.ok) {
-            showToast('Door created successfully!', 'success');
             closeModal('createDoorModal');
             event.target.reset();
             refreshDoorRelatedUI();
@@ -2210,11 +2740,7 @@ async function loadAccessGroups(page = 1) {
             ...currentFilters
         });
         
-        const response = await fetch(addCacheBusting(`/api/access-groups?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await forceRefresh(`/api/access-groups?${params}`);
         
         if (response.ok) {
             const data = await response.json();
@@ -2241,11 +2767,7 @@ async function displayAccessGroups(accessGroups) {
     const accessGroupsWithDoors = await Promise.all(
         accessGroups.map(async (group) => {
             try {
-                const response = await fetch(`/api/access-groups/${group.id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+                const response = await forceRefresh(`/api/access-groups/${group.id}`);
                 
                 if (response.ok) {
                     const data = await response.json();
@@ -2312,6 +2834,28 @@ function formatDoorsColumn(doors) {
         
         return `
             ${visibleDoors.map(door => `<span class="door-tag">${door.name}</span>`).join('')}
+            <span class="door-count">+${remainingCount} more</span>
+        `;
+    }
+}
+
+function formatDoorTags(tags) {
+    if (!tags || tags.length === 0) {
+        return '<span class="no-tags">No tags</span>';
+    }
+    
+    if (tags.length <= 2) {
+        // Show all tags
+        return tags.map(tag => `
+            <span class="door-tag-badge ${tag.tagType}">${tag.tagId}</span>
+        `).join('');
+    } else {
+        // Show first tag + count
+        const firstTag = tags[0];
+        const remainingCount = tags.length - 1;
+        
+        return `
+            <span class="door-tag-badge ${firstTag.tagType}">${firstTag.tagId}</span>
             <span class="door-count">+${remainingCount} more</span>
         `;
     }
@@ -2493,22 +3037,14 @@ async function manageUserAccessGroups(userId) {
     
     try {
         // Load all access groups
-        const accessGroupsResponse = await fetch('/api/access-groups?limit=100', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const accessGroupsResponse = await forceRefresh('/api/access-groups?limit=100');
         
         if (accessGroupsResponse.ok) {
             const accessGroupsData = await accessGroupsResponse.json();
             const allAccessGroups = accessGroupsData.accessGroups;
             
             // Get user's current access groups
-            const userAccessGroupsResponse = await fetch(`/api/users/${userId}/access-groups`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
+            const userAccessGroupsResponse = await forceRefresh(`/api/users/${userId}/access-groups`);
             
             let currentAccessGroups = [];
             if (userAccessGroupsResponse.ok) {
@@ -2601,6 +3137,203 @@ function deselectAllUserAccessGroups() {
     });
 }
 
+// Door Tag Management Functions
+async function manageDoorTags(doorId) {
+    try {
+        console.log('Opening tag management for door:', doorId);
+        
+        // Get door information
+        const doorResponse = await forceRefresh(`/api/doors/${doorId}`);
+        
+        if (!doorResponse.ok) {
+            console.error('Failed to load door information:', doorResponse.status, doorResponse.statusText);
+            showToast('Failed to load door information', 'error');
+            return;
+        }
+        
+        const doorData = await doorResponse.json();
+        const door = doorData.door;
+        console.log('Door loaded:', door);
+        
+        // Get door tags
+        console.log('Loading tags for door:', doorId);
+        const token = localStorage.getItem('token');
+        console.log('Using token:', token ? 'Token exists' : 'No token found');
+        
+        const tagsResponse = await forceRefresh(`/api/door-tags/door/${doorId}`);
+        
+        let tags = [];
+        if (tagsResponse.ok) {
+            const tagsData = await tagsResponse.json();
+            tags = tagsData.doorTags || [];
+            console.log('Tags loaded:', tags);
+        } else {
+            console.error('Failed to load tags:', tagsResponse.status, tagsResponse.statusText);
+            const errorText = await tagsResponse.text();
+            console.error('Error response:', errorText);
+            // Don't show error toast for empty tags - just continue with empty array
+            if (tagsResponse.status !== 404) {
+                showToast('Failed to load door tags', 'error');
+                return;
+            }
+        }
+        
+        // Populate modal
+        document.getElementById('doorTagDoorName').textContent = door.name;
+        document.getElementById('doorTagDoorLocation').textContent = door.location;
+        document.getElementById('addTagDoorId').value = doorId;
+        
+        // Clear form
+        document.getElementById('addTagId').value = '';
+        document.getElementById('addTagType').value = '';
+        document.getElementById('addTagData').value = '';
+        
+        // Display tags
+        displayDoorTags(tags);
+        
+        // Show modal
+        console.log('Showing door tag modal');
+        document.getElementById('doorTagModal').classList.add('active');
+        
+    } catch (error) {
+        console.error('Error managing door tags:', error);
+        showToast('Failed to load door tag information', 'error');
+    }
+}
+
+function displayDoorTags(tags) {
+    const tagsList = document.getElementById('doorTagsList');
+    
+    if (!tags || tags.length === 0) {
+        tagsList.innerHTML = '<div class="no-tags">No tags associated with this door</div>';
+        return;
+    }
+    
+    tagsList.innerHTML = tags.map(tag => `
+        <div class="tag-item">
+            <div class="tag-info">
+                <div class="tag-id">${tag.tagId}</div>
+                <div class="tag-type ${tag.tagType}">${tag.tagType.toUpperCase()}</div>
+            </div>
+            <div class="tag-actions">
+                <button class="tag-remove-btn" onclick="removeDoorTag(${tag.id})">
+                    <i class="fas fa-trash"></i> Remove
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function handleAddTag(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const tagData = {
+        tagId: formData.get('tagId'),
+        tagType: formData.get('tagType'),
+        tagData: formData.get('tagData') || null
+    };
+    
+    const doorId = formData.get('doorId');
+    
+    try {
+        const response = await fetch(`/api/door-tags`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                doorId: parseInt(doorId),
+                tagId: tagData.tagId,
+                tagType: tagData.tagType,
+                tagData: tagData.tagData
+            })
+        });
+        
+        if (response.ok) {
+            showToast('Tag associated successfully!', 'success');
+            
+            try {
+                // Reload tags
+                const tagsResponse = await fetch(`/api/door-tags/door/${doorId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (tagsResponse.ok) {
+                    const tagsData = await tagsResponse.json();
+                    displayDoorTags(tagsData.doorTags);
+                }
+                
+                // Clear form
+                event.target.reset();
+                document.getElementById('addTagDoorId').value = doorId;
+                
+                // Reload doors list to update tag display
+                if (typeof loadDoors === 'function') {
+                    loadDoors(currentDoorPage || 1);
+                }
+            } catch (reloadError) {
+                console.error('Error reloading tags after creation:', reloadError);
+                // Don't show error toast for reload issues, just log it
+            }
+        } else {
+            const errorData = await response.json();
+            showToast(errorData.message || 'Failed to associate tag', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding tag:', error);
+        showToast('Failed to associate tag', 'error');
+    }
+}
+
+async function removeDoorTag(tagId) {
+    if (!confirm('Are you sure you want to remove this tag association?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/door-tags/${tagId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            showToast('Tag association removed successfully!', 'success');
+            
+            // Get the door ID from the current modal
+            const doorId = document.getElementById('addTagDoorId').value;
+            
+            // Reload tags
+            const tagsResponse = await fetch(`/api/door-tags/door/${doorId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (tagsResponse.ok) {
+                const tagsData = await tagsResponse.json();
+                displayDoorTags(tagsData.doorTags);
+            }
+            
+            // Reload doors list to update tag display
+            if (typeof loadDoors === 'function') {
+                loadDoors(currentDoorPage || 1);
+            }
+        } else {
+            const errorData = await response.json();
+            showToast(errorData.message || 'Failed to remove tag association', 'error');
+        }
+    } catch (error) {
+        console.error('Error removing tag:', error);
+        showToast('Failed to remove tag association', 'error');
+    }
+}
+
 
 
 
@@ -2612,11 +3345,7 @@ async function manageAccessGroupDetails(accessGroupId) {
     
     try {
         // Load access group details
-        const accessGroupResponse = await fetch(`/api/access-groups/${accessGroupId}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const accessGroupResponse = await forceRefresh(`/api/access-groups/${accessGroupId}`);
         
         if (accessGroupResponse.ok) {
             const accessGroupData = await accessGroupResponse.json();
@@ -2624,11 +3353,7 @@ async function manageAccessGroupDetails(accessGroupId) {
             const currentDoors = accessGroupData.doors;
             
             // Load all doors for the checkboxes
-            const doorsResponse = await fetch('/api/doors?limit=100', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
+            const doorsResponse = await forceRefresh('/api/doors?limit=100');
             
             if (doorsResponse.ok) {
                 const doorsData = await doorsResponse.json();
@@ -2692,11 +3417,7 @@ async function updateAccessGroupDoors() {
         .map(cb => parseInt(cb.value));
     
     // Get current doors to determine what needs to be added/removed
-    const accessGroupResponse = await fetch(`/api/access-groups/${currentAccessGroupId}`, {
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-    });
+    const accessGroupResponse = await forceRefresh(`/api/access-groups/${currentAccessGroupId}`);
     
     if (!accessGroupResponse.ok) {
         showToast('Failed to load current access group details', 'error');
@@ -2751,15 +3472,7 @@ async function updateAccessGroupDoors() {
         const failedResponses = responses.filter(response => !response.ok);
         
         if (failedResponses.length === 0) {
-            let message = '';
-            if (doorsToAdd.length > 0 && doorsToRemove.length > 0) {
-                message = `${doorsToAdd.length} door(s) added, ${doorsToRemove.length} door(s) removed successfully!`;
-            } else if (doorsToAdd.length > 0) {
-                message = `${doorsToAdd.length} door(s) added successfully!`;
-            } else {
-                message = `${doorsToRemove.length} door(s) removed successfully!`;
-            }
-            showToast(message, 'success');
+            // Success handled by webhook events - no duplicate toast needed
             manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
         } else {
             showToast(`Some operations failed. ${failedResponses.length} out of ${promises.length} operations failed.`, 'warning');
@@ -2797,10 +3510,11 @@ function showSection(sectionName) {
     
     if (sectionName === 'dashboard') {
         loadDashboard();
-        connectEventStream(); // Connect to live event stream
-        // Door status updates are handled via Server-Sent Events (SSE)
+        // SSE disabled - using webhook-based system instead
+        console.log('🔄 SSE disabled for dashboard, using webhook-based updates');
     } else {
-        connectEventStream(); // Keep SSE connection alive on all sections
+        // SSE disabled - using webhook-based system instead
+        console.log('🔄 SSE disabled for section, using webhook-based updates');
         if (sectionName === 'users') {
             loadUsers();
         } else if (sectionName === 'doors') {
@@ -2977,11 +3691,7 @@ function displayDiscoveredControllers() {
 async function configureController(mac, ip) {
     // Load access groups for the dropdown
     try {
-        const response = await fetch('/api/access-groups?limit=100', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await forceRefresh('/api/access-groups?limit=100');
         
         if (response.ok) {
             const data = await response.json();
@@ -3035,7 +3745,6 @@ async function handleDoorControllerConfig(event) {
         const data = await response.json();
         
         if (response.ok) {
-            showToast('Door Controller configured as door successfully!', 'success');
             closeModal('doorControllerConfigModal');
             
             // Remove the configured controller from the discovered list
@@ -3100,11 +3809,7 @@ async function addAllDiscoveredControllers() {
     
     try {
         // Load access groups for default assignment
-        const accessGroupsResponse = await fetch('/api/access-groups?limit=100', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const accessGroupsResponse = await forceRefresh('/api/access-groups?limit=100');
         
         let defaultAccessGroupId = null;
         if (accessGroupsResponse.ok) {
@@ -3139,7 +3844,7 @@ async function addAllDiscoveredControllers() {
         const failed = results.length - successful;
         
         if (successful > 0) {
-            showToast(`Successfully added ${successful} Door Controller device(s) as doors`, 'success');
+            // Success handled by webhook events - no duplicate toast needed
         }
         
         if (failed > 0) {
@@ -3206,7 +3911,6 @@ async function saveDoorControllerConfiguration() {
         });
         
         if (response.ok) {
-            showToast('Door Controller device configured successfully!', 'success');
             closeModal('doorControllerConfigModal');
             
             // Refresh the doors list if we're on that page
@@ -3256,15 +3960,30 @@ async function refreshDoorStatus() {
             ...currentFilters
         });
         
-        const response = await fetch(addCacheBusting(`/api/doors?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await forceRefresh(`/api/doors?${params}`);
         
         if (response.ok) {
             const data = await response.json();
-            displayDoors(data.doors);
+            
+            // Load tags for each door (same as in loadDoors)
+            const doorsWithTags = await Promise.all(data.doors.map(async (door) => {
+                try {
+                    const tagsResponse = await forceRefresh(`/api/door-tags/door/${door.id}`);
+                    
+                    if (tagsResponse.ok) {
+                        const tagsData = await tagsResponse.json();
+                        door.tags = tagsData.doorTags || [];
+                    } else {
+                        door.tags = [];
+                    }
+                } catch (error) {
+                    door.tags = [];
+                }
+                
+                return door;
+            }));
+            
+            displayDoors(doorsWithTags);
             // Don't refresh pagination during auto-updates
         }
     } catch (error) {
@@ -3375,11 +4094,7 @@ async function loadEvents(page = 1, type = '') {
             params.append('status', currentEventFilters.status);
         }
         
-        const response = await fetch(addCacheBusting(`/api/events?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
+        const response = await forceRefresh(`/api/events?${params}`);
         
         console.log('Events response status:', response.status);
         
@@ -3521,6 +4236,10 @@ function filterEvents() {
 }
 
 function startEventRefresh() {
+    // Event refresh disabled - using polling system instead
+    console.log('🔄 Event refresh disabled - using polling system');
+    return;
+    
     // Clear existing interval
     if (eventRefreshInterval) {
         clearInterval(eventRefreshInterval);
@@ -3528,7 +4247,7 @@ function startEventRefresh() {
     
     // Start new interval - refresh every 10 seconds
     eventRefreshInterval = setInterval(() => {
-        // Only refresh if we're on the dashboard and events are visible
+        // Only refresh if we're on the site map and events are visible
         const dashboardSection = document.getElementById('dashboardSection');
         if (dashboardSection && dashboardSection.classList.contains('active')) {
             loadEvents(currentEventPage, currentEventFilters.type || '');
@@ -3630,8 +4349,12 @@ function startFetchStreaming(url) {
 }
 
 function connectEventStream() {
-    console.log('🔄 connectEventStream() called - EVENTSOURCE TEST VERSION');
-    addDebugLog('Starting SSE connection attempt - EVENTSOURCE TEST VERSION', 'info');
+    console.log('🔄 connectEventStream() called - DISABLED (using polling instead)');
+    addDebugLog('SSE connection disabled - using polling system', 'info');
+    
+    // SSE is disabled - using polling system instead
+    console.log('📡 SSE disabled, using UserEventPoller for real-time updates');
+    return;
     
     // Clear any cached connections
     console.log('🧹 Clearing any cached connections...');
@@ -3758,13 +4481,8 @@ function connectEventStream() {
                             }, 2000);
                         }
                         
-                        // Refresh the events list to show the new event
-                        if (typeof loadEvents === 'function') {
-                            console.log('🔄 Refreshing events list due to live event');
-                            // Preserve current page and filter, but go to page 1 to show the new event
-                            const currentType = document.getElementById('eventTypeFilter')?.value || '';
-                            loadEvents(1, currentType);
-                        }
+                        // SSE event handling disabled - using polling system instead
+                        console.log('📡 SSE event handling disabled - using polling system');
                         
                         // Update other sections if needed
                         if (data.event.type === 'user' && typeof loadUsers === 'function') {
@@ -3795,12 +4513,8 @@ function connectEventStream() {
                             }, 2000);
                         }
                         
-                        // Refresh the events list to show the new event
-                        if (typeof loadEvents === 'function') {
-                            console.log('🔄 Refreshing events list due to new event');
-                            const currentType = document.getElementById('eventTypeFilter')?.value || '';
-                            loadEvents(1, currentType);
-                        }
+                        // SSE event handling disabled - using polling system instead
+                        console.log('📡 SSE event handling disabled - using polling system');
                         
                         // Update site plan door status if this is a door event
                         if (data.event && data.event.type === 'door' && sitePlanManager && typeof sitePlanManager.updateDoorStatus === 'function') {
@@ -4423,7 +5137,7 @@ class SitePlanManager {
         // Ensure canvas is properly sized
         this.resizeCanvas();
         
-        // Don't load doors automatically - wait for dashboard section to be shown
+        // Don't load doors automatically - wait for site map section to be shown
         this.drawSitePlan(); // Just draw empty canvas initially
         
         console.log('Site plan initialized with canvas:', this.canvas.width, 'x', this.canvas.height);
@@ -5118,11 +5832,7 @@ class SitePlanManager {
             limit: 100  // Get all doors for site plan
         });
         
-        fetch(addCacheBusting(`/api/doors?${params}`), {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        })
+        forceRefresh(`/api/doors?${params}`)
             .then(response => {
                 console.log('API Response status:', response.status, response.statusText);
                 if (!response.ok) {
@@ -5175,90 +5885,6 @@ class SitePlanManager {
         this.ctx.fillText('Then return here to position them on your site plan', this.canvas.width / 2, this.canvas.height / 2 + 40);
     }
 
-    createSampleDoors() {
-        console.log('Creating sample doors for testing glow effects...');
-        this.doors = [
-            {
-                id: 1,
-                name: 'Online Locked',
-                number: '001',
-                status: 'locked',
-                x: 150,
-                y: 150,
-                isOnline: true,
-                isOpen: false,
-                isLocked: true,
-                location: 'Test Area',
-                ipAddress: '192.168.1.10'
-            },
-            {
-                id: 2,
-                name: 'Online Unlocked',
-                number: '002',
-                status: 'unlocked',
-                x: 300,
-                y: 150,
-                isOnline: true,
-                isOpen: false,
-                isLocked: false,
-                location: 'Test Area',
-                ipAddress: '192.168.1.11'
-            },
-            {
-                id: 3,
-                name: 'Online Open',
-                number: '003',
-                status: 'open',
-                x: 450,
-                y: 150,
-                isOnline: true,
-                isOpen: true,
-                isLocked: false,
-                location: 'Test Area',
-                ipAddress: '192.168.1.12'
-            },
-            {
-                id: 4,
-                name: 'Offline',
-                number: '004',
-                status: 'offline',
-                x: 600,
-                y: 150,
-                isOnline: false,
-                isOpen: false,
-                isLocked: true,
-                location: 'Test Area',
-                ipAddress: '192.168.1.13'
-            },
-            {
-                id: 5,
-                name: 'Office Door',
-                number: '005',
-                status: 'locked',
-                x: 150,
-                y: 250,
-                isOnline: true,
-                isOpen: false,
-                isLocked: true,
-                location: 'Office Wing',
-                ipAddress: '192.168.1.14'
-            },
-            {
-                id: 6,
-                name: 'Conference Room',
-                number: '006',
-                status: 'unlocked',
-                x: 350,
-                y: 400,
-                isOnline: true,
-                isOpen: false,
-                isLocked: false,
-                location: 'Conference Wing',
-                ipAddress: '192.168.1.15'
-            }
-        ];
-        console.log(`Created ${this.doors.length} sample doors`);
-    }
 
     getDoorStatus(door) {
         if (!door.isOnline) return 'offline';
@@ -5630,12 +6256,6 @@ function changeDoorSize(size) {
     sitePlanManager.drawSitePlan();
 }
 
-function showSampleDoors() {
-    sitePlanManager.doorsLoaded = false; // Reset flag to allow reloading
-    sitePlanManager.createSampleDoors();
-    sitePlanManager.drawSitePlan();
-    showToast('Sample doors loaded for testing glow effects', 'info');
-}
 
 // Zoom functions removed - using mouse wheel and pinch gestures only
 
@@ -5696,6 +6316,10 @@ document.addEventListener('DOMContentLoaded', function() {
     startDoorStatusUpdates();
     // Start keep-alive mechanism
     startKeepAlive();
+    // Start token manager for automatic refresh
+    if (window.tokenManager) {
+        window.tokenManager.start();
+    }
     // Initialize site plan
     sitePlanManager.init();
     

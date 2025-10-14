@@ -7,6 +7,8 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fetch = require('node-fetch');
 const { initDatabase } = require('./database/init');
+const { initDatabaseRailway } = require('./database/init-railway');
+const { initDatabaseMinimal } = require('./database/init-minimal');
 require('dotenv').config();
 
 // Load security config first to validate environment
@@ -60,25 +62,29 @@ app.use('/api/doors/heartbeat', (req, res, next) => {
   next();
 });
 
-// Serve static files with cache-busting for development
-if (process.env.NODE_ENV !== 'production') {
-    app.use((req, res, next) => {
-        res.set({
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-        });
-        next();
+// Serve static files with aggressive cache prevention for all environments
+app.use((req, res, next) => {
+    // Apply cache prevention to all static files
+    res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate, private, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Last-Modified': new Date().toUTCString(),
+        'ETag': `"${Date.now()}-${Math.random().toString(36).substr(2, 9)}"`
     });
-}
+    next();
+});
 app.use(express.static('public'));
 
-// Disable caching for API endpoints
+// Disable caching for API endpoints with stronger headers
 app.use('/api', (req, res, next) => {
   res.set({
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Cache-Control': 'no-cache, no-store, must-revalidate, private, max-age=0',
     'Pragma': 'no-cache',
-    'Expires': '0'
+    'Expires': '0',
+    'Last-Modified': new Date().toUTCString(),
+    'ETag': `"${Date.now()}-${Math.random().toString(36).substr(2, 9)}"`,
+    'Vary': '*'
   });
   next();
 });
@@ -97,6 +103,15 @@ const authLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// ESP32-specific rate limiter (more lenient for IoT devices)
+const esp32Limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 300, // limit each IP to 300 requests per minute (5 per second)
+  message: 'ESP32 rate limit exceeded, please slow down requests.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // limit each IP to 1000 requests per windowMs
@@ -105,21 +120,68 @@ const generalLimiter = rateLimit({
   legacyHeaders: false
 });
 
-app.use('/api', generalLimiter);
+// Apply ESP32 rate limiter to ESP32-specific endpoints
+app.use('/api/doors/commands', esp32Limiter);
+app.use('/api/doors/heartbeat', esp32Limiter);
+app.use('/api/doors/access/request', esp32Limiter);
 
-// Load and setup routes
-let authRoutes, userRoutes, doorRoutes, accessGroupRoutes, addLog;
+// Apply general rate limiter to all other API endpoints (excluding ESP32 endpoints)
+app.use('/api', (req, res, next) => {
+  // Skip rate limiting for ESP32 endpoints that already have their own limiter
+  if (req.path.startsWith('/doors/commands') || 
+      req.path.startsWith('/doors/heartbeat') || 
+      req.path.startsWith('/doors/access/request')) {
+    return next();
+  }
+  return generalLimiter(req, res, next);
+});
+
+// Load and setup routes with better error handling
+let authRoutes, userRoutes, doorRoutes, accessGroupRoutes, visitorRoutes, addLog;
 
 try {
   console.log('Loading route modules...');
-  authRoutes = require('./routes/auth');
-  console.log('Auth routes module loaded');
-  userRoutes = require('./routes/users');
-  console.log('User routes module loaded');
-  doorRoutes = require('./routes/doors');
-  console.log('Door routes module loaded');
-  accessGroupRoutes = require('./routes/accessGroups');
-  console.log('Access group routes module loaded');
+  
+  // Load routes with individual error handling
+  try {
+    authRoutes = require('./routes/auth');
+    console.log('Auth routes module loaded');
+  } catch (err) {
+    console.error('Failed to load auth routes:', err.message);
+    throw err;
+  }
+  
+  try {
+    userRoutes = require('./routes/users');
+    console.log('User routes module loaded');
+  } catch (err) {
+    console.error('Failed to load user routes:', err.message);
+    throw err;
+  }
+  
+  try {
+    doorRoutes = require('./routes/doors');
+    console.log('Door routes module loaded');
+  } catch (err) {
+    console.error('Failed to load door routes:', err.message);
+    throw err;
+  }
+  
+  try {
+    accessGroupRoutes = require('./routes/accessGroups');
+    console.log('Access group routes module loaded');
+  } catch (err) {
+    console.error('Failed to load access group routes:', err.message);
+    throw err;
+  }
+  
+  try {
+    visitorRoutes = require('./routes/visitors');
+    console.log('Visitor routes module loaded');
+  } catch (err) {
+    console.error('Failed to load visitor routes:', err.message);
+    throw err;
+  }
   
 const { router: eventRoutes, broadcastEvent } = require('./routes/events');
 global.broadcastEvent = broadcastEvent; // Make available globally
@@ -127,6 +189,9 @@ console.log('Event routes module loaded');
 
 accessRequestRoutes = require('./routes/accessRequests');
 console.log('Access request routes module loaded');
+
+doorTagsRoutes = require('./routes/doorTags');
+console.log('Door tags routes module loaded');
 
 const { router: logsRoutes, addLog: addLogFunction } = require('./routes/logs');
 addLog = addLogFunction;
@@ -138,19 +203,35 @@ console.log('Settings routes module loaded');
 sitePlanRoutes = require('./routes/sitePlan');
 console.log('Site plan routes module loaded');
 
-visitorRoutes = require('./routes/visitors');
-console.log('Visitor routes module loaded');
+webhookRoutes = require('./routes/webhooks');
+console.log('Webhook routes module loaded');
+
+webhookSetupRoutes = require('./routes/webhookSetup');
+console.log('Webhook setup routes module loaded');
+
+webhookTestRoutes = require('./routes/webhookTest');
+console.log('Webhook test routes module loaded');
+
+mobileSettingsRoutes = require('./routes/mobileSettings');
+console.log('Mobile settings routes module loaded');
   
   // Setup routes
-  // Health check endpoint for keep-alive
+  // Health check endpoint for keep-alive (Railway compatible)
   app.get('/api/health', (req, res) => {
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       memory: process.memoryUsage(),
-      version: process.version
+      version: process.version,
+      environment: process.env.NODE_ENV || 'development',
+      port: PORT
     });
+  });
+
+  // Railway-specific health check
+  app.get('/health', (req, res) => {
+    res.status(200).send('OK');
   });
 
   // Test endpoint for mobile app connection testing
@@ -182,15 +263,21 @@ console.log('Visitor routes module loaded');
   });
 
   app.use('/api/auth', authLimiter, authRoutes);
+  app.use('/api/token', authLimiter, require('./routes/tokenRefresh'));
   app.use('/api/users', userRoutes);
   app.use('/api/doors', doorRoutes);
 app.use('/api/access-groups', accessGroupRoutes);
+  app.use('/api/visitors', visitorRoutes);
 app.use('/api/events', eventRoutes);
-app.use('/api/access-requests', accessRequestRoutes);
-app.use('/api/logs', logsRoutes);
+  app.use('/api/access-requests', accessRequestRoutes);
+  app.use('/api/door-tags', doorTagsRoutes);
+  app.use('/api/logs', logsRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/site-plan', sitePlanRoutes);
-app.use('/api/visitors', visitorRoutes);
+app.use('/api/webhooks', webhookRoutes);
+app.use('/api/webhook-setup', webhookSetupRoutes);
+app.use('/api/webhook-test', webhookTestRoutes);
+app.use('/api/mobile-settings', mobileSettingsRoutes);
   console.log('All routes configured successfully');
 } catch (error) {
   console.error('Error loading/setting up routes:', error);
@@ -240,9 +327,8 @@ async function migrateDatabase() {
         executed_at DATETIME,
         FOREIGN KEY (door_id) REFERENCES doors (id)
       )`, (err) => {
-        db.close();
         if (err) {
-          console.error('❌ Migration failed:', err.message);
+          console.error('❌ Door commands migration failed:', err.message);
           reject(err);
         } else {
           console.log('✅ Door commands table created/verified');
@@ -250,6 +336,55 @@ async function migrateDatabase() {
         }
       });
     });
+    
+    // Create door_tags table if it doesn't exist
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE TABLE IF NOT EXISTS door_tags (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        door_id INTEGER NOT NULL,
+        tag_id TEXT NOT NULL,
+        tag_type TEXT NOT NULL CHECK (tag_type IN ('nfc', 'qr')),
+        tag_data TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE,
+        UNIQUE (tag_id)
+      )`, (err) => {
+        if (err) {
+          console.error('❌ Door tags migration failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ Door tags table created/verified');
+          resolve();
+        }
+      });
+    });
+    
+    // Create indexes for door_tags
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE INDEX IF NOT EXISTS idx_door_tags_door_id ON door_tags(door_id)`, (err) => {
+        if (err) {
+          console.error('❌ Door tags door_id index failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ Door tags door_id index created/verified');
+          resolve();
+        }
+      });
+    });
+    
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE INDEX IF NOT EXISTS idx_door_tags_tag_id ON door_tags(tag_id)`, (err) => {
+        if (err) {
+          console.error('❌ Door tags tag_id index failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ Door tags tag_id index created/verified');
+          resolve();
+        }
+      });
+    });
+    
+    db.close();
     
     console.log('✅ Database migration completed');
     
@@ -303,6 +438,10 @@ async function resetDatabase() {
 // Start server
 async function startServer() {
   try {
+    // Railway-specific startup optimizations
+    const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production';
+    console.log('🚀 Starting server...', isRailway ? '(Railway deployment)' : '(Local development)');
+    
     // Reset database if RESET_DB environment variable is set
     if (process.env.RESET_DB === 'true') {
       await resetDatabase();
@@ -310,18 +449,66 @@ async function startServer() {
       // Initialize database first
       console.log('🗄️  Initializing database...');
       console.log('Database path:', process.env.DB_PATH || path.join(__dirname, 'database', 'users.db'));
-      await initDatabase();
-      console.log('✅ Database initialization completed');
+      console.log('Calling initDatabase()...');
       
-      // Run migrations to ensure all tables exist
-      await migrateDatabase();
+      // Use Railway-optimized database initialization
+      const dbInitPromise = isRailway ? initDatabaseRailway() : initDatabase();
+      const dbTimeout = isRailway ? 15000 : 60000; // 15s for Railway, 60s for local
+      
+      console.log(`🚂 Railway: Starting database initialization with ${dbTimeout/1000}s timeout...`);
+      
+      try {
+        await Promise.race([
+          dbInitPromise,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Database initialization timeout')), dbTimeout)
+          )
+        ]);
+      } catch (dbError) {
+        console.error('🚂 Railway: Database initialization failed:', dbError.message);
+        
+        if (isRailway) {
+          console.log('🚂 Railway: Attempting fallback database initialization...');
+          try {
+            // Try minimal database initialization
+            const fallbackPromise = initDatabaseMinimal();
+            await Promise.race([
+              fallbackPromise,
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Minimal database initialization timeout')), 5000)
+              )
+            ]);
+            console.log('🚂 Railway: Minimal database initialization succeeded');
+          } catch (fallbackError) {
+            console.error('🚂 Railway: Minimal database initialization also failed:', fallbackError.message);
+            console.log('🚂 Railway: Continuing without database initialization...');
+            // Don't throw error, continue with startup
+          }
+        } else {
+          throw dbError;
+        }
+      }
+      
+      console.log('✅ Database initialization completed');
+      console.log('✅ Database initialization finished, proceeding to server creation...');
+      
+      // Add delay to ensure database operations are complete (reduced for production)
+      const dbDelay = isRailway ? 100 : 2000; // Much shorter delay for Railway
+      console.log(`Waiting ${dbDelay}ms for database operations to complete...`);
+      await new Promise(resolve => setTimeout(resolve, dbDelay));
+      console.log('Database operations wait completed, creating server...');
     }
     
-    console.log('Starting server...');
-    console.log('Port:', PORT);
-    console.log('Environment:', process.env.NODE_ENV || 'development');
-    
-    const server = app.listen(PORT, '0.0.0.0', async () => {
+        console.log('Starting server...');
+        console.log('Port:', PORT);
+        console.log('Environment:', process.env.NODE_ENV || 'development');
+        console.log('Binding to 0.0.0.0:' + PORT);
+        
+        console.log('Creating server instance...');
+        console.log('About to call app.listen()...');
+        console.log('app.listen() called, waiting for callback...');
+        const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log('✅ Server callback executed - server is listening');
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📱 Web interface: http://localhost:${PORT}`);
       console.log(`🔧 API endpoints: http://localhost:${PORT}/api`);
@@ -331,31 +518,41 @@ async function startServer() {
       console.log(`   Password: ${process.env.ADMIN_PASSWORD || 'admin123'}`);
       console.log(`\n⚠️  Please change the default password after first login!`);
       
-      // Add log entries
-      addLog('success', `Server started on port ${PORT}`);
-      addLog('info', `Web interface: http://localhost:${PORT}`);
-      addLog('info', `API endpoints: http://localhost:${PORT}/api`);
-      addLog('info', `Environment: ${process.env.NODE_ENV || 'development'}`);
-      
-      // Log system startup event
+      // Add log entries (non-blocking)
       try {
-        const EventLogger = require('./utils/eventLogger');
-        const mockReq = { 
-          ip: '127.0.0.1', 
-          headers: { 'user-agent': 'SimplifiAccess-Server' },
-          get: () => 'SimplifiAccess-Server'
-        };
-        await EventLogger.logSystemEvent(mockReq, 'startup', `SimplifiAccess server started on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+        if (typeof addLog === 'function') {
+          addLog('success', `Server started on port ${PORT}`);
+          addLog('info', `Web interface: http://localhost:${PORT}`);
+          addLog('info', `API endpoints: http://localhost:${PORT}/api`);
+          addLog('info', `Environment: ${process.env.NODE_ENV || 'development'}`);
+        } else {
+          console.log('⚠️ addLog function not available, skipping log entries');
+        }
       } catch (logError) {
-        console.error('Failed to log startup event:', logError);
+        console.error('Failed to add log entries:', logError);
       }
+      
+      // Log system startup event (non-blocking)
+      setImmediate(async () => {
+        try {
+          const EventLogger = require('./utils/eventLogger');
+          const mockReq = { 
+            ip: '127.0.0.1', 
+            headers: { 'user-agent': 'SimplifiAccess-Server' },
+            get: () => 'SimplifiAccess-Server'
+          };
+          await EventLogger.logSystemEvent(mockReq, 'startup', `SimplifiAccess server started on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+        } catch (logError) {
+          console.error('Failed to log startup event:', logError);
+        }
+      });
     });
 
     // Start periodic offline door check
     const { Door } = require('./database/door');
     setInterval(async () => {
       try {
-        const offlineDoors = await Door.checkOfflineDoors(0.17); // 10 second timeout (0.17 minutes)
+        const offlineDoors = await Door.checkOfflineDoors(3); // 3 minute timeout (more reasonable for ESP32 devices)
         if (offlineDoors.length > 0) {
           console.log(`🔴 ${offlineDoors.length} doors marked as offline due to timeout`);
           
@@ -373,15 +570,30 @@ async function startServer() {
       } catch (error) {
         console.error('Error checking offline doors:', error);
       }
-    }, 10000); // Check every 10 seconds
+    }, 30000); // Check every 30 seconds (less frequent)
+
+    console.log('✅ Server instance created successfully');
+    console.log('Server listening state:', server.listening);
 
     server.on('error', (error) => {
       console.error('Server error:', error);
       if (error.code === 'EADDRINUSE') {
         console.error(`Port ${PORT} is already in use. Please use a different port.`);
       }
+      console.error('Server failed to start. Exiting...');
       process.exit(1);
     });
+
+    // Add timeout to detect if server fails to start (increased for Railway)
+    const startupTimeout = process.env.NODE_ENV === 'production' ? 60000 : 30000;
+    setTimeout(() => {
+      if (!server.listening) {
+        console.error(`❌ Server failed to start within ${startupTimeout/1000} seconds`);
+        console.error('Port:', PORT);
+        console.error('Environment:', process.env.NODE_ENV);
+        process.exit(1);
+      }
+    }, startupTimeout);
 
   } catch (error) {
     console.error('Failed to start server:', error);
@@ -440,98 +652,19 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-// Aggressive keep-alive mechanism to prevent Render instance from sleeping
-function startKeepAlive() {
-  const keepAliveInterval = 2 * 60 * 1000; // 2 minutes - more aggressive
-  const externalPingInterval = 3 * 60 * 1000; // 3 minutes for external pings
-  
-  // Internal ping (self-ping)
-  setInterval(async () => {
-    try {
-      const response = await fetch(`http://localhost:${PORT}/api/health`, {
-        method: 'GET',
-        headers: {
-          'User-Agent': 'KeepAlive/1.0'
-        }
-      });
-      
-      if (response.ok) {
-        console.log('✅ Internal keep-alive ping successful');
-      } else {
-        console.log('⚠️ Internal keep-alive ping failed:', response.status);
-      }
-    } catch (error) {
-      console.log('❌ Internal keep-alive ping error:', error.message);
-    }
-  }, keepAliveInterval);
-  
-  // External ping (if we have a public URL)
-  if (process.env.RENDER_EXTERNAL_URL) {
-    setInterval(async () => {
-      try {
-        const response = await fetch(`${process.env.RENDER_EXTERNAL_URL}/api/health`, {
-          method: 'GET',
-          headers: {
-            'User-Agent': 'ExternalKeepAlive/1.0'
-          }
-        });
-        
-        if (response.ok) {
-          console.log('✅ External keep-alive ping successful');
-        } else {
-          console.log('⚠️ External keep-alive ping failed:', response.status);
-        }
-      } catch (error) {
-        console.log('❌ External keep-alive ping error:', error.message);
-      }
-    }, externalPingInterval);
-  }
-  
-  // Additional activity generation
-  setInterval(() => {
-    // Generate some CPU activity to keep instance active
-    const start = Date.now();
-    let result = 0;
-    for (let i = 0; i < 1000000; i++) {
-      result += Math.random();
-    }
-    const duration = Date.now() - start;
-    console.log(`🔄 CPU activity generated (${duration}ms)`);
-  }, 4 * 60 * 1000); // Every 4 minutes
-
-  // Multiple ping strategies
-  const pingEndpoints = ['/api/health', '/api/ping', '/api/status', '/ping'];
-  let currentEndpointIndex = 0;
-  
-  setInterval(async () => {
-    const endpoint = pingEndpoints[currentEndpointIndex];
-    currentEndpointIndex = (currentEndpointIndex + 1) % pingEndpoints.length;
-    
-    try {
-      const response = await fetch(`http://localhost:${PORT}${endpoint}`, {
-        method: 'GET',
-        headers: {
-          'User-Agent': 'MultiPing/1.0'
-        }
-      });
-      
-      if (response.ok) {
-        console.log(`✅ Multi-ping successful: ${endpoint}`);
-      } else {
-        console.log(`⚠️ Multi-ping failed: ${endpoint} (${response.status})`);
-      }
-    } catch (error) {
-      console.log(`❌ Multi-ping error: ${endpoint} - ${error.message}`);
-    }
-  }, 90 * 1000); // Every 90 seconds
-  
-  console.log(`🔄 Aggressive keep-alive mechanism started (internal: ${keepAliveInterval / 1000 / 60}min, external: ${externalPingInterval / 1000 / 60}min)`);
-}
+// Keep-alive mechanism removed to fix startup issues
 
 // Start the server
-startServer();
+console.log('🚀 Starting SimplifiAccess server...');
+console.log('Environment:', process.env.NODE_ENV || 'development');
+console.log('Port:', process.env.PORT || 3000);
+console.log('Database path:', process.env.DB_PATH || path.join(__dirname, 'database', 'users.db'));
 
-// Start keep-alive after server is running
-setTimeout(() => {
-  startKeepAlive();
-}, 5000); // Wait 5 seconds for server to fully start
+startServer().catch((error) => {
+  console.error('❌ Failed to start server:', error);
+  console.error('Error details:', error.message);
+  console.error('Stack trace:', error.stack);
+  process.exit(1);
+});
+
+// Keep-alive mechanism removed to fix startup issues

@@ -32,10 +32,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="styles.css?v=36" rel="stylesheet">
     
-    <!-- Mobile cache prevention -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <!-- Enhanced cache prevention -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, private, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Last-Modified" content="">
+    <meta http-equiv="ETag" content="">
+    
+    <!-- Additional cache prevention for mobile browsers -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
     
     <!-- Service Worker Registration -->
     <script>
@@ -114,9 +122,9 @@
                     <span class="nav-toggle-fallback">☰</span>
                 </button>
                 <div class="nav-menu" id="navMenu" role="menubar" style="display: none;">
-                    <a href="#" class="nav-link" onclick="showSection('dashboard')" role="menuitem" aria-label="Go to Dashboard">
-                        <i class="fas fa-tachometer-alt" aria-hidden="true"></i> 
-                        <span>Dashboard</span>
+                    <a href="#" class="nav-link" onclick="showSection('dashboard')" role="menuitem" aria-label="Go to Site Map">
+                        <i class="fas fa-map" aria-hidden="true"></i> 
+                        <span>Site Map</span>
                     </a>
                     <a href="#" class="nav-link" onclick="showSection('events')" role="menuitem" aria-label="Go to Events Log">
                         <i class="fas fa-history" aria-hidden="true"></i> 
@@ -141,6 +149,10 @@
                     <a href="#" class="nav-link" onclick="showSection('settings')" role="menuitem" aria-label="Go to Settings">
                         <i class="fas fa-cog" aria-hidden="true"></i> 
                         <span>Settings</span>
+                    </a>
+                    <a href="#" class="nav-link" onclick="forceRefreshAllData()" role="menuitem" aria-label="Force refresh all data">
+                        <i class="fas fa-sync-alt" aria-hidden="true"></i> 
+                        <span>Refresh Data</span>
                     </a>
                     <a href="#" class="nav-link" onclick="showSection('profile')" role="menuitem" aria-label="Go to Profile">
                         <i class="fas fa-user" aria-hidden="true"></i> 
@@ -239,59 +251,30 @@
             </div>
         </div>
 
-        <!-- Dashboard -->
-        <main id="dashboardSection" class="section" role="main" aria-label="Site Plan">
+        <!-- Site Map -->
+        <div id="dashboardSection" class="section">
             <div class="container">
-                <header class="page-header">
-                    <h1><i class="fas fa-map" aria-hidden="true"></i> Site Plan</h1>
-                    <p class="page-description">Interactive site monitoring with real-time door status</p>
-                </header>
+                <div class="section-header">
+                    <h1><i class="fas fa-map" aria-hidden="true"></i> Site Map</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" id="uploadMapBtn" onclick="uploadSitePlan()">
+                            <i class="fas fa-upload"></i> Upload Site Plan
+                        </button>
+                        <button class="btn btn-secondary" id="editModeBtn" onclick="toggleEditMode()">
+                            <i class="fas fa-edit"></i> Edit Mode
+                        </button>
+                        <button class="btn btn-secondary" id="savePositionsBtn" onclick="saveDoorPositions()" style="display: none;">
+                            <i class="fas fa-save"></i> Save Positions
+                        </button>
+                    </div>
+                </div>
                 
-                <!-- Site Plan Controls -->
-                <section class="site-plan-controls" aria-label="Site Plan Controls">
-                    <div class="controls-toolbar">
-                        <div class="toolbar-group">
-                            <button class="btn btn-secondary" id="uploadMapBtn" onclick="uploadSitePlan()">
-                                <i class="fas fa-upload"></i> Upload Site Plan
-                            </button>
-                            <button class="btn btn-secondary" id="editModeBtn" onclick="toggleEditMode()">
-                                <i class="fas fa-edit"></i> Edit Mode
-                            </button>
-                            <button class="btn btn-secondary" id="savePositionsBtn" onclick="saveDoorPositions()" style="display: none;">
-                                <i class="fas fa-save"></i> Save Positions
-                            </button>
-                        </div>
-                        <div class="toolbar-group" id="doorSizeGroup" style="display: none;">
-                            <label for="doorSizeSlider" style="color: white; margin-right: 8px; font-size: 14px;">Size:</label>
-                            <input type="range" id="doorSizeSlider" min="15" max="35" value="20" 
-                                   onchange="changeDoorSize(this.value)" style="width: 100px; height: 6px;">
-                            <span id="doorSizeValue" style="color: white; margin-left: 5px; font-size: 12px;">20px</span>
-                        </div>
-                        <div class="toolbar-group">
-                            <button class="btn btn-secondary" onclick="showSampleDoors()">
-                                <i class="fas fa-eye"></i> Test Glow Effects
-                            </button>
-                        </div>
-                        <div class="toolbar-group">
-                            <div class="status-indicator online" id="sitePlanStatus">
-                                <i class="fas fa-circle"></i>
-                                <span>Live Updates</span>
-                            </div>
-                        </div>
+                <div class="site-map-container">
+                    <canvas id="sitePlanCanvas" width="1200" height="800"></canvas>
+                    <div class="site-plan-overlay" id="sitePlanOverlay">
+                        <!-- Door status indicators will be positioned here -->
                     </div>
-                </section>
-
-                <!-- Site Plan Canvas -->
-                <section class="site-plan-section" aria-label="Site Plan Canvas">
-                    <div class="site-plan-container">
-                        <div class="site-plan-canvas-wrapper">
-                            <canvas id="sitePlanCanvas" width="1200" height="800"></canvas>
-                            <div class="site-plan-overlay" id="sitePlanOverlay">
-                                <!-- Door status indicators will be positioned here -->
-                            </div>
-                        </div>
-                    </div>
-                </section>
+                </div>
 
                 <!-- Door Details Panel -->
                 <section class="door-details-panel" id="doorDetailsPanel" style="display: none;">
@@ -307,7 +290,7 @@
                 </section>
                 
             </div>
-        </main>
+        </div>
 
         <!-- Events Management -->
         <div id="eventsSection" class="section">
@@ -315,12 +298,7 @@
                 <div class="section-header">
                     <h1><i class="fas fa-history" aria-hidden="true"></i> Events</h1>
                     <div class="header-actions">
-                        <div class="stream-status">
-                            <span class="status-indicator" id="eventStreamStatus">
-                                <i class="fas fa-circle"></i>
-                                <span id="eventStreamStatusText">Live</span>
-                            </span>
-                        </div>
+                        <!-- No status indicator needed - using webhooks for events -->
                     </div>
                 </div>
                 
@@ -359,9 +337,11 @@
             <div class="container">
                 <div class="section-header">
                     <h1><i class="fas fa-users"></i> User Management</h1>
-                    <button class="btn btn-primary" onclick="showCreateUserModal()">
-                        <i class="fas fa-plus"></i> Add User
-                    </button>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="showCreateUserModal()">
+                            <i class="fas fa-plus"></i> Add User
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="filters">
@@ -431,6 +411,7 @@
                                 <th>Location</th>
                                 <th>Controller IP</th>
                                 <th>Online Status</th>
+                                <th>Tags</th>
                                 <th>Last Seen</th>
                                 <th>Actions</th>
                             </tr>
@@ -452,9 +433,11 @@
             <div class="container">
                 <div class="section-header">
                     <h1><i class="fas fa-shield-alt"></i> Access Groups</h1>
-                    <button class="btn btn-primary" onclick="showCreateAccessGroupModal()">
-                        <i class="fas fa-plus"></i> Add Access Group
-                    </button>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="showCreateAccessGroupModal()">
+                            <i class="fas fa-plus"></i> Add Access Group
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="filters">
@@ -525,7 +508,9 @@
             <div class="container">
                 <div class="section-header">
                     <h1><i class="fas fa-cog"></i> System Settings</h1>
-                    <p>Configure system settings and run diagnostics</p>
+                    <div class="header-actions">
+                        <!-- Settings don't have primary actions, but we can add status indicators here if needed -->
+                    </div>
                 </div>
                 
                 <div class="settings-container">
@@ -729,6 +714,113 @@
                         </div>
                     </div>
                     
+                    <!-- Webhook Management Panel -->
+                    <div class="settings-panel">
+                        <div class="panel-header">
+                            <h2><i class="fas fa-link"></i> Webhook Management</h2>
+                            <p>Configure webhooks to receive real-time notifications</p>
+                        </div>
+                        
+                        <div class="webhook-management">
+                            <!-- Webhook Status -->
+                            <div class="webhook-status">
+                                <h3>Webhook Status</h3>
+                                <div id="webhookStatusDisplay">
+                                    <span class="loading">Loading webhook status...</span>
+                                </div>
+                                <button class="btn btn-outline" onclick="loadWebhookStatus()">
+                                    <i class="fas fa-sync"></i> Refresh Status
+                                </button>
+                            </div>
+                            
+                            <!-- Create New Webhook -->
+                            <div class="webhook-create">
+                                <h3>Create New Webhook</h3>
+                                <form id="webhookForm" onsubmit="createWebhook(event)">
+                                    <div class="form-group">
+                                        <label for="webhookName">Webhook Name</label>
+                                        <input type="text" id="webhookName" placeholder="e.g., Slack Notifications" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="webhookUrl">Webhook URL</label>
+                                        <input type="url" id="webhookUrl" placeholder="https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK" required>
+                                        <small class="form-help">For testing, use <a href="https://webhook.site" target="_blank">webhook.site</a></small>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Events to Subscribe To</label>
+                                        <div class="event-checkboxes">
+                                            <label class="checkbox-item">
+                                                <input type="checkbox" value="access_request.granted" checked>
+                                                <span>Access Granted</span>
+                                            </label>
+                                            <label class="checkbox-item">
+                                                <input type="checkbox" value="access_request.denied" checked>
+                                                <span>Access Denied</span>
+                                            </label>
+                                            <label class="checkbox-item">
+                                                <input type="checkbox" value="door.offline">
+                                                <span>Door Offline</span>
+                                            </label>
+                                            <label class="checkbox-item">
+                                                <input type="checkbox" value="door.online">
+                                                <span>Door Online</span>
+                                            </label>
+                                            <label class="checkbox-item">
+                                                <input type="checkbox" value="user.login">
+                                                <span>User Login</span>
+                                            </label>
+                                            <label class="checkbox-item">
+                                                <input type="checkbox" value="system.error">
+                                                <span>System Error</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> Create Webhook
+                                        </button>
+                                        <button type="button" class="btn btn-outline" onclick="testAllWebhooks()">
+                                            <i class="fas fa-play"></i> Test All Webhooks
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <!-- Webhook List -->
+                            <div class="webhook-list">
+                                <h3>Configured Webhooks</h3>
+                                <div id="webhookListDisplay">
+                                    <span class="loading">Loading webhooks...</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Quick Examples -->
+                            <div class="webhook-examples">
+                                <h3>Quick Examples</h3>
+                                <div class="example-cards">
+                                    <div class="example-card">
+                                        <h4><i class="fab fa-slack"></i> Slack Integration</h4>
+                                        <p>Get notifications in your Slack channel when access is granted or denied.</p>
+                                        <button class="btn btn-sm" onclick="showSlackExample()">Show Example</button>
+                                    </div>
+                                    <div class="example-card">
+                                        <h4><i class="fas fa-envelope"></i> Email Notifications</h4>
+                                        <p>Use Zapier or IFTTT to send email notifications when events occur.</p>
+                                        <button class="btn btn-sm" onclick="showEmailExample()">Show Example</button>
+                                    </div>
+                                    <div class="example-card">
+                                        <h4><i class="fas fa-mobile-alt"></i> Mobile Push</h4>
+                                        <p>Send push notifications to your mobile app when doors go offline.</p>
+                                        <button class="btn btn-sm" onclick="showMobileExample()">Show Example</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Version Information Panel -->
                     <div class="settings-panel">
                         <div class="panel-header">
@@ -853,7 +945,12 @@
         <!-- Profile -->
         <div id="profileSection" class="section">
             <div class="container">
-                <h1><i class="fas fa-user"></i> My Profile</h1>
+                <div class="section-header">
+                    <h1><i class="fas fa-user"></i> My Profile</h1>
+                    <div class="header-actions">
+                        <!-- Profile actions can be added here if needed -->
+                    </div>
+                </div>
                 <div class="profile-container">
                     <div class="profile-card">
                         <div class="profile-header">
@@ -948,6 +1045,52 @@
                     <button type="submit" class="btn btn-primary">Update User</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- User Visitors Modal -->
+    <div id="userVisitorsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-id-badge"></i> User Visitors</h3>
+                <span class="close" onclick="closeModal('userVisitorsModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="visitorsUserId" />
+                <div class="form-group">
+                    <h4>Registered Visitors</h4>
+                    <div id="userVisitorsList" class="visitor-list"></div>
+                </div>
+                <hr/>
+                <div class="form-group">
+                    <h4>Add Visitor</h4>
+                    <form id="addVisitorForm" onsubmit="handleAddVisitor(event)">
+                        <div class="grid-2">
+                            <div>
+                                <label for="visitorName">Name</label>
+                                <input type="text" id="visitorName" name="visitorName" placeholder="e.g., Jane Guest" required />
+                            </div>
+                            <div>
+                                <label for="validTo">Valid Until</label>
+                                <input type="datetime-local" id="validTo" name="validTo" required />
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div>
+                                <label for="visitorEmail">Email (optional)</label>
+                                <input type="email" id="visitorEmail" name="email" placeholder="jane@example.com" />
+                            </div>
+                            <div>
+                                <label for="visitorPhone">Phone (optional)</label>
+                                <input type="text" id="visitorPhone" name="phone" placeholder="+123456789" />
+                            </div>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Visitor</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1214,6 +1357,55 @@
         </div>
     </div>
 
+    <!-- Door Tag Management Modal -->
+    <div id="doorTagModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-tags"></i> Manage Door Tags</h3>
+                <span class="close" onclick="closeModal('doorTagModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="doorTagInfo">
+                    <h4 id="doorTagDoorName">Door Name</h4>
+                    <p id="doorTagDoorLocation">Door Location</p>
+                </div>
+                
+                <div class="tag-management-section">
+                    <h5>Add New Tag</h5>
+                    <form id="addTagForm" onsubmit="handleAddTag(event)">
+                        <input type="hidden" id="addTagDoorId" name="doorId">
+                        <div class="form-group">
+                            <label for="addTagId">Tag ID</label>
+                            <input type="text" id="addTagId" name="tagId" required placeholder="e.g., NFC123456 or QR789012">
+                        </div>
+                        <div class="form-group">
+                            <label for="addTagType">Tag Type</label>
+                            <select id="addTagType" name="tagType" required>
+                                <option value="">Select tag type...</option>
+                                <option value="nfc">NFC Tag</option>
+                                <option value="qr">QR Code</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="addTagData">Tag Data (Optional)</label>
+                            <textarea id="addTagData" name="tagData" placeholder="Additional tag data or description"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Tag
+                        </button>
+                    </form>
+                </div>
+
+                <div class="tag-list-section">
+                    <h5>Associated Tags</h5>
+                    <div id="doorTagsList" class="tag-list">
+                        <!-- Tags will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
@@ -1226,6 +1418,8 @@
     <!-- Toast Notifications -->
     <div id="toastContainer" class="toast-container"></div>
 
+    <script src="tokenManager.js"></script>
     <script src="app.js"></script>
+    <script src="user-webhook-receiver.js"></script>
 </body>
 </html>

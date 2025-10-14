@@ -7,13 +7,17 @@ const initDatabase = async () => {
         const db = await pool.getConnection();
         
         let completedTables = 0;
-        const totalTables = 14; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, access_requests, events, admin_user, door_commands, site_plan, door_positions, door_tags, visitors
+        const totalTables = 15; // users, doors, access_groups, door_access_groups, user_access_groups, access_log, access_requests, events, admin_user, door_commands, site_plan, door_positions, door_tags, visitors + admin user creation
         
         const checkCompletion = () => {
             completedTables++;
+            console.log(`checkCompletion called: ${completedTables}/${totalTables} tables completed`);
             if (completedTables === totalTables) {
+                console.log('All tables completed, releasing database connection...');
                 pool.releaseConnection(db);
+                console.log('Database connection released, resolving initDatabase promise...');
                 resolve();
+                console.log('initDatabase promise resolved successfully');
             }
         };
         
@@ -275,21 +279,42 @@ const initDatabase = async () => {
                 checkCompletion();
             });
 
+            // Door tags table
+            db.run(`CREATE TABLE IF NOT EXISTS door_tags (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                door_id INTEGER NOT NULL,
+                tag_id TEXT NOT NULL,
+                tag_type TEXT NOT NULL CHECK (tag_type IN ('nfc', 'qr')),
+                tag_data TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE,
+                UNIQUE (tag_id)
+            )`, (err) => {
+                if (err) {
+                    console.error('Error creating door_tags table:', err.message);
+                    reject(err);
+                    return;
+                }
+                console.log('Door tags table created/verified');
+                checkCompletion();
+            });
+
             // Visitors table
             db.run(`CREATE TABLE IF NOT EXISTS visitors (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                first_name TEXT,
-                last_name TEXT,
-                host_user_id INTEGER NOT NULL,
-                access_instances INTEGER DEFAULT 2,
-                remaining_instances INTEGER DEFAULT 2,
+                user_id INTEGER NOT NULL,
+                first_name TEXT NOT NULL,
+                last_name TEXT NOT NULL,
+                email TEXT,
+                phone TEXT,
+                valid_from DATETIME NOT NULL,
+                valid_until DATETIME NOT NULL,
                 is_active INTEGER DEFAULT 1,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (host_user_id) REFERENCES users (id) ON DELETE CASCADE
+                created_by INTEGER,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+                FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
             )`, (err) => {
                 if (err) {
                     console.error('Error creating visitors table:', err.message);
@@ -297,26 +322,6 @@ const initDatabase = async () => {
                     return;
                 }
                 console.log('Visitors table created/verified');
-                checkCompletion();
-            });
-
-            // Visitor access log table
-            db.run(`CREATE TABLE IF NOT EXISTS visitor_access_log (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                visitor_id INTEGER NOT NULL,
-                door_id INTEGER NOT NULL,
-                access_granted INTEGER NOT NULL,
-                access_reason TEXT,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (visitor_id) REFERENCES visitors (id) ON DELETE CASCADE,
-                FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE
-            )`, (err) => {
-                if (err) {
-                    console.error('Error creating visitor_access_log table:', err.message);
-                    reject(err);
-                    return;
-                }
-                console.log('Visitor access log table created/verified');
                 checkCompletion();
             });
 
@@ -365,29 +370,41 @@ const initDatabase = async () => {
                 if (err) console.error('Error creating access_requests status index:', err.message);
             });
 
-            // Visitor table indexes
-            db.run(`CREATE INDEX IF NOT EXISTS idx_visitors_username ON visitors(username)`, (err) => {
-                if (err) console.error('Error creating visitors username index:', err.message);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_door_tags_door_id ON door_tags(door_id)`, (err) => {
+                if (err) console.error('Error creating door_tags door_id index:', err.message);
+            });
+
+            db.run(`CREATE INDEX IF NOT EXISTS idx_door_tags_tag_id ON door_tags(tag_id)`, (err) => {
+                if (err) console.error('Error creating door_tags tag_id index:', err.message);
+            });
+
+            // Visitor indexes
+            db.run(`CREATE INDEX IF NOT EXISTS idx_visitors_user_id ON visitors(user_id)`, (err) => {
+                if (err) console.error('Error creating visitors user_id index:', err.message);
             });
 
             db.run(`CREATE INDEX IF NOT EXISTS idx_visitors_email ON visitors(email)`, (err) => {
                 if (err) console.error('Error creating visitors email index:', err.message);
             });
 
-            db.run(`CREATE INDEX IF NOT EXISTS idx_visitors_host_user_id ON visitors(host_user_id)`, (err) => {
-                if (err) console.error('Error creating visitors host_user_id index:', err.message);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_visitors_valid_from ON visitors(valid_from)`, (err) => {
+                if (err) console.error('Error creating visitors valid_from index:', err.message);
             });
 
-            db.run(`CREATE INDEX IF NOT EXISTS idx_visitor_access_log_visitor_id ON visitor_access_log(visitor_id)`, (err) => {
-                if (err) console.error('Error creating visitor_access_log visitor_id index:', err.message);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_visitors_valid_until ON visitors(valid_until)`, (err) => {
+                if (err) console.error('Error creating visitors valid_until index:', err.message);
             });
 
-            db.run(`CREATE INDEX IF NOT EXISTS idx_visitor_access_log_door_id ON visitor_access_log(door_id)`, (err) => {
-                if (err) console.error('Error creating visitor_access_log door_id index:', err.message);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_visitors_is_active ON visitors(is_active)`, (err) => {
+                if (err) console.error('Error creating visitors is_active index:', err.message);
             });
 
-            db.run(`CREATE INDEX IF NOT EXISTS idx_visitor_access_log_timestamp ON visitor_access_log(timestamp)`, (err) => {
-                if (err) console.error('Error creating visitor_access_log timestamp index:', err.message);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_visitors_created_at ON visitors(created_at)`, (err) => {
+                if (err) console.error('Error creating visitors created_at index:', err.message);
+            });
+
+            db.run(`CREATE INDEX IF NOT EXISTS idx_visitors_created_by ON visitors(created_by)`, (err) => {
+                if (err) console.error('Error creating visitors created_by index:', err.message);
             });
 
             // Insert default admin user if no users exist
@@ -398,26 +415,42 @@ const initDatabase = async () => {
                     return;
                 }
 
+                console.log(`User count check: ${row.count} users found`);
                 if (row.count === 0) {
                     const bcrypt = require('bcryptjs');
                     const hashedPassword = bcrypt.hashSync('admin123', 10);
+                    
+                    console.log('About to create admin user...');
+                    
+                    // Add timeout to detect hanging database operation
+                    const adminCreationTimeout = setTimeout(() => {
+                        console.error('❌ Admin user creation timed out after 10 seconds');
+                        reject(new Error('Admin user creation timed out'));
+                    }, 10000);
                     
                     db.run(`INSERT INTO users (username, email, password_hash, first_name, last_name, role, email_verified) 
                             VALUES (?, ?, ?, ?, ?, ?, ?)`,
                         ['admin', 'admin@example.com', hashedPassword, 'Admin', 'User', 'admin', 1],
                         function(err) {
+                            clearTimeout(adminCreationTimeout);
+                            console.log('Admin user creation callback executed');
                             if (err) {
                                 console.error('Error creating default admin user:', err.message);
                                 reject(err);
                                 return;
                             }
                             console.log('Default admin user created (username: admin, password: admin123)');
+                            console.log('Calling checkCompletion()...');
                             checkCompletion();
+                            console.log('checkCompletion() called successfully');
                         }
                     );
+                    console.log('Admin user creation query submitted');
                 } else {
                     console.log('Users already exist, skipping default admin creation');
+                    console.log('Calling checkCompletion() for existing users...');
                     checkCompletion();
+                    console.log('checkCompletion() called successfully for existing users');
                 }
             });
         });
