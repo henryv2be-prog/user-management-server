@@ -6,6 +6,7 @@ const {
   validateVisitorUpdate,
   validateId
 } = require('../middleware/validation');
+const { authenticate, requireAdmin, authorizeSelfOrAdmin } = require('../middleware/auth');
 const EventLogger = require('../utils/eventLogger');
 
 const router = express.Router();
