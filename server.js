@@ -349,6 +349,45 @@ async function migrateDatabase() {
         }
       });
     });
+
+    // Add access_event_limit column to visitors table if it doesn't exist
+    await new Promise((resolve, reject) => {
+      db.run(`ALTER TABLE visitors ADD COLUMN access_event_limit INTEGER DEFAULT 2`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('❌ Access event limit column migration failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ Access event limit column added or already exists');
+          resolve();
+        }
+      });
+    });
+
+    // Add remaining_access_events column to visitors table if it doesn't exist
+    await new Promise((resolve, reject) => {
+      db.run(`ALTER TABLE visitors ADD COLUMN remaining_access_events INTEGER DEFAULT 2`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('❌ Remaining access events column migration failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ Remaining access events column added or already exists');
+          resolve();
+        }
+      });
+    });
+
+    // Update existing visitors to have default access event limits
+    await new Promise((resolve, reject) => {
+      db.run(`UPDATE visitors SET access_event_limit = 2, remaining_access_events = 2 WHERE access_event_limit IS NULL`, (err) => {
+        if (err) {
+          console.error('❌ Update existing visitors failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ Existing visitors updated with default access event limits');
+          resolve();
+        }
+      });
+    });
     
     // Create door_tags table if it doesn't exist
     await new Promise((resolve, reject) => {
