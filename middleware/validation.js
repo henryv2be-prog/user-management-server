@@ -318,6 +318,14 @@ const validateVisitor = [
       }
       return true;
     }),
+  body('accessEventLimit')
+    .optional()
+    .isInt({ min: 0, max: 100 })
+    .withMessage('Access event limit must be between 0 and 100'),
+  body('remainingAccessEvents')
+    .optional()
+    .isInt({ min: 0, max: 100 })
+    .withMessage('Remaining access events must be between 0 and 100'),
   handleValidationErrors
 ];
 
@@ -365,6 +373,14 @@ const validateVisitorUpdate = [
     .optional()
     .isBoolean()
     .withMessage('isActive must be a boolean value'),
+  body('accessEventLimit')
+    .optional()
+    .isInt({ min: 0, max: 100 })
+    .withMessage('Access event limit must be between 0 and 100'),
+  body('remainingAccessEvents')
+    .optional()
+    .isInt({ min: 0, max: 100 })
+    .withMessage('Remaining access events must be between 0 and 100'),
   handleValidationErrors
 ];
 

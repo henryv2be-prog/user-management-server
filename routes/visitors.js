@@ -176,7 +176,7 @@ router.get('/:id', authenticate, validateId, async (req, res) => {
 // Create new visitor
 router.post('/', authenticate, validateVisitor, async (req, res) => {
   try {
-    const { userId, firstName, lastName, email, phone, validFrom, validUntil } = req.body;
+    const { userId, firstName, lastName, email, phone, validFrom, validUntil, accessEventLimit } = req.body;
     
     // Verify user exists
     const user = await User.findById(userId);
@@ -203,6 +203,8 @@ router.post('/', authenticate, validateVisitor, async (req, res) => {
       phone,
       validFrom,
       validUntil,
+      accessEventLimit: accessEventLimit || 0,
+      remainingAccessEvents: accessEventLimit || 0,
       createdBy: req.user.id
     });
     
@@ -390,6 +392,109 @@ router.get('/stats/overview', authenticate, requireAdmin, async (req, res) => {
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to retrieve visitor statistics'
+    });
+  }
+});
+
+// Add access events to visitor
+router.post('/:id/add-events', authenticate, validateId, async (req, res) => {
+  try {
+    const visitorId = parseInt(req.params.id);
+    const { additionalEvents } = req.body;
+    
+    if (!additionalEvents || additionalEvents <= 0) {
+      return res.status(400).json({
+        error: 'Invalid input',
+        message: 'Additional events must be a positive number'
+      });
+    }
+    
+    const visitor = await Visitor.findById(visitorId);
+    
+    if (!visitor) {
+      return res.status(404).json({
+        error: 'Visitor not found',
+        message: 'The requested visitor does not exist'
+      });
+    }
+    
+    // Check if user can manage this visitor
+    if (!req.user.hasRole('admin') && req.user.id !== visitor.userId) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only manage visitors associated with your account'
+      });
+    }
+    
+    const updatedVisitor = await visitor.addAccessEvents(additionalEvents);
+    
+    // Log event
+    await EventLogger.logEvent(req, {
+      type: 'visitor',
+      action: 'events_added',
+      entityType: 'visitor',
+      entityId: visitor.id,
+      entityName: `${visitor.firstName} ${visitor.lastName}`,
+      details: `Added ${additionalEvents} access events to visitor "${visitor.firstName} ${visitor.lastName}"`,
+      timestamp: new Date().toISOString()
+    });
+    
+    res.json({
+      message: `Successfully added ${additionalEvents} access events`,
+      visitor: updatedVisitor.toJSON()
+    });
+  } catch (error) {
+    console.error('Add access events error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to add access events'
+    });
+  }
+});
+
+// Reset visitor access events
+router.post('/:id/reset-events', authenticate, validateId, async (req, res) => {
+  try {
+    const visitorId = parseInt(req.params.id);
+    const visitor = await Visitor.findById(visitorId);
+    
+    if (!visitor) {
+      return res.status(404).json({
+        error: 'Visitor not found',
+        message: 'The requested visitor does not exist'
+      });
+    }
+    
+    // Check if user can manage this visitor
+    if (!req.user.hasRole('admin') && req.user.id !== visitor.userId) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only manage visitors associated with your account'
+      });
+    }
+    
+    const updatedVisitor = await visitor.resetAccessEvents();
+    
+    // Log event
+    await EventLogger.logEvent(req, {
+      type: 'visitor',
+      action: 'events_reset',
+      entityType: 'visitor',
+      entityId: visitor.id,
+      entityName: `${visitor.firstName} ${visitor.lastName}`,
+      details: `Reset access events for visitor "${visitor.firstName} ${visitor.lastName}"`,
+      timestamp: new Date().toISOString()
+    });
+    
+    res.json({
+      message: 'Successfully reset access events',
+      visitor: updatedVisitor.toJSON()
+    });
+  } catch (error) {
+    console.error('Reset access events error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to reset access events'
     });
   }
 });

@@ -9,6 +9,7 @@ import ServerConfigScreen from './src/screens/ServerConfigScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import NFCScannerScreen from './src/screens/NFCScannerScreen';
+import VisitorManagementScreen from './src/screens/VisitorManagementScreen';
 import QuickAccessWidget from './src/components/QuickAccessWidget';
 
 export default function App() {
@@ -54,7 +55,7 @@ export default function App() {
       } else if (!token) {
         setCurrentScreen('login');
       } else {
-        setCurrentScreen('home');
+        setCurrentScreen('nfcScanner');
       }
     } catch (error) {
       console.error('Error checking initial state:', error);
@@ -69,7 +70,7 @@ export default function App() {
 
   const handleLogin = () => {
     setIsAuthenticated(true);
-    setCurrentScreen('home');
+    setCurrentScreen('nfcScanner');
   };
 
   const handleLogout = async () => {
@@ -90,8 +91,12 @@ export default function App() {
     setCurrentScreen('nfcScanner');
   };
 
-  const handleBackToHome = () => {
-    setCurrentScreen('home');
+  const handleNavigateToVisitors = () => {
+    setCurrentScreen('visitorManagement');
+  };
+
+  const handleBackToScanner = () => {
+    setCurrentScreen('nfcScanner');
   };
 
   if (currentScreen === 'loading') {
@@ -111,7 +116,11 @@ export default function App() {
   }
 
   if (currentScreen === 'nfcScanner') {
-    return <NFCScannerScreen onBack={handleBackToHome} />;
+    return <NFCScannerScreen onBack={handleBackToHome} onNavigateToVisitors={handleNavigateToVisitors} />;
+  }
+
+  if (currentScreen === 'visitorManagement') {
+    return <VisitorManagementScreen onBack={handleBackToScanner} />;
   }
 
   return (
