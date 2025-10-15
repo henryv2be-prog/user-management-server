@@ -175,8 +175,8 @@ router.post('/change-password', authenticate, validatePasswordChange, async (req
   }
 });
 
-// Visitor login endpoint (email and password authentication)
-router.post('/visitor-login', async (req, res) => {
+// Unified login endpoint - automatically detects user vs visitor
+router.post('/unified-login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
@@ -194,72 +194,105 @@ router.post('/visitor-login', async (req, res) => {
       });
     }
     
-    // Find visitor by email
-    const visitor = await Visitor.findByEmail(email.trim().toLowerCase());
+    const emailLower = email.trim().toLowerCase();
     
-    if (!visitor) {
-      return res.status(401).json({
-        error: 'Authentication failed',
-        message: 'Visitor not found'
-      });
-    }
-    
-    // Verify password
-    let isValidPassword = false;
+    // First try visitor login
     try {
-      isValidPassword = await visitor.verifyPassword(password);
-    } catch (passwordError) {
-      console.error('Password verification error:', passwordError);
-      return res.status(500).json({
-        error: 'Internal Server Error',
-        message: 'Password verification failed'
-      });
+      const visitor = await Visitor.findByEmail(emailLower);
+      
+      if (visitor) {
+        // Verify visitor password
+        let isValidPassword = false;
+        try {
+          isValidPassword = await visitor.verifyPassword(password);
+        } catch (passwordError) {
+          console.error('Visitor password verification error:', passwordError);
+          // Continue to try user login
+        }
+        
+        if (isValidPassword && visitor.isValid()) {
+          // Generate JWT token for visitor
+          const token = jwt.sign(
+            { 
+              visitorId: visitor.id,
+              userId: visitor.userId, // Host user ID
+              email: visitor.email,
+              accountType: 'visitor'
+            },
+            JWT_SECRET,
+            { expiresIn: JWT_EXPIRES_IN }
+          );
+          
+          // Log visitor login event
+          await EventLogger.log(req, 'visitor.login', 'login', 'visitor', visitor.id, `${visitor.firstName} ${visitor.lastName}`, {
+            email: visitor.email,
+            userId: visitor.userId
+          });
+          
+          return res.json({
+            message: 'Visitor login successful',
+            token,
+            accountType: 'visitor',
+            user: visitor.toJSON()
+          });
+        }
+      }
+    } catch (visitorError) {
+      console.log('Visitor login failed, trying user login:', visitorError.message);
     }
     
-    if (!isValidPassword) {
-      console.log('Visitor password verification failed for:', email);
-      return res.status(401).json({
-        error: 'Authentication failed',
-        message: 'Invalid email or password'
-      });
+    // Try user login
+    try {
+      // Try to find user by email first, then by username
+      let user = await User.findByEmail(emailLower);
+      if (!user) {
+        user = await User.findByUsername(emailLower);
+      }
+      
+      if (user) {
+        const isValidPassword = await user.verifyPassword(password);
+        if (isValidPassword) {
+          // Generate JWT token for user
+          const token = jwt.sign(
+            { 
+              userId: user.id,
+              email: user.email,
+              username: user.username,
+              accountType: 'user'
+            },
+            JWT_SECRET,
+            { expiresIn: JWT_EXPIRES_IN }
+          );
+          
+          // Log user login event
+          await EventLogger.log(req, 'user.login', 'login', 'user', user.id, `${user.firstName} ${user.lastName}`, {
+            email: user.email,
+            username: user.username
+          });
+          
+          return res.json({
+            message: 'User login successful',
+            token,
+            accountType: 'user',
+            user: user.toJSON()
+          });
+        }
+      }
+    } catch (userError) {
+      console.log('User login failed:', userError.message);
     }
     
-    // Check if visitor is valid and has remaining access events
-    if (!visitor.isValid()) {
-      return res.status(401).json({
-        error: 'Access denied',
-        message: 'Visitor access has expired or no remaining events'
-      });
-    }
-    
-    // Generate JWT token for visitor
-    const token = jwt.sign(
-      { 
-        visitorId: visitor.id,
-        userId: visitor.userId, // Host user ID
-        email: visitor.email,
-        accountType: 'visitor'
-      },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
-    
-    // Log visitor login event
-    await EventLogger.log(req, 'visitor.login', 'login', 'visitor', visitor.id, `${visitor.firstName} ${visitor.lastName}`, {
-      email: visitor.email,
-      userId: visitor.userId
+    // If both failed, return authentication error
+    return res.status(401).json({
+      error: 'Authentication failed',
+      message: 'Invalid email/username or password'
     });
     
-    res.json({
-      message: 'Visitor login successful',
-      token,
-      visitor: visitor.toJSON()
-    });
   } catch (error) {
-    console.error('Visitor login error:', error);
+    console.error('Unified login error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Visitor login failed'
+      message: 'Login failed'
     });
   }
 });
