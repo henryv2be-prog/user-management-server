@@ -419,6 +419,14 @@ router.post('/:id/add-events', authenticate, validateId, async (req, res) => {
     }
     
     // Check if user can manage this visitor
+    console.log('Add events check:', {
+      userId: req.user.id,
+      visitorUserId: visitor.userId,
+      userRole: req.user.role,
+      hasRoleMethod: typeof req.user.hasRole,
+      isAdmin: req.user.hasRole ? req.user.hasRole('admin') : 'no hasRole method'
+    });
+    
     if (!req.user.hasRole('admin') && req.user.id !== visitor.userId) {
       return res.status(403).json({
         error: 'Forbidden',
