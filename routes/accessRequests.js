@@ -141,8 +141,13 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
         
         if (visitor && visitor.isValid()) {
           // Use one access event
+          console.log(`Before useAccessEvent: remainingEvents=${visitor.remainingAccessEvents}`);
           await visitor.useAccessEvent();
-          remainingEvents = visitor.remainingAccessEvents;
+          console.log(`After useAccessEvent: remainingEvents=${visitor.remainingAccessEvents}`);
+          // Refresh visitor object to get updated remaining events
+          const updatedVisitor = await Visitor.findById(req.user.visitorId);
+          remainingEvents = updatedVisitor.remainingAccessEvents;
+          console.log(`After refresh: remainingEvents=${remainingEvents}`);
           console.log(`Visitor ${visitor.firstName} ${visitor.lastName} used access event. Remaining: ${remainingEvents}`);
         } else if (visitor) {
           // Visitor exists but is not valid (no events or expired)
