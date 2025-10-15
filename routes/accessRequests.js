@@ -82,10 +82,15 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
     // All users (including admins) must have proper access groups to access doors
     let hasAccess = await checkUserDoorAccess(userId, resolvedDoorId);
     
+    // Debug logging for visitors
+    if (isVisitor) {
+      console.log(`Visitor ${req.user.email} (visitorId: ${req.user.visitorId}) checking access via host user ${userId} for door ${resolvedDoorId}`);
+    }
+    
     if (hasAccess) {
-      console.log(`User ${req.user.email} (${req.user.role}) granted access to door ${resolvedDoorId} via access groups`);
+      console.log(`User ${req.user.email} (${req.user.role || req.user.accountType}) granted access to door ${resolvedDoorId} via access groups`);
     } else {
-      console.log(`User ${req.user.email} (${req.user.role}) denied access to door ${resolvedDoorId} - no access groups`);
+      console.log(`User ${req.user.email} (${req.user.role || req.user.accountType}) denied access to door ${resolvedDoorId} - no access groups`);
     }
     
     if (!hasAccess) {
@@ -129,6 +134,11 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
         const { Visitor } = require('../database/visitor');
         const visitor = await Visitor.findById(req.user.visitorId);
         
+        console.log(`Visitor access check: visitorId=${req.user.visitorId}, found visitor=${!!visitor}`);
+        if (visitor) {
+          console.log(`Visitor details: ${visitor.firstName} ${visitor.lastName}, remainingEvents=${visitor.remainingAccessEvents}, isValid=${visitor.isValid()}`);
+        }
+        
         if (visitor && visitor.isValid()) {
           // Use one access event
           await visitor.useAccessEvent();
@@ -136,6 +146,7 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
           console.log(`Visitor ${visitor.firstName} ${visitor.lastName} used access event. Remaining: ${remainingEvents}`);
         } else if (visitor) {
           // Visitor exists but is not valid (no events or expired)
+          console.log(`Visitor ${visitor.firstName} ${visitor.lastName} access denied: remainingEvents=${visitor.remainingAccessEvents}, isValid=${visitor.isValid()}`);
           return res.status(403).json({
             access: false,
             message: visitor.remainingAccessEvents <= 0 ? 
