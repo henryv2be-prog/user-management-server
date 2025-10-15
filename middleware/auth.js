@@ -20,7 +20,7 @@ const authenticate = async (req, res, next) => {
       
       let account = null;
       if (decoded.accountType === 'visitor') {
-        account = await Visitor.findById(decoded.userId);
+        account = await Visitor.findById(decoded.visitorId);
         if (account && !account.isActive) {
           throw new AuthenticationError('Visitor account is inactive');
         }
@@ -34,6 +34,14 @@ const authenticate = async (req, res, next) => {
       
       req.user = account;
       req.accountType = decoded.accountType || 'user';
+      
+      // Add visitor-specific fields to req.user for access requests
+      if (decoded.accountType === 'visitor') {
+        req.user.accountType = 'visitor';
+        req.user.visitorId = decoded.visitorId;
+        req.user.userId = decoded.userId; // Host user ID
+      }
+      
       next();
     } catch (tokenError) {
       if (tokenError.name === 'JsonWebTokenError') {
