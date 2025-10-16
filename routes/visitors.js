@@ -396,16 +396,16 @@ router.get('/stats/overview', authenticate, requireAdmin, async (req, res) => {
   }
 });
 
-// Add access events to visitor
-router.post('/:id/add-events', authenticate, validateId, async (req, res) => {
+// Add access tokens to visitor
+router.post('/:id/add-tokens', authenticate, validateId, async (req, res) => {
   try {
     const visitorId = parseInt(req.params.id);
-    const { additionalEvents } = req.body;
+    const { additionalTokens } = req.body;
     
-    if (!additionalEvents || additionalEvents <= 0) {
+    if (!additionalTokens || additionalTokens <= 0) {
       return res.status(400).json({
         error: 'Invalid input',
-        message: 'Additional events must be a positive number'
+        message: 'Additional tokens must be a positive number'
       });
     }
     
@@ -434,34 +434,34 @@ router.post('/:id/add-events', authenticate, validateId, async (req, res) => {
       });
     }
     
-    const updatedVisitor = await visitor.addAccessEvents(additionalEvents);
+    const updatedVisitor = await visitor.addAccessEvents(additionalTokens);
     
     // Log event
     await EventLogger.logEvent(req, {
       type: 'visitor',
-      action: 'events_added',
+      action: 'tokens_added',
       entityType: 'visitor',
       entityId: visitor.id,
       entityName: `${visitor.firstName} ${visitor.lastName}`,
-      details: `Added ${additionalEvents} access events to visitor "${visitor.firstName} ${visitor.lastName}"`,
+      details: `Added ${additionalTokens} access tokens to visitor "${visitor.firstName} ${visitor.lastName}"`,
       timestamp: new Date().toISOString()
     });
     
     res.json({
-      message: `Successfully added ${additionalEvents} access events`,
+      message: `Successfully added ${additionalTokens} access tokens`,
       visitor: updatedVisitor.toJSON()
     });
   } catch (error) {
-    console.error('Add access events error:', error);
+    console.error('Add access tokens error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to add access events'
+      message: 'Failed to add access tokens'
     });
   }
 });
 
-// Reset visitor access events
-router.post('/:id/reset-events', authenticate, validateId, async (req, res) => {
+// Reset visitor access tokens
+router.post('/:id/reset-tokens', authenticate, validateId, async (req, res) => {
   try {
     const visitorId = parseInt(req.params.id);
     const visitor = await Visitor.findById(visitorId);
@@ -486,23 +486,23 @@ router.post('/:id/reset-events', authenticate, validateId, async (req, res) => {
     // Log event
     await EventLogger.logEvent(req, {
       type: 'visitor',
-      action: 'events_reset',
+      action: 'tokens_reset',
       entityType: 'visitor',
       entityId: visitor.id,
       entityName: `${visitor.firstName} ${visitor.lastName}`,
-      details: `Reset access events for visitor "${visitor.firstName} ${visitor.lastName}"`,
+      details: `Reset access tokens for visitor "${visitor.firstName} ${visitor.lastName}"`,
       timestamp: new Date().toISOString()
     });
     
     res.json({
-      message: 'Successfully reset access events',
+      message: 'Successfully reset access tokens',
       visitor: updatedVisitor.toJSON()
     });
   } catch (error) {
-    console.error('Reset access events error:', error);
+    console.error('Reset access tokens error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to reset access events'
+      message: 'Failed to reset access tokens'
     });
   }
 });

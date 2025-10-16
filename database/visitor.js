@@ -389,11 +389,11 @@ class Visitor {
         });
     }
 
-    // Use an access event (decrement remaining events)
-    async useAccessEvent() {
-        if (this.remainingAccessEvents <= 0) {
-            throw new Error('No remaining access events');
-        }
+  // Use an access token (decrement remaining tokens)
+  async useAccessEvent() {
+    if (this.remainingAccessEvents <= 0) {
+      throw new Error('No remaining access tokens');
+    }
 
         return new Promise((resolve, reject) => {
             const db = new sqlite3.Database(DB_PATH);
@@ -421,10 +421,10 @@ class Visitor {
         });
     }
 
-    // Add more access events
-    async addAccessEvents(additionalEvents) {
-        if (additionalEvents <= 0) {
-            throw new Error('Additional events must be positive');
+    // Add more access tokens
+    async addAccessEvents(additionalTokens) {
+        if (additionalTokens <= 0) {
+            throw new Error('Additional tokens must be positive');
         }
 
         return new Promise((resolve, reject) => {
@@ -438,15 +438,15 @@ class Visitor {
                 WHERE id = ?
             `;
             
-            db.run(sql, [additionalEvents, additionalEvents, this.id], (err) => {
+            db.run(sql, [additionalTokens, additionalTokens, this.id], (err) => {
                 if (err) {
                     db.close();
                     return reject(err);
                 }
                 
                 // Update local instance
-                this.remainingAccessEvents += additionalEvents;
-                this.accessEventLimit += additionalEvents;
+                this.remainingAccessEvents += additionalTokens;
+                this.accessEventLimit += additionalTokens;
                 this.updatedAt = new Date().toISOString();
                 
                 db.close();
@@ -455,7 +455,7 @@ class Visitor {
         });
     }
 
-    // Reset access events to original limit
+    // Reset access tokens to original limit
     async resetAccessEvents() {
         return new Promise((resolve, reject) => {
             const db = new sqlite3.Database(DB_PATH);

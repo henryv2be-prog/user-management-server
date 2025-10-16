@@ -140,28 +140,28 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
         }
         
         if (visitor && visitor.isValid()) {
-          // Use one access event
-          console.log(`Before useAccessEvent: remainingEvents=${visitor.remainingAccessEvents}`);
+          // Use one access token
+          console.log(`Before useAccessEvent: remainingTokens=${visitor.remainingAccessEvents}`);
           await visitor.useAccessEvent();
-          console.log(`After useAccessEvent: remainingEvents=${visitor.remainingAccessEvents}`);
-          // Refresh visitor object to get updated remaining events
+          console.log(`After useAccessEvent: remainingTokens=${visitor.remainingAccessEvents}`);
+          // Refresh visitor object to get updated remaining tokens
           const updatedVisitor = await Visitor.findById(req.user.visitorId);
           remainingEvents = updatedVisitor.remainingAccessEvents;
-          console.log(`After refresh: remainingEvents=${remainingEvents}`);
-          console.log(`Visitor ${visitor.firstName} ${visitor.lastName} used access event. Remaining: ${remainingEvents}`);
+          console.log(`After refresh: remainingTokens=${remainingEvents}`);
+          console.log(`Visitor ${visitor.firstName} ${visitor.lastName} used access token. Remaining: ${remainingEvents}`);
         } else if (visitor) {
-          // Visitor exists but is not valid (no events or expired)
-          console.log(`Visitor ${visitor.firstName} ${visitor.lastName} access denied: remainingEvents=${visitor.remainingAccessEvents}, isValid=${visitor.isValid()}`);
+          // Visitor exists but is not valid (no tokens or expired)
+          console.log(`Visitor ${visitor.firstName} ${visitor.lastName} access denied: remainingTokens=${visitor.remainingAccessEvents}, isValid=${visitor.isValid()}`);
           return res.status(403).json({
             access: false,
             message: visitor.remainingAccessEvents <= 0 ? 
-              'No remaining access events. Please contact your host to add more events.' :
+              'No remaining access tokens. Please contact your host to add more tokens.' :
               'Visitor access has expired or is inactive',
             remainingInstances: visitor.remainingAccessEvents || 0
           });
         }
       } catch (error) {
-        console.error('Error handling visitor access events:', error);
+        console.error('Error handling visitor access tokens:', error);
         // Continue with normal access if visitor handling fails
       }
     }
