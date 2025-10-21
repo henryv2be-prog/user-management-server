@@ -94,6 +94,11 @@ app.get('/test-access', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'test-access.html'));
 });
 
+// NFC URL Generator page
+app.get('/nfc-generator', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'nfc-url-generator.html'));
+});
+
 // Rate limiting
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
