@@ -36,25 +36,41 @@ export default function App() {
 
   const handleUrl = (url) => {
     console.log('Received URL:', url);
-    if (url.includes('scan')) {
+    
+    // Check if it's our custom scheme
+    if (url.startsWith('simplifiaccess://')) {
       try {
-        // Extract tagId from URL
-        const urlObj = new URL(url);
-        const tagId = urlObj.searchParams.get('tagId');
+        // Parse the URL manually since URL constructor might not work with custom schemes
+        const urlParts = url.split('?');
+        const path = urlParts[0];
+        const queryString = urlParts[1] || '';
         
-        if (tagId) {
-          console.log('Extracted tagId:', tagId);
-          setPendingTagId(tagId);
-        } else {
-          console.log('No tagId found in URL');
-        }
+        console.log('Path:', path);
+        console.log('Query string:', queryString);
         
-        // If user is authenticated, go directly to NFC scanner
-        if (isAuthenticated) {
-          console.log('User is authenticated, navigating to NFC scanner');
-          setCurrentScreen('nfcScanner');
-        } else {
-          console.log('User not authenticated, will process tag after login');
+        // Check if it's a scan request
+        if (path.includes('scan')) {
+          // Extract tagId from query parameters
+          let tagId = null;
+          if (queryString) {
+            const params = new URLSearchParams(queryString);
+            tagId = params.get('tagId');
+          }
+          
+          if (tagId) {
+            console.log('Extracted tagId:', tagId);
+            setPendingTagId(tagId);
+          } else {
+            console.log('No tagId found in URL');
+          }
+          
+          // If user is authenticated, go directly to NFC scanner
+          if (isAuthenticated) {
+            console.log('User is authenticated, navigating to NFC scanner');
+            setCurrentScreen('nfcScanner');
+          } else {
+            console.log('User not authenticated, will process tag after login');
+          }
         }
       } catch (error) {
         console.error('Error parsing URL:', error);
