@@ -14,6 +14,7 @@ class AccessRequest {
     this.userAgent = data.user_agent;
     this.ipAddress = data.ip_address;
     this.qrCodeData = data.qr_code_data; // QR code data that was scanned
+    this.tagId = data.tag_id; // NFC tag ID that was scanned
     this.requestedAt = data.requested_at;
     this.processedAt = data.processed_at;
     this.expiresAt = data.expires_at;
@@ -34,6 +35,7 @@ class AccessRequest {
       userAgent: this.userAgent,
       ipAddress: this.ipAddress,
       qrCodeData: this.qrCodeData,
+      tagId: this.tagId,
       requestedAt: this.requestedAt,
       processedAt: this.processedAt,
       expiresAt: this.expiresAt,
@@ -52,15 +54,16 @@ class AccessRequest {
         userAgent, 
         ipAddress, 
         qrCodeData,
+        tagId,
         expiresAt 
       } = requestData;
       
       const db = new sqlite3.Database(DB_PATH);
       db.run(
         `INSERT INTO access_requests 
-         (user_id, door_id, request_type, status, user_agent, ip_address, qr_code_data, expires_at) 
-         VALUES (?, ?, ?, 'pending', ?, ?, ?, ?)`,
-        [userId, doorId, requestType, userAgent, ipAddress, qrCodeData, expiresAt],
+         (user_id, door_id, request_type, status, user_agent, ip_address, qr_code_data, tag_id, expires_at) 
+         VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
+        [userId, doorId, requestType, userAgent, ipAddress, qrCodeData, tagId, expiresAt],
         function(err) {
           db.close();
           if (err) {

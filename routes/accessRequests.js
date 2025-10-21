@@ -45,6 +45,12 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
     if (tagId && !doorId) {
       const doorTag = await DoorTag.findByTagId(tagId);
       if (!doorTag) {
+        // Log unassociated tag attempt
+        const userName = req.user.firstName && req.user.lastName ? `${req.user.firstName} ${req.user.lastName}` : req.user.email || `User ${req.user.id}`;
+        await EventLogger.log(req, 'access', 'denied', 'Tag', null, 
+          `Unassociated tag scan attempt by ${userName} (Tag ID: ${tagId})`, 
+          `User: ${req.user.email}, Tag: ${tagId}`);
+        
         return res.status(404).json({
           error: 'Tag Not Associated',
           message: 'This NFC tag is not associated with any door'
@@ -104,14 +110,16 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
         userAgent: req.headers['user-agent'],
         ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
         qrCodeData: qrCodeData,
+        tagId: tagId, // Include tag ID in the request data
         processedAt: new Date().toISOString()
       };
 
       const accessRequest = await AccessRequest.create(requestData);
 
-      // Log denied access
+      // Log denied access with tag ID
       const userName = req.user.firstName && req.user.lastName ? `${req.user.firstName} ${req.user.lastName}` : req.user.email || `User ${req.user.id}`;
-      await EventLogger.log(req, 'access', 'denied', 'AccessRequest', accessRequest.id, `Access denied to ${userName} for ${door.name}`, `User: ${req.user.email}`);
+      const tagInfo = tagId ? ` (Tag ID: ${tagId})` : '';
+      await EventLogger.log(req, 'access', 'denied', 'AccessRequest', accessRequest.id, `Access denied to ${userName} for ${door.name}${tagInfo}`, `User: ${req.user.email}, Tag: ${tagId || 'N/A'}`);
 
       return res.json({
         success: true,
@@ -152,6 +160,13 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
         } else if (visitor) {
           // Visitor exists but is not valid (no tokens or expired)
           console.log(`Visitor ${visitor.firstName} ${visitor.lastName} access denied: remainingTokens=${visitor.remainingAccessEvents}, isValid=${visitor.isValid()}`);
+          
+          // Log visitor access denial with tag ID
+          const tagInfo = tagId ? ` (Tag ID: ${tagId})` : '';
+          await EventLogger.log(req, 'access', 'denied', 'Visitor', visitor.id, 
+            `Visitor access denied for ${visitor.firstName} ${visitor.lastName} for ${door.name}${tagInfo}`, 
+            `Visitor: ${visitor.email}, Tag: ${tagId || 'N/A'}, Remaining: ${visitor.remainingAccessEvents}`);
+          
           return res.status(403).json({
             access: false,
             message: visitor.remainingAccessEvents <= 0 ? 
@@ -176,14 +191,16 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
       qrCodeData: qrCodeData,
+      tagId: tagId, // Include tag ID in the request data
       processedAt: new Date().toISOString()
     };
 
     const accessRequest = await AccessRequest.create(requestData);
 
-    // Log granted access
+    // Log granted access with tag ID
     const userName = req.user.firstName && req.user.lastName ? `${req.user.firstName} ${req.user.lastName}` : req.user.email || `User ${req.user.id}`;
-    await EventLogger.log(req, 'access', 'granted', 'AccessRequest', accessRequest.id, `Access granted to ${userName} for ${door.name}`, `User: ${req.user.email}`);
+    const tagInfo = tagId ? ` (Tag ID: ${tagId})` : '';
+    await EventLogger.log(req, 'access', 'granted', 'AccessRequest', accessRequest.id, `Access granted to ${userName} for ${door.name}${tagInfo}`, `User: ${req.user.email}, Tag: ${tagId || 'N/A'}`);
 
     // Queue door open command for ESP32 to pick up (ESP32 polls server for commands)
     let doorControlSuccess = true; // Assume success since we're queuing the command
