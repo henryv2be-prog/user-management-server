@@ -37,23 +37,28 @@ export default function App() {
   const handleUrl = (url) => {
     console.log('Received URL:', url);
     if (url.includes('scan')) {
-      // Extract tagId from URL
-      const urlObj = new URL(url);
-      const tagId = urlObj.searchParams.get('tagId');
-      
-      if (tagId) {
-        console.log('Extracted tagId:', tagId);
-        setPendingTagId(tagId);
-      } else {
-        console.log('No tagId found in URL');
-      }
-      
-      // If user is authenticated, go directly to NFC scanner
-      if (isAuthenticated) {
-        console.log('User is authenticated, navigating to NFC scanner');
-        setCurrentScreen('nfcScanner');
-      } else {
-        console.log('User not authenticated, will process tag after login');
+      try {
+        // Extract tagId from URL
+        const urlObj = new URL(url);
+        const tagId = urlObj.searchParams.get('tagId');
+        
+        if (tagId) {
+          console.log('Extracted tagId:', tagId);
+          setPendingTagId(tagId);
+        } else {
+          console.log('No tagId found in URL');
+        }
+        
+        // If user is authenticated, go directly to NFC scanner
+        if (isAuthenticated) {
+          console.log('User is authenticated, navigating to NFC scanner');
+          setCurrentScreen('nfcScanner');
+        } else {
+          console.log('User not authenticated, will process tag after login');
+        }
+      } catch (error) {
+        console.error('Error parsing URL:', error);
+        console.log('URL that failed:', url);
       }
     }
   };

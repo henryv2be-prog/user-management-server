@@ -19,6 +19,8 @@ export default function NFCScannerScreen({ onBack, onNavigateToVisitors, pending
   const [scanAnimation] = useState(new Animated.Value(0));
 
   useEffect(() => {
+    console.log('NFCScannerScreen mounted, pendingTagId:', pendingTagId);
+    
     // Start scanning animation
     startScanAnimation();
     
