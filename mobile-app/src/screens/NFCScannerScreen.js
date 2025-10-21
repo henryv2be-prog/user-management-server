@@ -13,7 +13,7 @@ import * as Haptics from 'expo-haptics';
 
 const { width, height } = Dimensions.get('window');
 
-export default function NFCScannerScreen({ onBack, onNavigateToVisitors }) {
+export default function NFCScannerScreen({ onBack, onNavigateToVisitors, pendingTagId, onTagProcessed }) {
   const [isScanning, setIsScanning] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [scanAnimation] = useState(new Animated.Value(0));
@@ -21,6 +21,16 @@ export default function NFCScannerScreen({ onBack, onNavigateToVisitors }) {
   useEffect(() => {
     // Start scanning animation
     startScanAnimation();
+    
+    // Check if there's a pending tag ID from deep link
+    if (pendingTagId) {
+      console.log('Processing pending tag ID:', pendingTagId);
+      handleNFCTagDetected(pendingTagId);
+      if (onTagProcessed) {
+        onTagProcessed();
+      }
+      return;
+    }
     
     // Simulate NFC scanning (in a real app, you'd use expo-nfc or similar)
     const scanInterval = setInterval(() => {
@@ -31,7 +41,7 @@ export default function NFCScannerScreen({ onBack, onNavigateToVisitors }) {
     }, 2000);
 
     return () => clearInterval(scanInterval);
-  }, [isScanning, isProcessing]);
+  }, [isScanning, isProcessing, pendingTagId]);
 
   const startScanAnimation = () => {
     const animation = Animated.loop(

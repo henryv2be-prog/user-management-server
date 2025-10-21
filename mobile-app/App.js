@@ -16,6 +16,7 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState('loading');
   const [hasServerConfig, setHasServerConfig] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [pendingTagId, setPendingTagId] = useState(null);
 
   useEffect(() => {
     checkInitialState();
@@ -34,10 +35,25 @@ export default function App() {
   };
 
   const handleUrl = (url) => {
+    console.log('Received URL:', url);
     if (url.includes('scan')) {
+      // Extract tagId from URL
+      const urlObj = new URL(url);
+      const tagId = urlObj.searchParams.get('tagId');
+      
+      if (tagId) {
+        console.log('Extracted tagId:', tagId);
+        setPendingTagId(tagId);
+      } else {
+        console.log('No tagId found in URL');
+      }
+      
       // If user is authenticated, go directly to NFC scanner
       if (isAuthenticated) {
+        console.log('User is authenticated, navigating to NFC scanner');
         setCurrentScreen('nfcScanner');
+      } else {
+        console.log('User not authenticated, will process tag after login');
       }
     }
   };
@@ -99,6 +115,10 @@ export default function App() {
     setCurrentScreen('nfcScanner');
   };
 
+  const handleBackToHome = () => {
+    setCurrentScreen('home');
+  };
+
   if (currentScreen === 'loading') {
     return (
       <View style={styles.loadingContainer}>
@@ -116,11 +136,29 @@ export default function App() {
   }
 
   if (currentScreen === 'nfcScanner') {
-    return <NFCScannerScreen onBack={handleBackToHome} onNavigateToVisitors={handleNavigateToVisitors} />;
+    return <NFCScannerScreen 
+      onBack={handleBackToHome} 
+      onNavigateToVisitors={handleNavigateToVisitors}
+      pendingTagId={pendingTagId}
+      onTagProcessed={() => setPendingTagId(null)}
+    />;
   }
 
   if (currentScreen === 'visitorManagement') {
     return <VisitorManagementScreen onBack={handleBackToScanner} />;
+  }
+
+  if (currentScreen === 'home') {
+    return (
+      <>
+        <StatusBar style="auto" />
+        <HomeScreen 
+          onLogout={handleLogout} 
+          onNavigateToScanner={handleNavigateToScanner}
+          onQuickAccess={handleQuickAccess}
+        />
+      </>
+    );
   }
 
   return (
