@@ -411,6 +411,19 @@ async function migrateDatabase() {
       });
     });
     
+    // Add tag_id column to access_requests table if it doesn't exist
+    await new Promise((resolve, reject) => {
+      db.run(`ALTER TABLE access_requests ADD COLUMN tag_id TEXT`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('❌ Access requests tag_id migration failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ Access requests tag_id column added/verified');
+          resolve();
+        }
+      });
+    });
+    
     // Create indexes for door_tags
     await new Promise((resolve, reject) => {
       db.run(`CREATE INDEX IF NOT EXISTS idx_door_tags_door_id ON door_tags(door_id)`, (err) => {
