@@ -2319,7 +2319,11 @@ async function handleChangePassword(event) {
         
         if (response.ok) {
             closeModal('changePasswordModal');
-            app.showNotification('Password changed successfully!', 'success');
+            app.showNotification('Password changed successfully! Please login with your new password.', 'success');
+            // Log out user after password change
+            setTimeout(() => {
+                logout();
+            }, 2000);
         } else {
             app.showNotification(data.message || 'Failed to change password', 'error');
         }

@@ -516,7 +516,7 @@ body::after {
         background: var(--background-primary);
         border-top: 1px solid var(--border-light);
         flex-direction: column;
-        padding: var(--space-4);
+        padding: var(--space-2);
         display: none;
         box-shadow: var(--shadow-lg);
         max-height: calc(100vh - 64px);
@@ -535,6 +535,7 @@ body::after {
     .nav-link {
         width: 100%;
         justify-content: flex-start;
+        padding: var(--space-2) var(--space-3);
     }
     
     .stats-grid {
