@@ -1006,42 +1006,9 @@ body:has(#registerSection.active) .navbar {
     animation: fadeInUp 0.8s ease-out 0.5s both;
 }
 
-/* Professional Login/Registration Forms */
-.login-container {
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
-}
+/* Professional Login/Registration Forms - merged with main login-container */
 
-/* Removed duplicate background pattern */
-
-.login-card {
-    background: white;
-    border-radius: 24px;
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    padding: 48px;
-    width: 100%;
-    max-width: 420px;
-    position: relative;
-    z-index: 1;
-    overflow: hidden;
-}
-
-.login-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-}
+/* Removed duplicate login-card definition - using main one above */
 
 .login-header {
     text-align: center;

@@ -1162,6 +1162,7 @@ function clearLogs() {
 // Authentication functions
 async function handleLogin(event) {
     event.preventDefault();
+    console.log('Login form submitted'); // Debug log
     showLoading();
     
     const formData = new FormData(event.target);
@@ -1169,6 +1170,8 @@ async function handleLogin(event) {
         email: formData.get('email'),
         password: formData.get('password')
     };
+    
+    console.log('Login data:', loginData); // Debug log
     
     try {
         const response = await fetch('/api/auth/login', {
