@@ -4128,9 +4128,6 @@ let eventSource = null;
 let fetchStream = null;
 let isEventStreamConnected = false;
 
-// Debug panel variables
-let debugLogs = [];
-let debugPanelVisible = false;
 
 // Keep-alive mechanism for Render instance
 let keepAliveInterval = null;
@@ -4155,26 +4152,25 @@ function startKeepAlive() {
             
             if (response.ok) {
                 console.log(`🔄 Frontend keep-alive ping successful: ${endpoint}`);
-                addDebugLog(`Keep-alive ping successful: ${endpoint}`, 'info');
+(`Keep-alive ping successful: ${endpoint}`, 'info');
             } else {
                 console.log(`⚠️ Frontend keep-alive ping failed: ${endpoint} (${response.status})`);
-                addDebugLog(`Keep-alive ping failed: ${endpoint} (${response.status})`, 'warning');
+(`Keep-alive ping failed: ${endpoint} (${response.status})`, 'warning');
             }
         } catch (error) {
             console.log(`❌ Frontend keep-alive ping error: ${endpoint} - ${error.message}`);
-            addDebugLog(`Keep-alive ping error: ${endpoint} - ${error.message}`, 'error');
         }
     }, 5 * 60 * 1000); // 5 minutes - reduced frequency to fix SSE timeout
     
     // Disabled aggressive ping to reduce server load and fix SSE timeout
     console.log('🔄 Aggressive ping disabled to reduce server load');
-    addDebugLog('Aggressive ping disabled to reduce server load', 'info');
+('Aggressive ping disabled to reduce server load', 'info');
     
     // Store null interval for cleanup
     window.aggressiveKeepAliveInterval = null;
     
     console.log('🔄 Frontend keep-alive mechanism started (5min only)');
-    addDebugLog('Frontend keep-alive started (5min only)', 'info');
+('Frontend keep-alive started (5min only)', 'info');
 }
 
 function stopKeepAlive() {
@@ -4189,7 +4185,7 @@ function stopKeepAlive() {
     }
     
     console.log('🔄 Frontend keep-alive mechanism stopped');
-    addDebugLog('Frontend keep-alive stopped', 'info');
+('Frontend keep-alive stopped', 'info');
 }
 
 async function loadEvents(page = 1, type = '') {
@@ -4385,7 +4381,7 @@ function stopEventRefresh() {
 function startFetchStreaming(url) {
     console.log('🔄 Starting fetch streaming fallback...');
     console.log('🔄 Fetch streaming URL:', url);
-    addDebugLog('Starting fetch streaming fallback', 'info');
+('Starting fetch streaming fallback', 'info');
     
     // Close existing EventSource
     if (eventSource) {
@@ -4412,10 +4408,9 @@ function startFetchStreaming(url) {
         }
         
         console.log('✅ Fetch streaming connected');
-        addDebugLog('Fetch streaming connected', 'success');
+('Fetch streaming connected', 'success');
         isEventStreamConnected = true;
         updateEventStreamStatus(true);
-        updateDebugStatus();
         
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -4424,10 +4419,9 @@ function startFetchStreaming(url) {
             reader.read().then(({ done, value }) => {
                 if (done) {
                     console.log('📡 Fetch stream ended');
-                    addDebugLog('Fetch stream ended', 'warning');
+('Fetch stream ended', 'warning');
                     isEventStreamConnected = false;
                     updateEventStreamStatus(false);
-                    updateDebugStatus();
                     return;
                 }
                 
@@ -4448,10 +4442,9 @@ function startFetchStreaming(url) {
                 readStream();
             }).catch(error => {
                 console.error('❌ Fetch stream error:', error);
-                addDebugLog(`Fetch stream error: ${error.message}`, 'error');
+(`Fetch stream error: ${error.message}`, 'error');
                 isEventStreamConnected = false;
                 updateEventStreamStatus(false);
-                updateDebugStatus();
             });
         }
         
@@ -4459,16 +4452,15 @@ function startFetchStreaming(url) {
     })
     .catch(error => {
         console.error('❌ Fetch streaming failed:', error);
-        addDebugLog(`Fetch streaming failed: ${error.message}`, 'error');
+(`Fetch streaming failed: ${error.message}`, 'error');
         isEventStreamConnected = false;
         updateEventStreamStatus(false);
-        updateDebugStatus();
     });
 }
 
 function connectEventStream() {
     console.log('🔄 connectEventStream() called - DISABLED (using polling instead)');
-    addDebugLog('SSE connection disabled - using polling system', 'info');
+('SSE connection disabled - using polling system', 'info');
     
     // SSE is disabled - using polling system instead
     console.log('📡 SSE disabled, using UserEventPoller for real-time updates');
@@ -4501,7 +4493,7 @@ function connectEventStream() {
     console.log('📡 EventSource created, readyState:', eventSource.readyState);
     console.log('📡 EventSource URL property:', eventSource.url);
     console.log('📡 EventSource withCredentials:', eventSource.withCredentials);
-    addDebugLog(`EventSource created for public endpoint, readyState: ${eventSource.readyState}`, 'info');
+(`EventSource created for public endpoint, readyState: ${eventSource.readyState}`, 'info');
     
     // Add timeout to detect connection issues
     const connectionTimeout = setTimeout(() => {
@@ -4509,7 +4501,7 @@ function connectEventStream() {
         
         if (!eventSource) {
             console.log('❌ EventSource is null - cannot check connection state');
-            addDebugLog('EventSource is null - connection failed', 'error');
+('EventSource is null - connection failed', 'error');
             return;
         }
         
@@ -4518,21 +4510,21 @@ function connectEventStream() {
         
         if (eventSource.readyState !== 1) {
             console.log('⏰ SSE connection timeout - readyState still:', eventSource.readyState);
-            addDebugLog(`SSE connection timeout - readyState: ${eventSource.readyState}`, 'warning');
+(`SSE connection timeout - readyState: ${eventSource.readyState}`, 'warning');
             
             // Try fetch streaming fallback
             console.log('🔄 Attempting fetch streaming fallback...');
             if (eventSource && eventSource.url) {
                 console.log('🔄 EventSource URL for fetch streaming:', eventSource.url);
-                addDebugLog('Attempting fetch streaming fallback', 'info');
+('Attempting fetch streaming fallback', 'info');
                 startFetchStreaming(eventSource.url);
             } else {
                 console.log('❌ Cannot start fetch streaming - EventSource URL not available');
-                addDebugLog('Cannot start fetch streaming - EventSource URL not available', 'error');
+('Cannot start fetch streaming - EventSource URL not available', 'error');
             }
         } else {
             console.log('✅ EventSource connected successfully before timeout');
-            addDebugLog('EventSource connected successfully', 'success');
+('EventSource connected successfully', 'success');
         }
     }, 10000); // 10 second timeout
     
@@ -4542,10 +4534,9 @@ function connectEventStream() {
                 console.log('✅ Event object:', event);
                 console.log('✅ EventSource readyState:', eventSource.readyState);
                 console.log('✅ EventSource URL:', eventSource.url);
-                addDebugLog('SSE connection established successfully - PUBLIC ENDPOINT', 'success');
+('SSE connection established successfully - PUBLIC ENDPOINT', 'success');
         isEventStreamConnected = true;
         updateEventStreamStatus(true);
-        updateDebugStatus();
         
         // Clear any existing reconnection attempts
         if (window.sseReconnectAttempts) {
@@ -4559,7 +4550,6 @@ function connectEventStream() {
         setTimeout(() => {
             if (isEventStreamConnected) {
                 updateEventStreamStatus(true);
-                updateDebugStatus();
             }
         }, 1000);
     };
@@ -4568,17 +4558,17 @@ function connectEventStream() {
                 try {
                     const data = JSON.parse(event.data);
                     console.log('Received event stream data - PUBLIC ENDPOINT:', data);
-                    addDebugLog(`Received event from public endpoint: ${data.type}`, 'info');
+(`Received event from public endpoint: ${data.type}`, 'info');
                     
                     if (data.type === 'connection') {
                         console.log('✅ Connection message received from public endpoint');
-                        addDebugLog('Connection message received from public endpoint', 'success');
+('Connection message received from public endpoint', 'success');
                     } else if (data.type === 'test') {
                         console.log('✅ Test message received from public endpoint');
-                        addDebugLog('Test message received from public endpoint', 'success');
+('Test message received from public endpoint', 'success');
                     } else if (data.type === 'heartbeat') {
                         console.log('✅ Heartbeat received from public endpoint');
-                        addDebugLog('Heartbeat received from public endpoint', 'info');
+('Heartbeat received from public endpoint', 'info');
                         
                         // Update site plan door status if heartbeat contains door info
                         if (sitePlanManager && data.doorId && typeof sitePlanManager.updateDoorFromHeartbeat === 'function') {
@@ -4588,7 +4578,7 @@ function connectEventStream() {
                     } else if (data.type === 'event') {
                         console.log('✅ Live event received from public endpoint:', data.event);
                         console.log('Event details - Type:', data.event.type, 'Action:', data.event.action, 'Entity:', data.event.entityName, 'ID:', data.event.entityId);
-                        addDebugLog(`Live event received: ${data.event.type} ${data.event.action} - ${data.event.entityName}`, 'success');
+(`Live event received: ${data.event.type} ${data.event.action} - ${data.event.entityName}`, 'success');
                         
                         // Show a visual indicator that a new event was received
                         const eventLog = document.getElementById('eventLog');
@@ -4620,7 +4610,7 @@ function connectEventStream() {
                     } else if (data.type === 'new_event') {
                         console.log('✅ New event received from public endpoint:', data);
                         console.log('New event details:', data.event);
-                        addDebugLog(`New event received: ${data.type}`, 'success');
+(`New event received: ${data.type}`, 'success');
                         
                         // Show a visual indicator that a new event was received
                         const eventLog = document.getElementById('eventLog');
@@ -4690,7 +4680,7 @@ function connectEventStream() {
                     }
                 } catch (error) {
                     console.error('Error parsing event stream data:', error);
-                    addDebugLog(`Error parsing event data: ${error.message}`, 'error');
+(`Error parsing event data: ${error.message}`, 'error');
                 }
             };
     
@@ -4700,7 +4690,7 @@ function connectEventStream() {
         
         if (!eventSource) {
             console.error('❌ EventSource is null in error handler');
-            addDebugLog('EventSource is null in error handler', 'error');
+('EventSource is null in error handler', 'error');
             return;
         }
         
@@ -4712,26 +4702,26 @@ function connectEventStream() {
         console.error('  - Current page URL:', window.location.href);
         console.error('  - User agent:', navigator.userAgent);
         
-                addDebugLog(`SSE error occurred on public endpoint: readyState=${eventSource.readyState}`, 'error');
+(`SSE error occurred on public endpoint: readyState=${eventSource.readyState}`, 'error');
         
         // Try to get more info about the error
         if (eventSource.readyState === 0) {
             console.error('❌ EventSource stuck in CONNECTING state - likely network/CORS issue');
-            addDebugLog('EventSource stuck in CONNECTING state on public endpoint', 'error');
+('EventSource stuck in CONNECTING state on public endpoint', 'error');
             
             // Try fetch streaming fallback immediately
             console.log('🔄 Attempting fetch streaming fallback...');
             if (eventSource && eventSource.url) {
                 console.log('🔄 EventSource URL for fetch streaming:', eventSource.url);
-                addDebugLog('Attempting fetch streaming fallback', 'info');
+('Attempting fetch streaming fallback', 'info');
                 startFetchStreaming(eventSource.url);
             } else {
                 console.log('❌ Cannot start fetch streaming - EventSource URL not available');
-                addDebugLog('Cannot start fetch streaming - EventSource URL not available', 'error');
+('Cannot start fetch streaming - EventSource URL not available', 'error');
             }
         } else if (eventSource.readyState === 2) {
             console.error('❌ EventSource CLOSED - connection was established but closed');
-                    addDebugLog('EventSource connection was closed on public endpoint', 'error');
+('EventSource connection was closed on public endpoint', 'error');
         }
         
         // Clear the timeout since we got an error
@@ -4740,10 +4730,9 @@ function connectEventStream() {
         // Only mark as disconnected if readyState is CLOSED (2)
         if (eventSource.readyState === 2) {
             console.log('📡 Connection closed, marking as disconnected');
-            addDebugLog('SSE connection closed, marking as disconnected', 'warning');
+('SSE connection closed, marking as disconnected', 'warning');
             isEventStreamConnected = false;
             updateEventStreamStatus(false);
-            updateDebugStatus();
             
             // Attempt to reconnect with exponential backoff for Railway sleep/wake cycles
             if (!window.sseReconnectAttempts) {
@@ -4758,7 +4747,7 @@ function connectEventStream() {
                     const delay = Math.min(1000 * Math.pow(2, window.sseReconnectAttempts), 30000); // Max 30 seconds
                     
                     console.log(`🔄 Attempting to reconnect event stream (attempt ${window.sseReconnectAttempts}/${maxReconnectAttempts}) in ${delay}ms...`);
-                    addDebugLog(`Attempting to reconnect SSE (attempt ${window.sseReconnectAttempts}/${maxReconnectAttempts})`, 'info');
+(`Attempting to reconnect SSE (attempt ${window.sseReconnectAttempts}/${maxReconnectAttempts})`, 'info');
                     
                     setTimeout(() => {
                         if (!isEventStreamConnected) {
@@ -4767,14 +4756,14 @@ function connectEventStream() {
                     }, delay);
                 } else if (window.sseReconnectAttempts >= maxReconnectAttempts) {
                     console.log('❌ Max reconnection attempts reached, giving up');
-                    addDebugLog('Max SSE reconnection attempts reached', 'error');
+('Max SSE reconnection attempts reached', 'error');
                 }
             };
             
             attemptReconnect();
         } else {
             console.log('📡 Connection error but still open, keeping status as connected');
-            addDebugLog('SSE error but connection still open, keeping status', 'warning');
+('SSE error but connection still open, keeping status', 'warning');
         }
     };
 }
@@ -4786,8 +4775,7 @@ function disconnectEventStream() {
         eventSource = null;
         isEventStreamConnected = false;
         updateEventStreamStatus(false);
-        updateDebugStatus();
-        addDebugLog('SSE connection manually disconnected', 'info');
+('SSE connection manually disconnected', 'info');
         console.log('Event stream disconnected');
     }
     
@@ -4809,7 +4797,7 @@ function startSSEHealthCheck() {
     window.sseHealthCheckInterval = setInterval(() => {
         if (!isEventStreamConnected || !eventSource || eventSource.readyState !== 1) {
             console.log('🔄 SSE health check failed, attempting reconnection...');
-            addDebugLog('SSE health check failed, reconnecting', 'warning');
+('SSE health check failed, reconnecting', 'warning');
             
             // Reset reconnection attempts for health check
             window.sseReconnectAttempts = 0;
@@ -4823,7 +4811,7 @@ function startSSEHealthCheck() {
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden && !isEventStreamConnected) {
             console.log('🔄 Page became visible and SSE disconnected, reconnecting...');
-            addDebugLog('Page visible, reconnecting SSE', 'info');
+('Page visible, reconnecting SSE', 'info');
             window.sseReconnectAttempts = 0;
             connectEventStream();
         }
@@ -4896,12 +4884,12 @@ function addNewEventToList(event) {
 
 function updateEventStreamStatus(connected) {
     console.log(`📡 Updating event stream status: ${connected ? 'Live' : 'Offline'}`);
-    addDebugLog(`Updating status indicator: ${connected ? 'Live' : 'Offline'}`, 'info');
+(`Updating status indicator: ${connected ? 'Live' : 'Offline'}`, 'info');
     
     const eventControls = document.querySelector('#eventsSection .header-actions');
     if (!eventControls) {
         console.log('❌ Event controls not found');
-        addDebugLog('Event controls element not found', 'error');
+('Event controls element not found', 'error');
         return;
     }
     
@@ -4909,7 +4897,7 @@ function updateEventStreamStatus(connected) {
     const existingStatus = eventControls.querySelector('.stream-status');
     if (existingStatus) {
         existingStatus.remove();
-        addDebugLog('Removed existing status indicator', 'info');
+('Removed existing status indicator', 'info');
     }
     
     // Add new status indicator
@@ -4922,17 +4910,17 @@ function updateEventStreamStatus(connected) {
     
     eventControls.appendChild(statusElement);
     console.log(`✅ Status indicator added: ${connected ? 'Live' : 'Offline'}`);
-    addDebugLog(`Status indicator added to DOM: ${connected ? 'Live' : 'Offline'}`, 'success');
+(`Status indicator added to DOM: ${connected ? 'Live' : 'Offline'}`, 'success');
     
     // Force a re-render by adding a small delay and checking
     setTimeout(() => {
         const checkStatus = eventControls.querySelector('.stream-status');
         if (checkStatus) {
             console.log(`✅ Status confirmed in DOM: ${checkStatus.textContent.trim()}`);
-            addDebugLog(`Status confirmed in DOM: ${checkStatus.textContent.trim()}`, 'success');
+(`Status confirmed in DOM: ${checkStatus.textContent.trim()}`, 'success');
         } else {
             console.log('❌ Status indicator not found in DOM after creation');
-            addDebugLog('Status indicator not found in DOM after creation', 'error');
+('Status indicator not found in DOM after creation', 'error');
         }
     }, 100);
 }
@@ -5074,174 +5062,6 @@ function toggleEventDetails(index) {
     }
 }
 
-// Debug Panel Functions
-function addDebugLog(message, type = 'info') {
-    const timestamp = new Date().toLocaleTimeString();
-    const logEntry = {
-        timestamp,
-        message,
-        type
-    };
-    
-    debugLogs.push(logEntry);
-    
-    // Keep only last 50 logs
-    if (debugLogs.length > 50) {
-        debugLogs.shift();
-    }
-    
-    updateDebugLogDisplay();
-}
-
-function updateDebugLogDisplay() {
-    const container = document.getElementById('debugLogContainer');
-    if (!container) return;
-    
-    container.innerHTML = debugLogs.map(log => 
-        `<div class="log-entry ${log.type}">[${log.timestamp}] ${log.message}</div>`
-    ).join('');
-    
-    // Scroll to bottom
-    container.scrollTop = container.scrollHeight;
-}
-
-function updateDebugStatus() {
-    // Update SSE connection status
-    const sseStatus = document.getElementById('debugSseStatus');
-    if (sseStatus) {
-        sseStatus.textContent = isEventStreamConnected ? 'Connected' : 'Disconnected';
-        sseStatus.className = `status-badge ${isEventStreamConnected ? 'connected' : 'disconnected'}`;
-    }
-    
-    // Update EventSource state
-    const eventSourceState = document.getElementById('debugEventSourceState');
-    if (eventSourceState && eventSource) {
-        const states = ['CONNECTING', 'OPEN', 'CLOSED'];
-        eventSourceState.textContent = states[eventSource.readyState] || 'Unknown';
-        eventSourceState.className = `status-badge ${
-            eventSource.readyState === 1 ? 'connected' : 
-            eventSource.readyState === 2 ? 'disconnected' : 'unknown'
-        }`;
-    }
-    
-    // Update connection URL
-    const connectionUrl = document.getElementById('debugConnectionUrl');
-    if (connectionUrl && eventSource) {
-        connectionUrl.textContent = eventSource.url || 'Not connected';
-    }
-}
-
-function toggleDebugPanel() {
-    const panel = document.getElementById('debugPanel');
-    const toggleIcon = document.getElementById('debugToggleIcon');
-    const toggleText = document.getElementById('debugToggleText');
-    
-    if (!panel) return;
-    
-    debugPanelVisible = !debugPanelVisible;
-    
-    if (debugPanelVisible) {
-        panel.style.display = 'block';
-        toggleIcon.className = 'fas fa-eye-slash';
-        toggleText.textContent = 'Hide Debug';
-        updateDebugStatus();
-        addDebugLog('Debug panel opened', 'info');
-        // Fetch server logs when panel opens
-        fetchServerLogs();
-    } else {
-        panel.style.display = 'none';
-        toggleIcon.className = 'fas fa-eye';
-        toggleText.textContent = 'Show Debug';
-        addDebugLog('Debug panel closed', 'info');
-    }
-}
-
-function clearDebugLog() {
-    debugLogs = [];
-    updateDebugLogDisplay();
-    addDebugLog('Debug log cleared', 'info');
-}
-
-// Server logs functionality
-let serverLogs = [];
-
-function copyClientLogs() {
-    const logText = debugLogs.map(log => `[${log.timestamp}] ${log.message}`).join('\n');
-    navigator.clipboard.writeText(logText).then(() => {
-        addDebugLog('Client logs copied to clipboard', 'success');
-        app.showNotification('Client logs copied to clipboard!', 'success');
-    }).catch(err => {
-        addDebugLog('Failed to copy client logs: ' + err.message, 'error');
-        app.showNotification('Failed to copy logs', 'error');
-    });
-}
-
-function copyServerLogs() {
-    const logText = serverLogs.map(log => `[${log.timestamp}] ${log.message}`).join('\n');
-    navigator.clipboard.writeText(logText).then(() => {
-        addDebugLog('Server logs copied to clipboard', 'success');
-        app.showNotification('Server logs copied to clipboard!', 'success');
-    }).catch(err => {
-        addDebugLog('Failed to copy server logs: ' + err.message, 'error');
-        app.showNotification('Failed to copy logs', 'error');
-    });
-}
-
-function clearServerLogs() {
-    serverLogs = [];
-    updateServerLogDisplay();
-    addDebugLog('Server logs cleared', 'info');
-}
-
-function updateServerLogDisplay() {
-    const container = document.getElementById('serverLogContainer');
-    if (!container) return;
-    
-    container.innerHTML = serverLogs.map(log => 
-        `<div class="log-entry ${log.type}">[${log.timestamp}] ${log.message}</div>`
-    ).join('');
-    
-    // Scroll to bottom
-    container.scrollTop = container.scrollHeight;
-}
-
-function addServerLog(message, type = 'info') {
-    const timestamp = new Date().toLocaleTimeString();
-    const logEntry = {
-        timestamp,
-        message,
-        type
-    };
-    
-    serverLogs.push(logEntry);
-    
-    // Keep only last 100 logs
-    if (serverLogs.length > 100) {
-        serverLogs.shift();
-    }
-    
-    updateServerLogDisplay();
-}
-
-function fetchServerLogs() {
-    addDebugLog('Fetching server logs...', 'info');
-    
-    fetch('/api/events/debug-status')
-        .then(response => response.json())
-        .then(data => {
-            addServerLog('Server debug status fetched successfully', 'success');
-            addServerLog(`Total connections: ${data.totalConnections}`, 'info');
-            addServerLog(`Active connections: ${data.connections.length}`, 'info');
-            
-            data.connections.forEach((conn, index) => {
-                addServerLog(`Connection ${index + 1}: User ${conn.userId}, Active: ${conn.isActive}`, 'info');
-            });
-        })
-        .catch(error => {
-            addServerLog(`Failed to fetch server logs: ${error.message}`, 'error');
-            addDebugLog(`Server log fetch failed: ${error.message}`, 'error');
-        });
-}
 
 // Site Plan Functionality
 class SitePlanManager {
