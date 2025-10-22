@@ -47,10 +47,10 @@ async function forceRefreshAllData() {
         }
         
         console.log('✅ All critical data refreshed successfully');
-        showToast('All data refreshed from server', 'success');
+        app.showNotification('All data refreshed from server', 'success');
     } catch (error) {
         console.error('❌ Error refreshing data:', error);
-        showToast('Error refreshing data', 'error');
+        app.showNotification('Error refreshing data', 'error');
     }
 }
 
@@ -468,7 +468,7 @@ let testStatusInterval = null;
 // Load settings page
 async function loadSettings() {
     if (!currentUser || !hasRole('admin')) {
-        showToast('Access denied. Admin privileges required.', 'error');
+        app.showNotification('Access denied. Admin privileges required.', 'error');
         return;
     }
     
@@ -480,7 +480,7 @@ async function loadSettings() {
         ]);
     } catch (error) {
         console.error('Failed to load settings:', error);
-        showToast('Failed to load settings', 'error');
+        app.showNotification('Failed to load settings', 'error');
     }
 }
 
@@ -554,16 +554,16 @@ function formatDate(dateString) {
 function copyCommitSha() {
     const commitSha = document.getElementById('commitSha').textContent;
     navigator.clipboard.writeText(commitSha).then(() => {
-        showToast('Commit SHA copied to clipboard!', 'success');
+        app.showNotification('Commit SHA copied to clipboard!', 'success');
     }).catch(() => {
-        showToast('Failed to copy commit SHA', 'error');
+        app.showNotification('Failed to copy commit SHA', 'error');
     });
 }
 
 // Refresh version information
 function refreshVersionInfo() {
     loadVersionInfo();
-    showToast('Version information refreshed', 'success');
+    app.showNotification('Version information refreshed', 'success');
 }
 
 // Webhook Management Functions
@@ -648,7 +648,7 @@ async function createWebhook(event) {
     console.log('Creating webhook with:', { name, url, events });
     
     if (events.length === 0) {
-        showToast('Please select at least one event.', 'error');
+        app.showNotification('Please select at least one event.', 'error');
         return;
     }
 
@@ -672,15 +672,15 @@ async function createWebhook(event) {
         console.log('Response result:', result);
         
         if (result.success) {
-            showToast('Webhook created successfully!', 'success');
+            app.showNotification('Webhook created successfully!', 'success');
             document.getElementById('webhookForm').reset();
             loadWebhookStatus();
         } else {
-            showToast('Error: ' + (result.message || 'Failed to create webhook'), 'error');
+            app.showNotification('Error: ' + (result.message || 'Failed to create webhook'), 'error');
         }
     } catch (error) {
         console.error('Create webhook error:', error);
-        showToast('Error: ' + error.message, 'error');
+        app.showNotification('Error: ' + error.message, 'error');
     }
 }
 
@@ -696,12 +696,12 @@ async function testWebhook(webhookId) {
         const result = await response.json();
         
         if (result.success) {
-            showToast('Test webhook sent successfully!', 'success');
+            app.showNotification('Test webhook sent successfully!', 'success');
         } else {
-            showToast('Test failed: ' + (result.message || 'Unknown error'), 'error');
+            app.showNotification('Test failed: ' + (result.message || 'Unknown error'), 'error');
         }
     } catch (error) {
-        showToast('Error: ' + error.message, 'error');
+        app.showNotification('Error: ' + error.message, 'error');
     }
 }
 
@@ -721,13 +721,13 @@ async function deleteWebhook(webhookId) {
         const result = await response.json();
         
         if (result.success) {
-            showToast('Webhook deleted successfully!', 'success');
+            app.showNotification('Webhook deleted successfully!', 'success');
             loadWebhookStatus();
         } else {
-            showToast('Error: ' + (result.message || 'Failed to delete webhook'), 'error');
+            app.showNotification('Error: ' + (result.message || 'Failed to delete webhook'), 'error');
         }
     } catch (error) {
-        showToast('Error: ' + error.message, 'error');
+        app.showNotification('Error: ' + error.message, 'error');
     }
 }
 
@@ -753,12 +753,12 @@ async function testAllWebhooks() {
         const result = await response.json();
         
         if (result.success) {
-            showToast('Test webhook sent to all configured webhooks!', 'success');
+            app.showNotification('Test webhook sent to all configured webhooks!', 'success');
         } else {
-            showToast('Test failed: ' + (result.message || 'Unknown error'), 'error');
+            app.showNotification('Test failed: ' + (result.message || 'Unknown error'), 'error');
         }
     } catch (error) {
-        showToast('Error: ' + error.message, 'error');
+        app.showNotification('Error: ' + error.message, 'error');
     }
 }
 
@@ -850,7 +850,7 @@ function updateTestConfig() {
 // Start stress test
 async function startStressTest() {
     if (!currentUser || !hasRole('admin')) {
-        showToast('Access denied. Admin privileges required.', 'error');
+        app.showNotification('Access denied. Admin privileges required.', 'error');
         return;
     }
     
@@ -871,7 +871,7 @@ async function startStressTest() {
     
     // Validate at least one test option is selected
     if (!Object.values(testOptions).some(option => option)) {
-        showToast('Please select at least one test option', 'error');
+        app.showNotification('Please select at least one test option', 'error');
         return;
     }
     
@@ -910,14 +910,14 @@ async function startStressTest() {
             // Start polling for test status
             startTestStatusPolling();
             
-            showToast('Stress test started successfully', 'success');
+            app.showNotification('Stress test started successfully', 'success');
         } else {
             const errorData = await response.json();
-            showToast(errorData.message || 'Failed to start stress test', 'error');
+            app.showNotification(errorData.message || 'Failed to start stress test', 'error');
         }
     } catch (error) {
         console.error('Start stress test error:', error);
-        showToast('Failed to start stress test', 'error');
+        app.showNotification('Failed to start stress test', 'error');
     } finally {
         hideLoading();
     }
@@ -926,7 +926,7 @@ async function startStressTest() {
 // Stop stress test
 async function stopStressTest() {
     if (!currentTestId) {
-        showToast('No active test to stop', 'error');
+        app.showNotification('No active test to stop', 'error');
         return;
     }
     
@@ -939,16 +939,16 @@ async function stopStressTest() {
         });
         
         if (response.ok) {
-            showToast('Stress test stopped', 'info');
+            app.showNotification('Stress test stopped', 'info');
             stopTestStatusPolling();
             updateTestUI('stopped');
         } else {
             const errorData = await response.json();
-            showToast(errorData.message || 'Failed to stop stress test', 'error');
+            app.showNotification(errorData.message || 'Failed to stop stress test', 'error');
         }
     } catch (error) {
         console.error('Stop stress test error:', error);
-        showToast('Failed to stop stress test', 'error');
+        app.showNotification('Failed to stop stress test', 'error');
     }
 }
 
@@ -1061,7 +1061,7 @@ function updateTestUI(status) {
 // Download test report
 async function downloadTestReport() {
     if (!currentTestId) {
-        showToast('No test report available', 'error');
+        app.showNotification('No test report available', 'error');
         return;
     }
     
@@ -1079,14 +1079,14 @@ async function downloadTestReport() {
             const csvContent = generateCSVReport(report);
             downloadCSV(csvContent, `stress-test-report-${currentTestId}.csv`);
             
-            showToast('Test report downloaded', 'success');
+            app.showNotification('Test report downloaded', 'success');
         } else {
             const errorData = await response.json();
-            showToast(errorData.message || 'Failed to download report', 'error');
+            app.showNotification(errorData.message || 'Failed to download report', 'error');
         }
     } catch (error) {
         console.error('Download report error:', error);
-        showToast('Failed to download report', 'error');
+        app.showNotification('Failed to download report', 'error');
     }
 }
 
@@ -1196,18 +1196,18 @@ async function handleLogin(event) {
                     initializeUserWebhook();
                 }
             }, 1000);
-            showToast('Login successful!', 'success');
+            app.showNotification('Login successful!', 'success');
         } else {
             // Handle specific error codes
             if (data.code === 'WEB_ACCESS_DENIED') {
-                showToast('Access denied: ' + data.message, 'error');
+                app.showNotification('Access denied: ' + data.message, 'error');
             } else {
-                showToast(data.message || 'Login failed', 'error');
+                app.showNotification(data.message || 'Login failed', 'error');
             }
         }
     } catch (error) {
         console.error('Login error:', error);
-        showToast('Login failed. Please try again.', 'error');
+        app.showNotification('Login failed. Please try again.', 'error');
     } finally {
         hideLoading();
     }
@@ -1248,13 +1248,13 @@ async function handleRegister(event) {
                     connectEventStream();
                 }
             }, 1000);
-            showToast('Registration successful!', 'success');
+            app.showNotification('Registration successful!', 'success');
         } else {
-            showToast(data.message || 'Registration failed', 'error');
+            app.showNotification(data.message || 'Registration failed', 'error');
         }
     } catch (error) {
         console.error('Registration error:', error);
-        showToast('Registration failed. Please try again.', 'error');
+        app.showNotification('Registration failed. Please try again.', 'error');
     } finally {
         hideLoading();
     }
@@ -1276,7 +1276,7 @@ function logout() {
     }
     
     showLogin();
-    showToast('Logged out successfully', 'info');
+    app.showNotification('Logged out successfully', 'info');
 }
 
 // UI Navigation functions
@@ -1819,11 +1819,11 @@ async function loadUsers(page = 1) {
                 displaySimplePagination(data.totalCount);
             }
         } else {
-            showToast('Failed to load users', 'error');
+            app.showNotification('Failed to load users', 'error');
         }
     } catch (error) {
         console.error('Failed to load users:', error);
-        showToast('Failed to load users', 'error');
+        app.showNotification('Failed to load users', 'error');
     } finally {
         hideLoading();
     }
@@ -1942,13 +1942,13 @@ async function handleCreateUser(event) {
         if (response.ok) {
             closeModal('createUserModal');
             loadUsers(currentPage);
-            showToast('User created successfully!', 'success');
+            app.showNotification('User created successfully!', 'success');
         } else {
-            showToast(data.message || 'Failed to create user', 'error');
+            app.showNotification(data.message || 'Failed to create user', 'error');
         }
     } catch (error) {
         console.error('Create user error:', error);
-        showToast('Failed to create user', 'error');
+        app.showNotification('Failed to create user', 'error');
     } finally {
         hideLoading();
     }
@@ -1976,7 +1976,7 @@ async function editUser(userId) {
         }
     } catch (error) {
         console.error('Failed to load user for editing:', error);
-        showToast('Failed to load user data', 'error');
+        app.showNotification('Failed to load user data', 'error');
     }
 }
 
@@ -2008,13 +2008,13 @@ async function handleEditUser(event) {
         if (response.ok) {
             closeModal('editUserModal');
             loadUsers(currentPage);
-            showToast('User updated successfully!', 'success');
+            app.showNotification('User updated successfully!', 'success');
         } else {
-            showToast(data.message || 'Failed to update user', 'error');
+            app.showNotification(data.message || 'Failed to update user', 'error');
         }
     } catch (error) {
         console.error('Update user error:', error);
-        showToast('Failed to update user', 'error');
+        app.showNotification('Failed to update user', 'error');
     } finally {
         hideLoading();
     }
@@ -2037,14 +2037,14 @@ async function deleteUser(userId) {
         
         if (response.ok) {
             loadUsers(currentPage);
-            showToast('User deleted successfully!', 'success');
+            app.showNotification('User deleted successfully!', 'success');
         } else {
             const data = await response.json();
-            showToast(data.message || 'Failed to delete user', 'error');
+            app.showNotification(data.message || 'Failed to delete user', 'error');
         }
     } catch (error) {
         console.error('Delete user error:', error);
-        showToast('Failed to delete user', 'error');
+        app.showNotification('Failed to delete user', 'error');
     } finally {
         hideLoading();
     }
@@ -2074,7 +2074,7 @@ async function loadUserVisitors(userId) {
             }
         });
         if (!response.ok) {
-            showToast('Failed to load visitors', 'error');
+            app.showNotification('Failed to load visitors', 'error');
             return;
         }
         const data = await response.json();
@@ -2082,7 +2082,7 @@ async function loadUserVisitors(userId) {
         renderUserVisitors(visitors);
     } catch (error) {
         console.error('Load visitors error:', error);
-        showToast('Failed to load visitors', 'error');
+        app.showNotification('Failed to load visitors', 'error');
     } finally {
         hideLoading();
     }
@@ -2135,7 +2135,7 @@ async function handleAddVisitor(event) {
     const userIdEl = document.getElementById('visitorsUserId');
     const userId = userIdEl ? parseInt(userIdEl.value) : null;
     if (!userId) {
-        showToast('Missing user id', 'error');
+        app.showNotification('Missing user id', 'error');
         return;
     }
     const form = event.target;
@@ -2144,14 +2144,14 @@ async function handleAddVisitor(event) {
     const phone = form.phone.value.trim();
     const validToRaw = form.validTo.value;
     if (!visitorName || !validToRaw) {
-        showToast('Name and Valid Until are required', 'error');
+        app.showNotification('Name and Valid Until are required', 'error');
         return;
     }
     let validTo;
     try {
         validTo = new Date(validToRaw).toISOString();
     } catch (e) {
-        showToast('Invalid date/time', 'error');
+        app.showNotification('Invalid date/time', 'error');
         return;
     }
     showLoading();
@@ -2168,13 +2168,13 @@ async function handleAddVisitor(event) {
         if (response.ok) {
             form.reset();
             await loadUserVisitors(userId);
-            showToast('Visitor added', 'success');
+            app.showNotification('Visitor added', 'success');
         } else {
-            showToast(data.message || 'Failed to add visitor', 'error');
+            app.showNotification(data.message || 'Failed to add visitor', 'error');
         }
     } catch (error) {
         console.error('Add visitor error:', error);
-        showToast('Failed to add visitor', 'error');
+        app.showNotification('Failed to add visitor', 'error');
     } finally {
         hideLoading();
     }
@@ -2192,14 +2192,14 @@ async function deleteVisitor(visitorId, userId) {
         });
         if (response.ok) {
             await loadUserVisitors(userId);
-            showToast('Visitor deleted', 'success');
+            app.showNotification('Visitor deleted', 'success');
         } else {
             const data = await response.json();
-            showToast(data.message || 'Failed to delete visitor', 'error');
+            app.showNotification(data.message || 'Failed to delete visitor', 'error');
         }
     } catch (error) {
         console.error('Delete visitor error:', error);
-        showToast('Failed to delete visitor', 'error');
+        app.showNotification('Failed to delete visitor', 'error');
     } finally {
         hideLoading();
     }
@@ -2244,13 +2244,13 @@ async function handleChangePassword(event) {
         
         if (response.ok) {
             closeModal('changePasswordModal');
-            showToast('Password changed successfully!', 'success');
+            app.showNotification('Password changed successfully!', 'success');
         } else {
-            showToast(data.message || 'Failed to change password', 'error');
+            app.showNotification(data.message || 'Failed to change password', 'error');
         }
     } catch (error) {
         console.error('Change password error:', error);
-        showToast('Failed to change password', 'error');
+        app.showNotification('Failed to change password', 'error');
     } finally {
         hideLoading();
     }
@@ -2277,24 +2277,15 @@ function hideLoading() {
     document.getElementById('loadingOverlay').classList.remove('active');
 }
 
+// Legacy showToast function - now uses the modern notification system
 function showToast(message, type = 'info') {
-    const toastContainer = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    
-    const icon = type === 'success' ? 'check-circle' : 
-                 type === 'error' ? 'exclamation-circle' : 'info-circle';
-    
-    toast.innerHTML = `
-        <i class="fas fa-${icon}"></i>
-        <span>${message}</span>
-    `;
-    
-    toastContainer.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.remove();
-    }, 5000);
+    // Use the modern notification system instead
+    if (window.app && window.app.showNotification) {
+        window.app.showNotification(message, type);
+    } else {
+        // Fallback for when app is not initialized
+        console.log(`Toast: ${type.toUpperCase()} - ${message}`);
+    }
 }
 
 // Helper function to check if user has role
@@ -2350,11 +2341,11 @@ async function loadDoors(page = 1) {
             displayDoors(doorsWithTags);
             displayDoorsPagination(data.pagination);
         } else {
-            showToast('Failed to load doors', 'error');
+            app.showNotification('Failed to load doors', 'error');
         }
     } catch (error) {
         console.error('Failed to load doors:', error);
-        showToast('Failed to load doors', 'error');
+        app.showNotification('Failed to load doors', 'error');
     } finally {
         hideLoading();
     }
@@ -2460,13 +2451,13 @@ async function controlDoor(doorId, action) {
         console.log('Control response data:', data);
         
         if (response.ok) {
-            showToast(data.message, 'success');
+            app.showNotification(data.message, 'success');
         } else {
-            showToast(data.message || 'Failed to control door', 'error');
+            app.showNotification(data.message || 'Failed to control door', 'error');
         }
     } catch (error) {
         console.error('Door control error:', error);
-        showToast('Failed to control door', 'error');
+        app.showNotification('Failed to control door', 'error');
     }
 }
 
@@ -2518,18 +2509,18 @@ async function handleCreateDoor(event) {
                 // Show a general error toast for validation failures
                 const errorMessages = Object.values(data.errors);
                 if (errorMessages.some(msg => msg.includes('already in use'))) {
-                    showToast('Please fix the duplicate address errors below', 'error');
+                    app.showNotification('Please fix the duplicate address errors below', 'error');
                 } else {
-                    showToast('Please fix the validation errors below', 'error');
+                    app.showNotification('Please fix the validation errors below', 'error');
                 }
             } else {
                 console.log('No validation errors, showing generic message');
-                showToast(data.message || 'Failed to create door', 'error');
+                app.showNotification(data.message || 'Failed to create door', 'error');
             }
         }
     } catch (error) {
         console.error('Create door error:', error);
-        showToast('Failed to create door', 'error');
+        app.showNotification('Failed to create door', 'error');
     } finally {
         hideLoading();
     }
@@ -2557,11 +2548,11 @@ async function editDoor(doorId) {
             
             document.getElementById('editDoorModal').classList.add('active');
         } else {
-            showToast('Failed to load door details', 'error');
+            app.showNotification('Failed to load door details', 'error');
         }
     } catch (error) {
         console.error('Edit door error:', error);
-        showToast('Failed to load door details', 'error');
+        app.showNotification('Failed to load door details', 'error');
     }
 }
 
@@ -2596,7 +2587,7 @@ async function handleEditDoor(event) {
         const data = await response.json();
         
         if (response.ok) {
-            showToast('Door updated successfully!', 'success');
+            app.showNotification('Door updated successfully!', 'success');
             closeModal('editDoorModal');
             refreshDoorRelatedUI();
         } else {
@@ -2606,17 +2597,17 @@ async function handleEditDoor(event) {
                 // Show a general error toast for validation failures
                 const errorMessages = Object.values(data.errors);
                 if (errorMessages.some(msg => msg.includes('already in use'))) {
-                    showToast('Please fix the duplicate address errors below', 'error');
+                    app.showNotification('Please fix the duplicate address errors below', 'error');
                 } else {
-                    showToast('Please fix the validation errors below', 'error');
+                    app.showNotification('Please fix the validation errors below', 'error');
                 }
             } else {
-                showToast(data.message || 'Failed to update door', 'error');
+                app.showNotification(data.message || 'Failed to update door', 'error');
             }
         }
     } catch (error) {
         console.error('Update door error:', error);
-        showToast('Failed to update door', 'error');
+        app.showNotification('Failed to update door', 'error');
     } finally {
         hideLoading();
     }
@@ -2705,15 +2696,15 @@ async function deleteDoor(doorId) {
         });
         
         if (response.ok) {
-            showToast('Door deleted successfully!', 'success');
+            app.showNotification('Door deleted successfully!', 'success');
             refreshDoorRelatedUI();
         } else {
             const data = await response.json();
-            showToast(data.message || 'Failed to delete door', 'error');
+            app.showNotification(data.message || 'Failed to delete door', 'error');
         }
     } catch (error) {
         console.error('Delete door error:', error);
-        showToast('Failed to delete door', 'error');
+        app.showNotification('Failed to delete door', 'error');
     } finally {
         hideLoading();
     }
@@ -2749,11 +2740,11 @@ async function loadAccessGroups(page = 1) {
             displayAccessGroupsPagination(data.pagination);
         } else {
             console.error('Access groups API failed:', response.status, response.statusText);
-            showToast('Failed to load access groups', 'error');
+            app.showNotification('Failed to load access groups', 'error');
         }
     } catch (error) {
         console.error('Failed to load access groups:', error);
-        showToast('Failed to load access groups', 'error');
+        app.showNotification('Failed to load access groups', 'error');
     } finally {
         hideLoading();
     }
@@ -2920,16 +2911,16 @@ async function handleCreateAccessGroup(event) {
         const data = await response.json();
         
         if (response.ok) {
-            showToast('Access group created successfully!', 'success');
+            app.showNotification('Access group created successfully!', 'success');
             closeModal('createAccessGroupModal');
             event.target.reset();
             loadAccessGroups();
         } else {
-            showToast(data.message || 'Failed to create access group', 'error');
+            app.showNotification(data.message || 'Failed to create access group', 'error');
         }
     } catch (error) {
         console.error('Create access group error:', error);
-        showToast('Failed to create access group', 'error');
+        app.showNotification('Failed to create access group', 'error');
     } finally {
         hideLoading();
     }
@@ -2953,11 +2944,11 @@ async function editAccessGroup(accessGroupId) {
             
             document.getElementById('editAccessGroupModal').classList.add('active');
         } else {
-            showToast('Failed to load access group details', 'error');
+            app.showNotification('Failed to load access group details', 'error');
         }
     } catch (error) {
         console.error('Edit access group error:', error);
-        showToast('Failed to load access group details', 'error');
+        app.showNotification('Failed to load access group details', 'error');
     }
 }
 
@@ -2985,15 +2976,15 @@ async function handleEditAccessGroup(event) {
         const data = await response.json();
         
         if (response.ok) {
-            showToast('Access group updated successfully!', 'success');
+            app.showNotification('Access group updated successfully!', 'success');
             closeModal('editAccessGroupModal');
             loadAccessGroups();
         } else {
-            showToast(data.message || 'Failed to update access group', 'error');
+            app.showNotification(data.message || 'Failed to update access group', 'error');
         }
     } catch (error) {
         console.error('Update access group error:', error);
-        showToast('Failed to update access group', 'error');
+        app.showNotification('Failed to update access group', 'error');
     } finally {
         hideLoading();
     }
@@ -3015,15 +3006,15 @@ async function deleteAccessGroup(accessGroupId) {
         });
         
         if (response.ok) {
-            showToast('Access group deleted successfully!', 'success');
+            app.showNotification('Access group deleted successfully!', 'success');
             loadAccessGroups();
         } else {
             const data = await response.json();
-            showToast(data.message || 'Failed to delete access group', 'error');
+            app.showNotification(data.message || 'Failed to delete access group', 'error');
         }
     } catch (error) {
         console.error('Delete access group error:', error);
-        showToast('Failed to delete access group', 'error');
+        app.showNotification('Failed to delete access group', 'error');
     } finally {
         hideLoading();
     }
@@ -3060,7 +3051,7 @@ async function manageUserAccessGroups(userId) {
         }
     } catch (error) {
         console.error('Error loading user access groups:', error);
-        showToast('Failed to load user access groups', 'error');
+        app.showNotification('Failed to load user access groups', 'error');
     }
 }
 
@@ -3109,15 +3100,15 @@ async function updateUserAccessGroups() {
         });
         
         if (response.ok) {
-            showToast('User access groups updated successfully!', 'success');
+            app.showNotification('User access groups updated successfully!', 'success');
             manageUserAccessGroups(currentUserId); // Reload the modal
         } else {
             const data = await response.json();
-            showToast(data.message || 'Failed to update user access groups', 'error');
+            app.showNotification(data.message || 'Failed to update user access groups', 'error');
         }
     } catch (error) {
         console.error('Error updating user access groups:', error);
-        showToast('Failed to update user access groups', 'error');
+        app.showNotification('Failed to update user access groups', 'error');
     } finally {
         hideLoading();
     }
@@ -3147,7 +3138,7 @@ async function manageDoorTags(doorId) {
         
         if (!doorResponse.ok) {
             console.error('Failed to load door information:', doorResponse.status, doorResponse.statusText);
-            showToast('Failed to load door information', 'error');
+            app.showNotification('Failed to load door information', 'error');
             return;
         }
         
@@ -3173,7 +3164,7 @@ async function manageDoorTags(doorId) {
             console.error('Error response:', errorText);
             // Don't show error toast for empty tags - just continue with empty array
             if (tagsResponse.status !== 404) {
-                showToast('Failed to load door tags', 'error');
+                app.showNotification('Failed to load door tags', 'error');
                 return;
             }
         }
@@ -3197,7 +3188,7 @@ async function manageDoorTags(doorId) {
         
     } catch (error) {
         console.error('Error managing door tags:', error);
-        showToast('Failed to load door tag information', 'error');
+        app.showNotification('Failed to load door tag information', 'error');
     }
 }
 
@@ -3252,7 +3243,7 @@ async function handleAddTag(event) {
         });
         
         if (response.ok) {
-            showToast('Tag associated successfully!', 'success');
+            app.showNotification('Tag associated successfully!', 'success');
             
             try {
                 // Reload tags
@@ -3281,11 +3272,11 @@ async function handleAddTag(event) {
             }
         } else {
             const errorData = await response.json();
-            showToast(errorData.message || 'Failed to associate tag', 'error');
+            app.showNotification(errorData.message || 'Failed to associate tag', 'error');
         }
     } catch (error) {
         console.error('Error adding tag:', error);
-        showToast('Failed to associate tag', 'error');
+        app.showNotification('Failed to associate tag', 'error');
     }
 }
 
@@ -3303,7 +3294,7 @@ async function removeDoorTag(tagId) {
         });
         
         if (response.ok) {
-            showToast('Tag association removed successfully!', 'success');
+            app.showNotification('Tag association removed successfully!', 'success');
             
             // Get the door ID from the current modal
             const doorId = document.getElementById('addTagDoorId').value;
@@ -3326,11 +3317,11 @@ async function removeDoorTag(tagId) {
             }
         } else {
             const errorData = await response.json();
-            showToast(errorData.message || 'Failed to remove tag association', 'error');
+            app.showNotification(errorData.message || 'Failed to remove tag association', 'error');
         }
     } catch (error) {
         console.error('Error removing tag:', error);
-        showToast('Failed to remove tag association', 'error');
+        app.showNotification('Failed to remove tag association', 'error');
     }
 }
 
@@ -3365,15 +3356,15 @@ async function manageAccessGroupDetails(accessGroupId) {
                 document.getElementById('accessGroupDetailsModal').classList.add('active');
             } else {
                 console.error('Failed to load doors:', doorsResponse.status, doorsResponse.statusText);
-                showToast('Failed to load doors for selection', 'error');
+                app.showNotification('Failed to load doors for selection', 'error');
             }
         } else {
             console.error('Failed to load access group:', accessGroupResponse.status, accessGroupResponse.statusText);
-            showToast('Failed to load access group details', 'error');
+            app.showNotification('Failed to load access group details', 'error');
         }
     } catch (error) {
         console.error('Error loading access group details:', error);
-        showToast('Failed to load access group details', 'error');
+        app.showNotification('Failed to load access group details', 'error');
     }
 }
 
@@ -3420,7 +3411,7 @@ async function updateAccessGroupDoors() {
     const accessGroupResponse = await forceRefresh(`/api/access-groups/${currentAccessGroupId}`);
     
     if (!accessGroupResponse.ok) {
-        showToast('Failed to load current access group details', 'error');
+        app.showNotification('Failed to load current access group details', 'error');
         return;
     }
     
@@ -3433,7 +3424,7 @@ async function updateAccessGroupDoors() {
     const doorsToRemove = currentDoorIds.filter(id => !checkedDoorIds.includes(id));
     
     if (doorsToAdd.length === 0 && doorsToRemove.length === 0) {
-        showToast('No changes to save', 'info');
+        app.showNotification('No changes to save', 'info');
         return;
     }
     
@@ -3475,12 +3466,12 @@ async function updateAccessGroupDoors() {
             // Success handled by webhook events - no duplicate toast needed
             manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
         } else {
-            showToast(`Some operations failed. ${failedResponses.length} out of ${promises.length} operations failed.`, 'warning');
+            app.showNotification(`Some operations failed. ${failedResponses.length} out of ${promises.length} operations failed.`, 'warning');
             manageAccessGroupDetails(currentAccessGroupId); // Reload the modal
         }
     } catch (error) {
         console.error('Error updating access group doors:', error);
-        showToast('Failed to update access group doors', 'error');
+        app.showNotification('Failed to update access group doors', 'error');
     } finally {
         hideLoading();
     }
@@ -3632,7 +3623,7 @@ async function startDoorControllerScan() {
     } catch (error) {
         console.error('Door Controller scan failed:', error);
         updateScanStatus('error');
-        showToast('Failed to scan for Door Controller devices: ' + error.message, 'error');
+        app.showNotification('Failed to scan for Door Controller devices: ' + error.message, 'error');
     } finally {
         scanInProgress = false;
     }
@@ -3715,7 +3706,7 @@ async function configureController(mac, ip) {
         }
     } catch (error) {
         console.error('Failed to load access groups:', error);
-        showToast('Failed to load access groups', 'error');
+        app.showNotification('Failed to load access groups', 'error');
     }
 }
 
@@ -3762,11 +3753,11 @@ async function handleDoorControllerConfig(event) {
                 loadDoors();
             }
         } else {
-            showToast(data.message || 'Failed to configure Door Controller as door', 'error');
+            app.showNotification(data.message || 'Failed to configure Door Controller as door', 'error');
         }
     } catch (error) {
         console.error('Configure Door Controller error:', error);
-        showToast('Failed to configure Door Controller as door', 'error');
+        app.showNotification('Failed to configure Door Controller as door', 'error');
     } finally {
         hideLoading();
     }
@@ -3783,13 +3774,13 @@ async function testControllerConnection(mac, ip) {
         });
         
         if (response.ok) {
-            showToast('Door Controller connection test successful!', 'success');
+            app.showNotification('Door Controller connection test successful!', 'success');
         } else {
-            showToast('Door Controller connection test failed', 'error');
+            app.showNotification('Door Controller connection test failed', 'error');
         }
     } catch (error) {
         console.error('Door Controller connection test failed:', error);
-        showToast('Door Controller connection test failed - device may be offline', 'error');
+        app.showNotification('Door Controller connection test failed - device may be offline', 'error');
     } finally {
         hideLoading();
     }
@@ -3797,7 +3788,7 @@ async function testControllerConnection(mac, ip) {
 
 async function addAllDiscoveredControllers() {
     if (discoveredControllers.length === 0) {
-        showToast('No Door Controller devices to add', 'info');
+        app.showNotification('No Door Controller devices to add', 'info');
         return;
     }
     
@@ -3848,7 +3839,7 @@ async function addAllDiscoveredControllers() {
         }
         
         if (failed > 0) {
-            showToast(`Failed to add ${failed} Door Controller device(s)`, 'error');
+            app.showNotification(`Failed to add ${failed} Door Controller device(s)`, 'error');
         }
         
         // Clear the discovered list
@@ -3864,7 +3855,7 @@ async function addAllDiscoveredControllers() {
         
     } catch (error) {
         console.error('Add all Door Controllers error:', error);
-        showToast('Failed to add Door Controller devices', 'error');
+        app.showNotification('Failed to add Door Controller devices', 'error');
     } finally {
         hideLoading();
     }
@@ -3886,7 +3877,7 @@ async function saveDoorControllerConfiguration() {
     
     // Validate required fields
     if (!configData.name || !configData.accessGroupId) {
-        showToast('Please fill in all required fields', 'error');
+        app.showNotification('Please fill in all required fields', 'error');
         return;
     }
     
@@ -3919,11 +3910,11 @@ async function saveDoorControllerConfiguration() {
             }
         } else {
             const error = await response.json();
-            showToast(error.message || 'Failed to configure Door Controller device', 'error');
+            app.showNotification(error.message || 'Failed to configure Door Controller device', 'error');
         }
     } catch (error) {
         console.error('Failed to configure Door Controller device:', error);
-        showToast('Failed to configure Door Controller device', 'error');
+        app.showNotification('Failed to configure Door Controller device', 'error');
     } finally {
         hideLoading();
     }
@@ -5027,10 +5018,10 @@ function copyClientLogs() {
     const logText = debugLogs.map(log => `[${log.timestamp}] ${log.message}`).join('\n');
     navigator.clipboard.writeText(logText).then(() => {
         addDebugLog('Client logs copied to clipboard', 'success');
-        showToast('Client logs copied to clipboard!', 'success');
+        app.showNotification('Client logs copied to clipboard!', 'success');
     }).catch(err => {
         addDebugLog('Failed to copy client logs: ' + err.message, 'error');
-        showToast('Failed to copy logs', 'error');
+        app.showNotification('Failed to copy logs', 'error');
     });
 }
 
@@ -5038,10 +5029,10 @@ function copyServerLogs() {
     const logText = serverLogs.map(log => `[${log.timestamp}] ${log.message}`).join('\n');
     navigator.clipboard.writeText(logText).then(() => {
         addDebugLog('Server logs copied to clipboard', 'success');
-        showToast('Server logs copied to clipboard!', 'success');
+        app.showNotification('Server logs copied to clipboard!', 'success');
     }).catch(err => {
         addDebugLog('Failed to copy server logs: ' + err.message, 'error');
-        showToast('Failed to copy logs', 'error');
+        app.showNotification('Failed to copy logs', 'error');
     });
 }
 
@@ -5958,7 +5949,7 @@ class SitePlanManager {
         })
         .then(response => {
             if (response.ok) {
-                showToast('Door positions saved to server!', 'success');
+                app.showNotification('Door positions saved to server!', 'success');
                 console.log('Door positions saved to server');
             } else {
                 throw new Error('Failed to save door positions to server');
@@ -5966,7 +5957,7 @@ class SitePlanManager {
         })
         .catch(error => {
             console.error('Error saving positions to server:', error);
-            showToast('Error saving door positions to server', 'error');
+            app.showNotification('Error saving door positions to server', 'error');
             
             // Fallback to localStorage
             const positionsObj = {};
@@ -5974,7 +5965,7 @@ class SitePlanManager {
                 positionsObj[pos.id] = { x: pos.x, y: pos.y };
             });
             localStorage.setItem('doorPositions', JSON.stringify(positionsObj));
-            showToast('Door positions saved locally (server sync failed)', 'warning');
+            app.showNotification('Door positions saved locally (server sync failed)', 'warning');
         });
         
         // Also save individual door positions to API for door management
@@ -6209,7 +6200,7 @@ function saveSitePlanToServer(imageData) {
     })
     .then(response => {
         if (response.ok) {
-            showToast('Site plan uploaded and saved to server!', 'success');
+            app.showNotification('Site plan uploaded and saved to server!', 'success');
             console.log('Site plan background saved to server');
         } else {
             throw new Error('Failed to save site plan to server');
@@ -6217,11 +6208,11 @@ function saveSitePlanToServer(imageData) {
     })
     .catch(error => {
         console.error('Error saving site plan:', error);
-        showToast('Error saving site plan to server', 'error');
+        app.showNotification('Error saving site plan to server', 'error');
         
         // Fallback to localStorage
         localStorage.setItem('sitePlanBackground', imageData);
-        showToast('Site plan saved locally (server sync failed)', 'warning');
+        app.showNotification('Site plan saved locally (server sync failed)', 'warning');
     });
 }
 
