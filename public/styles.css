@@ -437,6 +437,7 @@ body::after {
     font-weight: 500;
     transition: all var(--transition-fast);
     position: relative;
+    white-space: nowrap;
 }
 
 .nav-link:hover,
@@ -502,6 +503,7 @@ body::after {
     font-weight: 500;
     transition: all var(--transition-fast);
     position: relative;
+    white-space: nowrap;
 }
 
 /* Mobile Styles */
