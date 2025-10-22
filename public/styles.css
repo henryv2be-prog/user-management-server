@@ -1643,6 +1643,20 @@ body:has(#registerSection.active) .navbar {
     font-size: 0.85rem;
 }
 
+/* Status indicator column styling */
+.users-table td:nth-child(4),
+.doors-table td:nth-child(4) {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Ensure status indicators are properly centered in their cells */
+.users-table .status-indicator,
+.doors-table .status-indicator {
+    margin: 0 auto;
+    display: inline-flex;
+}
+
 .doors-table td:nth-child(5) .tag-count {
     background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
     color: #3730a3;
@@ -1760,88 +1774,113 @@ body:has(#registerSection.active) .navbar {
     box-shadow: 0 6px 16px rgba(107, 114, 128, 0.4);
 }
 
-/* Professional Status Indicators */
+/* Modern Status Indicators - Clean and Consistent */
 .status-indicator {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 16px;
-    border-radius: 24px;
-    font-size: 0.875rem;
-    font-weight: 600;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
+    transition: all 0.2s ease;
     position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid transparent;
+    min-width: 80px;
+    justify-content: center;
 }
 
+/* Status dot - consistent sizing */
 .status-indicator::before {
     content: '';
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
+    flex-shrink: 0;
     position: relative;
-    z-index: 1;
-    animation: pulse 2s infinite;
 }
 
+/* Online/Active Status */
+.status-indicator.online,
 .status-indicator.active {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #bbf7d0;
 }
 
+.status-indicator.online::before,
 .status-indicator.active::before {
-    background: #ffffff;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+    background: #22c55e;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
 }
 
+/* Offline/Inactive Status */
+.status-indicator.offline,
 .status-indicator.inactive {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fecaca;
 }
 
+.status-indicator.offline::before,
 .status-indicator.inactive::before {
-    background: #ffffff;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+    background: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
-.status-indicator.online {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.status-indicator.online::before {
-    background: #ffffff;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
-}
-
-.status-indicator.offline {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
-
-.status-indicator.offline::before {
-    background: #ffffff;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
-}
-
-.status-indicator i.fa-circle {
-    font-size: 0.7rem;
-    margin-right: 6px;
-    position: relative;
-    z-index: 1;
-}
-
-/* Hover effects for status indicators */
+/* Hover effects */
 .status-indicator:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Compact version for tables */
+.status-indicator.compact {
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    min-width: 60px;
+    gap: 4px;
+}
+
+.status-indicator.compact::before {
+    width: 6px;
+    height: 6px;
+}
+
+/* Additional status variants */
+.status-indicator.warning {
+    background: #fffbeb;
+    color: #d97706;
+    border-color: #fed7aa;
+}
+
+.status-indicator.warning::before {
+    background: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.status-indicator.info {
+    background: #eff6ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
+}
+
+.status-indicator.info::before {
+    background: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.status-indicator.neutral {
+    background: #f8fafc;
+    color: #64748b;
+    border-color: #e2e8f0;
+}
+
+.status-indicator.neutral::before {
+    background: #94a3b8;
+    box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.2);
 }
 
 /* Pulse animation for status dots */
@@ -2964,19 +3003,27 @@ input[type="range"]::-moz-range-thumb:hover {
     color: white;
 }
 
+/* Door Status Indicator - Simplified */
 .door-status-indicator {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     flex-shrink: 0;
     position: relative;
-    animation: pulse 2s infinite;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
 }
 
 .door-status-indicator.online {
+    background: #22c55e;
+    border-color: #bbf7d0;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
 }
 
 .door-status-indicator.offline {
+    background: #ef4444;
+    border-color: #fecaca;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
 /* Door Location */
@@ -5941,21 +5988,7 @@ input[type="range"]::-moz-range-thumb:hover {
     margin-bottom: 1rem;
 }
 
-.status-indicator {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    margin-right: 0.5rem;
-}
-
-.status-indicator.active {
-    background: #28a745;
-}
-
-.status-indicator.inactive {
-    background: #dc3545;
-}
+/* Removed duplicate status indicator styles - using modern version above */
 
 .webhook-item {
     background: white;
