@@ -4202,11 +4202,8 @@ function displayEvents(events) {
         
         return `
         <div class="event-item">
-            <div class="event-icon ${event.type}">
+            <div class="event-icon ${event.type} ${getEventStatusClass(event.type, event.action)}">
                 <i class="fas ${getEventIcon(event.type)}"></i>
-            </div>
-            <div class="event-status-indicator ${getEventStatusClass(event.type, event.action)}">
-                <div class="status-dot"></div>
             </div>
             <div class="event-content">
                 <div class="event-main">
@@ -4789,11 +4786,8 @@ function addNewEventToList(event) {
     const newEventElement = document.createElement('div');
     newEventElement.className = 'event-item new-event';
     newEventElement.innerHTML = `
-        <div class="event-icon ${event.type}">
+        <div class="event-icon ${event.type} ${getEventStatusClass(event.type, event.action)}">
             <i class="fas ${getEventIcon(event.type)}"></i>
-        </div>
-        <div class="event-status-indicator ${getEventStatusClass(event.type, event.action)}">
-            <div class="status-dot"></div>
         </div>
         <div class="event-content">
             <div class="event-main">
@@ -4905,15 +4899,42 @@ function getEventStatusClass(type, action) {
     if (type === 'door') {
         if (action === 'online') return 'status-online';
         if (action === 'offline') return 'status-offline';
+        return 'status-info'; // Other door actions
     }
     
     // Access granted/denied status
     if (type === 'access') {
         if (action === 'granted') return 'status-granted';
         if (action === 'denied') return 'status-denied';
+        return 'status-info'; // Other access actions
     }
     
-    // General info (yellow) for all other events
+    // Auth events - use warning color for security-related events
+    if (type === 'auth') {
+        return 'status-warning';
+    }
+    
+    // Error events - use error color
+    if (type === 'error') {
+        return 'status-error';
+    }
+    
+    // User events - use info color
+    if (type === 'user') {
+        return 'status-info';
+    }
+    
+    // System events - use neutral color
+    if (type === 'system') {
+        return 'status-neutral';
+    }
+    
+    // Access group events - use info color
+    if (type === 'access_group') {
+        return 'status-info';
+    }
+    
+    // Default to info for unknown types
     return 'status-info';
 }
 
