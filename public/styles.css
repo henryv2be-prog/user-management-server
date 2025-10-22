@@ -423,7 +423,7 @@ body::after {
 .nav-menu {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: var(--space-3);
 }
 
 .nav-link {
@@ -488,7 +488,7 @@ body::after {
 .nav-menu {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: var(--space-3);
 }
 
 .nav-link {
