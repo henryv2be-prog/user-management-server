@@ -482,12 +482,28 @@ function setupEventListeners() {
         emailField.addEventListener('input', function() {
             console.log('Email field input:', this.value);
         });
+        
+        // Ensure the field is properly accessible
+        emailField.style.pointerEvents = 'auto';
+        emailField.style.zIndex = '30';
+        emailField.style.position = 'relative';
+        
+        // Test if field is focusable
+        try {
+            emailField.focus();
+            console.log('Email field is focusable');
+        } catch (e) {
+            console.error('Email field is not focusable:', e.message);
+        }
     } else {
         console.error('Email field not found!');
     }
     
     if (passwordField) {
         console.log('Password field found:', passwordField);
+        passwordField.style.pointerEvents = 'auto';
+        passwordField.style.zIndex = '30';
+        passwordField.style.position = 'relative';
     } else {
         console.error('Password field not found!');
     }
@@ -6362,6 +6378,23 @@ function checkFontAwesome() {
 document.addEventListener('DOMContentLoaded', function() {
     checkAuthStatus();
     setupEventListeners();
+    
+    // Ensure login form is properly initialized
+    setTimeout(() => {
+        const emailField = document.getElementById('email');
+        const loginForm = document.getElementById('loginForm');
+        
+        if (emailField) {
+            console.log('Email field initialized:', emailField);
+            // Ensure the field is focusable
+            emailField.tabIndex = 1;
+        }
+        
+        if (loginForm) {
+            console.log('Login form initialized:', loginForm);
+        }
+    }, 100);
+    
     // Start periodic door status updates
     startDoorStatusUpdates();
     // Start keep-alive mechanism
