@@ -1694,15 +1694,7 @@ body:has(#registerSection.active) .navbar {
     position: relative;
 }
 
-.users-table th::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, #4f46e5, #06b6d4, #10b981, #f59e0b);
-}
+/* Removed gradient line above users table header */
 
 .users-table tr {
     transition: all 0.2s ease;
@@ -4813,16 +4805,7 @@ input[type="range"]::-moz-range-thumb:hover {
     position: relative;
 }
 
-.doors-table th::after,
-.access-groups-table th::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, #4f46e5, #06b6d4, #10b981, #f59e0b);
-}
+/* Removed gradient lines above doors and access groups table headers */
 
 .doors-table tr,
 .access-groups-table tr {
