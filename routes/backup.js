@@ -18,9 +18,15 @@ const {
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDir = './uploads';
-        cb(null, uploadDir);
+    destination: async (req, file, cb) => {
+        try {
+            const uploadDir = './uploads';
+            await fs.mkdir(uploadDir, { recursive: true });
+            cb(null, uploadDir);
+        } catch (error) {
+            console.error('Error creating upload directory:', error);
+            cb(error, null);
+        }
     },
     filename: (req, file, cb) => {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -242,9 +248,26 @@ router.post('/import', authenticate, requireAdmin, async (req, res) => {
 });
 
 // Upload and import backup file
-router.post('/import/upload', authenticate, requireAdmin, upload.single('backupFile'), async (req, res) => {
+router.post('/import/upload', authenticate, requireAdmin, (req, res, next) => {
+    upload.single('backupFile')(req, res, (err) => {
+        if (err) {
+            console.error('Multer error:', err);
+            return res.status(400).json({
+                success: false,
+                error: 'File upload error',
+                message: err.message
+            });
+        }
+        next();
+    });
+}, async (req, res) => {
     try {
+        console.log('Import upload request received');
+        console.log('Request body:', req.body);
+        console.log('Request file:', req.file);
+        
         if (!req.file) {
+            console.log('No file uploaded');
             return res.status(400).json({
                 success: false,
                 error: 'No file uploaded'
@@ -279,7 +302,9 @@ router.post('/import/upload', authenticate, requireAdmin, upload.single('backupF
         }
         
         // Import the database
+        console.log('Starting database import...');
         const results = await importDatabase(filePath, importOptions);
+        console.log('Import results:', results);
         
         // Clean up uploaded file after successful import
         await fs.unlink(filePath).catch(console.error);
@@ -303,6 +328,36 @@ router.post('/import/upload', authenticate, requireAdmin, upload.single('backupF
             success: false,
             error: 'Failed to import uploaded file',
             message: error.message
+        });
+    }
+});
+
+// Test file upload endpoint
+router.post('/test-upload', authenticate, requireAdmin, upload.single('testFile'), (req, res) => {
+    try {
+        console.log('Test upload received');
+        console.log('File:', req.file);
+        console.log('Body:', req.body);
+        
+        if (req.file) {
+            // Clean up test file
+            fs.unlink(req.file.path).catch(console.error);
+        }
+        
+        res.json({
+            success: true,
+            message: 'Upload test successful',
+            file: req.file ? {
+                originalname: req.file.originalname,
+                size: req.file.size,
+                mimetype: req.file.mimetype
+            } : null
+        });
+    } catch (error) {
+        console.error('Test upload error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });
