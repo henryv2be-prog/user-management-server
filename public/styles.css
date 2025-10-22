@@ -1092,6 +1092,19 @@ body:has(#registerSection.active) .navbar {
     transform: translateY(-1px);
 }
 
+/* Ensure login form inputs are clickable */
+#loginSection .form-group input {
+    z-index: 20;
+    pointer-events: auto;
+    position: relative;
+}
+
+#loginSection .form-group {
+    z-index: 20;
+    pointer-events: auto;
+    position: relative;
+}
+
 /* Animated login button */
 #loginSection .btn-primary {
     position: relative;
@@ -1178,6 +1191,8 @@ body:has(#registerSection.active) .navbar {
     color: #1e293b;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     position: relative;
+    z-index: 10;
+    pointer-events: auto;
 }
 
 .form-group input:focus,

@@ -459,6 +459,49 @@ function setupEventListeners() {
             closeMobileMenu();
         }
     });
+    
+    // Add debugging for login form
+    const emailField = document.getElementById('email');
+    const passwordField = document.getElementById('password');
+    const loginForm = document.getElementById('loginForm');
+    
+    if (emailField) {
+        console.log('Email field found:', emailField);
+        
+        // Add click event listener for debugging
+        emailField.addEventListener('click', function() {
+            console.log('Email field clicked!');
+        });
+        
+        // Add focus event listener for debugging
+        emailField.addEventListener('focus', function() {
+            console.log('Email field focused!');
+        });
+        
+        // Add input event listener for debugging
+        emailField.addEventListener('input', function() {
+            console.log('Email field input:', this.value);
+        });
+    } else {
+        console.error('Email field not found!');
+    }
+    
+    if (passwordField) {
+        console.log('Password field found:', passwordField);
+    } else {
+        console.error('Password field not found!');
+    }
+    
+    if (loginForm) {
+        console.log('Login form found:', loginForm);
+        
+        // Ensure form submission works
+        loginForm.addEventListener('submit', function(event) {
+            console.log('Form submit event triggered');
+        });
+    } else {
+        console.error('Login form not found!');
+    }
 }
 
 // Settings Section Functions
@@ -1163,6 +1206,19 @@ function clearLogs() {
 async function handleLogin(event) {
     event.preventDefault();
     console.log('Login form submitted'); // Debug log
+    
+    // Debug: Check if form elements exist
+    const emailField = document.getElementById('email');
+    const passwordField = document.getElementById('password');
+    console.log('Email field:', emailField);
+    console.log('Password field:', passwordField);
+    
+    if (!emailField || !passwordField) {
+        console.error('Form fields not found!');
+        app.showNotification('Form error: Fields not found', 'error');
+        return;
+    }
+    
     showLoading();
     
     const formData = new FormData(event.target);
