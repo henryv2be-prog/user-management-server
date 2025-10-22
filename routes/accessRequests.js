@@ -202,6 +202,27 @@ router.post('/request', authenticate, validateAccessRequest, async (req, res) =>
     const tagInfo = tagId ? ` (Tag ID: ${tagId})` : '';
     await EventLogger.log(req, 'access', 'granted', 'AccessRequest', accessRequest.id, `Access granted to ${userName} for ${door.name}${tagInfo}`, `User: ${req.user.email}, Tag: ${tagId || 'N/A'}`);
 
+    // Immediately update site map door status for instant visual feedback
+    if (global.triggerWebhook) {
+      try {
+        // Create a door event for immediate site map update
+        const doorEvent = {
+          type: 'door',
+          action: 'access_granted',
+          entityId: resolvedDoorId,
+          id: resolvedDoorId,
+          doorId: resolvedDoorId,
+          timestamp: new Date().toISOString()
+        };
+        
+        // Trigger webhook for immediate site map update
+        global.triggerWebhook('door.access_granted', doorEvent);
+        console.log(`🚪 Immediate site map update triggered for door ${resolvedDoorId}`);
+      } catch (webhookError) {
+        console.error('Failed to trigger immediate site map update:', webhookError);
+      }
+    }
+
     // Queue door open command for ESP32 to pick up (ESP32 polls server for commands)
     let doorControlSuccess = true; // Assume success since we're queuing the command
     let doorControlMessage = 'Door opening command queued for ESP32';

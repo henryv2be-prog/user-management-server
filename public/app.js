@@ -3633,7 +3633,11 @@ function showSection(sectionName) {
         loadDashboard();
         // SSE disabled - using webhook-based system instead
         console.log('🔄 SSE disabled for dashboard, using webhook-based updates');
+        // Start aggressive polling for site map
+        startSiteMapPolling();
     } else {
+        // Stop site map polling when leaving dashboard
+        stopSiteMapPolling();
         // SSE disabled - using webhook-based system instead
         console.log('🔄 SSE disabled for section, using webhook-based updates');
         if (sectionName === 'users') {
@@ -4052,19 +4056,28 @@ async function saveDoorControllerConfiguration() {
 
 // Periodic door status updates
 let doorStatusInterval;
+let siteMapStatusInterval;
 
 function startDoorStatusUpdates() {
-    // Update door status every 10 seconds for more responsive updates
+    // Update door status every 2 seconds for maximum responsiveness
     doorStatusInterval = setInterval(() => {
         if (currentUser && hasRole('admin') && currentSection === 'doors') {
             refreshDoorStatus();
         }
-    }, 10000);
+        
+        // Also update site map door status if on dashboard
+        if (currentUser && hasRole('admin') && currentSection === 'dashboard' && sitePlanManager) {
+            refreshSiteMapDoorStatus();
+        }
+    }, 2000); // Reduced from 10 seconds to 2 seconds
 }
 
 function stopDoorStatusUpdates() {
     if (doorStatusInterval) {
         clearInterval(doorStatusInterval);
+    }
+    if (siteMapStatusInterval) {
+        clearInterval(siteMapStatusInterval);
     }
 }
 
@@ -4110,6 +4123,75 @@ async function refreshDoorStatus() {
     } catch (error) {
         console.error('Failed to refresh door status:', error);
         // Don't show error toast for background updates
+    }
+}
+
+// Dedicated function for refreshing site map door status
+async function refreshSiteMapDoorStatus() {
+    if (!currentUser || !hasRole('admin') || !sitePlanManager) {
+        return;
+    }
+    
+    try {
+        // Get fresh door data
+        const response = await forceRefresh('/api/doors?limit=100');
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.doors && sitePlanManager.doors) {
+                // Update site map door statuses
+                data.doors.forEach(updatedDoor => {
+                    const siteMapDoor = sitePlanManager.doors.find(d => d.id === updatedDoor.id);
+                    if (siteMapDoor) {
+                        // Update door properties
+                        siteMapDoor.isOnline = updatedDoor.isOnline;
+                        siteMapDoor.isOpen = updatedDoor.isOpen;
+                        siteMapDoor.isLocked = updatedDoor.isLocked;
+                        siteMapDoor.lastSeen = updatedDoor.lastSeen;
+                        
+        // Update status using the new logic
+        const newStatus = sitePlanManager.getDoorStatus(updatedDoor);
+        if (siteMapDoor.status !== newStatus) {
+            const oldStatus = siteMapDoor.status;
+            siteMapDoor.status = newStatus;
+            console.log(`🔄 Site map door ${siteMapDoor.name} status updated: ${oldStatus} → ${newStatus}`);
+            
+            // Add visual feedback for status changes
+            sitePlanManager.highlightDoorStatusChange(siteMapDoor, oldStatus, newStatus);
+        }
+                    }
+                });
+                
+                // Redraw the site plan with updated statuses
+                sitePlanManager.drawSitePlan();
+            }
+        }
+    } catch (error) {
+        console.error('Failed to refresh site map door status:', error);
+    }
+}
+
+// Start aggressive polling for site map when active
+function startSiteMapPolling() {
+    // Clear existing interval
+    if (siteMapStatusInterval) {
+        clearInterval(siteMapStatusInterval);
+    }
+    
+    // Poll every 1 second when site map is active
+    siteMapStatusInterval = setInterval(() => {
+        if (currentUser && hasRole('admin') && currentSection === 'dashboard' && sitePlanManager) {
+            refreshSiteMapDoorStatus();
+        }
+    }, 1000); // 1 second polling for maximum responsiveness
+}
+
+// Stop site map polling
+function stopSiteMapPolling() {
+    if (siteMapStatusInterval) {
+        clearInterval(siteMapStatusInterval);
+        siteMapStatusInterval = null;
     }
 }
 
@@ -4359,14 +4441,14 @@ function startEventRefresh() {
         clearInterval(eventRefreshInterval);
     }
     
-    // Start new interval - refresh every 10 seconds
+    // Start new interval - refresh every 3 seconds for better responsiveness
     eventRefreshInterval = setInterval(() => {
         // Only refresh if we're on the site map and events are visible
         const dashboardSection = document.getElementById('dashboardSection');
         if (dashboardSection && dashboardSection.classList.contains('active')) {
             loadEvents(currentEventPage, currentEventFilters.type || '');
         }
-    }, 10000);
+    }, 3000); // Reduced from 10 seconds to 3 seconds
 }
 
 function stopEventRefresh() {
@@ -5750,6 +5832,18 @@ class SitePlanManager {
         this.ctx.lineWidth = 3;
         this.ctx.stroke();
         
+        // Highlight effect for status changes
+        if (door.highlighted) {
+            this.ctx.strokeStyle = door.highlightColor || '#007bff';
+            this.ctx.lineWidth = 6;
+            this.ctx.stroke();
+            
+            // Add pulsing effect
+            this.ctx.strokeStyle = 'rgba(0, 123, 255, 0.3)';
+            this.ctx.lineWidth = 12;
+            this.ctx.stroke();
+        }
+        
         // Door number with better visibility
         this.ctx.fillStyle = 'white';
         this.ctx.font = 'bold 12px Arial';
@@ -6097,11 +6191,45 @@ class SitePlanManager {
         }
 
         const door = this.doors[doorIndex];
+        const oldStatus = door.status;
         door.status = status;
         console.log(`Door ${door.name} status set to ${status} for testing`);
         
+        // Add visual feedback
+        this.highlightDoorStatusChange(door, oldStatus, status);
+        
         // Redraw the site plan to show the new status
         this.drawSitePlan();
+    }
+    
+    // Highlight door status changes with visual feedback
+    highlightDoorStatusChange(door, oldStatus, newStatus) {
+        // Add a temporary highlight effect
+        door.highlighted = true;
+        door.highlightColor = this.getStatusHighlightColor(newStatus);
+        
+        // Redraw immediately to show the highlight
+        this.drawSitePlan();
+        
+        // Remove highlight after animation
+        setTimeout(() => {
+            door.highlighted = false;
+            this.drawSitePlan();
+        }, 1000); // 1 second highlight
+    }
+    
+    // Get highlight color for status changes
+    getStatusHighlightColor(status) {
+        switch (status) {
+            case 'closed':
+                return '#22c55e'; // Green
+            case 'open':
+                return '#f59e0b'; // Yellow
+            case 'offline':
+                return '#6b7280'; // Grey
+            default:
+                return '#6b7280';
+        }
     }
 }
 
