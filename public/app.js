@@ -2291,33 +2291,12 @@ function updateProfileInfo() {
 }
 
 function showChangePasswordModal() {
-    console.log('Opening change password modal');
-    const modal = document.getElementById('changePasswordModal');
-    const form = document.getElementById('changePasswordForm');
-    
-    if (!modal) {
-        console.error('Change password modal not found!');
-        return;
-    }
-    
-    if (!form) {
-        console.error('Change password form not found!');
-        return;
-    }
-    
-    modal.classList.add('active');
-    form.reset();
-    console.log('Modal opened successfully');
-    
-    // Add event listener for form submission
-    form.addEventListener('submit', function(event) {
-        console.log('Form submit event listener triggered');
-    });
+    document.getElementById('changePasswordModal').classList.add('active');
+    document.getElementById('changePasswordForm').reset();
 }
 
 async function handleChangePassword(event) {
     event.preventDefault();
-    console.log('Password change form submitted');
     showLoading();
     
     const formData = new FormData(event.target);
@@ -2325,8 +2304,6 @@ async function handleChangePassword(event) {
         currentPassword: formData.get('currentPassword'),
         newPassword: formData.get('newPassword')
     };
-    
-    console.log('Password change data:', { currentPassword: '***', newPassword: '***' });
     
     try {
         const response = await fetch('/api/auth/change-password', {
@@ -2338,9 +2315,7 @@ async function handleChangePassword(event) {
             body: JSON.stringify(passwordData)
         });
         
-        console.log('Password change response status:', response.status);
         const data = await response.json();
-        console.log('Password change response data:', data);
         
         if (response.ok) {
             closeModal('changePasswordModal');
