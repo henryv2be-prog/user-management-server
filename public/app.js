@@ -2582,6 +2582,60 @@ async function controlDoor(doorId, action) {
         
         if (response.ok) {
             app.showNotification(data.message, 'success');
+            
+            // Immediately update site map door status for visual feedback
+            if (sitePlanManager) {
+                console.log(`🚪 Immediately updating site map for door ${doorId} - ${action}`);
+                
+                // Find the door in site map
+                const siteMapDoor = sitePlanManager.doors.find(d => d.id === doorId);
+                if (siteMapDoor) {
+                    const oldStatus = siteMapDoor.status;
+                    
+                    if (action === 'open') {
+                        siteMapDoor.status = 'open';
+                        siteMapDoor.isOpen = true;
+                        
+                        // Add visual highlight
+                        sitePlanManager.highlightDoorStatusChange(siteMapDoor, oldStatus, 'open');
+                        
+                        // Redraw immediately
+                        sitePlanManager.drawSitePlan();
+                        
+                        // Reset to closed after 5 seconds (same as access granted)
+                        setTimeout(() => {
+                            if (siteMapDoor.status === 'open') {
+                                siteMapDoor.status = 'closed';
+                                siteMapDoor.isOpen = false;
+                                sitePlanManager.drawSitePlan();
+                                console.log(`🚪 Site map door ${siteMapDoor.name} reset to CLOSED after manual open`);
+                            }
+                        }, 5000);
+                    } else if (action === 'close' || action === 'lock') {
+                        siteMapDoor.status = 'closed';
+                        siteMapDoor.isOpen = false;
+                        siteMapDoor.isLocked = true;
+                        
+                        // Add visual highlight
+                        sitePlanManager.highlightDoorStatusChange(siteMapDoor, oldStatus, 'closed');
+                        
+                        // Redraw immediately
+                        sitePlanManager.drawSitePlan();
+                        console.log(`🚪 Site map door ${siteMapDoor.name} set to CLOSED after manual ${action}`);
+                    } else if (action === 'unlock') {
+                        siteMapDoor.status = 'closed';
+                        siteMapDoor.isOpen = false;
+                        siteMapDoor.isLocked = false;
+                        
+                        // Add visual highlight
+                        sitePlanManager.highlightDoorStatusChange(siteMapDoor, oldStatus, 'closed');
+                        
+                        // Redraw immediately
+                        sitePlanManager.drawSitePlan();
+                        console.log(`🚪 Site map door ${siteMapDoor.name} set to UNLOCKED after manual ${action}`);
+                    }
+                }
+            }
         } else {
             app.showNotification(data.message || 'Failed to control door', 'error');
         }
@@ -6117,11 +6171,27 @@ class SitePlanManager {
             case 'door_open':
                 // Door opened (relay triggered) = yellow
                 newStatus = 'open';
+                console.log(`Door ${door.name} status set to OPEN due to manual door control`);
+                
+                // Reset to closed after 5 seconds for manual opens
+                setTimeout(() => {
+                    if (this.doors[doorIndex] && this.doors[doorIndex].status === 'open') {
+                        this.doors[doorIndex].status = 'closed';
+                        this.doors[doorIndex].isOpen = false;
+                        this.drawSitePlan(); // Redraw to update status
+                        console.log(`Door ${door.name} status reset to CLOSED after manual open`);
+                    }
+                }, 5000);
                 break;
                 
             case 'door_closed':
             case 'door_close':
                 // Door closed = green
+                newStatus = 'closed';
+                break;
+                
+            case 'door_unlocked':
+                // Door unlocked = green (closed but unlocked)
                 newStatus = 'closed';
                 break;
                 

@@ -983,6 +983,42 @@ router.post('/:id/control', authenticate, requireAdmin, validateId, async (req, 
         
         console.log(`✅ Door ${action} command queued for ESP32 polling`);
         
+        // Immediately update site map door status for instant visual feedback
+        if (global.triggerWebhook) {
+          try {
+            let webhookEvent, doorAction;
+            
+            if (action === 'open') {
+              webhookEvent = 'door.opened';
+              doorAction = 'door_opened';
+            } else if (action === 'close' || action === 'lock') {
+              webhookEvent = 'door.closed';
+              doorAction = 'door_closed';
+            } else if (action === 'unlock') {
+              webhookEvent = 'door.unlocked';
+              doorAction = 'door_unlocked';
+            }
+            
+            if (webhookEvent) {
+              // Create a door event for immediate site map update
+              const doorEvent = {
+                type: 'door',
+                action: doorAction,
+                entityId: doorId,
+                id: doorId,
+                doorId: doorId,
+                timestamp: new Date().toISOString()
+              };
+              
+              // Trigger webhook for immediate site map update
+              global.triggerWebhook(webhookEvent, doorEvent);
+              console.log(`🚪 Immediate site map update triggered for door ${doorId} - manual ${action}`);
+            }
+          } catch (webhookError) {
+            console.error('Failed to trigger immediate site map update:', webhookError);
+          }
+        }
+        
         res.json({
           success: true,
           message: `Door ${action} command queued successfully - ESP32 will pick it up on next poll`
