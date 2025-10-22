@@ -1831,12 +1831,18 @@ async function loadUsers(page = 1) {
 
 function displayUsers(users) {
     const tbody = document.getElementById('usersTableBody');
-    tbody.innerHTML = users.map(user => `
+    tbody.innerHTML = users.map(user => {
+        // Determine user status based on isActive field
+        const isActive = user.isActive !== false; // Default to true if not specified
+        const statusClass = isActive ? 'active' : 'inactive';
+        const statusText = isActive ? 'Active' : 'Inactive';
+        
+        return `
         <tr>
             <td>${user.firstName} ${user.lastName}</td>
             <td>${user.email}</td>
             <td><span class="role-badge ${user.role}">${user.role}</span></td>
-            <td><span class="status-indicator active">Active</span></td>
+            <td><span class="status-indicator ${statusClass}">${statusText}</span></td>
             <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}</td>
             <td>
                 <div class="action-buttons">
@@ -1859,7 +1865,8 @@ function displayUsers(users) {
                 </div>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function displayPagination(pagination) {
@@ -2362,15 +2369,42 @@ async function loadDoors(page = 1) {
 
 function displayDoors(doors) {
     const tbody = document.getElementById('doorsTableBody');
-    tbody.innerHTML = doors.map(door => `
+    tbody.innerHTML = doors.map(door => {
+        // Determine door status with more detailed information
+        const isOnline = door.isOnline;
+        const lastSeen = door.lastSeen ? new Date(door.lastSeen) : null;
+        const now = new Date();
+        const timeSinceLastSeen = lastSeen ? Math.floor((now - lastSeen) / (1000 * 60)) : null; // minutes
+        
+        let statusClass = 'offline';
+        let statusText = 'Offline';
+        let statusIcon = 'fas fa-circle';
+        
+        if (isOnline) {
+            if (timeSinceLastSeen !== null && timeSinceLastSeen < 5) {
+                statusClass = 'online';
+                statusText = 'Online';
+                statusIcon = 'fas fa-circle';
+            } else if (timeSinceLastSeen !== null && timeSinceLastSeen < 30) {
+                statusClass = 'warning';
+                statusText = 'Stale';
+                statusIcon = 'fas fa-exclamation-triangle';
+            } else {
+                statusClass = 'pending';
+                statusText = 'Unknown';
+                statusIcon = 'fas fa-question-circle';
+            }
+        }
+        
+        return `
         <tr>
             <td>${door.name}</td>
             <td>${door.location}</td>
             <td>${door.controllerIp}</td>
             <td>
-                <span class="status-indicator ${door.isOnline ? 'online' : 'offline'}">
-                    <i class="fas fa-circle"></i>
-                    ${door.isOnline ? 'Online' : 'Offline'}
+                <span class="status-indicator ${statusClass}">
+                    <i class="${statusIcon}"></i>
+                    ${statusText}
                 </span>
             </td>
             <td class="door-tag-cell">
@@ -2391,7 +2425,7 @@ function displayDoors(doors) {
                         <i class="fas fa-trash"></i>
                         <span class="btn-text">Delete</span>
                     </button>
-                    ${door.isOnline ? `
+                    ${isOnline ? `
                         <button class="action-btn control" onclick="controlDoor(${door.id}, 'open')" title="Open Door">
                             <i class="fas fa-door-open"></i>
                             <span class="btn-text">Open</span>
@@ -2400,7 +2434,8 @@ function displayDoors(doors) {
                 </div>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
     
     // Update last refresh time
 }
