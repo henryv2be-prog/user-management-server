@@ -79,6 +79,8 @@ router.get('/backup/download/:fileName', authenticate, requireAdmin, async (req,
         // Set appropriate headers for file download
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
         
         // Stream the file
         const fileStream = require('fs').createReadStream(filePath);
