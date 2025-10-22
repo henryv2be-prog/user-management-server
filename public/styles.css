@@ -1413,25 +1413,21 @@ body:has(#registerSection.active) .navbar {
     color: white;
 }
 
-/* Status Indicators */
+/* Modern Status Indicators */
 .status-indicator {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.status-indicator.active {
-    background: var(--success-light);
-    color: var(--text-inverse);
-}
-
-.status-indicator.inactive {
-    background: var(--danger-light);
-    color: var(--text-inverse);
+    padding: 6px 14px;
+    border-radius: 24px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .status-indicator::before {
@@ -1439,34 +1435,103 @@ body:has(#registerSection.active) .navbar {
     width: 8px;
     height: 8px;
     border-radius: 50%;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
 }
 
-.status-indicator.active::before {
-    background: #28a745;
+.status-indicator::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
 }
 
-.status-indicator.inactive::before {
-    background: #dc3545;
+.status-indicator:hover::after {
+    left: 100%;
 }
 
+/* Active/Online Status */
+.status-indicator.active,
 .status-indicator.online {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
-.status-indicator.offline {
-    background: var(--danger-light);
-    color: var(--text-inverse);
-}
-
+.status-indicator.active::before,
 .status-indicator.online::before {
+    background: #ffffff;
+    animation: pulse-green 2s infinite;
 }
 
+/* Inactive/Offline Status */
+.status-indicator.inactive,
+.status-indicator.offline {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.status-indicator.inactive::before,
 .status-indicator.offline::before {
-    background: #dc3545;
+    background: #ffffff;
+    animation: pulse-red 2s infinite;
 }
 
+/* Pending/Warning Status */
+.status-indicator.pending,
+.status-indicator.warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.status-indicator.pending::before,
+.status-indicator.warning::before {
+    background: #ffffff;
+    animation: pulse-yellow 2s infinite;
+}
+
+/* Unknown/Neutral Status */
+.status-indicator.unknown,
+.status-indicator.neutral {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+.status-indicator.unknown::before,
+.status-indicator.neutral::before {
+    background: #ffffff;
+}
+
+/* Pulse animations for status dots */
+@keyframes pulse-green {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+@keyframes pulse-red {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+@keyframes pulse-yellow {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+/* Status indicator with icon */
 .status-indicator i.fa-circle {
     font-size: 0.6rem;
     margin-right: 4px;
+    position: relative;
+    z-index: 1;
 }
 
 /* Action Buttons */
