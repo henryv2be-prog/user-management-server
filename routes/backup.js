@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs').promises;
+const multer = require('multer');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { 
     exportDatabase, 
@@ -14,6 +15,33 @@ const {
     validateImportFile, 
     createPreImportBackup 
 } = require('../database/import');
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadDir = './uploads';
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const fileName = `import-${timestamp}-${file.originalname}`;
+        cb(null, fileName);
+    }
+});
+
+const upload = multer({ 
+    storage: storage,
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/json' || file.originalname.endsWith('.json')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only JSON files are allowed'), false);
+        }
+    },
+    limits: {
+        fileSize: 50 * 1024 * 1024 // 50MB limit
+    }
+});
 
 // Get list of available backups
 router.get('/backups', authenticate, requireAdmin, async (req, res) => {
@@ -214,25 +242,27 @@ router.post('/import', authenticate, requireAdmin, async (req, res) => {
 });
 
 // Upload and import backup file
-router.post('/import/upload', authenticate, requireAdmin, async (req, res) => {
+router.post('/import/upload', authenticate, requireAdmin, upload.single('backupFile'), async (req, res) => {
     try {
-        // This would typically use multer middleware for file uploads
-        // For now, we'll expect the file to be uploaded to a specific location
-        const { fileName, importOptions = {} } = req.body;
-        
-        if (!fileName) {
+        if (!req.file) {
             return res.status(400).json({
                 success: false,
-                error: 'File name is required'
+                error: 'No file uploaded'
             });
         }
         
-        const uploadDir = './uploads';
-        const filePath = path.join(uploadDir, fileName);
+        const filePath = req.file.path;
+        const importOptions = req.body.importOptions ? JSON.parse(req.body.importOptions) : {};
+        
+        console.log(`Processing uploaded file: ${req.file.originalname}`);
+        console.log(`File saved to: ${filePath}`);
+        console.log(`Import options:`, importOptions);
         
         // Validate the uploaded file
         const validation = await validateImportFile(filePath);
         if (!validation.valid) {
+            // Clean up uploaded file
+            await fs.unlink(filePath).catch(console.error);
             return res.status(400).json({
                 success: false,
                 error: 'Invalid import file',
@@ -251,6 +281,9 @@ router.post('/import/upload', authenticate, requireAdmin, async (req, res) => {
         // Import the database
         const results = await importDatabase(filePath, importOptions);
         
+        // Clean up uploaded file after successful import
+        await fs.unlink(filePath).catch(console.error);
+        
         res.json({
             success: true,
             message: 'Database imported successfully from uploaded file',
@@ -260,6 +293,12 @@ router.post('/import/upload', authenticate, requireAdmin, async (req, res) => {
         
     } catch (error) {
         console.error('Error importing uploaded file:', error);
+        
+        // Clean up uploaded file on error
+        if (req.file && req.file.path) {
+            await fs.unlink(req.file.path).catch(console.error);
+        }
+        
         res.status(500).json({
             success: false,
             error: 'Failed to import uploaded file',

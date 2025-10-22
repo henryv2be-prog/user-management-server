@@ -2651,6 +2651,9 @@ function setupFileUpload() {
 
 // Import database from uploaded file
 async function importDatabase() {
+    console.log('Import function called');
+    console.log('Selected file:', selectedBackupFile);
+    
     if (!selectedBackupFile) {
         app.showNotification('Please select a backup file first', 'error');
         return;
@@ -2662,6 +2665,7 @@ async function importDatabase() {
     
     try {
         showLoading();
+        console.log('Starting import process...');
         
         // Create FormData for file upload
         const formData = new FormData();
@@ -2680,6 +2684,7 @@ async function importDatabase() {
             skipAccessLog
         }));
         
+        console.log('Sending request to server...');
         const response = await fetch('/api/backup/import/upload', {
             method: 'POST',
             headers: {
@@ -2688,7 +2693,9 @@ async function importDatabase() {
             body: formData
         });
         
+        console.log('Response status:', response.status);
         const data = await response.json();
+        console.log('Response data:', data);
         
         if (data.success) {
             app.showNotification('Database imported successfully!', 'success');
