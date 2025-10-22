@@ -537,6 +537,10 @@ async function loadSettings() {
             loadVersionInfo(),
             loadWebhookStatus()
         ]);
+        
+        // Initialize backup functionality
+        setupFileUpload();
+        refreshBackupList();
     } catch (error) {
         console.error('Failed to load settings:', error);
         app.showNotification('Failed to load settings', 'error');
@@ -2358,6 +2362,326 @@ function closeModal(modalId) {
             form.reset();
         }
     }
+}
+
+// Backup and Restore Functions
+let selectedBackupFile = null;
+
+// Create a new backup
+async function createBackup() {
+    try {
+        showLoading();
+        const response = await fetch('/api/backup/backup/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({})
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            app.showNotification('Backup created successfully!', 'success');
+            refreshBackupList();
+        } else {
+            app.showNotification(data.message || 'Failed to create backup', 'error');
+        }
+    } catch (error) {
+        console.error('Error creating backup:', error);
+        app.showNotification('Failed to create backup', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Refresh the backup list
+async function refreshBackupList() {
+    try {
+        const response = await fetch('/api/backup/backups', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displayBackupList(data.backups);
+            updateBackupStatus(data.backups);
+        } else {
+            app.showNotification('Failed to load backup list', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading backups:', error);
+        app.showNotification('Failed to load backup list', 'error');
+    }
+}
+
+// Display the backup list
+function displayBackupList(backups) {
+    const tbody = document.getElementById('backupTableBody');
+    
+    if (backups.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No backups available</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = backups.map(backup => {
+        const createdDate = new Date(backup.created).toLocaleString();
+        const fileSize = formatFileSize(backup.size);
+        const totalRecords = backup.metadata ? 
+            backup.metadata.tables.reduce((sum, table) => sum + table.recordCount, 0) : 0;
+        
+        return `
+            <tr>
+                <td>${backup.fileName}</td>
+                <td>${createdDate}</td>
+                <td>${fileSize}</td>
+                <td>${totalRecords.toLocaleString()}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="downloadBackup('${backup.fileName}')">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                    <button class="btn btn-sm btn-warning" onclick="restoreBackup('${backup.fileName}')">
+                        <i class="fas fa-upload"></i> Restore
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteBackup('${backup.fileName}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Update backup status
+function updateBackupStatus(backups) {
+    document.getElementById('totalBackups').textContent = backups.length;
+    
+    if (backups.length > 0) {
+        const latest = backups[0];
+        const createdDate = new Date(latest.created).toLocaleString();
+        document.getElementById('latestBackup').textContent = createdDate;
+    } else {
+        document.getElementById('latestBackup').textContent = 'None';
+    }
+}
+
+// Format file size
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Download a backup
+function downloadBackup(fileName) {
+    const link = document.createElement('a');
+    link.href = `/api/backup/backup/download/${fileName}`;
+    link.download = fileName;
+    link.click();
+}
+
+// Restore a backup
+async function restoreBackup(fileName) {
+    if (!confirm('Are you sure you want to restore this backup? This will replace all current data.')) {
+        return;
+    }
+    
+    try {
+        showLoading();
+        const response = await fetch('/api/backup/import', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                filePath: `./backups/${fileName}`,
+                clearExisting: true,
+                createBackup: true
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            app.showNotification('Database restored successfully!', 'success');
+            refreshBackupList();
+            // Refresh all data
+            if (typeof loadUsers === 'function') loadUsers();
+            if (typeof loadDoors === 'function') loadDoors();
+            if (typeof loadAccessGroups === 'function') loadAccessGroups();
+            if (typeof loadEvents === 'function') loadEvents();
+        } else {
+            app.showNotification(data.message || 'Failed to restore backup', 'error');
+        }
+    } catch (error) {
+        console.error('Error restoring backup:', error);
+        app.showNotification('Failed to restore backup', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Delete a backup
+async function deleteBackup(fileName) {
+    if (!confirm(`Are you sure you want to delete backup "${fileName}"?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/backup/backup/${fileName}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            app.showNotification('Backup deleted successfully!', 'success');
+            refreshBackupList();
+        } else {
+            app.showNotification(data.message || 'Failed to delete backup', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting backup:', error);
+        app.showNotification('Failed to delete backup', 'error');
+    }
+}
+
+// Setup file upload for import
+function setupFileUpload() {
+    const fileInput = document.getElementById('backupFileInput');
+    const uploadArea = document.getElementById('fileUploadArea');
+    const importBtn = document.getElementById('importBtn');
+    
+    // Click to select file
+    uploadArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // Handle file selection
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            selectedBackupFile = file;
+            uploadArea.innerHTML = `
+                <i class="fas fa-check-circle" style="color: #22c55e;"></i>
+                <p>Selected: ${file.name}</p>
+                <p style="font-size: 0.8rem; color: #6b7280;">Size: ${formatFileSize(file.size)}</p>
+            `;
+            importBtn.disabled = false;
+        }
+    });
+    
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#3b82f6';
+        uploadArea.style.backgroundColor = '#eff6ff';
+    });
+    
+    uploadArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#d1d5db';
+        uploadArea.style.backgroundColor = '#f9fafb';
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#d1d5db';
+        uploadArea.style.backgroundColor = '#f9fafb';
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.type === 'application/json' || file.name.endsWith('.json')) {
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change'));
+            } else {
+                app.showNotification('Please select a JSON backup file', 'error');
+            }
+        }
+    });
+}
+
+// Import database from uploaded file
+async function importDatabase() {
+    if (!selectedBackupFile) {
+        app.showNotification('Please select a backup file first', 'error');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to import this database? This will replace all current data.')) {
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('backupFile', selectedBackupFile);
+        
+        // Get import options
+        const clearExisting = document.getElementById('clearExisting').checked;
+        const skipUsers = document.getElementById('skipUsers').checked;
+        const skipEvents = document.getElementById('skipEvents').checked;
+        const skipAccessLog = document.getElementById('skipAccessLog').checked;
+        
+        formData.append('importOptions', JSON.stringify({
+            clearExisting,
+            skipUsers,
+            skipEvents,
+            skipAccessLog
+        }));
+        
+        const response = await fetch('/api/backup/import/upload', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            app.showNotification('Database imported successfully!', 'success');
+            clearImportFile();
+            refreshBackupList();
+            // Refresh all data
+            if (typeof loadUsers === 'function') loadUsers();
+            if (typeof loadDoors === 'function') loadDoors();
+            if (typeof loadAccessGroups === 'function') loadAccessGroups();
+            if (typeof loadEvents === 'function') loadEvents();
+        } else {
+            app.showNotification(data.message || 'Failed to import database', 'error');
+        }
+    } catch (error) {
+        console.error('Error importing database:', error);
+        app.showNotification('Failed to import database', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Clear selected import file
+function clearImportFile() {
+    selectedBackupFile = null;
+    document.getElementById('backupFileInput').value = '';
+    document.getElementById('fileUploadArea').innerHTML = `
+        <i class="fas fa-cloud-upload-alt"></i>
+        <p>Drop backup file here or click to select</p>
+    `;
+    document.getElementById('importBtn').disabled = true;
 }
 
 function showLoading() {

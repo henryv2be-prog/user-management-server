@@ -934,6 +934,110 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Database Backup & Restore Panel -->
+                    <div class="settings-panel">
+                        <div class="panel-header">
+                            <h2><i class="fas fa-database"></i> Database Backup & Restore</h2>
+                            <p>Create backups of all system data and restore from previous backups</p>
+                        </div>
+                        
+                        <div class="backup-controls">
+                            <div class="backup-actions">
+                                <button class="btn btn-primary" onclick="createBackup()">
+                                    <i class="fas fa-download"></i> Create Backup
+                                </button>
+                                <button class="btn btn-secondary" onclick="refreshBackupList()">
+                                    <i class="fas fa-sync"></i> Refresh List
+                                </button>
+                            </div>
+                            
+                            <div class="backup-status" id="backupStatus">
+                                <div class="status-item">
+                                    <span class="status-label">Total Backups:</span>
+                                    <span class="status-value" id="totalBackups">-</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-label">Latest Backup:</span>
+                                    <span class="status-value" id="latestBackup">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="backup-list">
+                            <h3>Available Backups</h3>
+                            <div class="backup-table-container">
+                                <table class="backup-table" id="backupTable">
+                                    <thead>
+                                        <tr>
+                                            <th>File Name</th>
+                                            <th>Created</th>
+                                            <th>Size</th>
+                                            <th>Records</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="backupTableBody">
+                                        <tr>
+                                            <td colspan="5" class="text-center">Loading backups...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="import-section">
+                            <h3>Import Database</h3>
+                            <div class="import-controls">
+                                <div class="file-upload-area" id="fileUploadArea">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>Drop backup file here or click to select</p>
+                                    <input type="file" id="backupFileInput" accept=".json" style="display: none;">
+                                </div>
+                                
+                                <div class="import-options">
+                                    <h4>Import Options</h4>
+                                    <div class="option-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="clearExisting" checked>
+                                            <span class="checkmark"></span>
+                                            Clear existing data before import
+                                        </label>
+                                    </div>
+                                    <div class="option-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="skipUsers">
+                                            <span class="checkmark"></span>
+                                            Skip users (preserve current users)
+                                        </label>
+                                    </div>
+                                    <div class="option-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="skipEvents">
+                                            <span class="checkmark"></span>
+                                            Skip events (preserve current events)
+                                        </label>
+                                    </div>
+                                    <div class="option-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="skipAccessLog">
+                                            <span class="checkmark"></span>
+                                            Skip access logs (preserve current logs)
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="import-actions">
+                                    <button class="btn btn-warning" onclick="importDatabase()" id="importBtn" disabled>
+                                        <i class="fas fa-upload"></i> Import Database
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="clearImportFile()">
+                                        <i class="fas fa-times"></i> Clear File
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -214,6 +214,9 @@ console.log('Webhook test routes module loaded');
 
 mobileSettingsRoutes = require('./routes/mobileSettings');
 console.log('Mobile settings routes module loaded');
+
+backupRoutes = require('./routes/backup');
+console.log('Backup routes module loaded');
   
   // Setup routes
   // Health check endpoint for keep-alive (Railway compatible)
@@ -278,6 +281,7 @@ app.use('/api/webhooks', webhookRoutes);
 app.use('/api/webhook-setup', webhookSetupRoutes);
 app.use('/api/webhook-test', webhookTestRoutes);
 app.use('/api/mobile-settings', mobileSettingsRoutes);
+app.use('/api/backup', backupRoutes);
   console.log('All routes configured successfully');
 } catch (error) {
   console.error('Error loading/setting up routes:', error);
