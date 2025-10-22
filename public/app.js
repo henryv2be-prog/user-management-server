@@ -5695,28 +5695,27 @@ class SitePlanManager {
         // Set color and glow based on status
         let fillColor, glowColor, glowBlur;
         switch (door.status) {
-            case 'locked':
-                fillColor = '#00ff41';
-                glowColor = 'rgba(0, 255, 65, 0.6)';
-                glowBlur = 15;
-                break;
-            case 'unlocked':
-                fillColor = '#ff0040';
-                glowColor = 'rgba(255, 0, 64, 0.6)';
+            case 'closed':
+                // Door online and closed = GREEN
+                fillColor = '#22c55e';
+                glowColor = 'rgba(34, 197, 94, 0.6)';
                 glowBlur = 15;
                 break;
             case 'open':
-                fillColor = '#ffea00';
-                glowColor = 'rgba(255, 234, 0, 0.6)';
+                // Door online and opened (relay triggered) = YELLOW
+                fillColor = '#f59e0b';
+                glowColor = 'rgba(245, 158, 11, 0.6)';
                 glowBlur = 15;
                 break;
             case 'offline':
-                fillColor = '#666';
+                // Door offline = GREY
+                fillColor = '#6b7280';
                 glowColor = 'rgba(0, 0, 0, 0)'; // No glow
                 glowBlur = 0;
                 break;
             default:
-                fillColor = '#6c757d';
+                // Default to grey for unknown status
+                fillColor = '#6b7280';
                 glowColor = 'rgba(0, 0, 0, 0)'; // No glow
                 glowBlur = 0;
         }
@@ -5849,10 +5848,14 @@ class SitePlanManager {
 
 
     getDoorStatus(door) {
+        // Door offline = grey
         if (!door.isOnline) return 'offline';
+        
+        // Door online and opened (relay triggered) = yellow
         if (door.isOpen) return 'open';
-        if (!door.isLocked) return 'unlocked';
-        return 'locked';
+        
+        // Door online and closed = green
+        return 'closed';
     }
 
     showDoorDetails(door) {
@@ -5992,47 +5995,46 @@ class SitePlanManager {
 
         switch (event.action) {
             case 'access_granted':
-                // Show yellow (open) status for 5 seconds after access granted
+                // Show yellow (open) status when relay is triggered
                 newStatus = 'open';
                 console.log(`Door ${door.name} status set to OPEN due to access granted`);
                 
-                // Reset to locked after 5 seconds (only for access granted)
+                // Reset to closed (green) after 5 seconds when relay stops
                 setTimeout(() => {
                     if (this.doors[doorIndex] && this.doors[doorIndex].status === 'open') {
-                        this.doors[doorIndex].status = 'locked';
+                        this.doors[doorIndex].status = 'closed';
                         this.drawSitePlan(); // Redraw to update status
-                        console.log(`Door ${door.name} status reset to LOCKED after access granted`);
+                        console.log(`Door ${door.name} status reset to CLOSED after access granted`);
                     }
                 }, 5000);
                 break;
                 
-            case 'locked':
-                newStatus = 'locked';
-                break;
-                
-            case 'unlocked':
-                newStatus = 'unlocked';
-                break;
-                
             case 'offline':
+                // Door offline = grey
                 newStatus = 'offline';
                 break;
                 
             case 'online':
-                // If coming online, default to locked unless we have more specific info
-                newStatus = event.data?.status || 'locked';
+                // Door coming online = green (closed)
+                newStatus = 'closed';
                 break;
                 
             case 'door_opened':
             case 'door_open':
-                // Handle door opened events
+                // Door opened (relay triggered) = yellow
                 newStatus = 'open';
                 break;
                 
             case 'door_closed':
             case 'door_close':
-                // Handle door closed events - return to previous status
-                newStatus = 'unlocked'; // Default to unlocked when closed
+                // Door closed = green
+                newStatus = 'closed';
+                break;
+                
+            case 'locked':
+            case 'unlocked':
+                // Legacy status - convert to new system
+                newStatus = 'closed'; // Both locked/unlocked are now "closed" (green)
                 break;
         }
 
@@ -6063,17 +6065,15 @@ class SitePlanManager {
         }
 
         const door = this.doors[doorIndex];
-        let newStatus = 'online'; // Default to online if heartbeat received
+        let newStatus = 'closed'; // Default to closed (green) if online
 
         // Determine status based on heartbeat data
         if (heartbeatData.status === 'offline' || heartbeatData.signal < -80) {
-            newStatus = 'offline';
+            newStatus = 'offline'; // Grey
         } else if (heartbeatData.doorOpen === true) {
-            newStatus = 'open';
-        } else if (heartbeatData.status === 'unlocked') {
-            newStatus = 'unlocked';
+            newStatus = 'open'; // Yellow
         } else {
-            newStatus = 'locked'; // Default to locked if online
+            newStatus = 'closed'; // Green (online and closed)
         }
 
         // Update the door status
@@ -6115,6 +6115,18 @@ window.testDoorStatus = function(doorId, status) {
         sitePlanManager.testDoorStatusUpdate(doorId, status);
     } else {
         console.log('Site plan manager not available');
+    }
+};
+
+// Global function to show current door statuses
+window.showDoorStatuses = function() {
+    if (sitePlanManager && sitePlanManager.doors) {
+        console.log('Current door statuses on site map:');
+        sitePlanManager.doors.forEach(door => {
+            console.log(`- Door ${door.id} (${door.name}): ${door.status} (${door.isOnline ? 'online' : 'offline'})`);
+        });
+    } else {
+        console.log('Site plan manager or doors not available');
     }
 };
 
