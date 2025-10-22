@@ -2325,7 +2325,19 @@ async function handleChangePassword(event) {
                 logout();
             }, 2000);
         } else {
-            app.showNotification(data.message || 'Failed to change password', 'error');
+            // Handle validation errors with more specific messages
+            if (data.error === 'Validation Error' && data.errors) {
+                let errorMessage = 'Password validation failed:\n';
+                if (data.errors.newPassword) {
+                    errorMessage += `• ${data.errors.newPassword}\n`;
+                }
+                if (data.errors.currentPassword) {
+                    errorMessage += `• ${data.errors.currentPassword}\n`;
+                }
+                app.showNotification(errorMessage.trim(), 'error');
+            } else {
+                app.showNotification(data.message || 'Failed to change password', 'error');
+            }
         }
     } catch (error) {
         console.error('Change password error:', error);
