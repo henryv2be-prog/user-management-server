@@ -1836,7 +1836,7 @@ function displayUsers(users) {
             <td>${user.firstName} ${user.lastName}</td>
             <td>${user.email}</td>
             <td><span class="role-badge ${user.role}">${user.role}</span></td>
-            <td><span class="status-indicator active">Active</span></td>
+            <td><span class="status-indicator active"><i class="fas fa-circle"></i>Active</span></td>
             <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}</td>
             <td>
                 <div class="action-buttons">
