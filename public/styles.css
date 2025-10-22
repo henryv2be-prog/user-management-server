@@ -1265,6 +1265,15 @@ body:has(#registerSection.active) .navbar {
     position: relative;
 }
 
+/* Form help text */
+.form-help {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
 .form-group.with-icon input {
     padding-left: 48px;
 }
