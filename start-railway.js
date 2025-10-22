@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 // Railway-specific startup script
+// Trigger deployment - updated for Railway
 console.log('🚂 Railway startup script starting...');
 
 // Set Railway-specific environment variables
