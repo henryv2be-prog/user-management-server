@@ -1836,7 +1836,7 @@ function displayUsers(users) {
             <td>${user.firstName} ${user.lastName}</td>
             <td>${user.email}</td>
             <td><span class="role-badge ${user.role}">${user.role}</span></td>
-            <td><span class="status-indicator active">Active</span></td>
+            <td><span class="status-indicator ${user.isActive !== false ? 'active' : 'inactive'}">${user.isActive !== false ? 'Active' : 'Inactive'}</span></td>
             <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}</td>
             <td>
                 <div class="action-buttons">
@@ -2369,7 +2369,6 @@ function displayDoors(doors) {
             <td>${door.controllerIp}</td>
             <td>
                 <span class="status-indicator ${door.isOnline ? 'online' : 'offline'}">
-                    <i class="fas fa-circle"></i>
                     ${door.isOnline ? 'Online' : 'Offline'}
                 </span>
             </td>
@@ -2796,6 +2795,7 @@ async function displayAccessGroups(accessGroups) {
             <td>${group.name}</td>
             <td>${group.description || 'No description'}</td>
             <td>${formatDoorsColumn(group.doors)}</td>
+            <td><span class="status-indicator ${group.doors && group.doors.length > 0 ? 'active' : 'warning'}">${group.doors && group.doors.length > 0 ? 'Active' : 'No Doors'}</span></td>
             <td>${new Date(group.createdAt).toLocaleDateString()}</td>
             <td>
                 <div class="action-buttons">
