@@ -9,7 +9,7 @@ const path = require('path');
  * @returns {Promise<Object>} - Export metadata
  */
 const exportDatabase = async (exportPath) => {
-    return new Promise(async (resolve, reject) => => {
+    return new Promise(async (resolve, reject) => {
         try {
             const db = await pool.getConnection();
             const exportData = {
