@@ -158,7 +158,7 @@ router.post('/change-password', authenticate, validatePasswordChange, async (req
       });
     }
     
-    await user.update({ password: newPassword });
+    await user.updatePassword(newPassword);
     
     // Log password change event
     await EventLogger.logPasswordChange(req, user);
