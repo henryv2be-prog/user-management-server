@@ -268,10 +268,15 @@ console.log('Door access routes module loaded');
     res.send('pong');
   });
 
-  // Door access page for NFC cards
-  app.get('/door-access', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'door-access.html'));
-  });
+                // Door access page for NFC cards
+                app.get('/door-access', (req, res) => {
+                  res.sendFile(path.join(__dirname, 'public', 'door-access.html'));
+                });
+
+                // Access complete page
+                app.get('/access-complete', (req, res) => {
+                  res.sendFile(path.join(__dirname, 'public', 'access-complete.html'));
+                });
 
   app.use('/api/auth', authLimiter, authRoutes);
   app.use('/api/token', authLimiter, require('./routes/tokenRefresh'));
