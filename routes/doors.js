@@ -233,22 +233,20 @@ router.get('/:id/basic', authenticate, async (req, res) => {
       });
     }
     
-    console.log('🔍 Backend - Returning door info:', {
-      id: door.id,
-      name: door.name,
-      location: door.location,
-      isOnline: door.isOnline
-    });
-    
-    // Return only basic information needed for door access
-    res.json({
+    const doorInfo = {
       id: door.id,
       name: door.name,
       location: door.location,
       isOnline: door.isOnline,
       isOpen: door.isOpen,
       isLocked: door.isLocked
-    });
+    };
+    
+    console.log('🔍 Backend - Returning door info:', doorInfo);
+    console.log('🔍 Backend - JSON stringified:', JSON.stringify(doorInfo));
+    
+    // Return only basic information needed for door access
+    res.json(doorInfo);
   } catch (error) {
     console.error('Get basic door info error:', error);
     res.status(500).json({

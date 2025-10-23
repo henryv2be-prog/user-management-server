@@ -278,6 +278,10 @@
                 if (response.ok) {
                     const door = await response.json();
                     console.log('🔍 Frontend - Door info received:', door);
+                    console.log('🔍 Frontend - Door name:', door.name);
+                    console.log('🔍 Frontend - Door location:', door.location);
+                    console.log('🔍 Frontend - Door isOnline:', door.isOnline);
+                    
                     document.getElementById('doorName').textContent = door.name;
                     document.getElementById('doorLocation').textContent = door.location;
                     
