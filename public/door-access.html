@@ -252,7 +252,10 @@
         // Get door ID from URL parameters
         function getDoorIdFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('door_id');
+            const doorId = urlParams.get('door_id');
+            console.log('🔍 Frontend - Raw door_id from URL:', doorId);
+            console.log('🔍 Frontend - Parsed doorId:', doorId);
+            return doorId;
         }
         
         // Load door information
@@ -324,6 +327,8 @@
         
         // Request door access
         async function requestDoorAccess() {
+            console.log('🔍 Frontend - requestDoorAccess called with currentDoorId:', currentDoorId);
+            
             if (!currentDoorId) {
                 showResult('No door ID provided', 'error');
                 return;
@@ -338,6 +343,7 @@
             try {
                 showLoading(true);
                 
+                console.log('🔍 Frontend - Making request to:', `/api/door-access/${currentDoorId}`);
                 const response = await fetch(`/api/door-access/${currentDoorId}`, {
                     method: 'POST',
                     headers: {

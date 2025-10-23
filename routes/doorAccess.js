@@ -4,6 +4,26 @@ const { authenticate } = require('../middleware/auth');
 const { Door } = require('../database/door');
 const EventLogger = require('../utils/eventLogger');
 
+// Debug endpoint to list all doors
+router.get('/debug/doors', authenticate, async (req, res) => {
+  try {
+    const doors = await Door.findAll();
+    console.log('🔍 Debug - All doors:', doors);
+    res.json({
+      success: true,
+      doors: doors,
+      count: doors.length
+    });
+  } catch (error) {
+    console.error('Debug doors error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch doors',
+      error: error.message
+    });
+  }
+});
+
 // Door access request endpoint
 router.post('/:doorId', authenticate, async (req, res) => {
   try {
@@ -12,9 +32,17 @@ router.post('/:doorId', authenticate, async (req, res) => {
     const userName = req.user.username;
     
     console.log(`🚪 Door access request - User: ${userName} (${userId}), Door: ${doorId}`);
+    console.log(`🚪 Raw doorId from params:`, req.params.doorId);
+    console.log(`🚪 Parsed doorId:`, doorId);
+    console.log(`🚪 Is doorId NaN?`, isNaN(doorId));
     
     // Get door details
     const door = await Door.findById(doorId);
+    console.log(`🚪 Door found:`, door ? 'Yes' : 'No');
+    if (door) {
+      console.log(`🚪 Door details:`, { id: door.id, name: door.name, location: door.location });
+    }
+    
     if (!door) {
       return res.status(404).json({
         success: false,
