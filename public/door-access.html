@@ -364,7 +364,18 @@
             console.log('🔍 Frontend - Page will auto-close in 5 seconds');
             setTimeout(() => {
                 console.log('🔍 Frontend - Auto-closing page');
-                window.close();
+                // Try to close the window/tab
+                if (window.opener) {
+                    // If opened by another window, close this one
+                    window.close();
+                } else {
+                    // Try to close anyway (may not work due to browser security)
+                    window.close();
+                    // If that doesn't work, redirect to a blank page
+                    setTimeout(() => {
+                        window.location.href = 'about:blank';
+                    }, 100);
+                }
             }, 5000);
         }
         
