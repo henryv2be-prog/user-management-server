@@ -262,6 +262,16 @@
         async function loadDoorInfo(doorId) {
             try {
                 console.log('🔍 Frontend - Loading door info for doorId:', doorId);
+                
+                // First test if the basic endpoint is reachable
+                console.log('🔍 Frontend - Testing basic endpoint...');
+                const testResponse = await fetch('/api/doors/test-basic');
+                console.log('🔍 Frontend - Test endpoint status:', testResponse.status);
+                if (testResponse.ok) {
+                    const testData = await testResponse.json();
+                    console.log('🔍 Frontend - Test endpoint response:', testData);
+                }
+                
                 const response = await fetch(`/api/doors/${doorId}/basic`);
                 console.log('🔍 Frontend - Door info response status:', response.status);
                 
