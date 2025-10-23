@@ -202,17 +202,37 @@ router.get('/', authenticate, requireAdmin, validatePagination, async (req, res)
 });
 
 // Get basic door information (for door access page)
-router.get('/:id/basic', authenticate, validateId, async (req, res) => {
+router.get('/:id/basic', authenticate, async (req, res) => {
   try {
+    console.log('🔍 Backend - Basic door info request for ID:', req.params.id);
     const doorId = parseInt(req.params.id);
+    console.log('🔍 Backend - Parsed doorId:', doorId, 'isNaN:', isNaN(doorId));
+    
+    if (isNaN(doorId) || doorId <= 0) {
+      console.log('🔍 Backend - Invalid door ID format');
+      return res.status(400).json({
+        error: 'Invalid door ID',
+        message: 'Door ID must be a positive integer'
+      });
+    }
+    
     const door = await Door.findById(doorId);
+    console.log('🔍 Backend - Door found:', door ? 'YES' : 'NO');
     
     if (!door) {
+      console.log('🔍 Backend - Door not found in database');
       return res.status(404).json({
         error: 'Door not found',
         message: 'The requested door does not exist'
       });
     }
+    
+    console.log('🔍 Backend - Returning door info:', {
+      id: door.id,
+      name: door.name,
+      location: door.location,
+      isOnline: door.isOnline
+    });
     
     // Return only basic information needed for door access
     res.json({
