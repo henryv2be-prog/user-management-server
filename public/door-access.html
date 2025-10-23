@@ -261,9 +261,13 @@
         // Load door information
         async function loadDoorInfo(doorId) {
             try {
-                const response = await fetch(`/api/doors/${doorId}`);
+                console.log('🔍 Frontend - Loading door info for doorId:', doorId);
+                const response = await fetch(`/api/doors/${doorId}/basic`);
+                console.log('🔍 Frontend - Door info response status:', response.status);
+                
                 if (response.ok) {
                     const door = await response.json();
+                    console.log('🔍 Frontend - Door info received:', door);
                     document.getElementById('doorName').textContent = door.name;
                     document.getElementById('doorLocation').textContent = door.location;
                     
@@ -276,7 +280,9 @@
                         statusElement.className = 'door-status offline';
                     }
                 } else {
-                    throw new Error('Door not found');
+                    const errorData = await response.json();
+                    console.error('🔍 Frontend - Door info error:', errorData);
+                    throw new Error(errorData.message || 'Door not found');
                 }
             } catch (error) {
                 console.error('Error loading door info:', error);

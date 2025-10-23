@@ -201,7 +201,38 @@ router.get('/', authenticate, requireAdmin, validatePagination, async (req, res)
   }
 });
 
-// Get door by ID
+// Get basic door information (for door access page)
+router.get('/:id/basic', authenticate, validateId, async (req, res) => {
+  try {
+    const doorId = parseInt(req.params.id);
+    const door = await Door.findById(doorId);
+    
+    if (!door) {
+      return res.status(404).json({
+        error: 'Door not found',
+        message: 'The requested door does not exist'
+      });
+    }
+    
+    // Return only basic information needed for door access
+    res.json({
+      id: door.id,
+      name: door.name,
+      location: door.location,
+      isOnline: door.isOnline,
+      isOpen: door.isOpen,
+      isLocked: door.isLocked
+    });
+  } catch (error) {
+    console.error('Get basic door info error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to retrieve door information'
+    });
+  }
+});
+
+// Get door by ID (admin only)
 router.get('/:id', authenticate, requireAdmin, validateId, async (req, res) => {
   try {
     const doorId = parseInt(req.params.id);
