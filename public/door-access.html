@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Door Access - Simple Access Control</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .door-access-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .door-access-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .door-info {
+            margin-bottom: 30px;
+        }
+        
+        .door-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .door-name {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .door-location {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .door-status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .door-status.online {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .door-status.offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .login-form {
+            margin-top: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .access-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .access-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .access-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .access-result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        
+        .access-result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .access-result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .auto-access {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .logout-btn:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="door-access-container">
+        <div class="door-access-card">
+            <button class="logout-btn" onclick="logout()" style="display: none;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+            
+            <div class="door-info">
+                <div class="door-icon">
+                    <i class="fas fa-door-open"></i>
+                </div>
+                <div class="door-name" id="doorName">Loading...</div>
+                <div class="door-location" id="doorLocation">Loading...</div>
+                <div class="door-status" id="doorStatus">Checking...</div>
+            </div>
+            
+            <div class="login-form" id="loginForm">
+                <h3>Enter Your Credentials</h3>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter your username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password">
+                </div>
+                <button class="access-btn" onclick="loginAndRequestAccess()">
+                    <i class="fas fa-unlock"></i> Request Access
+                </button>
+            </div>
+            
+            <div class="auto-access" id="autoAccess">
+                <h3>Requesting Access...</h3>
+                <p>You are already logged in. Checking access permissions...</p>
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+            
+            <div class="access-result" id="accessResult" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentDoorId = null;
+        let isLoggedIn = false;
+        
+        // Check if user is already logged in
+        function checkLoginStatus() {
+            const token = localStorage.getItem('token');
+            if (token && !isTokenExpired(token)) {
+                isLoggedIn = true;
+                document.querySelector('.logout-btn').style.display = 'block';
+                return true;
+            }
+            return false;
+        }
+        
+        // Check if token is expired
+        function isTokenExpired(token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return Date.now() >= payload.exp * 1000;
+            } catch {
+                return true;
+            }
+        }
+        
+        // Get door ID from URL parameters
+        function getDoorIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('door_id');
+        }
+        
+        // Load door information
+        async function loadDoorInfo(doorId) {
+            try {
+                const response = await fetch(`/api/doors/${doorId}`);
+                if (response.ok) {
+                    const door = await response.json();
+                    document.getElementById('doorName').textContent = door.name;
+                    document.getElementById('doorLocation').textContent = door.location;
+                    
+                    const statusElement = document.getElementById('doorStatus');
+                    if (door.isOnline) {
+                        statusElement.textContent = 'Online';
+                        statusElement.className = 'door-status online';
+                    } else {
+                        statusElement.textContent = 'Offline';
+                        statusElement.className = 'door-status offline';
+                    }
+                } else {
+                    throw new Error('Door not found');
+                }
+            } catch (error) {
+                console.error('Error loading door info:', error);
+                document.getElementById('doorName').textContent = 'Door Not Found';
+                document.getElementById('doorLocation').textContent = 'Invalid door ID';
+                document.getElementById('doorStatus').textContent = 'Unknown';
+                document.getElementById('doorStatus').className = 'door-status offline';
+            }
+        }
+        
+        // Login and request access
+        async function loginAndRequestAccess() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showResult('Please enter both username and password', 'error');
+                return;
+            }
+            
+            try {
+                // Login
+                const loginResponse = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (loginResponse.ok) {
+                    const loginData = await loginResponse.json();
+                    localStorage.setItem('token', loginData.token);
+                    isLoggedIn = true;
+                    document.querySelector('.logout-btn').style.display = 'block';
+                    
+                    // Now request door access
+                    await requestDoorAccess();
+                } else {
+                    const errorData = await loginResponse.json();
+                    showResult(errorData.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showResult('Login failed. Please try again.', 'error');
+            }
+        }
+        
+        // Request door access
+        async function requestDoorAccess() {
+            if (!currentDoorId) {
+                showResult('No door ID provided', 'error');
+                return;
+            }
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showResult('Not logged in', 'error');
+                return;
+            }
+            
+            try {
+                showLoading(true);
+                
+                const response = await fetch(`/api/door-access/${currentDoorId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showResult('Access Granted! Door is opening...', 'success');
+                } else {
+                    showResult(data.message || 'Access Denied', 'error');
+                }
+            } catch (error) {
+                console.error('Access request error:', error);
+                showResult('Failed to request access. Please try again.', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Show loading state
+        function showLoading(show) {
+            const loading = document.querySelector('.loading');
+            loading.style.display = show ? 'block' : 'none';
+        }
+        
+        // Show result message
+        function showResult(message, type) {
+            const result = document.getElementById('accessResult');
+            result.textContent = message;
+            result.className = `access-result ${type}`;
+            result.style.display = 'block';
+        }
+        
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            isLoggedIn = false;
+            document.querySelector('.logout-btn').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('autoAccess').style.display = 'none';
+            document.getElementById('accessResult').style.display = 'none';
+        }
+        
+        // Initialize page
+        async function init() {
+            currentDoorId = getDoorIdFromUrl();
+            
+            if (!currentDoorId) {
+                showResult('No door ID provided in URL', 'error');
+                return;
+            }
+            
+            // Load door information
+            await loadDoorInfo(currentDoorId);
+            
+            // Check if user is already logged in
+            if (checkLoginStatus()) {
+                // User is logged in - show auto access
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('autoAccess').style.display = 'block';
+                
+                // Automatically request access
+                await requestDoorAccess();
+            } else {
+                // User needs to login
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('autoAccess').style.display = 'none';
+            }
+        }
+        
+        // Start the application
+        init();
+    </script>
+</body>
+</html>

@@ -506,6 +506,141 @@ body::after {
     white-space: nowrap;
 }
 
+/* NFC Cards Styles */
+.nfc-cards-content {
+    margin-top: 2rem;
+}
+
+.nfc-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.nfc-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    border: 1px solid #e5e7eb;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.nfc-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.nfc-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.nfc-card-icon {
+    font-size: 1.5rem;
+    color: #667eea;
+}
+
+.nfc-card-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.nfc-card-status.online {
+    color: #059669;
+}
+
+.nfc-card-status.offline {
+    color: #dc2626;
+}
+
+.nfc-card-status i {
+    font-size: 0.5rem;
+}
+
+.nfc-card-body h3 {
+    margin: 0 0 0.5rem 0;
+    color: #111827;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.nfc-card-body p {
+    margin: 0 0 1rem 0;
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.nfc-card-url {
+    margin-bottom: 1rem;
+}
+
+.nfc-card-url label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.url-display {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.url-display input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: #f9fafb;
+}
+
+.nfc-card-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.nfc-card-actions .btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6b7280;
+}
+
+.empty-state h3 {
+    margin: 1rem 0 0.5rem 0;
+    color: #374151;
+}
+
+/* Modal styles for NFC cards */
+#createNFCCardModal .url-display {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+#createNFCCardModal .url-display input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: #f9fafb;
+}
+
 /* Mobile Styles */
 @media (max-width: 768px) {
     .nav-menu {

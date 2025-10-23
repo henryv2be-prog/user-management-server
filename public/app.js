@@ -3674,6 +3674,164 @@ function deselectAllAvailableDoors() {
 
 
 
+// NFC Card Management Functions
+let nfcCards = [];
+
+async function loadNFCCards() {
+    if (!currentUser || !hasRole('admin')) {
+        return;
+    }
+    
+    try {
+        showLoading();
+        const response = await fetch('/api/doors', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            nfcCards = data.doors || [];
+            displayNFCCards();
+        } else {
+            app.showNotification('Failed to load doors for NFC cards', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading NFC cards:', error);
+        app.showNotification('Failed to load NFC cards', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function displayNFCCards() {
+    const grid = document.getElementById('nfcCardsGrid');
+    if (!grid) return;
+    
+    if (nfcCards.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-credit-card" style="font-size: 3rem; color: #adb5bd; margin-bottom: 1rem;"></i>
+                <h3>No Doors Available</h3>
+                <p>Create some doors first to generate NFC cards.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = nfcCards.map(door => `
+        <div class="nfc-card" data-door-id="${door.id}">
+            <div class="nfc-card-header">
+                <div class="nfc-card-icon">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <div class="nfc-card-status ${door.isOnline ? 'online' : 'offline'}">
+                    <i class="fas fa-circle"></i>
+                    ${door.isOnline ? 'Online' : 'Offline'}
+                </div>
+            </div>
+            <div class="nfc-card-body">
+                <h3>${door.name}</h3>
+                <p>${door.location}</p>
+                <div class="nfc-card-url">
+                    <label>NFC Card URL:</label>
+                    <div class="url-display">
+                        <input type="text" value="${window.location.origin}/door-access?door_id=${door.id}" readonly>
+                        <button onclick="copyNFCCardUrl(${door.id})" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="nfc-card-actions">
+                <button class="btn btn-primary" onclick="testNFCCard(${door.id})">
+                    <i class="fas fa-external-link-alt"></i> Test Card
+                </button>
+                <button class="btn btn-secondary" onclick="downloadNFCCard(${door.id})">
+                    <i class="fas fa-download"></i> Download QR
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showCreateNFCCardModal() {
+    loadDoorsForNFCCard();
+    document.getElementById('createNFCCardModal').classList.add('active');
+}
+
+async function loadDoorsForNFCCard() {
+    try {
+        const response = await fetch('/api/doors', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const doorSelect = document.getElementById('nfcCardDoor');
+            doorSelect.innerHTML = '<option value="">Select a door...</option>';
+            
+            data.doors.forEach(door => {
+                const option = document.createElement('option');
+                option.value = door.id;
+                option.textContent = `${door.name} - ${door.location}`;
+                doorSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading doors for NFC card:', error);
+    }
+}
+
+function handleCreateNFCCard(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const doorId = formData.get('doorId');
+    
+    if (!doorId) {
+        app.showNotification('Please select a door', 'error');
+        return;
+    }
+    
+    // Generate the NFC card URL
+    const nfcCardUrl = `${window.location.origin}/door-access?door_id=${doorId}`;
+    document.getElementById('nfcCardUrl').value = nfcCardUrl;
+    
+    app.showNotification('NFC Card URL generated! Copy the URL to write to your NFC card.', 'success');
+}
+
+function copyNFCCardUrl(doorId) {
+    const url = `${window.location.origin}/door-access?door_id=${doorId}`;
+    navigator.clipboard.writeText(url).then(() => {
+        app.showNotification('NFC Card URL copied to clipboard!', 'success');
+    }).catch(() => {
+        app.showNotification('Failed to copy URL', 'error');
+    });
+}
+
+function testNFCCard(doorId) {
+    const url = `${window.location.origin}/door-access?door_id=${doorId}`;
+    window.open(url, '_blank');
+}
+
+function downloadNFCCard(doorId) {
+    const url = `${window.location.origin}/door-access?door_id=${doorId}`;
+    
+    // Create a QR code for the NFC card
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+    
+    // Create a temporary link to download the QR code
+    const link = document.createElement('a');
+    link.href = qrCodeUrl;
+    link.download = `nfc-card-door-${doorId}.png`;
+    link.click();
+    
+    app.showNotification('QR Code downloaded!', 'success');
+}
+
 // Update the showSection function to handle new sections
 function showSection(sectionName) {
     hideAllSections();
@@ -3708,6 +3866,8 @@ function showSection(sectionName) {
             updateProfileInfo();
         } else if (sectionName === 'settings') {
             loadSettings();
+        } else if (sectionName === 'nfcCards') {
+            loadNFCCards();
         }
         
         // Ensure keep-alive is running when user is active

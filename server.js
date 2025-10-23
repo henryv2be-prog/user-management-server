@@ -217,6 +217,9 @@ console.log('Mobile settings routes module loaded');
 
 backupRoutes = require('./routes/backup');
 console.log('Backup routes module loaded');
+
+doorAccessRoutes = require('./routes/doorAccess');
+console.log('Door access routes module loaded');
   
   // Setup routes
   // Health check endpoint for keep-alive (Railway compatible)
@@ -265,6 +268,11 @@ console.log('Backup routes module loaded');
     res.send('pong');
   });
 
+  // Door access page for NFC cards
+  app.get('/door-access', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'door-access.html'));
+  });
+
   app.use('/api/auth', authLimiter, authRoutes);
   app.use('/api/token', authLimiter, require('./routes/tokenRefresh'));
   app.use('/api/users', userRoutes);
@@ -282,6 +290,7 @@ app.use('/api/webhook-setup', webhookSetupRoutes);
 app.use('/api/webhook-test', webhookTestRoutes);
 app.use('/api/mobile-settings', mobileSettingsRoutes);
 app.use('/api/backup', backupRoutes);
+app.use('/api/door-access', doorAccessRoutes);
   console.log('All routes configured successfully');
 } catch (error) {
   console.error('Error loading/setting up routes:', error);
