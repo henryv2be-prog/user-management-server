@@ -258,53 +258,13 @@
             return doorId;
         }
         
-        // Load door information
+        // Load door information (simplified - just set basic info)
         async function loadDoorInfo(doorId) {
-            try {
-                console.log('🔍 Frontend - Loading door info for doorId:', doorId);
-                
-                // First test if the basic endpoint is reachable
-                console.log('🔍 Frontend - Testing basic endpoint...');
-                const testResponse = await fetch('/api/doors/test-basic');
-                console.log('🔍 Frontend - Test endpoint status:', testResponse.status);
-                if (testResponse.ok) {
-                    const testData = await testResponse.json();
-                    console.log('🔍 Frontend - Test endpoint response:', testData);
-                }
-                
-                const response = await fetch(`/api/doors/${doorId}/basic`);
-                console.log('🔍 Frontend - Door info response status:', response.status);
-                
-                if (response.ok) {
-                    const door = await response.json();
-                    console.log('🔍 Frontend - Door info received:', door);
-                    console.log('🔍 Frontend - Door name:', door.name);
-                    console.log('🔍 Frontend - Door location:', door.location);
-                    console.log('🔍 Frontend - Door isOnline:', door.isOnline);
-                    
-                    document.getElementById('doorName').textContent = door.name;
-                    document.getElementById('doorLocation').textContent = door.location;
-                    
-                    const statusElement = document.getElementById('doorStatus');
-                    if (door.isOnline) {
-                        statusElement.textContent = 'Online';
-                        statusElement.className = 'door-status online';
-                    } else {
-                        statusElement.textContent = 'Offline';
-                        statusElement.className = 'door-status offline';
-                    }
-                } else {
-                    const errorData = await response.json();
-                    console.error('🔍 Frontend - Door info error:', errorData);
-                    throw new Error(errorData.message || 'Door not found');
-                }
-            } catch (error) {
-                console.error('Error loading door info:', error);
-                document.getElementById('doorName').textContent = 'Door Not Found';
-                document.getElementById('doorLocation').textContent = 'Invalid door ID';
-                document.getElementById('doorStatus').textContent = 'Unknown';
-                document.getElementById('doorStatus').className = 'door-status offline';
-            }
+            console.log('🔍 Frontend - Door ID:', doorId);
+            document.getElementById('doorName').textContent = 'Door Access';
+            document.getElementById('doorLocation').textContent = 'Requesting Access...';
+            document.getElementById('doorStatus').textContent = 'Processing';
+            document.getElementById('doorStatus').className = 'door-status offline';
         }
         
         // Login and request access
@@ -399,6 +359,13 @@
             result.textContent = message;
             result.className = `access-result ${type}`;
             result.style.display = 'block';
+            
+            // Auto-close page after 5 seconds
+            console.log('🔍 Frontend - Page will auto-close in 5 seconds');
+            setTimeout(() => {
+                console.log('🔍 Frontend - Auto-closing page');
+                window.close();
+            }, 5000);
         }
         
         // Logout function
@@ -420,7 +387,7 @@
                 return;
             }
             
-            // Load door information
+            // Load basic door information
             await loadDoorInfo(currentDoorId);
             
             // Check if user is already logged in

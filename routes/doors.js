@@ -201,12 +201,6 @@ router.get('/', authenticate, requireAdmin, validatePagination, async (req, res)
   }
 });
 
-// Test endpoint to verify routing
-router.get('/test-basic', (req, res) => {
-  console.log('🔍 Backend - Test basic endpoint called');
-  res.json({ message: 'Basic endpoint is working' });
-});
-
 // Get basic door information (for door access page)
 router.get('/:id/basic', authenticate, async (req, res) => {
   try {
