@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
-const Door = require('../database/models/Door');
+const { Door } = require('../database/door');
 const EventLogger = require('../utils/eventLogger');
 
 // Door access request endpoint
