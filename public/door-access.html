@@ -12,18 +12,19 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-50);
             padding: 20px;
         }
         
         .door-access-card {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             padding: 40px;
             max-width: 500px;
             width: 100%;
             text-align: center;
+            border: 1px solid var(--primary-200);
         }
         
         .door-info {
@@ -32,20 +33,20 @@
         
         .door-icon {
             font-size: 4rem;
-            color: #667eea;
+            color: var(--primary-600);
             margin-bottom: 20px;
         }
         
         .door-name {
             font-size: 2rem;
             font-weight: bold;
-            color: #333;
+            color: var(--primary-800);
             margin-bottom: 10px;
         }
         
         .door-location {
             font-size: 1.1rem;
-            color: #666;
+            color: var(--primary-600);
             margin-bottom: 20px;
         }
         
@@ -86,21 +87,22 @@
         .form-group input {
             width: 100%;
             padding: 12px 16px;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
+            border: 1px solid var(--primary-300);
+            border-radius: 6px;
             font-size: 1rem;
-            transition: border-color 0.3s;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
         
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--primary-500);
+            box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
         }
         
         .access-btn {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             color: white;
             border: none;
             border-radius: 10px;
@@ -111,7 +113,9 @@
         }
         
         .access-btn:hover {
-            transform: translateY(-2px);
+            background: var(--secondary-gradient);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         
         .access-btn:disabled {
@@ -208,13 +212,13 @@
                     <input type="password" id="password" placeholder="Enter your password">
                 </div>
                 <button class="access-btn" onclick="loginAndRequestAccess()">
-                    <i class="fas fa-unlock"></i> Request Access
+                    <i class="fas fa-sign-in-alt"></i> Login
                 </button>
             </div>
             
             <div class="auto-access" id="autoAccess">
-                <h3>Requesting Access...</h3>
-                <p>You are already logged in. Checking access permissions...</p>
+                <h3>Checking Access...</h3>
+                <p>You are already logged in. Verifying permissions...</p>
                 <div class="loading">
                     <div class="spinner"></div>
                 </div>
@@ -261,8 +265,8 @@
         // Load door information (simplified - just set basic info)
         async function loadDoorInfo(doorId) {
             console.log('🔍 Frontend - Door ID:', doorId);
-            document.getElementById('doorName').textContent = 'Door Access';
-            document.getElementById('doorLocation').textContent = 'Requesting Access...';
+            document.getElementById('doorName').textContent = 'Access Control';
+            document.getElementById('doorLocation').textContent = 'Please login to continue';
             document.getElementById('doorStatus').textContent = 'Processing';
             document.getElementById('doorStatus').className = 'door-status offline';
         }
