@@ -29,9 +29,10 @@ router.post('/:doorId', authenticate, async (req, res) => {
   try {
     const doorId = parseInt(req.params.doorId);
     const userId = req.user.id;
-    const userName = req.user.username;
+    const userName = req.user.username || req.user.firstName + ' ' + req.user.lastName;
+    const accountType = req.accountType || 'user';
     
-    console.log(`🚪 Door access request - User: ${userName} (${userId}), Door: ${doorId}`);
+    console.log(`🚪 Door access request - ${accountType}: ${userName} (${userId}), Door: ${doorId}`);
     console.log(`🚪 Raw doorId from params:`, req.params.doorId);
     console.log(`🚪 Parsed doorId:`, doorId);
     console.log(`🚪 Is doorId NaN?`, isNaN(doorId));
@@ -59,12 +60,14 @@ router.post('/:doorId', authenticate, async (req, res) => {
     }
     
     // Check if user has access to this door
-    const hasAccess = await checkDoorAccess(userId, doorId);
+    // For visitors, use the host user ID; for regular users, use their own ID
+    const accessUserId = req.accountType === 'visitor' ? req.user.userId : userId;
+    const hasAccess = await checkDoorAccess(accessUserId, doorId);
     
     if (!hasAccess) {
       // Log access denied event
       await EventLogger.log(req, 'access', 'denied', 'door', doorId, door.name, 
-        `Access denied for user ${userName} - insufficient permissions`);
+        `Access denied for ${accountType} ${userName} - insufficient permissions`);
       
       return res.status(403).json({
         success: false,
@@ -210,6 +213,7 @@ router.get('/:doorId/info', authenticate, async (req, res) => {
   try {
     const doorId = parseInt(req.params.doorId);
     const userId = req.user.id;
+    const accessUserId = req.accountType === 'visitor' ? req.user.userId : userId;
     
     const door = await Door.findById(doorId);
     if (!door) {
@@ -219,7 +223,7 @@ router.get('/:doorId/info', authenticate, async (req, res) => {
       });
     }
     
-    const hasAccess = await checkDoorAccess(userId, doorId);
+    const hasAccess = await checkDoorAccess(accessUserId, doorId);
     
     res.json({
       success: true,
