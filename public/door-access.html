@@ -276,6 +276,8 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
+            console.log('🔍 Frontend - Login attempt with username:', username);
+            
             if (!username || !password) {
                 showResult('Please enter both username and password', 'error');
                 return;
@@ -283,6 +285,7 @@
             
             try {
                 // Login
+                console.log('🔍 Frontend - Sending login request to /api/auth/login');
                 const loginResponse = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: {
@@ -291,8 +294,11 @@
                     body: JSON.stringify({ email: username, password })
                 });
                 
+                console.log('🔍 Frontend - Login response status:', loginResponse.status);
+                
                 if (loginResponse.ok) {
                     const loginData = await loginResponse.json();
+                    console.log('🔍 Frontend - Login successful, token received');
                     localStorage.setItem('token', loginData.token);
                     isLoggedIn = true;
                     document.querySelector('.logout-btn').style.display = 'block';
@@ -301,6 +307,7 @@
                     await requestDoorAccess();
                 } else {
                     const errorData = await loginResponse.json();
+                    console.error('🔍 Frontend - Login failed:', errorData);
                     showResult(errorData.message || 'Login failed', 'error');
                 }
             } catch (error) {
@@ -393,6 +400,19 @@
             
             // Load basic door information
             await loadDoorInfo(currentDoorId);
+            
+            // Test if login endpoint is accessible
+            console.log('🔍 Frontend - Testing login endpoint accessibility...');
+            try {
+                const testResponse = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: 'test', password: 'test' })
+                });
+                console.log('🔍 Frontend - Login endpoint test response status:', testResponse.status);
+            } catch (error) {
+                console.error('🔍 Frontend - Login endpoint test failed:', error);
+            }
             
             // Check if user is already logged in
             if (checkLoginStatus()) {
