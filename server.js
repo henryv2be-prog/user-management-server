@@ -268,9 +268,19 @@ console.log('Door access routes module loaded');
     res.send('pong');
   });
 
-                // Door access page for NFC cards
+                // Door access pages
                 app.get('/door-access', (req, res) => {
                   res.sendFile(path.join(__dirname, 'public', 'door-access.html'));
+                });
+
+                // Dedicated login page for door access
+                app.get('/door-login', (req, res) => {
+                  res.sendFile(path.join(__dirname, 'public', 'door-login.html'));
+                });
+
+                // Silent door access page (for subsequent scans)
+                app.get('/silent-door-access', (req, res) => {
+                  res.sendFile(path.join(__dirname, 'public', 'silent-door-access.html'));
                 });
 
                 // Access complete page

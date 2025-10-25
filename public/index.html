@@ -1312,6 +1312,15 @@
                     </div>
                     
                     <div class="form-group">
+                        <label for="nfcCardType">Access Type</label>
+                        <select id="nfcCardType" name="accessType" required>
+                            <option value="silent">Silent Access (after login)</option>
+                            <option value="login">Login Required</option>
+                        </select>
+                        <small>Silent access works after user logs in once. Login required always shows login form.</small>
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="nfcCardDescription">Description (Optional)</label>
                         <textarea id="nfcCardDescription" name="description" placeholder="Additional information about this card"></textarea>
                     </div>

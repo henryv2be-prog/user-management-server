@@ -3759,6 +3759,10 @@ function displayNFCCards() {
 function showCreateNFCCardModal() {
     loadDoorsForNFCCard();
     document.getElementById('createNFCCardModal').classList.add('active');
+    
+    // Add event listeners for URL updates
+    document.getElementById('nfcCardDoor').addEventListener('change', updateNFCCardUrl);
+    document.getElementById('nfcCardType').addEventListener('change', updateNFCCardUrl);
 }
 
 async function loadDoorsForNFCCard() {
@@ -3790,21 +3794,51 @@ function handleCreateNFCCard(event) {
     event.preventDefault();
     const formData = new FormData(event.target);
     const doorId = formData.get('doorId');
+    const accessType = formData.get('accessType');
     
     if (!doorId) {
         app.showNotification('Please select a door', 'error');
         return;
     }
     
-    // Generate the NFC card URL
-    const nfcCardUrl = `${window.location.origin}/door-access?door_id=${doorId}`;
+    // Generate the NFC card URL based on access type
+    let nfcCardUrl;
+    if (accessType === 'silent') {
+        nfcCardUrl = `${window.location.origin}/silent-door-access?door_id=${doorId}`;
+    } else {
+        nfcCardUrl = `${window.location.origin}/door-access?door_id=${doorId}`;
+    }
+    
     document.getElementById('nfcCardUrl').value = nfcCardUrl;
     
     app.showNotification('NFC Card URL generated! Copy the URL to write to your NFC card.', 'success');
 }
 
-function copyNFCCardUrl(doorId) {
-    const url = `${window.location.origin}/door-access?door_id=${doorId}`;
+// Update NFC card URL when door or access type changes
+function updateNFCCardUrl() {
+    const doorId = document.getElementById('nfcCardDoor').value;
+    const accessType = document.getElementById('nfcCardType').value;
+    
+    if (doorId) {
+        let url;
+        if (accessType === 'silent') {
+            url = `${window.location.origin}/silent-door-access?door_id=${doorId}`;
+        } else {
+            url = `${window.location.origin}/door-access?door_id=${doorId}`;
+        }
+        document.getElementById('nfcCardUrl').value = url;
+    } else {
+        document.getElementById('nfcCardUrl').value = '';
+    }
+}
+
+function copyNFCCardUrl() {
+    const url = document.getElementById('nfcCardUrl').value;
+    if (!url) {
+        app.showNotification('Please generate a URL first', 'error');
+        return;
+    }
+    
     navigator.clipboard.writeText(url).then(() => {
         app.showNotification('NFC Card URL copied to clipboard!', 'success');
     }).catch(() => {

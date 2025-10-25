@@ -234,12 +234,32 @@
         
         // Check if user is already logged in
         function checkLoginStatus() {
-            const token = localStorage.getItem('token');
-            if (token && !isTokenExpired(token)) {
-                isLoggedIn = true;
-                document.querySelector('.logout-btn').style.display = 'block';
-                return true;
+            const token = localStorage.getItem('doorAccessToken');
+            const tokenExpiry = localStorage.getItem('doorAccessTokenExpiry');
+            
+            if (token && tokenExpiry) {
+                const now = new Date().getTime();
+                const expiry = parseInt(tokenExpiry);
+                
+                if (now < expiry) {
+                    // User is already logged in, redirect to silent access
+                    console.log('🔍 Frontend - User already logged in, redirecting to silent access');
+                    const doorId = getDoorIdFromUrl();
+                    if (doorId) {
+                        window.location.href = `/silent-door-access?door_id=${doorId}`;
+                    } else {
+                        // No door ID, show login form
+                        showLoginForm();
+                    }
+                    return true;
+                } else {
+                    // Token expired, clear it
+                    localStorage.removeItem('doorAccessToken');
+                    localStorage.removeItem('doorAccessTokenExpiry');
+                    localStorage.removeItem('doorAccessUser');
+                }
             }
+            
             return false;
         }
         
@@ -299,7 +319,24 @@
                 if (loginResponse.ok) {
                     const loginData = await loginResponse.json();
                     console.log('🔍 Frontend - Login successful, token received');
-                    localStorage.setItem('token', loginData.token);
+                    
+                    // Store door access token and user info
+                    const token = loginData.token;
+                    const user = loginData.user;
+                    const accountType = loginData.accountType;
+                    
+                    // Calculate expiry time (24 hours from now)
+                    const expiryTime = new Date().getTime() + (24 * 60 * 60 * 1000);
+                    
+                    localStorage.setItem('doorAccessToken', token);
+                    localStorage.setItem('doorAccessTokenExpiry', expiryTime.toString());
+                    localStorage.setItem('doorAccessUser', JSON.stringify({
+                        id: user.id,
+                        name: user.firstName + ' ' + user.lastName,
+                        email: user.email,
+                        accountType: accountType
+                    }));
+                    
                     isLoggedIn = true;
                     document.querySelector('.logout-btn').style.display = 'block';
                     
@@ -325,7 +362,7 @@
                 return;
             }
             
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('doorAccessToken');
             if (!token) {
                 showResult('Not logged in', 'error');
                 return;

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silent Door Access</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .access-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .status-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-icon.success {
+            background: #d4edda;
+            color: #28a745;
+        }
+
+        .status-icon.error {
+            background: #f8d7da;
+            color: #dc3545;
+        }
+
+        .status-icon.loading {
+            background: #cce5ff;
+            color: #007bff;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .message {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .door-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .door-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .door-location {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .countdown {
+            color: #007bff;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="access-container">
+        <div id="statusIcon" class="status-icon loading">⏳</div>
+        <h1 id="statusTitle">Processing Access...</h1>
+        <p id="statusMessage" class="message">Please wait while we verify your access...</p>
+        
+        <div id="doorInfo" class="door-info hidden">
+            <div id="doorName" class="door-name"></div>
+            <div id="doorLocation" class="door-location"></div>
+        </div>
+        
+        <div id="countdown" class="countdown hidden"></div>
+    </div>
+
+    <script>
+        let countdownInterval;
+        let countdownSeconds = 3;
+
+        // Get door ID from URL
+        function getDoorIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const doorId = urlParams.get('door_id');
+            console.log('🔍 Silent Access - Door ID from URL:', doorId);
+            return doorId ? parseInt(doorId) : null;
+        }
+
+        // Check if user is logged in
+        function checkLoginStatus() {
+            const token = localStorage.getItem('doorAccessToken');
+            const tokenExpiry = localStorage.getItem('doorAccessTokenExpiry');
+            
+            if (!token || !tokenExpiry) {
+                console.log('🔍 Silent Access - No token found');
+                return false;
+            }
+            
+            const now = new Date().getTime();
+            const expiry = parseInt(tokenExpiry);
+            
+            if (now >= expiry) {
+                console.log('🔍 Silent Access - Token expired');
+                localStorage.removeItem('doorAccessToken');
+                localStorage.removeItem('doorAccessTokenExpiry');
+                localStorage.removeItem('doorAccessUser');
+                return false;
+            }
+            
+            console.log('🔍 Silent Access - Valid token found');
+            return true;
+        }
+
+        // Show status
+        function showStatus(icon, title, message, isSuccess = false) {
+            const statusIcon = document.getElementById('statusIcon');
+            const statusTitle = document.getElementById('statusTitle');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            statusIcon.textContent = icon;
+            statusIcon.className = `status-icon ${isSuccess ? 'success' : 'error'}`;
+            statusTitle.textContent = title;
+            statusMessage.textContent = message;
+        }
+
+        // Show door info
+        function showDoorInfo(name, location) {
+            const doorInfo = document.getElementById('doorInfo');
+            const doorName = document.getElementById('doorName');
+            const doorLocation = document.getElementById('doorLocation');
+            
+            doorName.textContent = name;
+            doorLocation.textContent = location;
+            doorInfo.classList.remove('hidden');
+        }
+
+        // Start countdown
+        function startCountdown() {
+            const countdown = document.getElementById('countdown');
+            countdown.classList.remove('hidden');
+            
+            countdownInterval = setInterval(() => {
+                countdown.textContent = `Closing in ${countdownSeconds} seconds...`;
+                countdownSeconds--;
+                
+                if (countdownSeconds < 0) {
+                    clearInterval(countdownInterval);
+                    window.close();
+                }
+            }, 1000);
+        }
+
+        // Request door access
+        async function requestDoorAccess(doorId) {
+            const token = localStorage.getItem('doorAccessToken');
+            const user = JSON.parse(localStorage.getItem('doorAccessUser') || '{}');
+            
+            console.log('🔍 Silent Access - Requesting access for door:', doorId);
+            console.log('🔍 Silent Access - User:', user);
+            
+            try {
+                const response = await fetch(`/api/door-access/${doorId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                console.log('🔍 Silent Access - Response:', data);
+                
+                if (response.ok && data.success) {
+                    showStatus('✅', 'Access Granted', 'Door opened successfully!', true);
+                    showDoorInfo(data.doorName || 'Door', data.doorLocation || '');
+                    startCountdown();
+                } else {
+                    showStatus('❌', 'Access Denied', data.message || 'You do not have permission to access this door');
+                    startCountdown();
+                }
+            } catch (error) {
+                console.error('🔍 Silent Access - Error:', error);
+                showStatus('❌', 'Error', 'Failed to process access request');
+                startCountdown();
+            }
+        }
+
+        // Initialize
+        async function init() {
+            console.log('🔍 Silent Access - Initializing...');
+            
+            // Check if user is logged in
+            if (!checkLoginStatus()) {
+                showStatus('🔑', 'Login Required', 'Please login first at the door access page');
+                startCountdown();
+                return;
+            }
+            
+            // Get door ID
+            const doorId = getDoorIdFromUrl();
+            if (!doorId) {
+                showStatus('❌', 'Invalid Request', 'No door ID provided');
+                startCountdown();
+                return;
+            }
+            
+            // Request access
+            await requestDoorAccess(doorId);
+        }
+
+        // Start when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
