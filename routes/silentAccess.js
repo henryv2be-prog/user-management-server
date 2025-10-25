@@ -2,7 +2,39 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const { Door } = require('../database/door');
-const { checkDoorAccess } = require('../database/access');
+// Check if user has access to a specific door
+async function checkDoorAccess(userId, doorId) {
+  try {
+    const sqlite3 = require('sqlite3').verbose();
+    const path = require('path');
+    const dbPath = path.join(__dirname, '../database/users.db');
+    
+    return new Promise((resolve, reject) => {
+      const db = new sqlite3.Database(dbPath);
+      
+      // Check if user has access to this door through access groups
+      const query = `
+        SELECT COUNT(*) as count
+        FROM user_access_groups uag
+        JOIN access_group_doors agd ON uag.access_group_id = agd.access_group_id
+        WHERE uag.user_id = ? AND agd.door_id = ?
+      `;
+      
+      db.get(query, [userId, doorId], (err, row) => {
+        db.close();
+        if (err) {
+          console.error('Database error in checkDoorAccess:', err);
+          resolve(false);
+        } else {
+          resolve(row.count > 0);
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Error in checkDoorAccess:', error);
+    return false;
+  }
+}
 const EventLogger = require('../utils/eventLogger');
 
 // Silent door access endpoint (no browser required)

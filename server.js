@@ -555,9 +555,9 @@ async function startServer() {
       console.log('Database path:', process.env.DB_PATH || path.join(__dirname, 'database', 'users.db'));
       console.log('Calling initDatabase()...');
       
-      // Use Railway-optimized database initialization
-      const dbInitPromise = isRailway ? initDatabaseRailway() : initDatabase();
-      const dbTimeout = isRailway ? 15000 : 60000; // 15s for Railway, 60s for local
+      // Use minimal database initialization for testing
+      const dbInitPromise = initDatabaseMinimal();
+      const dbTimeout = 30000; // 30s timeout
       
       console.log(`🚂 Railway: Starting database initialization with ${dbTimeout/1000}s timeout...`);
       
