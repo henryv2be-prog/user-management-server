@@ -297,6 +297,128 @@ router.post('/unified-login', async (req, res) => {
   }
 });
 
+// Door access login endpoint (for regular users and visitors via web)
+router.post('/door-access-login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !email.trim()) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Email is required'
+      });
+    }
+    
+    if (!password || !password.trim()) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Password is required'
+      });
+    }
+    
+    const emailLower = email.trim().toLowerCase();
+    
+    // First try visitor login
+    try {
+      const visitor = await Visitor.findByEmail(emailLower);
+      
+      if (visitor) {
+        // Verify visitor password
+        let isValidPassword = false;
+        try {
+          isValidPassword = await visitor.verifyPassword(password);
+        } catch (passwordError) {
+          console.error('Visitor password verification error:', passwordError);
+          // Continue to try user login
+        }
+        
+        if (isValidPassword && visitor.isValid()) {
+          // Generate JWT token for visitor
+          const token = jwt.sign(
+            { 
+              visitorId: visitor.id,
+              userId: visitor.userId, // Host user ID
+              email: visitor.email,
+              accountType: 'visitor'
+            },
+            JWT_SECRET,
+            { expiresIn: JWT_EXPIRES_IN }
+          );
+          
+          // Log visitor login event
+          await EventLogger.log(req, 'visitor.login', 'login', 'visitor', visitor.id, `${visitor.firstName} ${visitor.lastName}`, {
+            email: visitor.email,
+            userId: visitor.userId
+          });
+          
+          return res.json({
+            message: 'Visitor login successful',
+            token,
+            accountType: 'visitor',
+            user: visitor.toJSON()
+          });
+        }
+      }
+    } catch (visitorError) {
+      console.log('Visitor login failed, trying user login:', visitorError.message);
+    }
+    
+    // Try user login
+    try {
+      // Try to find user by email first, then by username
+      let user = await User.findByEmail(emailLower);
+      if (!user) {
+        user = await User.findByUsername(emailLower);
+      }
+      
+      if (user) {
+        const isValidPassword = await user.verifyPassword(password);
+        if (isValidPassword) {
+          // Generate JWT token for user
+          const token = jwt.sign(
+            { 
+              userId: user.id,
+              email: user.email,
+              username: user.username,
+              accountType: 'user'
+            },
+            JWT_SECRET,
+            { expiresIn: JWT_EXPIRES_IN }
+          );
+          
+          // Log user login event
+          await EventLogger.log(req, 'user.login', 'login', 'user', user.id, `${user.firstName} ${user.lastName}`, {
+            email: user.email,
+            username: user.username
+          });
+          
+          return res.json({
+            message: 'User login successful',
+            token,
+            accountType: 'user',
+            user: user.toJSON()
+          });
+        }
+      }
+    } catch (userError) {
+      console.log('User login failed:', userError.message);
+    }
+    
+    // If we get here, both visitor and user login failed
+    return res.status(401).json({
+      error: 'Authentication failed',
+      message: 'Invalid email/username or password'
+    });
+    
+  } catch (error) {
+    console.error('Door access login error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Login failed'
+    });
+  }
+});
+
 // Mobile app login endpoint (for regular users)
 router.post('/mobile-login', validateLogin, async (req, res) => {
   try {
