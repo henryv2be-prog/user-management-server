@@ -1314,10 +1314,17 @@
                     <div class="form-group">
                         <label for="nfcCardType">Access Type</label>
                         <select id="nfcCardType" name="accessType" required>
-                            <option value="silent">Silent Access (after login)</option>
+                            <option value="truly-silent">Truly Silent (no browser)</option>
+                            <option value="mobile-app">Mobile App Integration</option>
+                            <option value="silent">Silent Access (minimal browser)</option>
                             <option value="login">Login Required</option>
                         </select>
-                        <small>Silent access works after user logs in once. Login required always shows login form.</small>
+                        <small>
+                            <strong>Truly Silent:</strong> No browser opens at all (requires mobile app)<br>
+                            <strong>Mobile App:</strong> Redirects to mobile app for silent access<br>
+                            <strong>Silent Access:</strong> Minimal browser window that auto-closes<br>
+                            <strong>Login Required:</strong> Always shows login form
+                        </small>
                     </div>
                     
                     <div class="form-group">

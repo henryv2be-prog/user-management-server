@@ -3803,8 +3803,14 @@ function handleCreateNFCCard(event) {
     
     // Generate the NFC card URL based on access type
     let nfcCardUrl;
-    if (accessType === 'silent') {
-        nfcCardUrl = `${window.location.origin}/silent-door-access?door_id=${doorId}`;
+    if (accessType === 'truly-silent') {
+        // This would be a custom URL scheme for your mobile app
+        // Replace 'yourapp' with your actual app's URL scheme
+        nfcCardUrl = `yourapp://silent-access?door_id=${doorId}`;
+    } else if (accessType === 'mobile-app') {
+        nfcCardUrl = `${window.location.origin}/mobile-silent-access?door_id=${doorId}`;
+    } else if (accessType === 'silent') {
+        nfcCardUrl = `${window.location.origin}/silent-api-call?door_id=${doorId}`;
     } else {
         nfcCardUrl = `${window.location.origin}/door-access?door_id=${doorId}`;
     }
@@ -3821,8 +3827,12 @@ function updateNFCCardUrl() {
     
     if (doorId) {
         let url;
-        if (accessType === 'silent') {
-            url = `${window.location.origin}/silent-door-access?door_id=${doorId}`;
+        if (accessType === 'truly-silent') {
+            url = `yourapp://silent-access?door_id=${doorId}`;
+        } else if (accessType === 'mobile-app') {
+            url = `${window.location.origin}/mobile-silent-access?door_id=${doorId}`;
+        } else if (accessType === 'silent') {
+            url = `${window.location.origin}/silent-api-call?door_id=${doorId}`;
         } else {
             url = `${window.location.origin}/door-access?door_id=${doorId}`;
         }

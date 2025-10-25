@@ -283,6 +283,16 @@ console.log('Door access routes module loaded');
                   res.sendFile(path.join(__dirname, 'public', 'silent-door-access.html'));
                 });
 
+                // Truly silent access (minimal browser window)
+                app.get('/silent-api-call', (req, res) => {
+                  res.sendFile(path.join(__dirname, 'public', 'silent-api-call.html'));
+                });
+
+                // Mobile app silent access redirect
+                app.get('/mobile-silent-access', (req, res) => {
+                  res.sendFile(path.join(__dirname, 'public', 'mobile-silent-access.html'));
+                });
+
                 // Access complete page
                 app.get('/access-complete', (req, res) => {
                   res.sendFile(path.join(__dirname, 'public', 'access-complete.html'));
@@ -306,6 +316,7 @@ app.use('/api/webhook-test', webhookTestRoutes);
 app.use('/api/mobile-settings', mobileSettingsRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/door-access', doorAccessRoutes);
+app.use('/api/silent-access', require('./routes/silentAccess'));
   console.log('All routes configured successfully');
 } catch (error) {
   console.error('Error loading/setting up routes:', error);

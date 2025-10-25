@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Silent Access</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            overflow: hidden;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="status" class="hidden">Redirecting to mobile app...</div>
+    
+    <script>
+        // This page redirects to the mobile app with the door access request
+        // The mobile app then handles the API call silently
+        
+        function redirectToMobileApp() {
+            try {
+                // Get door ID from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const doorId = urlParams.get('door_id');
+                
+                if (!doorId) {
+                    console.log('No door ID provided');
+                    window.close();
+                    return;
+                }
+                
+                // Try to open the mobile app with custom URL scheme
+                // Replace 'yourapp' with your actual app's URL scheme
+                const mobileAppUrl = `yourapp://door-access?door_id=${doorId}`;
+                
+                console.log('Attempting to open mobile app:', mobileAppUrl);
+                
+                // Try to open the mobile app
+                window.location.href = mobileAppUrl;
+                
+                // If the app doesn't open, fall back to silent API call
+                setTimeout(() => {
+                    console.log('Mobile app not available, falling back to silent API call');
+                    makeSilentApiCall(doorId);
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error redirecting to mobile app:', error);
+                window.close();
+            }
+        }
+        
+        async function makeSilentApiCall(doorId) {
+            try {
+                // Check if user has valid token
+                const token = localStorage.getItem('doorAccessToken');
+                const tokenExpiry = localStorage.getItem('doorAccessTokenExpiry');
+                
+                if (!token || !tokenExpiry) {
+                    console.log('No valid token found');
+                    window.close();
+                    return;
+                }
+                
+                const now = new Date().getTime();
+                const expiry = parseInt(tokenExpiry);
+                
+                if (now >= expiry) {
+                    console.log('Token expired');
+                    localStorage.removeItem('doorAccessToken');
+                    localStorage.removeItem('doorAccessTokenExpiry');
+                    localStorage.removeItem('doorAccessUser');
+                    window.close();
+                    return;
+                }
+                
+                // Make silent API call
+                console.log('Making silent door access request for door:', doorId);
+                
+                const response = await fetch(`/api/door-access/${doorId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                console.log('Silent access response:', data);
+                
+            } catch (error) {
+                console.error('Silent access error:', error);
+            } finally {
+                // Always close the window
+                window.close();
+            }
+        }
+        
+        // Start redirect immediately when page loads
+        document.addEventListener('DOMContentLoaded', redirectToMobileApp);
+        
+        // Fallback close
+        setTimeout(() => {
+            window.close();
+        }, 3000);
+    </script>
+</body>
+</html>

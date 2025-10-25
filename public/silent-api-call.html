@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silent Door Access</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            overflow: hidden;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="status" class="hidden">Processing...</div>
+    
+    <script>
+        // This page is designed to be invisible and auto-close
+        // It makes the API call and closes immediately
+        
+        async function processSilentAccess() {
+            try {
+                // Get door ID from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const doorId = urlParams.get('door_id');
+                
+                if (!doorId) {
+                    console.log('No door ID provided');
+                    window.close();
+                    return;
+                }
+                
+                // Check if user has valid token
+                const token = localStorage.getItem('doorAccessToken');
+                const tokenExpiry = localStorage.getItem('doorAccessTokenExpiry');
+                
+                if (!token || !tokenExpiry) {
+                    console.log('No valid token found');
+                    window.close();
+                    return;
+                }
+                
+                const now = new Date().getTime();
+                const expiry = parseInt(tokenExpiry);
+                
+                if (now >= expiry) {
+                    console.log('Token expired');
+                    localStorage.removeItem('doorAccessToken');
+                    localStorage.removeItem('doorAccessTokenExpiry');
+                    localStorage.removeItem('doorAccessUser');
+                    window.close();
+                    return;
+                }
+                
+                // Make silent API call
+                console.log('Making silent door access request for door:', doorId);
+                
+                const response = await fetch(`/api/door-access/${doorId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                console.log('Silent access response:', data);
+                
+                // Optional: Show brief notification (can be disabled)
+                if (data.success) {
+                    // You could trigger a system notification here if supported
+                    console.log('Access granted silently');
+                } else {
+                    console.log('Access denied:', data.message);
+                }
+                
+            } catch (error) {
+                console.error('Silent access error:', error);
+            } finally {
+                // Always close the window immediately
+                setTimeout(() => {
+                    window.close();
+                }, 100); // Close after 100ms
+            }
+        }
+        
+        // Start processing immediately when page loads
+        document.addEventListener('DOMContentLoaded', processSilentAccess);
+        
+        // Also try to close immediately if the above doesn't work
+        setTimeout(() => {
+            window.close();
+        }, 2000); // Fallback close after 2 seconds
+    </script>
+</body>
+</html>
