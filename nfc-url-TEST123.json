@@ -1,0 +1,9 @@
+[
+  {
+    "tagId": "TEST123",
+    "doorId": 14,
+    "doorName": "Door 11",
+    "url": "simplifiaccess://scan?tagId=TEST123",
+    "tagType": "nfc"
+  }
+]

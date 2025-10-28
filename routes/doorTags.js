@@ -22,6 +22,20 @@ const validateDoorTagUpdate = [
   body('tagData').optional().isString().withMessage('Tag data must be a string')
 ];
 
+// Get all door tags for NFC URL generator (public endpoint)
+router.get('/public', async (req, res) => {
+  try {
+    const doorTags = await DoorTag.findAll();
+    res.json(doorTags.map(tag => tag.toJSON()));
+  } catch (error) {
+    console.error('Get public door tags error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to retrieve door tags'
+    });
+  }
+});
+
 // Get all door tags (admin only)
 router.get('/', authenticate, requireAdmin, validatePagination, async (req, res) => {
   try {

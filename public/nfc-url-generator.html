@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC URL Generator - SimplifiAccess</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #9ca3af;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            color: #3b82f6;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #d1d5db;
+            font-weight: 500;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #374151;
+            border-radius: 8px;
+            background: #111827;
+            color: #ffffff;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-section {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            backdrop-filter: blur(10px);
+            margin-top: 20px;
+        }
+
+        .url-display {
+            background: #111827;
+            border: 2px solid #374151;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            color: #10b981;
+        }
+
+        .copy-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #059669;
+        }
+
+        .qr-code {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .qr-code canvas {
+            border: 2px solid #374151;
+            border-radius: 8px;
+        }
+
+        .instructions {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .instructions h3 {
+            color: #3b82f6;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #d1d5db;
+        }
+
+        .loading {
+            text-align: center;
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            color: #fca5a5;
+            margin: 20px 0;
+        }
+
+        .success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            color: #6ee7b7;
+            margin: 20px 0;
+        }
+
+        .tag-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            background: #111827;
+        }
+
+        .tag-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #374151;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .tag-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .tag-item:last-child {
+            border-bottom: none;
+        }
+
+        .tag-id {
+            font-weight: 600;
+            color: #3b82f6;
+        }
+
+        .door-info {
+            color: #9ca3af;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 NFC URL Generator</h1>
+            <p>Generate NFC-compatible URLs for your SimplifiAccess door tags</p>
+        </div>
+
+        <div class="main-content">
+            <div class="card">
+                <h2>📱 Generate NFC URL</h2>
+                <form id="urlForm">
+                    <div class="form-group">
+                        <label for="tagSelect">Select Door Tag:</label>
+                        <select id="tagSelect" required>
+                            <option value="">Loading door tags...</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn" id="generateBtn">
+                        Generate NFC URL
+                    </button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>📋 Available Tags</h2>
+                <div id="tagList" class="tag-list">
+                    <div class="loading">Loading door tags...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultSection" class="result-section" style="display: none;">
+            <h2>🔗 Generated NFC URL</h2>
+            <div id="urlDisplay" class="url-display"></div>
+            <button id="copyBtn" class="copy-btn">Copy URL</button>
+            
+            <div id="qrCode" class="qr-code"></div>
+            
+            <div class="instructions">
+                <h3>📋 How to Use This URL:</h3>
+                <ol>
+                    <li>Copy the URL above</li>
+                    <li>Use an NFC writing app (like NFC Tools) to write this URL to your NFC card</li>
+                    <li>When someone scans the NFC card, it will open the SimplifiAccess mobile app</li>
+                    <li>The app will automatically process the door access request</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+        class NFCUrlGenerator {
+            constructor() {
+                this.doorTags = [];
+                this.init();
+            }
+
+            async init() {
+                await this.loadDoorTags();
+                this.setupEventListeners();
+            }
+
+            async loadDoorTags() {
+                try {
+                    const response = await fetch('/api/door-tags/public');
+                    if (!response.ok) {
+                        throw new Error('Failed to load door tags');
+                    }
+                    
+                    this.doorTags = await response.json();
+                    this.populateTagSelect();
+                    this.populateTagList();
+                } catch (error) {
+                    console.error('Error loading door tags:', error);
+                    this.showError('Failed to load door tags. Please check if the server is running.');
+                }
+            }
+
+            populateTagSelect() {
+                const select = document.getElementById('tagSelect');
+                select.innerHTML = '<option value="">Select a door tag...</option>';
+                
+                this.doorTags.forEach(tag => {
+                    const option = document.createElement('option');
+                    option.value = tag.tagId;
+                    option.textContent = `${tag.tagId} - ${tag.door ? tag.door.name : 'Unknown Door'}`;
+                    select.appendChild(option);
+                });
+            }
+
+            populateTagList() {
+                const tagList = document.getElementById('tagList');
+                
+                if (this.doorTags.length === 0) {
+                    tagList.innerHTML = '<div class="loading">No door tags found. Create some door tags first.</div>';
+                    return;
+                }
+
+                tagList.innerHTML = '';
+                
+                this.doorTags.forEach(tag => {
+                    const tagItem = document.createElement('div');
+                    tagItem.className = 'tag-item';
+                    tagItem.onclick = () => this.selectTag(tag.tagId);
+                    
+                    tagItem.innerHTML = `
+                        <div class="tag-id">${tag.tagId}</div>
+                        <div class="door-info">
+                            Door: ${tag.door ? tag.door.name : 'Unknown'} (ID: ${tag.doorId})<br>
+                            Type: ${tag.tagType}
+                        </div>
+                    `;
+                    
+                    tagList.appendChild(tagItem);
+                });
+            }
+
+            selectTag(tagId) {
+                document.getElementById('tagSelect').value = tagId;
+                this.generateUrl(tagId);
+            }
+
+            setupEventListeners() {
+                document.getElementById('urlForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const tagId = document.getElementById('tagSelect').value;
+                    if (tagId) {
+                        this.generateUrl(tagId);
+                    }
+                });
+
+                document.getElementById('copyBtn').addEventListener('click', () => {
+                    this.copyUrl();
+                });
+            }
+
+            generateUrl(tagId) {
+                const url = `simplifiaccess://scan?tagId=${encodeURIComponent(tagId)}`;
+                
+                // Display the URL
+                document.getElementById('urlDisplay').textContent = url;
+                document.getElementById('resultSection').style.display = 'block';
+                
+                // Generate QR code
+                this.generateQRCode(url);
+                
+                // Scroll to result
+                document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+            }
+
+            generateQRCode(url) {
+                const qrContainer = document.getElementById('qrCode');
+                qrContainer.innerHTML = '';
+                
+                const canvas = document.createElement('canvas');
+                qrContainer.appendChild(canvas);
+                
+                QRCode.toCanvas(canvas, url, {
+                    width: 300,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                }, (error) => {
+                    if (error) {
+                        console.error('QR code generation error:', error);
+                        qrContainer.innerHTML = '<p>QR code generation failed</p>';
+                    }
+                });
+            }
+
+            async copyUrl() {
+                const url = document.getElementById('urlDisplay').textContent;
+                
+                try {
+                    await navigator.clipboard.writeText(url);
+                    this.showSuccess('URL copied to clipboard!');
+                } catch (error) {
+                    console.error('Copy failed:', error);
+                    this.showError('Failed to copy URL. Please copy it manually.');
+                }
+            }
+
+            showError(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.textContent = message;
+                
+                const container = document.querySelector('.container');
+                container.insertBefore(errorDiv, container.firstChild);
+                
+                setTimeout(() => {
+                    errorDiv.remove();
+                }, 5000);
+            }
+
+            showSuccess(message) {
+                const successDiv = document.createElement('div');
+                successDiv.className = 'success';
+                successDiv.textContent = message;
+                
+                const container = document.querySelector('.container');
+                container.insertBefore(successDiv, container.firstChild);
+                
+                setTimeout(() => {
+                    successDiv.remove();
+                }, 3000);
+            }
+        }
+
+        // Initialize the generator when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new NFCUrlGenerator();
+        });
+    </script>
+</body>
+</html>
