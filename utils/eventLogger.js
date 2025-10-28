@@ -74,6 +74,15 @@ class EventLogger {
       } else {
         console.log('ℹ️ EventLogger: triggerWebhook function not available globally');
       }
+
+      // Also trigger webhooks through the global broadcast function for consistency
+      if (global.broadcastEvent) {
+        try {
+          global.broadcastEvent(createdEvent);
+        } catch (broadcastError) {
+          console.error('❌ EventLogger: Error in global broadcast:', broadcastError);
+        }
+      }
     } catch (error) {
       console.error('Error logging event:', error);
       // Don't throw error to avoid breaking the main operation

@@ -14,6 +14,9 @@ const webhookConfigs = new Map();
 // Webhook delivery queue for retry logic
 const deliveryQueue = new Map();
 
+// Duplicate prevention for webhook deliveries
+const processedWebhookEvents = new Set();
+
 // Webhook event types
 const WEBHOOK_EVENTS = {
   // Special: subscribe to ALL events
@@ -66,7 +69,11 @@ const WEBHOOK_EVENTS = {
   // System/runtime
   SYSTEM_ERROR: 'system.error',
   SYSTEM_STARTUP: 'system.startup',
-  SYSTEM_SHUTDOWN: 'system.shutdown'
+  SYSTEM_SHUTDOWN: 'system.shutdown',
+  // ESP32 Command events
+  ESP32_COMMAND_SENT: 'esp32.command_sent',
+  ESP32_COMMAND_RECEIVED: 'esp32.command_received',
+  ESP32_COMMAND_EXECUTED: 'esp32.command_executed'
 };
 
 // Webhook configuration model
@@ -270,6 +277,25 @@ async function processWebhookDelivery(delivery) {
 // Trigger webhook for an event
 async function triggerWebhook(event, payload) {
   console.log(`📡 Triggering webhook for event: ${event}`);
+  
+  // Create a unique key for duplicate prevention
+  const eventKey = `${event}-${payload.eventId || payload.id || Date.now()}`;
+  
+  // Check for duplicates
+  if (processedWebhookEvents.has(eventKey)) {
+    console.log(`📡 Skipping duplicate webhook event: ${eventKey}`);
+    return;
+  }
+  
+  // Mark as processed
+  processedWebhookEvents.add(eventKey);
+  
+  // Clean up old processed events (keep only last 1000)
+  if (processedWebhookEvents.size > 1000) {
+    const eventsArray = Array.from(processedWebhookEvents);
+    const toRemove = eventsArray.slice(0, eventsArray.length - 1000);
+    toRemove.forEach(key => processedWebhookEvents.delete(key));
+  }
   
   const activeWebhooks = Array.from(webhookConfigs.values())
     .filter(config => config.active && (config.events.includes(event) || config.events.includes(WEBHOOK_EVENTS.EVENTS_ALL)));
@@ -589,6 +615,163 @@ router.get('/events/available', authenticate, requireAdmin, async (req, res) => 
   }
 });
 
+// ESP32 Webhook Command endpoint (for sending commands to ESP32 via webhook)
+router.post('/esp32/command', authenticate, requireAdmin, [
+  body('doorId').isInt({ min: 1 }).withMessage('Door ID is required and must be a positive integer'),
+  body('command').isString().notEmpty().withMessage('Command is required'),
+  body('webhookUrl').optional().isURL().withMessage('Webhook URL must be a valid URL')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        errors: errors.array()
+      });
+    }
+
+    const { doorId, command, webhookUrl } = req.body;
+    
+    // Get door information
+    const { Door } = require('../database/door');
+    const door = await Door.findById(doorId);
+    
+    if (!door) {
+      return res.status(404).json({
+        error: 'Door Not Found',
+        message: 'The specified door does not exist'
+      });
+    }
+
+    // Create webhook payload for ESP32 command
+    const webhookPayload = {
+      event: 'esp32.command_sent',
+      timestamp: new Date().toISOString(),
+      data: {
+        doorId: door.id,
+        doorName: door.name,
+        doorIp: door.esp32Ip,
+        doorMac: door.esp32Mac,
+        command: command,
+        commandId: `cmd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        sentBy: {
+          userId: req.user.id,
+          userName: req.user.firstName && req.user.lastName ? 
+            `${req.user.firstName} ${req.user.lastName}` : req.user.email
+        },
+        webhookUrl: webhookUrl || null
+      }
+    };
+
+    // If webhook URL is provided, send command directly to ESP32
+    if (webhookUrl) {
+      try {
+        const axios = require('axios');
+        const response = await axios.post(webhookUrl, webhookPayload, {
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'SimplifiAccess-ESP32-Command/1.0'
+          },
+          timeout: 5000
+        });
+
+        console.log(`✅ ESP32 command sent via webhook to ${webhookUrl}:`, command);
+        
+        // Log the command
+        const EventLogger = require('../utils/eventLogger');
+        await EventLogger.log(req, 'esp32', 'command_sent', 'Door', door.id, door.name, 
+          `Command '${command}' sent to ESP32 via webhook`);
+
+        res.json({
+          success: true,
+          message: 'ESP32 command sent successfully via webhook',
+          command: command,
+          door: door.toJSON(),
+          webhookResponse: {
+            status: response.status,
+            statusText: response.statusText
+          }
+        });
+
+      } catch (webhookError) {
+        console.error('❌ Error sending ESP32 command via webhook:', webhookError.message);
+        
+        res.status(500).json({
+          error: 'Webhook Delivery Failed',
+          message: 'Failed to send command to ESP32 via webhook',
+          details: webhookError.message
+        });
+      }
+    } else {
+      // Store command in database for ESP32 to poll (existing method)
+      try {
+        const pool = require('../database/pool');
+        const db = await pool.getConnection();
+        
+        try {
+          // Ensure door_commands table exists
+          await new Promise((resolve, reject) => {
+            db.run(`CREATE TABLE IF NOT EXISTS door_commands (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              door_id INTEGER NOT NULL,
+              command TEXT NOT NULL,
+              status TEXT DEFAULT 'pending',
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              executed_at DATETIME,
+              FOREIGN KEY (door_id) REFERENCES doors (id)
+            )`, (err) => {
+              if (err) reject(err);
+              else resolve();
+            });
+          });
+          
+          // Insert command
+          await new Promise((resolve, reject) => {
+            db.run('INSERT INTO door_commands (door_id, command) VALUES (?, ?)', 
+                   [door.id, command], (err) => {
+              if (err) reject(err);
+              else resolve();
+            });
+          });
+          
+          console.log(`✅ ESP32 command queued for polling: ${command}`);
+          
+          // Log the command
+          const EventLogger = require('../utils/eventLogger');
+          await EventLogger.log(req, 'esp32', 'command_queued', 'Door', door.id, door.name, 
+            `Command '${command}' queued for ESP32 polling`);
+
+          res.json({
+            success: true,
+            message: 'ESP32 command queued successfully for polling',
+            command: command,
+            door: door.toJSON()
+          });
+          
+        } finally {
+          pool.releaseConnection(db);
+        }
+        
+      } catch (dbError) {
+        console.error('❌ Error queuing ESP32 command:', dbError.message);
+        
+        res.status(500).json({
+          error: 'Command Queue Failed',
+          message: 'Failed to queue command for ESP32',
+          details: dbError.message
+        });
+      }
+    }
+
+  } catch (error) {
+    console.error('ESP32 webhook command error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to process ESP32 command'
+    });
+  }
+});
+
 // Helper function to get event descriptions
 function getEventDescription(event) {
   const descriptions = {
@@ -625,7 +808,10 @@ function getEventDescription(event) {
     [WEBHOOK_EVENTS.WEBHOOK_DELETED]: 'Triggered when a webhook configuration is deleted',
     [WEBHOOK_EVENTS.SYSTEM_ERROR]: 'Triggered when a system error occurs',
     [WEBHOOK_EVENTS.SYSTEM_STARTUP]: 'Triggered when the system starts up',
-    [WEBHOOK_EVENTS.SYSTEM_SHUTDOWN]: 'Triggered when the system shuts down'
+    [WEBHOOK_EVENTS.SYSTEM_SHUTDOWN]: 'Triggered when the system shuts down',
+    [WEBHOOK_EVENTS.ESP32_COMMAND_SENT]: 'Triggered when a command is sent to an ESP32 device',
+    [WEBHOOK_EVENTS.ESP32_COMMAND_RECEIVED]: 'Triggered when an ESP32 device receives a command',
+    [WEBHOOK_EVENTS.ESP32_COMMAND_EXECUTED]: 'Triggered when an ESP32 device executes a command'
   };
   
   return descriptions[event] || 'No description available';
