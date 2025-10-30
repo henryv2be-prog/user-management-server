@@ -3811,7 +3811,7 @@ function handleCreateNFCCard(event) {
     } else if (accessType === 'mobile-app') {
         nfcCardUrl = `${window.location.origin}/mobile-silent-access?door_id=${doorId}`;
     } else if (accessType === 'silent') {
-        nfcCardUrl = `${window.location.origin}/silent-api-call?door_id=${doorId}`;
+        nfcCardUrl = `${window.location.origin}/silent-door-access?door_id=${doorId}`;
     } else {
         nfcCardUrl = `${window.location.origin}/door-access?door_id=${doorId}`;
     }
@@ -3833,7 +3833,7 @@ function updateNFCCardUrl() {
         } else if (accessType === 'mobile-app') {
             url = `${window.location.origin}/mobile-silent-access?door_id=${doorId}`;
         } else if (accessType === 'silent') {
-            url = `${window.location.origin}/silent-api-call?door_id=${doorId}`;
+            url = `${window.location.origin}/silent-door-access?door_id=${doorId}`;
         } else {
             url = `${window.location.origin}/door-access?door_id=${doorId}`;
         }
@@ -3858,12 +3858,12 @@ function copyNFCCardUrl() {
 }
 
 function testNFCCard(doorId) {
-    const url = `${window.location.origin}/silent-api-call?door_id=${doorId}`;
+    const url = `${window.location.origin}/silent-door-access?door_id=${doorId}`;
     window.open(url, '_blank');
 }
 
 function downloadNFCCard(doorId) {
-    const url = `${window.location.origin}/silent-api-call?door_id=${doorId}`;
+    const url = `${window.location.origin}/silent-door-access?door_id=${doorId}`;
     
     // Create a QR code for the NFC card
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
