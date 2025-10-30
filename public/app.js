@@ -3857,12 +3857,12 @@ function copyNFCCardUrl() {
 }
 
 function testNFCCard(doorId) {
-    const url = `${window.location.origin}/door-access?door_id=${doorId}`;
+    const url = `${window.location.origin}/silent-api-call?door_id=${doorId}`;
     window.open(url, '_blank');
 }
 
 function downloadNFCCard(doorId) {
-    const url = `${window.location.origin}/door-access?door_id=${doorId}`;
+    const url = `${window.location.origin}/silent-api-call?door_id=${doorId}`;
     
     // Create a QR code for the NFC card
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
@@ -3873,6 +3873,22 @@ function downloadNFCCard(doorId) {
     link.download = `nfc-card-door-${doorId}.png`;
     link.click();
     
+    app.showNotification('QR Code downloaded!', 'success');
+}
+
+// Generate a QR code from the currently generated NFC URL in the modal
+function downloadQRFromGeneratedUrl() {
+    const input = document.getElementById('nfcCardUrl');
+    if (!input || !input.value) {
+        app.showNotification('Please generate the NFC URL first', 'error');
+        return;
+    }
+    const url = input.value;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+    const link = document.createElement('a');
+    link.href = qrCodeUrl;
+    link.download = 'nfc-tag-qr.png';
+    link.click();
     app.showNotification('QR Code downloaded!', 'success');
 }
 

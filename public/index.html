@@ -142,10 +142,7 @@
                         <i class="fas fa-shield-alt" aria-hidden="true"></i> 
                         <span>Access Groups</span>
                     </a>
-                    <a href="#" class="nav-link" onclick="showSection('nfcCards')" role="menuitem" aria-label="Go to NFC Cards">
-                        <i class="fas fa-credit-card" aria-hidden="true"></i> 
-                        <span>NFC Cards</span>
-                    </a>
+                    
                     <a href="#" class="nav-link" onclick="showSection('doorControllerDiscovery')" role="menuitem" aria-label="Go to Door Controller Discovery">
                         <i class="fas fa-wifi" aria-hidden="true"></i> 
                         <span>Controller Discovery</span>
@@ -467,25 +464,7 @@
             </div>
         </div>
 
-        <!-- NFC Cards Management -->
-        <div id="nfcCardsSection" class="section">
-            <div class="container">
-                <div class="section-header">
-                    <h1><i class="fas fa-credit-card"></i> NFC Cards</h1>
-                    <div class="header-actions">
-                        <button class="btn btn-primary" onclick="showCreateNFCCardModal()">
-                            <i class="fas fa-plus"></i> Create NFC Card
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="nfc-cards-content">
-                    <div class="nfc-cards-grid" id="nfcCardsGrid">
-                        <!-- NFC Cards will be loaded here -->
-                    </div>
-                </div>
-            </div>
-        </div>
+        
 
         <!-- Door Controller Discovery Management -->
         <div id="doorControllerDiscoverySection" class="section">
@@ -534,6 +513,18 @@
                 </div>
                 
                 <div class="settings-container">
+                    <!-- NFC & QR Tag Management Panel -->
+                    <div class="settings-panel">
+                        <div class="panel-header">
+                            <h2><i class="fas fa-qrcode"></i> NFC & QR Tag Management</h2>
+                            <p>Create NFC tags and generate matching QR codes (silent action).</p>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-primary" onclick="showCreateNFCCardModal()">
+                                <i class="fas fa-plus"></i> Create NFC Tag / Generate QR
+                            </button>
+                        </div>
+                    </div>
                     
                     <!-- System Information Panel -->
                     <div class="settings-panel">
@@ -1316,14 +1307,12 @@
                         <select id="nfcCardType" name="accessType" required>
                             <option value="truly-silent">Truly Silent (no browser)</option>
                             <option value="mobile-app">Mobile App Integration</option>
-                            <option value="silent">Silent Access (minimal browser)</option>
-                            <option value="login">Login Required</option>
+                            <option value="silent" selected>Silent Access (minimal browser)</option>
                         </select>
                         <small>
                             <strong>Truly Silent:</strong> No browser opens at all (requires mobile app)<br>
                             <strong>Mobile App:</strong> Redirects to mobile app for silent access<br>
-                            <strong>Silent Access:</strong> Minimal browser window that auto-closes<br>
-                            <strong>Login Required:</strong> Always shows login form
+                            <strong>Silent Access:</strong> Minimal browser window that auto-closes
                         </small>
                     </div>
                     
@@ -1347,6 +1336,9 @@
                         <button type="button" class="btn btn-secondary" onclick="closeModal('createNFCCardModal')">Cancel</button>
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-credit-card"></i> Generate Card
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="downloadQRFromGeneratedUrl()">
+                            <i class="fas fa-qrcode"></i> Download QR
                         </button>
                     </div>
                 </form>
