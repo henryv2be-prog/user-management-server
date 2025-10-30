@@ -449,6 +449,70 @@ async function migrateDatabase() {
         }
       });
     });
+
+    // Ensure access_groups table exists
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE TABLE IF NOT EXISTS access_groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`, (err) => {
+        if (err) {
+          console.error('❌ access_groups migration failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ access_groups table created/verified');
+          resolve();
+        }
+      });
+    });
+
+    // Ensure user_access_groups table exists
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE TABLE IF NOT EXISTS user_access_groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        access_group_id INTEGER NOT NULL,
+        granted_by INTEGER,
+        expires_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+        FOREIGN KEY (access_group_id) REFERENCES access_groups (id) ON DELETE CASCADE,
+        FOREIGN KEY (granted_by) REFERENCES users (id) ON DELETE SET NULL,
+        UNIQUE(user_id, access_group_id)
+      )`, (err) => {
+        if (err) {
+          console.error('❌ user_access_groups migration failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ user_access_groups table created/verified');
+          resolve();
+        }
+      });
+    });
+
+    // Ensure door_access_groups table exists
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE TABLE IF NOT EXISTS door_access_groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        door_id INTEGER NOT NULL,
+        access_group_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE,
+        FOREIGN KEY (access_group_id) REFERENCES access_groups (id) ON DELETE CASCADE,
+        UNIQUE(door_id, access_group_id)
+      )`, (err) => {
+        if (err) {
+          console.error('❌ door_access_groups migration failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ door_access_groups table created/verified');
+          resolve();
+        }
+      });
+    });
     
     // Add tag_id column to access_requests table if it doesn't exist
     await new Promise((resolve, reject) => {
