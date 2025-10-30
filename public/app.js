@@ -11,6 +11,7 @@ function forceRefresh(url, options = {}) {
     const cacheBustedUrl = addCacheBusting(url);
     const enhancedOptions = {
         ...options,
+        cache: 'no-store',
         headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
@@ -936,7 +937,7 @@ async function handleLogin(event) {
             localStorage.setItem('token', data.token);
             currentUser = data.user;
             showAuthenticatedUI();
-            loadDashboard();
+            await forceRefreshAllData();
             // SSE connection disabled - using webhook-based system instead
             console.log('🔄 SSE disabled, using webhook-based real-time updates');
             
