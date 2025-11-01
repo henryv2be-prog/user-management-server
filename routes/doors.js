@@ -905,7 +905,7 @@ router.post('/access/request', async (req, res) => {
               console.error('Error creating door_commands table:', err.message);
               reject(err);
             } else {
-              console.log('✅ Door commands table verified/created');
+              // Table verified/created (silent - don't spam logs)
               resolve();
             }
           });
@@ -1006,7 +1006,7 @@ router.post('/:id/control', authenticate, requireAdmin, validateId, async (req, 
               console.error('Error creating door_commands table:', err.message);
               reject(err);
             } else {
-              console.log('✅ Door commands table verified/created');
+              // Table verified/created (silent - don't spam logs)
               resolve();
             }
           });
@@ -1253,7 +1253,7 @@ router.get('/commands/:doorId', async (req, res) => {
     const db = await pool.getConnection();
     
     try {
-      // First, ensure the door_commands table exists
+      // First, ensure the door_commands table exists (silently - don't log on every poll)
       await new Promise((resolve, reject) => {
         db.run(`CREATE TABLE IF NOT EXISTS door_commands (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1265,10 +1265,11 @@ router.get('/commands/:doorId', async (req, res) => {
           FOREIGN KEY (door_id) REFERENCES doors (id)
         )`, (err) => {
           if (err) {
-            console.error('Error creating door_commands table:', err.message);
+            console.error('❌ Error creating door_commands table:', err.message);
             reject(err);
           } else {
-            console.log('✅ Door commands table verified/created');
+            // Only log if table was actually created (not just verified) - table creation happens once
+            // Note: SQLite doesn't differentiate, so we avoid logging here to prevent spam
             resolve();
           }
         });
@@ -1317,7 +1318,10 @@ router.get('/commands/:doorId', async (req, res) => {
         }))
       };
       
-      console.log(`Sending response to ESP32 for door ${doorId}:`, JSON.stringify(response));
+      // Only log response if there are commands (not on every empty poll)
+      if (commands.length > 0) {
+        console.log(`📤 Door ${doorId}: Sending ${commands.length} command(s) to ESP32`);
+      }
       res.json(response);
       
     } finally {
