@@ -166,14 +166,10 @@ router.get('/', authenticate, requireAdmin, validatePagination, async (req, res)
       search
     };
     
-    console.log('Fetching doors with options:', options);
-    
     const [doors, totalCount] = await Promise.all([
       Door.findAll(options),
       Door.count(options)
     ]);
-    
-    console.log(`Found ${doors.length} doors, total count: ${totalCount}`);
     
     const totalPages = Math.ceil(totalCount / options.limit);
     
