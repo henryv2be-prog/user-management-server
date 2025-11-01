@@ -234,15 +234,21 @@
         async function init() {
             console.log('🔍 Silent Access - Initializing...');
             
+            // Get door ID first
+            const doorId = getDoorIdFromUrl();
+            
             // Check if user is logged in
             if (!checkLoginStatus()) {
-                showStatus('🔑', 'Login Required', 'Please login first at the door access page');
-                startCountdown();
+                // Redirect to door login page with door_id parameter
+                console.log('🔍 Silent Access - Not logged in, redirecting to door login');
+                if (doorId) {
+                    window.location.href = `/door-login?door_id=${doorId}`;
+                } else {
+                    window.location.href = '/door-login';
+                }
                 return;
             }
             
-            // Get door ID
-            const doorId = getDoorIdFromUrl();
             if (!doorId) {
                 showStatus('❌', 'Invalid Request', 'No door ID provided');
                 startCountdown();

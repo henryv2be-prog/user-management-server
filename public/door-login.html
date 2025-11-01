@@ -321,7 +321,18 @@
                     }));
                     
                     console.log('🔍 Door Login - Login successful, token stored');
-                    showSuccess();
+                    
+                    // Get door_id from URL and redirect to silent-door-access
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const doorId = urlParams.get('door_id');
+                    
+                    if (doorId) {
+                        // Redirect to silent door access with door_id
+                        window.location.href = `/silent-door-access?door_id=${doorId}`;
+                    } else {
+                        // No door_id, just show success
+                        showSuccess();
+                    }
                 } else {
                     console.error('🔍 Door Login - Login failed:', data);
                     showError(data.message || 'Login failed. Please check your credentials.');

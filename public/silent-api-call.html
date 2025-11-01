@@ -40,8 +40,9 @@
                 const tokenExpiry = localStorage.getItem('doorAccessTokenExpiry');
                 
                 if (!token || !tokenExpiry) {
-                    console.log('No valid token found');
-                    window.close();
+                    console.log('No valid token found - redirecting to login');
+                    // Redirect to door login page
+                    window.location.href = `/door-login?door_id=${doorId}`;
                     return;
                 }
                 
@@ -49,11 +50,12 @@
                 const expiry = parseInt(tokenExpiry);
                 
                 if (now >= expiry) {
-                    console.log('Token expired');
+                    console.log('Token expired - redirecting to login');
                     localStorage.removeItem('doorAccessToken');
                     localStorage.removeItem('doorAccessTokenExpiry');
                     localStorage.removeItem('doorAccessUser');
-                    window.close();
+                    // Redirect to door login page
+                    window.location.href = `/door-login?door_id=${doorId}`;
                     return;
                 }
                 
