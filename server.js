@@ -50,11 +50,13 @@ app.use(compression());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
   skip: (req, res) => {
     // Skip logging for ESP32 command polling (called frequently)
-    if (req.path.startsWith('/api/doors/commands/') && req.method === 'GET') {
+    // Check both req.path and req.url for robustness
+    const path = req.path || req.url.split('?')[0];
+    if ((path.startsWith('/api/doors/commands/') || req.url?.startsWith('/api/doors/commands/')) && req.method === 'GET') {
       return true;
     }
     // Skip logging for ESP32 heartbeat requests (called every 10 seconds per door)
-    if (req.path === '/api/doors/heartbeat' && req.method === 'POST') {
+    if ((path === '/api/doors/heartbeat' || req.url?.startsWith('/api/doors/heartbeat')) && req.method === 'POST') {
       return true;
     }
     return false; // Log all other requests
