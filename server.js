@@ -46,8 +46,16 @@ app.use(cors({
 // Compression
 app.use(compression());
 
-// Logging
-app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+// Logging - skip frequent ESP32 polling requests to reduce log spam
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
+  skip: (req, res) => {
+    // Skip logging for ESP32 command polling (called frequently)
+    if (req.path.startsWith('/api/doors/commands/') && req.method === 'GET') {
+      return true; // Skip logging these requests
+    }
+    return false; // Log all other requests
+  }
+}));
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
