@@ -49,22 +49,23 @@ app.use(compression());
 // Logging - skip frequent ESP32 polling and heartbeat requests to reduce log spam
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
   skip: (req, res) => {
-    // Skip logging for ESP32 requests (identified by User-Agent or path)
-    const userAgent = req.get('User-Agent') || '';
-    const isESP32Request = userAgent.includes('ESP32HTTPClient');
+    // Check User-Agent first - ESP32 requests always have this header
+    const userAgent = req.headers['user-agent'] || req.get('User-Agent') || '';
+    if (userAgent.includes('ESP32HTTPClient')) {
+      return true; // Skip all ESP32 requests
+    }
+    
+    // Also check path as fallback (in case User-Agent is missing somehow)
+    const url = req.url || req.originalUrl || '';
+    const path = req.path || url.split('?')[0] || '';
     
     // Skip ESP32 command polling requests
-    if (req.method === 'GET' && (req.path?.includes('/api/doors/commands/') || req.url?.includes('/api/doors/commands/'))) {
+    if (req.method === 'GET' && (path.includes('/api/doors/commands/') || url.includes('/api/doors/commands/'))) {
       return true;
     }
     
     // Skip ESP32 heartbeat requests
-    if (req.method === 'POST' && (req.path === '/api/doors/heartbeat' || req.url?.includes('/api/doors/heartbeat'))) {
-      return true;
-    }
-    
-    // Also skip any request from ESP32 client (catch-all)
-    if (isESP32Request && (req.path?.includes('/api/doors/') || req.url?.includes('/api/doors/'))) {
+    if (req.method === 'POST' && (path.includes('/api/doors/heartbeat') || url.includes('/api/doors/heartbeat'))) {
       return true;
     }
     
