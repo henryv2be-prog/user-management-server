@@ -53,14 +53,17 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Debug middleware for heartbeat requests
-app.use('/api/doors/heartbeat', (req, res, next) => {
-  console.log('Heartbeat middleware hit');
-  console.log('Method:', req.method);
-  console.log('Headers:', req.headers);
-  console.log('Body:', req.body);
-  next();
-});
+// Debug middleware for heartbeat requests (disabled for production to reduce log spam)
+// Enable only in development if needed for debugging
+if (process.env.NODE_ENV === 'development' && process.env.DEBUG_HEARTBEAT === 'true') {
+  app.use('/api/doors/heartbeat', (req, res, next) => {
+    console.log('Heartbeat middleware hit');
+    console.log('Method:', req.method);
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
+    next();
+  });
+}
 
 // Serve static files with aggressive cache prevention for all environments
 app.use((req, res, next) => {

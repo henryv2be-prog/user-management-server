@@ -52,16 +52,10 @@ router.get('/public', async (req, res) => {
 // ESP32 Heartbeat endpoint (no auth required)
 router.post('/heartbeat', validateHeartbeat, asyncHandler(async (req, res) => {
   try {
-    console.log('Heartbeat endpoint hit');
-    console.log('Request body:', req.body);
-    console.log('Request headers:', req.headers);
-    
     let { deviceID, deviceName, ip, mac, status, doorOpen, signal, freeHeap, uptime, firmware, deviceType } = req.body;
     
-    console.log('Heartbeat received:', { deviceID, deviceName, ip, mac, status });
-    
     if (!ip) {
-      console.log('Heartbeat rejected - missing ip');
+      console.error('❌ Heartbeat rejected - missing IP address');
       return res.status(400).json({
         error: 'Bad Request',
         message: 'IP address is required'
@@ -103,21 +97,16 @@ router.post('/heartbeat', validateHeartbeat, asyncHandler(async (req, res) => {
     }
     
     // Find door by ESP32 IP first (most reliable)
-    console.log('Looking for door with IP:', ip);
     let door = await Door.findByIp(ip);
-    console.log('Door found by IP:', door ? 'Yes' : 'No');
     
     if (!door && mac) {
-      console.log('Looking for door with MAC:', mac);
       // Try to find by MAC if IP not found, but warn about potential conflicts
       door = await Door.findByMac(mac);
-      console.log('Door found by MAC:', door ? 'Yes' : 'No');
       
       if (door) {
-        console.log('WARNING: Found door by MAC but IP mismatch. Door IP:', door.esp32Ip, 'Heartbeat IP:', ip);
         // Update the door's IP to match the current heartbeat
         if (door.esp32Ip !== ip) {
-          console.log('Updating door IP from', door.esp32Ip, 'to', ip);
+          console.warn(`⚠️ Door "${door.name}" IP mismatch - updating from ${door.esp32Ip} to ${ip}`);
           door.esp32Ip = ip;
           await door.save();
         }
@@ -133,6 +122,7 @@ router.post('/heartbeat', validateHeartbeat, asyncHandler(async (req, res) => {
       
       // Only log door coming back online if it was previously offline
       if (wasOffline) {
+        console.log(`✅ Door "${door.name}" (ID: ${door.id}) came back online`);
         await EventLogger.log(req, 'door', 'online', 'door', door.id, door.name, `Door came back online - heartbeat received from IP: ${ip}`);
       }
       
@@ -143,7 +133,13 @@ router.post('/heartbeat', validateHeartbeat, asyncHandler(async (req, res) => {
         doorName: door.name
       });
     } else {
-      // Door not found - could be a new ESP32
+      // Door not found - could be a new ESP32 (only log first time per device)
+      const firstTime = !heartbeatCache.has(deviceID + '_logged');
+      if (firstTime) {
+        console.log(`ℹ️ Heartbeat from unregistered ESP32: ${ip} (${mac || 'no MAC'})`);
+        heartbeatCache.set(deviceID + '_logged', true);
+      }
+      
       res.json({
         success: true,
         message: 'Heartbeat received but door not registered',
@@ -151,7 +147,7 @@ router.post('/heartbeat', validateHeartbeat, asyncHandler(async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Heartbeat error:', error);
+    console.error('❌ Heartbeat error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to process heartbeat'
@@ -1030,7 +1026,7 @@ router.post('/:id/control', authenticate, requireAdmin, validateId, async (req, 
           });
         });
         
-        console.log(`✅ Door ${action} command queued for ESP32 polling`);
+        // Command queued successfully (already logged above)
         
         // Immediately update site map door status for instant visual feedback
         if (global.triggerWebhook) {
@@ -1243,12 +1239,9 @@ router.delete('/:id/tags/:tagId', authenticate, requireAdmin, validateId, async 
 router.get('/commands/:doorId', async (req, res) => {
   try {
     const doorId = parseInt(req.params.doorId);
-    console.log(`🚪 ESP32 polling for commands - Door ID: ${doorId}`);
-    console.log(`🚪 Request from IP: ${req.ip}`);
-    console.log(`🚪 User-Agent: ${req.get('User-Agent')}`);
     
     if (isNaN(doorId)) {
-      console.log(`❌ Invalid door ID received: ${req.params.doorId}`);
+      console.error(`❌ Invalid door ID received: ${req.params.doorId}`);
       return res.status(400).json({
         error: 'Invalid door ID',
         message: 'Door ID must be a number'
@@ -1288,9 +1281,9 @@ router.get('/commands/:doorId', async (req, res) => {
             console.error(`❌ Error fetching commands for door ${doorId}:`, err);
             reject(err);
           } else {
-            console.log(`✅ Found ${rows.length} pending commands for door ${doorId}`);
+            // Only log when commands are found (not on every poll)
             if (rows.length > 0) {
-              console.log(`📋 Commands:`, rows.map(cmd => ({ id: cmd.id, command: cmd.command, created: cmd.created_at })));
+              console.log(`📋 Door ${doorId}: Found ${rows.length} pending command(s):`, rows.map(cmd => cmd.command).join(', '));
             }
             resolve(rows);
           }
@@ -1300,16 +1293,15 @@ router.get('/commands/:doorId', async (req, res) => {
       // Mark commands as executed
       if (commands.length > 0) {
         const commandIds = commands.map(cmd => cmd.id);
-        console.log(`Marking ${commandIds.length} commands as executed for door ${doorId}:`, commandIds);
         
         await new Promise((resolve, reject) => {
           db.run(`UPDATE door_commands SET status = 'executed', executed_at = CURRENT_TIMESTAMP WHERE id IN (${commandIds.map(() => '?').join(',')})`, 
                    commandIds, (err) => {
             if (err) {
-              console.error(`Error marking commands as executed:`, err);
+              console.error(`❌ Error marking commands as executed for door ${doorId}:`, err);
               reject(err);
             } else {
-              console.log(`Successfully marked ${commandIds.length} commands as executed`);
+              // Only log successful execution, not every poll
               resolve();
             }
           });
