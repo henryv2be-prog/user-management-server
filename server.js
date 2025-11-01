@@ -46,7 +46,7 @@ app.use(cors({
 // Compression
 app.use(compression());
 
-// Logging - skip frequent ESP32 polling and heartbeat requests to reduce log spam
+// Logging - skip frequent polling requests to reduce log spam
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
   skip: (req, res) => {
     // Check User-Agent first - ESP32 requests always have this header
@@ -66,6 +66,11 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
     
     // Skip ESP32 heartbeat requests
     if (req.method === 'POST' && (path.includes('/api/doors/heartbeat') || url.includes('/api/doors/heartbeat'))) {
+      return true;
+    }
+    
+    // Skip frequent events polling requests (dashboard auto-refresh)
+    if (req.method === 'GET' && (path.includes('/api/events/recent') || url.includes('/api/events/recent'))) {
       return true;
     }
     
