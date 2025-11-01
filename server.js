@@ -513,15 +513,19 @@ async function migrateDatabase() {
         }
       });
     });
-    
-    // Add tag_id column to access_requests table if it doesn't exist
+
+    // Add tag_id column to access_requests table if it doesn't exist (only if table exists)
     await new Promise((resolve, reject) => {
       db.run(`ALTER TABLE access_requests ADD COLUMN tag_id TEXT`, (err) => {
-        if (err && !err.message.includes('duplicate column name')) {
+        if (err && !err.message.includes('duplicate column name') && !err.message.includes('no such table')) {
           console.error('❌ Access requests tag_id migration failed:', err.message);
           reject(err);
         } else {
-          console.log('✅ Access requests tag_id column added/verified');
+          if (err && err.message.includes('no such table')) {
+            console.log('⚠️ access_requests table does not exist yet, tag_id will be added when table is created');
+          } else {
+            console.log('✅ Access requests tag_id column added/verified');
+          }
           resolve();
         }
       });
@@ -547,6 +551,96 @@ async function migrateDatabase() {
           reject(err);
         } else {
           console.log('✅ Door tags tag_id index created/verified');
+          resolve();
+        }
+      });
+    });
+
+    // Ensure access_log table exists
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE TABLE IF NOT EXISTS access_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        door_id INTEGER NOT NULL,
+        access_granted INTEGER NOT NULL,
+        access_reason TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL,
+        FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE
+      )`, (err) => {
+        if (err) {
+          console.error('❌ access_log migration failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ access_log table created/verified');
+          resolve();
+        }
+      });
+    });
+
+    // Ensure access_requests table exists
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE TABLE IF NOT EXISTS access_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        door_id INTEGER NOT NULL,
+        request_type TEXT DEFAULT 'qr_scan',
+        status TEXT DEFAULT 'pending',
+        reason TEXT,
+        user_agent TEXT,
+        ip_address TEXT,
+        qr_code_data TEXT,
+        requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        processed_at DATETIME,
+        expires_at DATETIME,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+        FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE
+      )`, (err) => {
+        if (err) {
+          console.error('❌ access_requests migration failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ access_requests table created/verified');
+          resolve();
+        }
+      });
+    });
+
+    // Ensure site_plan table exists
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE TABLE IF NOT EXISTS site_plan (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        background_image TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`, (err) => {
+        if (err) {
+          console.error('❌ site_plan migration failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ site_plan table created/verified');
+          resolve();
+        }
+      });
+    });
+
+    // Ensure door_positions table exists
+    await new Promise((resolve, reject) => {
+      db.run(`CREATE TABLE IF NOT EXISTS door_positions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        door_id INTEGER,
+        x REAL,
+        y REAL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(door_id),
+        FOREIGN KEY (door_id) REFERENCES doors (id) ON DELETE CASCADE
+      )`, (err) => {
+        if (err) {
+          console.error('❌ door_positions migration failed:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ door_positions table created/verified');
           resolve();
         }
       });

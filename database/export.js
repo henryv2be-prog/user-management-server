@@ -54,9 +54,29 @@ const exportDatabase = async (exportPath) => {
             tables.forEach(tableName => {
                 db.all(`SELECT * FROM ${tableName}`, (err, rows) => {
                     if (err) {
+                        // If table doesn't exist, log warning and continue with empty data
+                        if (err.code === 'SQLITE_ERROR' && err.message.includes('no such table')) {
+                            console.warn(`Table ${tableName} does not exist, exporting empty array`);
+                            exportData.data[tableName] = [];
+                            exportData.metadata.tables.push({
+                                name: tableName,
+                                recordCount: 0,
+                                exportedAt: new Date().toISOString(),
+                                warning: 'Table does not exist in database'
+                            });
+                            checkCompletion();
+                            return;
+                        }
+                        // For other errors, still log but don't fail - continue with empty data
                         console.error(`Error exporting table ${tableName}:`, err.message);
-                        pool.releaseConnection(db);
-                        reject(err);
+                        exportData.data[tableName] = [];
+                        exportData.metadata.tables.push({
+                            name: tableName,
+                            recordCount: 0,
+                            exportedAt: new Date().toISOString(),
+                            error: err.message
+                        });
+                        checkCompletion();
                         return;
                     }
 
